@@ -12,7 +12,10 @@ export const REGISTER_PER_IP_PER_DAY = 10;
 export const REPORT_PER_IP_PER_DAY = 10;
 export const VERIFY_PER_UID_PER_DAY = 5;
 export const RESET_PER_IP_PER_DAY = 10;
-export const RESET_PER_EMAIL_PER_DAY = 3;
+export const VERIFY_PER_IP_PER_DAY = 20;
+export const RESET_PER_EMAIL_PER_DAY = 5;
+export const INVITE_PER_UID_PER_DAY = 20;
+export const INVITE_PER_SCHOOL_PER_DAY = 20;
 
 export const RATE_LIMITS = 'rateLimits';
 const DAY_MS = 86_400_000;

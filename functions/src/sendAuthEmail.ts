@@ -13,11 +13,15 @@ import {
   hashIp,
   RESET_PER_EMAIL_PER_DAY,
   RESET_PER_IP_PER_DAY,
+  VERIFY_PER_IP_PER_DAY,
   VERIFY_PER_UID_PER_DAY,
 } from './lib/rateLimit';
 import { mailConfig } from './email/params';
 import { writeMail } from './email/send';
 import { passwordReset, verifyEmail } from './email/templates';
+
+// Teacher login addresses (core syntheticEmail) are not real mailboxes.
+const isTeacherLogin = (e: string): boolean => e.endsWith('.teachers.sathiya.lk');
 
 const hash = (v: string): string => createHash('sha256').update(v).digest('hex');
 
@@ -34,7 +38,10 @@ export const sendAuthEmail = onCall(callOpts, async (req): Promise<SendAuthEmail
 
   if (kind === 'verify') {
     const { uid, token } = requireAuth(req);
-    await consumeRateLimits([{ scope: 'verify-uid', id: uid, max: VERIFY_PER_UID_PER_DAY }]);
+    await consumeRateLimits([
+      { scope: 'verify-uid', id: uid, max: VERIFY_PER_UID_PER_DAY },
+      { scope: 'verify-ip', id: hashIp(clientIp(req)), max: VERIFY_PER_IP_PER_DAY },
+    ]);
     const to = token.email;
     if (!to) invalid('Account has no email address');
     if (token.email_verified === true) return { ok: true };
@@ -48,6 +55,7 @@ export const sendAuthEmail = onCall(callOpts, async (req): Promise<SendAuthEmail
     { scope: 'reset-ip', id: hashIp(clientIp(req)), max: RESET_PER_IP_PER_DAY },
     { scope: 'reset-email', id: hash(to), max: RESET_PER_EMAIL_PER_DAY },
   ]);
+  if (isTeacherLogin(to)) return { ok: true };
   try {
     const link = await auth.generatePasswordResetLink(to, actionCodeSettings);
     await writeMail({ to: [to], message: passwordReset({ link, lang, webUrl }) });

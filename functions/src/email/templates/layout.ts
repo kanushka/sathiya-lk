@@ -109,14 +109,9 @@ export function render(e: Email): Rendered {
     ? `<img src="${esc(logo)}" alt="" width="28" height="28" style="vertical-align:middle;border:0;margin-right:10px"><span style="vertical-align:middle">${esc(e.header.name)}</span>`
     : esc(e.header.name);
   const link = safeUrl(e.footer.linkUrl);
-  const footerHtml = [
-    esc(e.footer.en),
-    e.footer.si ? esc(e.footer.si) : '',
-    link ? ` <a href="${esc(link)}" style="color:${FOOT}">${esc(e.footer.linkLabel ?? link)}</a>` : '',
-  ]
-    .filter(Boolean)
-    .join('<br>')
-    .replace('<br> <a', ' · <a');
+  const footerLines = [esc(e.footer.en), ...(e.footer.si ? [esc(e.footer.si)] : [])];
+  const footerLink = link ? `<a href="${esc(link)}" style="color:${FOOT}">${esc(e.footer.linkLabel ?? link)}</a>` : '';
+  const footerHtml = [...footerLines.slice(0, -1), [footerLines.at(-1), footerLink].filter(Boolean).join(' · ')].join('<br>');
 
   const html = `<!doctype html>
 <html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>${esc(e.subject)}</title></head>

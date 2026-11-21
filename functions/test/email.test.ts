@@ -1,14 +1,14 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
 // Copyright (C) 2026 Kanushka Gayan
-import { paths } from '@sathiya/core';
+import { paths, syntheticEmail } from '@sathiya/core';
 import { logger } from 'firebase-functions/v2';
 import { httpsCallable } from 'firebase/functions';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { db } from '../src/lib/admin';
-import { RESET_PER_EMAIL_PER_DAY, VERIFY_PER_UID_PER_DAY } from '../src/lib/rateLimit';
+import { hashIp, INVITE_PER_SCHOOL_PER_DAY, INVITE_PER_UID_PER_DAY, RESET_PER_EMAIL_PER_DAY, VERIFY_PER_IP_PER_DAY, VERIFY_PER_UID_PER_DAY } from '../src/lib/rateLimit';
 import { setSchoolStatus } from '../src/setSchoolStatus';
 import { sendMail } from '../src/email/send';
-import { adminDb, adminWithSchool, client, expectFnError, makeSuper, schoolReq, signUp, teacherInput, uniq, unverifiedSignUp, type Client } from './helpers';
+import { adminAuth, adminDb, adminWithSchool, client, expectFnError, makeSuper, rawCall, rawErr, schoolReq, signUp, teacherInput, uniq, unverifiedSignUp, type Client } from './helpers';
 
 const APP_URL = 'https://app.sathiya.kanushka.com';
 const FROM = 'Sathiya <noreply@sathiya.kanushka.com>';
@@ -42,6 +42,24 @@ describe('app emails', () => {
     expect(mails[0]!.message.subject).toBe("You're invited to manage Siripura Central College on Sathiya");
     expect(mails[0]!.message.html).toContain('<b>Principal</b>');
     expect(mails[0]!.message.html).toContain(`${APP_URL}/login`);
+  });
+
+  it('inviteAdmin is limited per admin and per school, before the invite is written', async () => {
+    const { admin, sid } = await adminWithSchool();
+    for (let i = 0; i < INVITE_PER_UID_PER_DAY; i++) await admin.call('inviteAdmin', { schoolId: sid, email: `inv-${i}-${uniq()}@example.com` });
+    const blocked = `blocked-${uniq()}@example.com`;
+    await expectFnError(admin.call('inviteAdmin', { schoolId: sid, email: blocked }), 'resource-exhausted', 'rate-limited');
+    expect((await adminDb.doc(`${paths.invites(sid)}/${blocked}`).get()).exists).toBe(false);
+    expect(await mailsTo(blocked)).toHaveLength(0);
+  });
+
+  it('inviteAdmin has a per-school daily limit shared by all its admins', async () => {
+    const { admin, sid } = await adminWithSchool();
+    const day = new Date().toISOString().slice(0, 10);
+    await adminDb.doc(`rateLimits/invite-school_${day}_${sid}`).set({ scope: 'invite-school', day, count: INVITE_PER_SCHOOL_PER_DAY });
+    const to = `blocked-${uniq()}@example.com`;
+    await expectFnError(admin.call('inviteAdmin', { schoolId: sid, email: to }), 'resource-exhausted', 'rate-limited');
+    expect((await adminDb.doc(`${paths.invites(sid)}/${to}`).get()).exists).toBe(false);
   });
 
   it('reportSchool mails the configured super admins', async () => {
@@ -155,6 +173,21 @@ describe('sendAuthEmail', () => {
     expect(mails[0]!.message.subject).toBe('Reset your Sathiya password · ඔබගේ මුරපදය යළි සකසන්න');
     expect(mails[0]!.message.html).toMatch(/href="http[^"]*oobCode=/);
     expect(await mailsTo(unknown)).toHaveLength(0);
+  });
+
+  it('reset for a teacher login address answers ok and sends nothing', async () => {
+    const to = syntheticEmail(`T${uniq()}`, 'sid1');
+    await adminAuth.createUser({ email: to, password: 'secret123' });
+    await expect(sendAuth(client(), { kind: 'reset', email: to, lang: 'en' })).resolves.toEqual({ ok: true });
+    expect(await mailsTo(to)).toHaveLength(0);
+  });
+
+  it('verify is limited per IP', async () => {
+    const c = await unverifiedSignUp();
+    const day = new Date().toISOString().slice(0, 10);
+    await adminDb.doc(`rateLimits/verify-ip_${day}_${hashIp('9.9.9.9')}`).set({ scope: 'verify-ip', day, count: VERIFY_PER_IP_PER_DAY });
+    expect(rawErr(await rawCall('sendAuthEmail', { kind: 'verify', lang: 'en' }, { ip: '9.9.9.9', client: c }))).toEqual({ status: 'RESOURCE_EXHAUSTED', code: 'rate-limited' });
+    expect(await mailsTo(emailOf(c))).toHaveLength(0);
   });
 
   it('reset is rate limited per email, also for unknown addresses', async () => {
