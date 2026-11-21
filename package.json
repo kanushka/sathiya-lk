@@ -10,6 +10,7 @@
     "test:emulators": "firebase emulators:exec --only auth,firestore,storage,functions --project sathiya-lk \"pnpm --filter functions --if-present test && pnpm --filter rules --if-present test\"",
     "lint": "pnpm -r --if-present lint",
     "typecheck": "pnpm -r --if-present typecheck",
+    "check:license": "node scripts/check-license.mjs",
     "dev:app": "pnpm --filter app dev",
     "dev:web": "pnpm --filter web dev",
     "emulators": "firebase emulators:start"

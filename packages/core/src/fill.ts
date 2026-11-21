@@ -1,3 +1,6 @@
+// SPDX-License-Identifier: AGPL-3.0-or-later
+// Copyright (C) 2026 Kanushka Gayan
+
 import { teacherDayLoad } from './availability';
 import { findConflicts, withTeacherIds } from './clash';
 import { DAYS, findClass, gradeOf, templateOf } from './lookup';

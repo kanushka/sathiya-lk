@@ -20,6 +20,7 @@ jobs:
           distribution: temurin
           java-version: '17'
       - run: pnpm install --frozen-lockfile
+      - run: pnpm check:license
       - run: pnpm typecheck
       - run: pnpm test
       - run: pnpm --filter app build

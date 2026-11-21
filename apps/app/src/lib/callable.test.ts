@@ -1,3 +1,6 @@
+// SPDX-License-Identifier: AGPL-3.0-or-later
+// Copyright (C) 2026 Kanushka Gayan
+
 import type { SaveEntryRes } from '@sathiya/core';
 import { beforeEach, describe, expect, expectTypeOf, it, vi } from 'vitest';
 
