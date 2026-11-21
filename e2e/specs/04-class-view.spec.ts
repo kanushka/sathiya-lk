@@ -11,8 +11,7 @@ async function openSlot(page: Page, label: string) {
 }
 
 async function chooseSubject(page: Page, name: RegExp) {
-  await page.getByRole('dialog').getByRole('button', { name: 'Subject' }).click();
-  await page.getByRole('option', { name }).click();
+  await page.getByRole('dialog', { name: 'Choose a subject' }).getByRole('button', { name }).click();
 }
 
 test('class view: fill a slot, then a busy teacher cannot be picked for an overlapping slot', async ({ page }) => {
@@ -23,13 +22,15 @@ test('class view: fill a slot, then a busy teacher cannot be picked for an overl
   await expect(page.getByText('36 / 40 placed')).toBeVisible();
 
   await openSlot(page, 'Wednesday, period 4, 09:50–10:30: empty, Add lesson');
-  await chooseSubject(page, /^Science needs 2/);
+  await chooseSubject(page, /^Science .*needs 2$/);
   const picker = page.getByRole('dialog', { name: 'Choose a teacher' });
   await expect(picker.getByRole('listitem').filter({ hasText: 'Mrs. N. Perera' })).toContainText('Teaching 6A · Mathematics');
   await expect(picker.getByRole('button', { name: /Mrs\. N\. Perera/ })).toHaveCount(0);
   await shot(page, 'class-view-slot-picker');
   await picker.getByRole('button', { name: /^Mrs\. S\. Gunasekara/ }).click();
+  await picker.getByRole('button', { name: 'Assign' }).click();
   await expect(picker).toBeHidden();
+  await page.getByRole('region', { name: 'Pin mode' }).getByRole('button', { name: 'Done' }).click();
   await expect(page.getByRole('button', { name: 'Wednesday, period 4, 09:50–10:30: Science Mrs. S. Gunasekara' })).toBeVisible();
   await expect(page.getByText('37 / 40 placed')).toBeVisible();
   await shot(page, 'class-view');
