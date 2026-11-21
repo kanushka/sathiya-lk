@@ -379,7 +379,7 @@ function ClassView({ cls, classes }: { cls: SchoolClass; classes: SchoolClass[] 
               ? {}
               : {
                   onPin: (subjectId: string) => {
-                    stopPin();
+                    if (pinTarget) stopPin();
                     pinOrigin.current = { subjectId };
                     setAssign({ slot: null, subjectId });
                   },

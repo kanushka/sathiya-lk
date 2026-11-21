@@ -369,6 +369,12 @@ describe('ClassViewPage', () => {
       expect(cellNamed(/^Thursday, period 7, .*: pin Science with Mrs\. S\. Gunasekara, over plan$/)).toHaveTextContent('Over plan');
     });
 
+    it('does not announce pin mode off when starting from the list while not pinning', async () => {
+      setup();
+      await userEvent.click(screen.getByRole('button', { name: 'Pin Sinhala' }));
+      expect(screen.getByRole('status')).not.toHaveTextContent('Pin mode off.');
+    });
+
     it('starts from the lesson list pin button on the teacher step for the whole week', async () => {
       const api = setup();
       await userEvent.click(screen.getByRole('button', { name: 'Pin Sinhala' }));
