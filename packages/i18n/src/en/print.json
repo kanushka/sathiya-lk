@@ -1,5 +1,8 @@
 {
-  "toolbar": { "print": "Print", "close": "Close" },
+  "toolbar": {
+    "print": "Print",
+    "close": "Close"
+  },
   "sheet": {
     "classTitle": "Grade {{grade}} · {{name}}",
     "teacherTitle": "{{name}} · {{staffId}}",
@@ -13,16 +16,16 @@
     "groupNote": "{{groups}} run as groups — students go to their chosen option.",
     "printed": "Printed {{date}}",
     "madeWith": "Made with Sathiya",
-    "empty": "Empty",
     "slotLabel": "{{day}}, period {{n}}"
   },
   "states": {
-    "loading": "Preparing printout…",
     "notPublishedTitle": "Not published yet",
     "notPublishedBody": "This timetable has not been published for the selected year.",
     "classNotFoundTitle": "Class not found",
     "classNotFoundBody": "This class does not exist in the selected year.",
     "teacherNotFoundTitle": "Teacher not found",
-    "teacherNotFoundBody": "This teacher does not exist in the selected year."
+    "teacherNotFoundBody": "This teacher does not exist in the selected year.",
+    "errorTitle": "Could not load the timetable",
+    "errorBody": "Please check your connection and try again."
   }
 }

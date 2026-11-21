@@ -11,7 +11,7 @@ export type PublishedDocHook = <T>(path: string | null) => DocState<T>;
 
 export const PublishedDocContext = createContext<PublishedDocHook>(useDoc);
 
-export type PrintStatus = 'loading' | 'ready' | 'notFound' | 'notPublished';
+export type PrintStatus = 'loading' | 'ready' | 'notFound' | 'notPublished' | 'error';
 
 export interface PrintSnapshot<S> {
   status: PrintStatus;
@@ -24,7 +24,7 @@ export function usePrintSnapshot(kind: 'teacher', id: string | undefined): Print
 export function usePrintSnapshot(kind: 'class' | 'teacher', id: string | undefined): PrintSnapshot<ClassSnapshot | TeacherSnapshot> {
   const [params] = useSearchParams();
   const ctx = useSchool();
-  const { years, yearId, setYearId, entries, loading } = useYear();
+  const { years, yearId, setYearId, entries, loading, error } = useYear();
   const useDocHook = useContext(PublishedDocContext);
   const published = params.get('published') === '1';
   const auto = params.get('auto') === '1';
@@ -37,11 +37,17 @@ export function usePrintSnapshot(kind: 'class' | 'teacher', id: string | undefin
   }, [switching, wanted, setYearId]);
 
   const sid = ctx.school.id;
-  const publishedPath = published && id ? (kind === 'class' ? paths.publishedClass(sid, requested ?? yearId, id) : paths.publishedTeacher(sid, requested ?? yearId, id)) : null;
+  const publishedYear = requested ?? yearId;
+  const publishedPath =
+    published && id && publishedYear && !ctx.loading
+      ? kind === 'class'
+        ? paths.publishedClass(sid, publishedYear, id)
+        : paths.publishedTeacher(sid, publishedYear, id)
+      : null;
   const doc = useDocHook<ClassSnapshot | TeacherSnapshot>(publishedPath);
 
   const draft = useMemo(() => {
-    if (published || ctx.loading || loading || switching || !id) return undefined;
+    if (published || ctx.loading || loading || switching || !id || !yearId) return undefined;
     const year = years.find((y) => y.id === yearId);
     if (!year) return undefined;
     const built = buildSnapshots(ctx, entries, year);
@@ -49,9 +55,12 @@ export function usePrintSnapshot(kind: 'class' | 'teacher', id: string | undefin
   }, [published, ctx, loading, switching, id, years, yearId, entries, kind]);
 
   if (published) {
+    if (ctx.loading || !publishedYear) return { status: 'loading', auto };
+    if (doc.error) return { status: 'error', auto };
     if (doc.loading) return { status: 'loading', auto };
     return doc.data ? { status: 'ready', snapshot: doc.data, auto } : { status: 'notPublished', auto };
   }
-  if (ctx.loading || loading || switching) return { status: 'loading', auto };
+  if (ctx.error || error) return { status: 'error', auto };
+  if (ctx.loading || loading || switching || !yearId) return { status: 'loading', auto };
   return draft ? { status: 'ready', snapshot: draft, auto } : { status: 'notFound', auto };
 }

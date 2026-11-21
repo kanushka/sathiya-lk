@@ -33,6 +33,7 @@ export function PrintPage({ status, auto, notFoundTitle, notFoundBody, icon, chi
   }, [status, auto]);
 
   if (status === 'loading') return <LoadingState />;
+  if (status === 'error') return <EmptyState icon={icon} title={t('states.errorTitle')} body={t('states.errorBody')} />;
   if (status === 'notPublished') return <EmptyState icon={icon} title={t('states.notPublishedTitle')} body={t('states.notPublishedBody')} />;
   if (status === 'notFound') return <EmptyState icon={icon} title={notFoundTitle} body={notFoundBody} />;
 
