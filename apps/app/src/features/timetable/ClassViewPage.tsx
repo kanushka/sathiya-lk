@@ -16,7 +16,7 @@ import {
   type SchoolContext,
   type TemplateRow,
 } from '@sathiya/core';
-import { useEffect, useMemo, useState, type ReactNode } from 'react';
+import { useEffect, useMemo, useRef, useState, type ReactNode } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Navigate, useNavigate, useParams } from 'react-router-dom';
 import { useLang } from '../../app/LangProvider';
@@ -123,6 +123,8 @@ function ClassView({ cls, classes }: { cls: SchoolClass; classes: SchoolClass[] 
   const [assign, setAssign] = useState<{ slot: Slot | null; subjectId?: string } | null>(null);
   const pin = usePinMode({ ctx, classId: cls.id, entries, save, remove });
   const { target: pinTarget, stop: stopPin } = pin;
+  const pinOrigin = useRef<{ day: DayIndex; period: number } | { subjectId: string } | null>(null);
+  const pinWasOn = useRef(false);
   const [block, setBlock] = useState<BlockState | null>(null);
   const [fill, setFill] = useState<{ drafts: EntryDraft[]; done: number; running: boolean } | null>(null);
 
@@ -140,9 +142,28 @@ function ClassView({ cls, classes }: { cls: SchoolClass; classes: SchoolClass[] 
   const gradeNumber = (c: SchoolClass) => ctx.grades.find((g) => g.id === c.gradeId)?.number ?? '';
 
   useEffect(() => {
+    if (pinTarget) {
+      pinWasOn.current = true;
+      return;
+    }
+    if (!pinWasOn.current) return;
+    pinWasOn.current = false;
+    const active = document.activeElement;
+    if (active && active !== document.body) return;
+    const origin = pinOrigin.current;
+    const el =
+      origin && 'subjectId' in origin
+        ? document.querySelector<HTMLElement>(`[data-pin-subject="${origin.subjectId}"]`)
+        : origin && document.querySelector<HTMLElement>(`[data-day="${origin.day}"][data-period="${origin.period}"]`);
+    el?.focus();
+  }, [pinTarget]);
+
+  useEffect(() => {
     if (!pinTarget) return;
     function onKey(e: KeyboardEvent) {
-      if (e.key === 'Escape' && !e.defaultPrevented && !document.querySelector('[role="dialog"]')) stopPin();
+      if (e.key !== 'Escape' || e.defaultPrevented || document.querySelector('[role="dialog"]')) return;
+      if (e.target instanceof HTMLElement && e.target.closest('input, select, textarea')) return;
+      stopPin();
     }
     document.addEventListener('keydown', onKey);
     return () => document.removeEventListener('keydown', onKey);
@@ -155,7 +176,10 @@ function ClassView({ cls, classes }: { cls: SchoolClass; classes: SchoolClass[] 
       return;
     }
     const e = entryAt(day, period);
-    if (!e) setAssign({ slot: { day, period } });
+    if (!e) {
+      pinOrigin.current = { day, period };
+      setAssign({ slot: { day, period } });
+    }
     else if (isBlock(e)) setBlock(blockStateFor(e, ctx, cls.id));
     else setPicker({ day, period, editing: e });
   }
@@ -209,6 +233,9 @@ function ClassView({ cls, classes }: { cls: SchoolClass; classes: SchoolClass[] 
       };
     }
     const label = t('pin.cellPin', { ...where, subject: pinSubjectName, teacher: pinTeacherName });
+    if (pin.progress && pin.progress.left === 0) {
+      return { label: `${label}, ${t('pin.noteOver')}`, className: pinOver, content: <PinGlyph sub={t('pin.overPlan')} /> };
+    }
     if (pin.isSuggested(day, period)) {
       return {
         label: `${label}, ${t('pin.noteSuggested')}`,
@@ -220,9 +247,6 @@ function ClassView({ cls, classes }: { cls: SchoolClass; classes: SchoolClass[] 
           </span>
         ),
       };
-    }
-    if (pin.progress && pin.progress.left === 0) {
-      return { label: `${label}, ${t('pin.noteOver')}`, className: pinOver, content: <PinGlyph sub={t('pin.overPlan')} /> };
     }
     if (c.limit) {
       return { label: `${label}, ${t('pin.noteLimit', { load: c.load, max: c.max })}`, className: pinWarn, content: <PinGlyph sub={t('pin.limit', { load: c.load, max: c.max })} /> };
@@ -356,6 +380,7 @@ function ClassView({ cls, classes }: { cls: SchoolClass; classes: SchoolClass[] 
               : {
                   onPin: (subjectId: string) => {
                     stopPin();
+                    pinOrigin.current = { subjectId };
                     setAssign({ slot: null, subjectId });
                   },
                   onStop: stopPin,

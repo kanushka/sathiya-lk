@@ -34,14 +34,14 @@ export function PinBar({ subject, teacher, color, progress, suggestedCount, onSu
     >
       <span aria-hidden="true" className="h-4 w-4 shrink-0 rounded border border-on-brand/40" style={{ background: color }} />
       <div className="min-w-0 flex-[1_1_240px]">
-        <p id={titleId} className="m-0 flex items-center gap-1.5 text-xs font-semibold opacity-80">
+        <p id={titleId} className="m-0 flex items-center gap-1.5 text-xs font-semibold">
           <Icon name="pin" size={13} strokeWidth={2} />
           {t('pin.mode')}
         </p>
         <p className="m-0 mt-0.5 text-base font-bold">{t('pin.target', { subject, teacher })}</p>
       </div>
       <div className="flex min-w-[170px] flex-col gap-1">
-        <span aria-live="polite" className="flex flex-wrap items-center gap-1.5 text-[13px] font-bold">
+        <span className="flex flex-wrap items-center gap-1.5 text-[13px] font-bold">
           <span>{text}</span>
           {over > 0 && <span className="rounded-full bg-[#FDECEA] px-2 py-px text-xs font-bold text-[#9A3412]">{t('pin.over', { count: over })}</span>}
         </span>

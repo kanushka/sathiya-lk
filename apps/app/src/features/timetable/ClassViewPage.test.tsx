@@ -333,6 +333,42 @@ describe('ClassViewPage', () => {
       expect(slot('Wednesday', 4)).toHaveTextContent('Science');
     });
 
+    it('announces pin mode on and off in the persistent status region', async () => {
+      await assignScience();
+      expect(screen.getByRole('status')).toHaveTextContent('Pin mode on: Science with Mrs. S. Gunasekara.');
+      await userEvent.click(within(pinBar()).getByRole('button', { name: 'Done' }));
+      expect(screen.getByRole('status')).toHaveTextContent('Pin mode off.');
+    });
+
+    it('returns focus to the cell that started pin mode after Done', async () => {
+      await assignScience();
+      await userEvent.click(within(pinBar()).getByRole('button', { name: 'Done' }));
+      await waitFor(() => expect(slot('Wednesday', 4)).toHaveFocus());
+    });
+
+    it('returns focus to the list pin button after Done when started from the list', async () => {
+      setup();
+      await userEvent.click(screen.getByRole('button', { name: 'Pin Sinhala' }));
+      await userEvent.click(within(screen.getByRole('dialog')).getByRole('button', { name: 'Start pinning' }));
+      await userEvent.click(within(pinBar()).getByRole('button', { name: 'Done' }));
+      await waitFor(() => expect(screen.getByRole('button', { name: 'Pin Sinhala' })).toHaveFocus());
+    });
+
+    it('does not exit when Escape is pressed in a form control', async () => {
+      await assignScience();
+      fireEvent.keyDown(screen.getByRole('combobox', { name: 'Class' }), { key: 'Escape' });
+      expect(pinBar()).toBeInTheDocument();
+    });
+
+    it('never offers or shows more suggestions than still needed', async () => {
+      await assignScience();
+      await userEvent.click(within(pinBar()).getByRole('button', { name: 'Suggest 1 slot' }));
+      await userEvent.click(cellNamed(/^Friday, period 5, .*: pin Science/));
+      await waitFor(() => expect(pinBar()).toHaveTextContent('5 of 5 placed · complete'));
+      expect(within(pinBar()).queryByRole('button', { name: /suggested$/ })).not.toBeInTheDocument();
+      expect(cellNamed(/^Thursday, period 7, .*: pin Science with Mrs\. S\. Gunasekara, over plan$/)).toHaveTextContent('Over plan');
+    });
+
     it('starts from the lesson list pin button on the teacher step for the whole week', async () => {
       const api = setup();
       await userEvent.click(screen.getByRole('button', { name: 'Pin Sinhala' }));

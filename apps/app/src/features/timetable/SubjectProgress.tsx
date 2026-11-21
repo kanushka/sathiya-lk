@@ -64,6 +64,7 @@ export function SubjectProgress({ cls, entries, onPin, onStop, activeSubjectId }
                   {subjectId !== null && (
                     <button
                       type="button"
+                      data-pin-subject={subjectId}
                       aria-label={active ? t('pin.listStop', { subject: name }) : t('pin.listPin', { subject: name })}
                       title={active ? t('pin.listStop', { subject: name }) : t('pin.listPin', { subject: name })}
                       onClick={() => (active ? onStop?.() : onPin(subjectId))}
