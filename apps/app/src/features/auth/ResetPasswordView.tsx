@@ -6,7 +6,7 @@ import { Link } from 'react-router-dom';
 import { Button } from '../../ui/Button';
 import { Field, inputClass } from '../../ui/Field';
 import { actionErrorKey, type ActionErrorKey } from './actionErrors';
-import { ActionError, ActionShell } from './ActionShell';
+import { ActionErrorView, ActionShell } from './ActionShell';
 import { confirmNewPassword, getResetEmail } from './api';
 import { useActionCode } from './useActionCode';
 
@@ -51,11 +51,7 @@ export function ResetPasswordView({ code }: { code: string }) {
 
   const failure = fatal ?? (state.status === 'error' ? state.error : null);
   if (failure) {
-    return (
-      <ActionShell title={t('action.invalid.title')}>
-        <ActionError message={t(`action.errors.${failure}`)} />
-      </ActionShell>
-    );
+    return <ActionErrorView message={t(`action.errors.${failure}`)} />;
   }
   if (done) {
     return (

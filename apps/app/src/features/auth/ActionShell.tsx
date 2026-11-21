@@ -2,6 +2,7 @@
 // Copyright (C) 2026 Kanushka Gayan
 import type { ReactNode } from 'react';
 import { useTranslation } from 'react-i18next';
+import { Link } from 'react-router-dom';
 import { BrandMark, LanguageToggle } from './AuthChrome';
 
 export function ActionShell({ title, children }: { title: string; children: ReactNode }) {
@@ -29,5 +30,17 @@ export function ActionError({ message }: { message: string }) {
     <p role="alert" className="m-0 text-sm font-medium text-danger">
       {message}
     </p>
+  );
+}
+
+export function ActionErrorView({ message }: { message: string }) {
+  const { t } = useTranslation('auth');
+  return (
+    <ActionShell title={t('action.invalid.title')}>
+      <ActionError message={message} />
+      <p className="mb-0 mt-5 text-center text-sm">
+        <Link to="/login">{t('action.toLogin')}</Link>
+      </p>
+    </ActionShell>
   );
 }

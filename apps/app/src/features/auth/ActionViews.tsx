@@ -3,7 +3,7 @@
 import { useCallback } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Link } from 'react-router-dom';
-import { ActionError, ActionShell } from './ActionShell';
+import { ActionErrorView, ActionShell } from './ActionShell';
 import { applyEmailCode, getRecoveredEmail } from './api';
 import { useActionCode } from './useActionCode';
 
@@ -12,14 +12,7 @@ const linkButton =
 
 export function InvalidLinkView() {
   const { t } = useTranslation('auth');
-  return (
-    <ActionShell title={t('action.invalid.title')}>
-      <ActionError message={t('action.errors.badRequest')} />
-      <p className="mb-0 mt-5 text-center text-sm">
-        <Link to="/login">{t('action.toLogin')}</Link>
-      </p>
-    </ActionShell>
-  );
+  return <ActionErrorView message={t('action.errors.badRequest')} />;
 }
 
 export function VerifyEmailView({ code }: { code: string }) {
@@ -27,11 +20,7 @@ export function VerifyEmailView({ code }: { code: string }) {
   const run = useCallback(() => applyEmailCode(code), [code]);
   const state = useActionCode(run);
   if (state.status === 'error') {
-    return (
-      <ActionShell title={t('action.invalid.title')}>
-        <ActionError message={t(`action.errors.${state.error}`)} />
-      </ActionShell>
-    );
+    return <ActionErrorView message={t(`action.errors.${state.error}`)} />;
   }
   if (state.status === 'loading') {
     return (
@@ -59,11 +48,7 @@ export function RecoverEmailView({ code }: { code: string }) {
   }, [code]);
   const state = useActionCode(run);
   if (state.status === 'error') {
-    return (
-      <ActionShell title={t('action.invalid.title')}>
-        <ActionError message={t(`action.errors.${state.error}`)} />
-      </ActionShell>
-    );
+    return <ActionErrorView message={t(`action.errors.${state.error}`)} />;
   }
   if (state.status === 'loading') {
     return (

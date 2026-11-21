@@ -131,6 +131,19 @@ describe('recoverEmail', () => {
   });
 });
 
+describe('error states', () => {
+  it.each([
+    ['verifyEmail', () => vi.mocked(api.applyEmailCode).mockRejectedValue(authError('auth/invalid-action-code'))],
+    ['resetPassword', () => vi.mocked(api.getResetEmail).mockRejectedValue(authError('auth/expired-action-code'))],
+    ['recoverEmail', () => vi.mocked(api.getRecoveredEmail).mockRejectedValue(authError('auth/invalid-action-code'))],
+  ])('%s offers a way back to login', async (mode, fail) => {
+    fail();
+    at(`mode=${mode}&oobCode=bad`);
+    await screen.findByRole('alert');
+    expect(screen.getByRole('link', { name: 'Go to login' })).toHaveAttribute('href', '/login');
+  });
+});
+
 describe('bad requests', () => {
   it.each(['', 'mode=bogus&oobCode=a', 'mode=verifyEmail', 'oobCode=a'])('shows an invalid-link error for "%s"', async (qs) => {
     at(qs);
