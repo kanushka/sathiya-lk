@@ -19,7 +19,7 @@ import { UsagePage } from './UsagePage';
 import { UsageSourceProvider, useUsageCounts, type UsageSource } from './source';
 
 const base = ctx.school;
-const make = (id: string, over: Partial<School>): School => ({ ...base, id, activeYearId: undefined, ...over });
+const make = (id: string, over: Partial<School>): School => ({ ...base, id, activeYearId: undefined, city: 'Colombo', type: 'international', censusNo: undefined, ...over });
 const schools: School[] = [
   make('a', { nameEn: 'Siripura Central College', nameSi: 'සිරිපුර මධ්‍ය විද්‍යාලය', district: 'Kandy', staffPrefix: 'SCC', status: 'active', activeYearId: 'y1' }),
   make('b', { nameEn: 'Lakeside Girls', nameSi: undefined, district: 'Galle', staffPrefix: 'LSG', status: 'active' }),

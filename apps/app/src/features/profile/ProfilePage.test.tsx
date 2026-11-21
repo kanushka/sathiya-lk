@@ -23,7 +23,7 @@ beforeEach(() => {
 });
 
 function setup() {
-  const view = renderWithSchool(<ProfilePage />, { ctx });
+  const view = renderWithSchool(<ProfilePage />, { ctx: { ...ctx, school: { ...ctx.school, city: '' } } });
   return { user: userEvent.setup(), view };
 }
 
