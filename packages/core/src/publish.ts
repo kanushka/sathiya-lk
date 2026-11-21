@@ -1,6 +1,6 @@
 import { findClass, gradeOf, templateOf } from './lookup';
 import { effectivePlan } from './plan';
-import { periodsFor, rowsFor, toMinutes } from './time';
+import { bestOverlapPeriod, periodsFor, rowsFor, toMinutes } from './time';
 import type { Bilingual, DayIndex, Entry, Hhmm, PeriodTemplate, SchoolClass, SchoolContext, Subject, TemplateRow, Year } from './types';
 
 export interface SnapshotCell { day: DayIndex; period: number; start: Hhmm; end: Hhmm; title: string; titleSi?: string; sub: string; color: string; isGroup: boolean }
@@ -16,21 +16,6 @@ function entrySlot(ctx: SchoolContext, e: Entry): { start: Hhmm; end: Hhmm } | n
   const cls = e.classIds[0] === undefined ? undefined : findClass(ctx, e.classIds[0]);
   const template = cls && templateOf(ctx, cls);
   return (template && periodsFor(template, e.day).find((p) => p.period === e.period)) ?? null;
-}
-
-function defaultPeriod(template: PeriodTemplate, day: DayIndex, slot: { start: Hhmm; end: Hhmm }): number | null {
-  const start = toMinutes(slot.start);
-  const end = toMinutes(slot.end);
-  let best: number | null = null;
-  let bestOverlap = 0;
-  for (const p of periodsFor(template, day)) {
-    const overlap = Math.min(end, toMinutes(p.end)) - Math.max(start, toMinutes(p.start));
-    if (overlap > bestOverlap) {
-      best = p.period;
-      bestOverlap = overlap;
-    }
-  }
-  return best;
 }
 
 const byDayStart = (a: SnapshotCell, b: SnapshotCell): number => a.day - b.day || toMinutes(a.start) - toMinutes(b.start);
@@ -78,7 +63,7 @@ export function buildSnapshots(ctx: SchoolContext, entries: Entry[], year: Year)
     for (const { e, slot } of slotted) {
       const lesson = e.lessons.find((l) => l.teacherId === teacher.id);
       if (!lesson || !defaultTemplate) continue;
-      const period = defaultPeriod(defaultTemplate, e.day, slot);
+      const period = bestOverlapPeriod(defaultTemplate, e.day, { start: toMinutes(slot.start), end: toMinutes(slot.end) });
       if (period === null) continue;
       const subject = subjects.get(lesson.subjectId);
       const title = e.classIds.map((id) => findClass(ctx, id)?.name ?? id).join('+');

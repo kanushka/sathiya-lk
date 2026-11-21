@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { overlaps, periodsFor, rowsFor, toMinutes, windowOf } from './time';
+import { bestOverlapPeriod, overlaps, periodsFor, rowsFor, toMinutes, windowOf } from './time';
 import type { PeriodTemplate, TemplateRow } from './types';
 
 const r = (type: 'period' | 'interval', start: string, end: string): TemplateRow => ({ type, start, end });
@@ -84,5 +84,19 @@ describe('windowOf', () => {
   it('returns null for missing period', () => {
     expect(windowOf(schoolDefault, 0, 9)).toBeNull();
     expect(windowOf(schoolDefault, 0, 0)).toBeNull();
+  });
+});
+
+describe('bestOverlapPeriod', () => {
+  const t: PeriodTemplate = { id: 't', name: 't', isDefault: true, mode: 'same', rows: [r('period', '07:45', '08:30'), r('period', '08:30', '09:10'), r('interval', '09:10', '09:30'), r('period', '09:30', '10:10')] };
+
+  it('picks the period with the largest overlap, first on ties', () => {
+    expect(bestOverlapPeriod(t, 0, { start: toMinutes('08:20'), end: toMinutes('09:00') })).toBe(2);
+    expect(bestOverlapPeriod(t, 0, { start: toMinutes('08:10'), end: toMinutes('08:50') })).toBe(1);
+    expect(bestOverlapPeriod(t, 0, { start: toMinutes('09:05'), end: toMinutes('09:40') })).toBe(3);
+  });
+
+  it('returns null without overlap', () => {
+    expect(bestOverlapPeriod(t, 0, { start: toMinutes('09:10'), end: toMinutes('09:30') })).toBeNull();
   });
 });

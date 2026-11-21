@@ -1,7 +1,7 @@
 import { findConflicts } from './clash';
 import { findClass, gradeOf, templateOf } from './lookup';
 import { effectivePlan } from './plan';
-import { periodsFor, toMinutes } from './time';
+import { bestOverlapPeriod, periodsFor, toMinutes } from './time';
 import type { DayIndex, Entry, SchoolClass, SchoolContext, Teacher } from './types';
 
 export type UnavailableReason = 'busy' | 'limit' | 'not-qualified';
@@ -52,17 +52,7 @@ export function teacherOptionsForSlot(args: { ctx: SchoolContext; entries: Entry
 
 export function matchClassPeriod(cls: SchoolClass, ctx: SchoolContext, day: DayIndex, window: { start: number; end: number }): number | null {
   const template = templateOf(ctx, cls);
-  if (!template) return null;
-  let best: number | null = null;
-  let bestOverlap = 0;
-  for (const p of periodsFor(template, day)) {
-    const overlap = Math.min(window.end, toMinutes(p.end)) - Math.max(window.start, toMinutes(p.start));
-    if (overlap > bestOverlap) {
-      best = p.period;
-      bestOverlap = overlap;
-    }
-  }
-  return best;
+  return template ? bestOverlapPeriod(template, day, window) : null;
 }
 
 export function classOptionsForTeacherSlot(args: { ctx: SchoolContext; entries: Entry[]; teacherId: string; day: DayIndex; defaultPeriod: number; subjectId: string }): ClassOption[] {

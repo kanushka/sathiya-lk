@@ -26,3 +26,16 @@ export function windowOf(t: PeriodTemplate, day: DayIndex, period: number): { st
   const p = periodsFor(t, day).find((x) => x.period === period);
   return p ? { start: toMinutes(p.start), end: toMinutes(p.end) } : null;
 }
+
+export function bestOverlapPeriod(t: PeriodTemplate, day: DayIndex, window: { start: number; end: number }): number | null {
+  let best: number | null = null;
+  let bestOverlap = 0;
+  for (const p of periodsFor(t, day)) {
+    const overlap = Math.min(window.end, toMinutes(p.end)) - Math.max(window.start, toMinutes(p.start));
+    if (overlap > bestOverlap) {
+      best = p.period;
+      bestOverlap = overlap;
+    }
+  }
+  return best;
+}
