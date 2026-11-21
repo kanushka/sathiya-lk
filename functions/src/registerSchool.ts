@@ -10,7 +10,8 @@ const HEX = /^#[0-9A-Fa-f]{6}$/;
 
 export const registerSchool = onCall(callOpts, async (req): Promise<RegisterSchoolRes> => {
   const { uid, claims, token } = requireAuth(req);
-  if (claims.sid || (await auth.getUser(uid)).customClaims?.sid) notAllowed('Already a member of a school');
+  const prevClaims = (await auth.getUser(uid)).customClaims ?? null;
+  if (claims.sid || prevClaims?.sid) notAllowed('Already a member of a school');
 
   const data = obj(req.data, 'request');
   const s = obj(data.school, 'school');
@@ -33,6 +34,8 @@ export const registerSchool = onCall(callOpts, async (req): Promise<RegisterScho
   const sid = schoolRef.id;
   const template: Omit<PeriodTemplate, 'id'> = { name: defaultTemplate.name, isDefault: true, mode: 'same', rows: defaultTemplate.rows };
 
+  // Claims first, rolled back if the batch fails, so neither an orphan school nor a dangling sid claim is left.
+  await setSchoolClaims(uid, { sid, role: 'admin' });
   const batch = db.batch();
   batch.create(schoolRef, {
     nameEn,
@@ -49,8 +52,11 @@ export const registerSchool = onCall(callOpts, async (req): Promise<RegisterScho
   batch.create(db.doc(paths.directory(sid)), { nameEn, nameSi, district, status: 'active' });
   batch.create(db.doc(`${paths.members(sid)}/${uid}`), { uid, role: 'admin', email: token.email?.toLowerCase(), name: adminName });
   batch.create(db.collection(paths.templates(sid)).doc(), template);
-  await batch.commit();
-
-  await setSchoolClaims(uid, { sid, role: 'admin' });
+  try {
+    await batch.commit();
+  } catch (e) {
+    await auth.setCustomUserClaims(uid, prevClaims).catch(() => undefined);
+    throw e;
+  }
   return { schoolId: sid };
 });

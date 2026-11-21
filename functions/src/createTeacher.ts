@@ -35,12 +35,13 @@ export const createTeacher = onCall(callOpts, async (req): Promise<CreateTeacher
     .catch((e: { code?: string }) => (e.code === 'auth/email-already-exists' ? duplicate(staffId) : Promise.reject(e)));
 
   const ref = teachers.doc();
+  // Claims first: if they fail nothing is written yet, and deleting the Auth user frees the staff ID.
   try {
+    await setSchoolClaims(user.uid, { sid, role: 'teacher', tid: ref.id });
     const batch = db.batch();
     batch.create(ref, { ...teacher, uid: user.uid });
     batch.create(db.doc(`${paths.members(sid)}/${user.uid}`), { uid: user.uid, role: 'teacher', teacherId: ref.id });
     await batch.commit();
-    await setSchoolClaims(user.uid, { sid, role: 'teacher', tid: ref.id });
   } catch (e) {
     await auth.deleteUser(user.uid).catch(() => undefined);
     throw e;

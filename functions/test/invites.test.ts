@@ -56,6 +56,21 @@ describe('claimInvites', () => {
     await expect(c.call('claimInvites', {})).resolves.toEqual({ schoolIds: [] });
   });
 
+  it('keeps an existing tid when a re-invite has no teacherId', async () => {
+    const { admin, sid } = await adminWithSchool();
+    const { teacherId } = await admin.call('createTeacher', { schoolId: sid, teacher: teacherInput('SCC041') });
+    const email = `reinvite-${uniq()}@example.com`;
+    await admin.call('inviteAdmin', { schoolId: sid, email, teacherId });
+    const c = await signInGoogle(email, true);
+    await c.call('claimInvites', {});
+
+    await admin.call('inviteAdmin', { schoolId: sid, email });
+    await expect(c.call('claimInvites', {})).resolves.toEqual({ schoolIds: [sid] });
+    expect(await c.claims()).toEqual({ sid, role: 'admin', tid: teacherId });
+    const member = (await adminDb.doc(`${paths.members(sid)}/${c.uid}`).get()).data();
+    expect(member).toMatchObject({ role: 'admin', teacherId });
+  });
+
   it('accepts a Google sign-in even without a verified email flag', async () => {
     const { admin, sid } = await adminWithSchool();
     const email = `google-${uniq()}@example.com`;

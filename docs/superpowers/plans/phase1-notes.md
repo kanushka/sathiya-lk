@@ -58,7 +58,7 @@ Every callable: signed out → `unauthenticated` / `not-allowed`. Bad input → 
 | `claimInvites` | signed in, `email_verified` or `sign_in_provider == 'google.com'` | per invite: `members/{uid}` `{uid, role:'admin', email, teacherId?}`, deletes invite; claims `{sid, role:'admin', tid?}`; returns `{ schoolIds }` claimed | not verified → `permission-denied`/`not-allowed` |
 | `setSchoolStatus` | `super` only | `schools/{sid}.status` + `schoolDirectory/{sid}.status` | unknown school → `not-found`/`invalid` |
 
-`claimInvites` details: claims hold one school, so it claims invites only for the caller's current `sid` (if any) or the first invite of an active school; other invites stay pending. Invites of disabled schools are skipped (left in place).
+`claimInvites` details: claims hold one school, so it claims invites only for the caller's current `sid` (if any) or the first invite of an active school; other invites stay pending. Invites of disabled schools are skipped (left in place). An invite without `teacherId` keeps the caller's existing `tid` / member `teacherId` for that school. Claims are set before the invite is consumed, so a failed call can be retried. `registerSchool` and `createTeacher` also set claims before writing docs (and roll back on failure), so a failure leaves no orphan school, member or teacher doc.
 
 ### For later phases
 - Phase 3 (register/login/members): call `registerSchool` then refresh the token; call `claimInvites` after every admin sign-in (Google or verified email) and refresh the token if `schoolIds` is non-empty. Show the `createTeacher`/`resetTeacherPassword` password once (it is never stored).

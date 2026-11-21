@@ -1,4 +1,4 @@
-import { paths, type ClaimInvitesRes, type School } from '@sathiya/core';
+import { paths, type ClaimInvitesRes, type Member, type School } from '@sathiya/core';
 import { onCall } from 'firebase-functions/v2/https';
 import { auth, db } from './lib/admin';
 import { callOpts } from './lib/callOptions';
@@ -19,23 +19,29 @@ export const claimInvites = onCall(callOpts, async (req): Promise<ClaimInvitesRe
   const email = token.email!.toLowerCase();
 
   // Claims hold one school: claim the first invite of an active school, or any for the school the user already belongs to.
-  let sid = (await auth.getUser(uid)).customClaims?.sid as string | undefined;
+  // Claims are set before the invite is consumed (both idempotent), so a failure leaves the invite for a retry.
+  const current = (await auth.getUser(uid)).customClaims ?? {};
+  let sid = current.sid as string | undefined;
   const invites = await db.collectionGroup(INVITES).where('email', '==', email).get();
   const claimed: string[] = [];
   for (const doc of invites.docs) {
     const inviteSid = doc.ref.parent.parent!.id;
     if (sid && sid !== inviteSid) continue;
-    const teacherId = await db.runTransaction(async (tx) => {
-      const [invite, school] = await Promise.all([tx.get(doc.ref), tx.get(db.doc(paths.school(inviteSid)))]);
-      if (!invite.exists || (school.data() as School | undefined)?.status !== 'active') return null;
-      const { teacherId } = invite.data() as Invite;
-      tx.set(db.doc(`${paths.members(inviteSid)}/${uid}`), { uid, role: 'admin', email, teacherId });
-      tx.delete(doc.ref);
-      return teacherId ?? '';
-    });
-    if (teacherId === null) continue;
-    await setSchoolClaims(uid, { sid: inviteSid, role: 'admin', tid: teacherId || undefined });
+    const memberRef = db.doc(`${paths.members(inviteSid)}/${uid}`);
+    const [school, member] = await Promise.all([db.doc(paths.school(inviteSid)).get(), memberRef.get()]);
+    if ((school.data() as School | undefined)?.status !== 'active') continue;
+    const tid =
+      (doc.data() as Invite).teacherId ??
+      (member.data() as Member | undefined)?.teacherId ??
+      (current.sid === inviteSid ? (current.tid as string | undefined) : undefined);
+
+    await setSchoolClaims(uid, { sid: inviteSid, role: 'admin', tid });
     sid = inviteSid;
+    await db.runTransaction(async (tx) => {
+      const invite = await tx.get(doc.ref);
+      tx.set(memberRef, { uid, role: 'admin', email, teacherId: tid });
+      if (invite.exists) tx.delete(doc.ref);
+    });
     claimed.push(inviteSid);
   }
   return { schoolIds: claimed };
