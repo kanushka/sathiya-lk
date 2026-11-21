@@ -23,6 +23,7 @@ Firebase console → Extensions → install "Trigger Email from Firestore" (proj
 | `APP_URL` | `https://app.sathiya.kanushka.com` |
 | `WEB_URL` | `https://sathiya.kanushka.com` |
 | `SUPER_EMAILS` | empty: comma-separated super admin addresses that get "report received" emails; none = no report emails |
+| `MAIL_SUBJECT_PREFIX` | empty: prepended to every subject; staging sets `[staging]` in `functions/.env.sathiya-lk-staging` |
 
 Override in `functions/.env.sathiya-lk` (kept out of git if it holds addresses you don't want public), then `firebase deploy --only functions`.
 

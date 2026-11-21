@@ -37,4 +37,12 @@ pnpm e2e
 
 Builds functions, runs `firebase emulators:exec` (auth, firestore, storage, functions), and inside it Playwright (`e2e/`, chromium, one worker). Playwright's global setup re-seeds the emulators, then builds the app in emulator mode into `apps/app/dist-e2e` and serves it with `vite preview` on port 4173. Specs run in file order (`e2e/specs/0N-*.spec.ts`); each re-uses the seed or makes its own school, except that later class/teacher grids include earlier specs' edits. Screenshots of key screens go to `e2e/__screenshots__/` (gitignored).
 
-Against an already running stack (`pnpm dev:local`): `E2E_BASE_URL=http://localhost:5173 pnpm --filter e2e test` (re-seeds, so local edits are wiped). Not part of root `pnpm test`; CI runs it as the last steps of the `ci` job.
+Against an already running stack (`pnpm dev:local`): `E2E_BASE_URL=http://localhost:5173 pnpm --filter e2e test` (re-seeds, so local edits are wiped). Not part of root `pnpm test`; CI runs it in the `ci-e2e` job (see below).
+
+## Staging and CI
+
+- Staging is a second Firebase project, `sathiya-lk-staging` (`.firebaserc` alias `staging`, hosting sites `sathiya-lk-staging-web` / `sathiya-lk-staging-app`). Setup and deploy steps: `docs/deploy.md`. Nothing is deployed from code here; the user creates the project and fills the placeholders in `packages/firebase-config/src/index.ts`.
+- Per-environment config: `functions/.env.sathiya-lk-staging` (URLs, `MAIL_SUBJECT_PREFIX=[staging]`), `apps/app/.env.staging` (`VITE_FIREBASE_ENV=staging`, `VITE_WEB_URL`, `VITE_APPCHECK_ALLOW_DEBUG`), web `PUBLIC_SITE_URL` / `PUBLIC_APP_URL`. `pnpm build:staging` builds app and web for staging.
+- App Check debug token outside emulators needs both `VITE_APPCHECK_ALLOW_DEBUG=true` and a token (keep it in `apps/app/.env.staging.local`); production builds ignore it.
+- CI (`.github/workflows/ci.yml`): runs on push to `main`, PRs and manual dispatch; one run per ref (older runs cancelled). `ci-fast` always runs (licence, typecheck, unit tests, app build, web test). `ci-emulators` always reports, but its steps run on PRs only when functions, rules, indexes, `tests/rules` or `packages/core` changed (always on push/dispatch). `ci-e2e` runs on push to `main`, manual dispatch, or PRs labelled `e2e`. Caches: pnpm store, Firebase emulator jars, Playwright browsers.
+- `.github/workflows/deploy-staging.yml`: manual staging deploy using secret `FIREBASE_SERVICE_ACCOUNT_STAGING`. There is no production deploy workflow.
