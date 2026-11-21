@@ -1,0 +1,119 @@
+// SPDX-License-Identifier: AGPL-3.0-or-later
+// Copyright (C) 2026 Kanushka Gayan
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    function signedIn() { return request.auth != null; }
+    function claim(k) { return request.auth.token.get(k, null); }
+    function isSuper() { return signedIn() && claim('super') == true; }
+    function isAdmin(sid) { return signedIn() && claim('sid') == sid && claim('role') == 'admin'; }
+    function isTeacher(sid) { return signedIn() && claim('sid') == sid && claim('role') == 'teacher'; }
+    function adminRead(sid) { return isAdmin(sid) || isSuper(); }
+    // Super is read-only on school data; school data writes need an admin of an active school.
+    function adminWrite(sid) {
+      return isAdmin(sid) && get(/databases/$(database)/documents/schools/$(sid)).data.status != 'disabled';
+    }
+    function changed() { return request.resource.data.diff(resource.data).affectedKeys(); }
+    function optText(k, max) {
+      return !(k in request.resource.data)
+        || (request.resource.data[k] is string && request.resource.data[k].size() <= max);
+    }
+
+    match /schoolDirectory/{sid} {
+      allow read: if true;
+    }
+
+    match /schools/{sid} {
+      allow read: if adminRead(sid) || isTeacher(sid);
+      allow update: if adminWrite(sid)
+        && changed().hasOnly(['nameEn', 'nameSi', 'district', 'grades', 'staffPrefix', 'logoUrl', 'colors', 'city', 'address', 'phone'])
+        && (!('city' in changed())
+          || ('city' in request.resource.data && request.resource.data.city is string
+            && request.resource.data.city.size() <= 80 && request.resource.data.city.matches('.*\\S.*')))
+        && optText('address', 200)
+        && optText('phone', 30);
+
+      match /teachers/{tid} {
+        allow read: if adminRead(sid) || (isTeacher(sid) && claim('tid') == tid);
+        allow update: if adminWrite(sid) && !changed().hasAny(['uid', 'staffId']);
+      }
+
+      match /subjects/{id} {
+        allow read: if adminRead(sid);
+        allow create, update: if adminWrite(sid);
+      }
+      match /periodTemplates/{id} {
+        allow read: if adminRead(sid);
+        allow create: if adminWrite(sid);
+        // The default template stays the default (deleteSetupItem also refuses to delete it).
+        allow update: if adminWrite(sid)
+          && (resource.data.get('isDefault', false) != true || request.resource.data.get('isDefault', false) == true);
+      }
+      match /classes/{id} {
+        allow read: if adminRead(sid);
+        allow create, update: if adminWrite(sid);
+      }
+      match /grades/{id} {
+        allow read: if adminRead(sid);
+        allow create, update, delete: if adminWrite(sid);
+      }
+
+      match /members/{uid} {
+        allow read: if adminRead(sid) || (isTeacher(sid) && request.auth.uid == uid);
+      }
+      match /invites/{id} {
+        allow read: if adminRead(sid);
+      }
+
+      match /years/{yid} {
+        allow read: if adminRead(sid) || isTeacher(sid);
+        allow create: if adminWrite(sid)
+          && request.resource.data.get('label', null) is string
+          && request.resource.data.label.matches('.*\\S.*')
+          && request.resource.data.get('status', null) == 'draft'
+          && !('publishedAt' in request.resource.data);
+        allow update: if adminWrite(sid) && !changed().hasAny(['status', 'publishedAt'])
+          && (!('label' in changed())
+            || (request.resource.data.get('label', null) is string && request.resource.data.label.matches('.*\\S.*')));
+
+        match /entries/{id} {
+          allow read: if adminRead(sid);
+        }
+        match /publishedClasses/{cid} {
+          allow read: if adminRead(sid) || isTeacher(sid);
+        }
+        match /publishedTeachers/{tid} {
+          allow read: if adminRead(sid) || (isTeacher(sid) && claim('tid') == tid);
+        }
+        // slotLocks: functions only, no client access.
+      }
+    }
+
+    // schoolId is written by registerSchool only.
+    match /users/{uid} {
+      allow read: if signedIn() && request.auth.uid == uid;
+      allow create: if signedIn() && request.auth.uid == uid
+        && request.resource.data.keys().hasOnly(['lang'])
+        && request.resource.data.get('lang', null) in ['en', 'si'];
+      allow update: if signedIn() && request.auth.uid == uid
+        && changed().hasOnly(['lang'])
+        && request.resource.data.get('lang', null) in ['en', 'si'];
+    }
+
+    match /reports/{id} {
+      allow read: if isSuper();
+      allow update: if isSuper()
+        && changed().hasOnly(['status', 'note'])
+        && request.resource.data.status in ['open', 'resolved', 'dismissed']
+        && optText('note', 1000);
+    }
+
+    // censusIndex, rateLimits, mail (Trigger Email queue): functions only, no client access.
+
+    match /platform/{path=**} {
+      allow read: if signedIn();
+      allow write: if isSuper();
+    }
+  }
+}
