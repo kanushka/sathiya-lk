@@ -1,0 +1,22 @@
+---
+// SPDX-License-Identifier: AGPL-3.0-or-later
+// Copyright (C) 2026 Kanushka Gayan
+import { appLinks, content, type Lang } from '../lib/links';
+
+interface Props {
+  lang: Lang;
+}
+const t = content(Astro.props.lang);
+---
+<section id="faq" class="wrap section faq">
+  <h2>{t.faq.title}</h2>
+  <div class="faq-list">
+    {t.faq.items.map((item) => (
+      <details>
+        <summary>{item.q}</summary>
+        <p>{item.a}</p>
+      </details>
+    ))}
+  </div>
+  <p class="faq-report">{t.faq.report} <a href={appLinks().report}>{t.footer.report}</a></p>
+</section>

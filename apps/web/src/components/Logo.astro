@@ -1,0 +1,17 @@
+---
+// SPDX-License-Identifier: AGPL-3.0-or-later
+// Copyright (C) 2026 Kanushka Gayan
+interface Props {
+  href: string;
+}
+const { href } = Astro.props;
+---
+<a class="logo" href={href}>
+  <svg width="34" height="34" viewBox="0 0 34 34" aria-hidden="true">
+    <rect x="1" y="1" width="32" height="32" rx="8" fill="#0E6B6A"></rect>
+    <path d="M8 12h18M8 17h18M8 22h18M14 8v18M20 8v18" stroke="#FBFAF7" stroke-width="1.6"></path>
+    <rect x="20" y="17" width="6" height="5" fill="#F2A541"></rect>
+  </svg>
+  <span class="logo-en" lang="en">Sathiya</span>
+  <span class="logo-si" lang="si">සතිය</span>
+</a>

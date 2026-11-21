@@ -1,0 +1,16 @@
+---
+// SPDX-License-Identifier: AGPL-3.0-or-later
+// Copyright (C) 2026 Kanushka Gayan
+import { content, type Lang } from '../lib/links';
+
+interface Props {
+  lang: Lang;
+}
+const t = content(Astro.props.lang);
+---
+<article class="wrap prose">
+  <h1>{t.contact.title}</h1>
+  {t.contact.body.map((p) => <p>{p}</p>)}
+  <p class="contact-email" lang="en"><a href={`mailto:${t.contact.email}`}>{t.contact.email}</a></p>
+  <p class="note">{t.contact.teacherNote}</p>
+</article>
