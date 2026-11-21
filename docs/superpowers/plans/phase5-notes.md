@@ -39,6 +39,8 @@ School contact fields: `features/superadmin/school.ts` has a local `SchoolRecord
 
 Same `SchoolRecord` also carries local optional `type?` (free string, shown raw) and `censusNo?` (searchable) until Phase 6 adds them to core. Reports use a local `SchoolReport` (`features/superadmin/reports.ts`, collection `reports`) — see below.
 
+`/super/reports` (open reports newest first, Close via `ReportWriter` updateDoc, Suspend via `setSchoolStatus`; nav badge). Phase 1 rules: super read + update (`status` only) on `reports/{id}`; whoever creates reports (public form/callable, Phase 3/6) must write `SchoolReport` shape with `status: 'open'`.
+
 ## Needs from other phases
 
 ### Phase 1 (rules)

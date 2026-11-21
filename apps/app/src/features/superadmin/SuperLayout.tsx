@@ -5,7 +5,9 @@ import { useTranslation } from 'react-i18next';
 import { NavLink } from 'react-router-dom';
 import { useAuth } from '../../app/AuthProvider';
 import { useMaybeLang } from '../../app/LangProvider';
+import type { CollectionState } from '../../lib/firestore';
 import { cx } from '../../ui/cx';
+import { useOpenReports, type SchoolReport } from './reports';
 
 interface NavItem {
   to: string;
@@ -15,6 +17,7 @@ interface NavItem {
 
 export const superNav: NavItem[] = [
   { to: '/super', labelKey: 'nav.schools', end: true },
+  { to: '/super/reports', labelKey: 'nav.reports' },
   { to: '/super/usage', labelKey: 'nav.usage' },
   { to: '/super/subjects', labelKey: 'nav.subjects' },
   { to: '/super/terms', labelKey: 'nav.terms' },
@@ -27,11 +30,13 @@ const linkClass = ({ isActive }: { isActive: boolean }) =>
     isActive && 'bg-white/10 font-bold text-white',
   );
 
-export function SuperLayout({ children }: { children: ReactNode }) {
+export function SuperLayout({ children, openReports }: { children: ReactNode; openReports?: CollectionState<SchoolReport> }) {
   const { t } = useTranslation(['superadmin', 'shell', 'common']);
   const { claims, signOut } = useAuth();
   const langCtl = useMaybeLang();
   const target = langCtl?.lang === 'en' ? 'si' : 'en';
+  const reports = useOpenReports(openReports);
+  const openCount = reports.loading || reports.error ? 0 : reports.data.filter((r) => r.status === 'open').length;
   const isAdmin = claims?.role === 'admin' && !!claims.sid;
   return (
     <div className="flex min-h-screen bg-ground font-sans text-ink">
@@ -46,6 +51,9 @@ export function SuperLayout({ children }: { children: ReactNode }) {
               <li key={item.to}>
                 <NavLink to={item.to} end={item.end} className={linkClass}>
                   {t(item.labelKey)}
+                  {item.to === '/super/reports' && openCount > 0 && (
+                    <span className="ml-2 rounded-full bg-saffron px-2 py-0.5 text-xs font-bold text-navy">{openCount}</span>
+                  )}
                 </NavLink>
               </li>
             ))}

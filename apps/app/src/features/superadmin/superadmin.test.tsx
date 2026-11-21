@@ -36,6 +36,7 @@ const source: UsageSource = {
 const loaded = { data: schools, loading: false };
 const claims = { super: true };
 const opts = { ctx, claims };
+const noReports = { data: [], loading: false };
 
 function renderPage(setStatus = vi.fn().mockResolvedValue({ ok: true })) {
   renderWithSchool(
@@ -270,7 +271,7 @@ describe('SuperLayout controls', () => {
     renderWithSchool(
       <AuthContextProvider value={auth}>
         <LangContextProvider value={{ lang: 'en', setLang }}>
-          <SuperLayout><p>body</p></SuperLayout>
+          <SuperLayout openReports={noReports}><p>body</p></SuperLayout>
         </LangContextProvider>
       </AuthContextProvider>,
       { ctx, claims: { super: true }, route: '/super' },
@@ -286,7 +287,7 @@ describe('SuperLayout and SuperAdminLink', () => {
   const layout = (claims: object) =>
     renderWithSchool(
       <Routes>
-        <Route path="*" element={<SuperLayout><p>body</p></SuperLayout>} />
+        <Route path="*" element={<SuperLayout openReports={noReports}><p>body</p></SuperLayout>} />
       </Routes>,
       { ctx, claims, route: '/super' },
     );

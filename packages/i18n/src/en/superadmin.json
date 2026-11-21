@@ -5,6 +5,7 @@
     "label": "Super admin menu",
     "schools": "Schools",
     "usage": "Usage",
+    "reports": "Reports",
     "schoolAdmin": "School admin",
     "subjects": "Default subjects",
     "terms": "Terms",
@@ -35,6 +36,33 @@
     "details": "Details",
     "disable": "Disable",
     "enable": "Enable"
+  },
+  "reports": {
+    "title": "Reports",
+    "intro": "Open reports about schools, newest first.",
+    "columns": {
+      "school": "School",
+      "reason": "Reason",
+      "details": "Details",
+      "email": "Reporter email",
+      "created": "Reported",
+      "actions": "Actions"
+    },
+    "reasons": {
+      "fake": "Fake school",
+      "duplicate": "Duplicate",
+      "abuse": "Abuse",
+      "other": "Other"
+    },
+    "close": "Close",
+    "suspend": "Suspend school",
+    "empty": "No open reports",
+    "emptyBody": "New reports will appear here.",
+    "loadError": "Could not load reports.",
+    "toast": {
+      "closed": "Report closed",
+      "closeFailed": "Could not close report: {{message}}"
+    }
   },
   "status": {
     "active": "Active",
