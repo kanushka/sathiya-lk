@@ -21,6 +21,11 @@ describe('runTx', () => {
     await expect(runTx(async () => 'x')).rejects.toBe(other);
     expect(spy).toHaveBeenCalledTimes(1);
 
+    const aborted = Object.assign(new Error('10 ABORTED'), { code: 10 });
+    spy.mockReset().mockRejectedValue(aborted);
+    await expect(runTx(async () => 'x')).rejects.toBe(aborted);
+    expect(spy).toHaveBeenCalledTimes(1);
+
     spy.mockReset().mockRejectedValue(closed);
     await expect(runTx(async () => 'x', 3)).rejects.toBe(closed);
     expect(spy).toHaveBeenCalledTimes(3);

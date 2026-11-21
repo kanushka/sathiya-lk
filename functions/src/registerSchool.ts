@@ -2,6 +2,7 @@
 // Copyright (C) 2026 Kanushka Gayan
 import { paths, type PeriodTemplate, type RegisterSchoolRes } from '@sathiya/core';
 import { defaultTemplate } from '@sathiya/core/fixtures';
+import { logger } from 'firebase-functions/v2';
 import { onCall } from 'firebase-functions/v2/https';
 import { auth, db } from './lib/admin';
 import { callOpts } from './lib/callOptions';
@@ -108,6 +109,6 @@ export const registerSchool = onCall(callOpts, async (req): Promise<RegisterScho
     throw e;
   }
   // Re-assert after commit: a concurrent losing attempt by the same user may have restored the old claims meanwhile.
-  await setSchoolClaims(uid, { sid, role: 'admin' });
+  await setSchoolClaims(uid, { sid, role: 'admin' }).catch((e) => logger.error('registerSchool: claims re-assert failed', { sid, e }));
   return { schoolId: sid };
 });
