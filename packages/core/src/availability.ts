@@ -12,7 +12,7 @@ export interface TeacherOption { teacher: Teacher; loadToday: number; reason?: U
 export interface BusyDetail { kind: 'teacher' | 'class'; entryId: string; classIds: string[]; subjectId: string; teacherId: string | null; groupKey?: string }
 export interface ClassOption { cls: SchoolClass; period: number; free: boolean; busy?: BusyDetail }
 
-function busyDetail(e: Entry, kind: BusyDetail['kind'], teacherId: string): BusyDetail {
+export function busyDetail(e: Entry, kind: BusyDetail['kind'], teacherId: string): BusyDetail {
   if (kind === 'teacher') {
     const lesson = e.lessons.find((l) => l.teacherId === teacherId);
     return { kind, entryId: e.id, classIds: e.classIds, subjectId: lesson?.subjectId ?? '', teacherId };
