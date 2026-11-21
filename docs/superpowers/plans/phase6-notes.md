@@ -27,3 +27,14 @@ Seeded logins (emulator-only test values, defined in `scripts/seed.ts`):
 All 19 fixture teachers exist with password `teach234` (`pnpm seed` prints the list). The seeded year 2027 is a draft, so teachers see "Not published yet" until the admin publishes it from the dashboard.
 
 `pnpm seed` re-seeds running emulators at any time (it wipes the emulator's Firestore and Auth data first). Project id `sathiya-lk` (the app's Firebase config is fixed to it); the seed refuses to run unless the emulator hosts are local.
+
+## End-to-end tests
+
+```bash
+pnpm --filter e2e exec playwright install chromium   # once
+pnpm e2e
+```
+
+Builds functions, runs `firebase emulators:exec` (auth, firestore, storage, functions), and inside it Playwright (`e2e/`, chromium, one worker). Playwright's global setup re-seeds the emulators, then builds the app in emulator mode into `apps/app/dist-e2e` and serves it with `vite preview` on port 4173. Specs run in file order (`e2e/specs/0N-*.spec.ts`); each re-uses the seed or makes its own school, except that later class/teacher grids include earlier specs' edits. Screenshots of key screens go to `e2e/__screenshots__/` (gitignored).
+
+Against an already running stack (`pnpm dev:local`): `E2E_BASE_URL=http://localhost:5173 pnpm --filter e2e test` (re-seeds, so local edits are wiped). Not part of root `pnpm test`; CI runs it as the last steps of the `ci` job.
