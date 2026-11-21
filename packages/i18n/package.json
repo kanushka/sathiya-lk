@@ -7,5 +7,12 @@
   "scripts": {
     "test": "vitest run --passWithNoTests",
     "typecheck": "tsc --noEmit"
+  },
+  "dependencies": {
+    "@sathiya/core": "workspace:*",
+    "i18next": "^23.16.8"
+  },
+  "devDependencies": {
+    "vite": "^5.4.0"
   }
 }
