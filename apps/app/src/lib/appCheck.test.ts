@@ -40,4 +40,14 @@ describe('appCheckMode', () => {
     expect(appCheckMode({ VITE_APPCHECK_SITE_KEY: 'k', VITE_APPCHECK_ALLOW_DEBUG: 'true' })).toBe('recaptcha');
     expect(appCheckMode({ VITE_APPCHECK_DEBUG_TOKEN: 'd', VITE_APPCHECK_ALLOW_DEBUG: 'true' })).toBe('off');
   });
+
+  it('never uses the debug provider in a production-mode build', () => {
+    const base = { VITE_APPCHECK_SITE_KEY: 'k', VITE_APPCHECK_DEBUG_TOKEN: 'd', VITE_APPCHECK_ALLOW_DEBUG: 'true' };
+    expect(appCheckMode({ ...base, MODE: 'production' })).toBe('recaptcha');
+    expect(appCheckMode({ ...base, MODE: 'staging' })).toBe('debug');
+  });
+
+  it('keeps the emulator debug provider in a production-mode build', () => {
+    expect(appCheckMode({ MODE: 'production', VITE_USE_EMULATORS: 'true', VITE_APPCHECK_SITE_KEY: 'k', VITE_APPCHECK_DEBUG_TOKEN: 'd' })).toBe('debug');
+  });
 });
