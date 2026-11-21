@@ -184,13 +184,13 @@ function ClassView({ cls, classes }: { cls: SchoolClass; classes: SchoolClass[] 
     const where = { day: tc(`days.long.${day}`), n: period, time: `${time.start}–${time.end}` };
     if (c.kind === 'taken') {
       const view = classCellView(c.entry, ctx, lang, t, plan);
-      return { label: t('grid.cell', { ...where, title: `${view.title} ${view.sub}` }), className: 'border-transparent opacity-40', content: <CellBody cells={[view]} />, disabled: true };
+      return { label: t('grid.cell', { ...where, title: `${view.title} ${view.sub}` }), className: 'border-transparent text-ink opacity-40', content: <CellBody cells={[view]} />, disabled: true };
     }
     if (c.kind === 'pinned') {
       const view = classCellView(c.entry, ctx, lang, t, plan);
       return {
         label: t('pin.cellPinned', { ...where, subject: view.title, teacher: view.sub }),
-        className: 'border-transparent ring-2 ring-brand ring-offset-2',
+        className: 'border-transparent text-ink ring-2 ring-brand ring-offset-2',
         content: <CellBody cells={[{ ...view, sub: t('pin.clickUnpin') }]} />,
       };
     }

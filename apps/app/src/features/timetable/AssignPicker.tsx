@@ -247,7 +247,10 @@ function AssignPickerBody({ classId, slot, subjectId: initialSubject, entries, o
                 <button
                   type="button"
                   onClick={() => choose(p)}
-                  className="flex w-full items-center gap-2.5 rounded-lg px-2 py-[9px] text-left text-sm text-ink hover:bg-[#FBF6EA] focus-visible:outline focus-visible:outline-2 focus-visible:outline-brand"
+                  className={cx(
+                    'flex w-full items-center gap-2.5 rounded-lg px-2 py-[9px] text-left text-sm text-ink hover:bg-[#FBF1DC] focus-visible:outline focus-visible:outline-2 focus-visible:outline-brand',
+                    p.placed < p.needed && 'bg-[#FFFCF5]',
+                  )}
                 >
                   <span className="h-3 w-3 shrink-0 rounded-[3px]" style={{ background: planItemColor(p.item, ctx) }} />
                   <span className="flex-1 font-semibold">{p.name}</span>

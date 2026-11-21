@@ -157,12 +157,12 @@ export function TimetableGrid({ rows, cellsFor, selected, onSelect, onActivate, 
                   onClick={() => onClick(d, r.n)}
                   onKeyDown={(e) => onKeyDown(e, d, r.n)}
                   className={cx(
-                    'box-border flex min-h-[58px] flex-col justify-center rounded-[10px] border p-1 text-left text-ink',
+                    'box-border flex min-h-[58px] flex-col justify-center rounded-[10px] border p-1 text-left',
                     over
                       ? over.className
                       : cells.length === 0
-                        ? 'border-[1.5px] border-dashed border-[#C9CDD6] bg-white text-[#8A91A3] px-2.5 items-center'
-                        : 'border-transparent',
+                        ? 'border-[1.5px] border-dashed border-[#C9CDD6] bg-white text-ink text-[#8A91A3] px-2.5 items-center'
+                        : 'border-transparent text-ink',
                     on && 'shadow-[0_0_0_2px_#fff,0_0_0_4px_var(--brand)]',
                     readOnly || over?.disabled ? 'cursor-default' : 'cursor-pointer',
                   )}
