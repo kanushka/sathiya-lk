@@ -13,5 +13,26 @@
       "class": "Class {{name}} already has a lesson at this time"
     },
     "generic": "Could not save the timetable. Please try again."
+  },
+  "block": {
+    "titleCombined": "Combine classes · {{subject}}",
+    "subtitle": "{{day}}, period {{n}}",
+    "classes": "Classes",
+    "classesHint": "Base class is always included. Only same-grade classes on the same template that are free now can join.",
+    "baseClass": "{{name}} (this class)",
+    "teacherPlaceholder": "Choose a teacher",
+    "noTeacher": "No teacher yet",
+    "duplicate": "Already chosen for another option",
+    "available": "Available",
+    "unavailable": "Not available",
+    "free": "✓ free",
+    "load": "{{load}}/{{max}}",
+    "busy": "Busy · {{classes}} {{subject}}",
+    "limit": "Limit reached · {{load}}/{{max}} today",
+    "notQualified": "Doesn't teach Grade {{grade}}",
+    "limitWarn": "⚠ Limit reached · {{load}}/{{max}} today",
+    "save": "Save",
+    "remove": "Remove block",
+    "needTwo": "Pick at least one more class to combine."
   }
 }

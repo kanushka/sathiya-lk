@@ -10,4 +10,11 @@
 - `useTimetable` API is injectable via `TimetableApiContext` (`saveEntry`/`deleteEntry`); default calls the callables.
 - Optimistic overlay entries stay until the next Firestore `entries` snapshot after the call succeeds, then are dropped.
 
+### 4.4 Block editor
+- `BlockEditor` props: `{ open, onClose, baseClassId, day, period, mode: {kind:'group', item} | {kind:'combined', subjectId}, entry? }`; closes itself on successful save/remove.
+- Combined mode requires 2+ classes to enable Save; group mode allows base class alone.
+- Chips are filtered by `effectivePlan` (group key / subject item); classes already on an edited entry stay visible so they can be unchecked.
+- `findClass`/`gradeOf`/`templateOf` are not exported from `@sathiya/core` index, so resolved from `ctx` inline.
+- Busy and not-qualified teachers are disabled `<option>`s; a previously chosen teacher who becomes busy stays selected, flagged, and Save is disabled.
+
 ## Requests for shell/core
