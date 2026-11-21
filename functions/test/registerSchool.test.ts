@@ -48,6 +48,8 @@ describe('registerSchool', () => {
       city: 'Siripura',
       type: 'private',
       status: 'active',
+      nameLower: 'siripura central college',
+      cityLower: 'siripura',
     });
 
     const member = (await adminDb.doc(`${paths.members(schoolId)}/${c.uid}`).get()).data();

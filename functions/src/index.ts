@@ -12,3 +12,4 @@ export { deleteSetupItem } from './deleteSetupItem';
 export { publishYear } from './publishYear';
 export { reportSchool } from './reportSchool';
 export { sendAuthEmail } from './sendAuthEmail';
+export { syncDirectory } from './syncDirectory';

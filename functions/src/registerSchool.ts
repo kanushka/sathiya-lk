@@ -11,6 +11,7 @@ import { schoolRegistered } from './email/templates';
 import { callOpts } from './lib/callOptions';
 import { setSchoolClaims } from './lib/claims';
 import { CENSUS_NO_RE, SCHOOL_TYPES, type SchoolType } from './lib/contract';
+import { directoryFields } from './lib/directory';
 import { fail, intList, invalid, isVerified, obj, optStr, requireAuth, str } from './lib/guards';
 import { clientIp, consumeRateLimits, hashIp, REGISTER_PER_IP_PER_DAY, REGISTER_PER_UID_PER_DAY } from './lib/rateLimit';
 import { runTx } from './lib/tx';
@@ -99,7 +100,7 @@ export const registerSchool = onCall(callOpts, async (req): Promise<RegisterScho
         acceptedTerms: { version: termsVersion, at: now, uid },
         createdAt: now,
       });
-      tx.create(db.doc(paths.directory(sid)), { nameEn, nameSi, district, city, type, status: 'active' });
+      tx.create(db.doc(paths.directory(sid)), directoryFields({ nameEn, nameSi, district, city, type, status: 'active' }));
       tx.create(db.doc(`${paths.members(sid)}/${uid}`), { uid, role: 'admin', email: token.email?.toLowerCase(), name: adminName });
       tx.create(db.collection(paths.templates(sid)).doc(), template);
       if (censusRef) tx.create(censusRef, { schoolId: sid });
