@@ -36,7 +36,7 @@ export function HomeRedirect() {
   if (hasRole(claims, 'admin')) return <Navigate to="/admin" replace />;
   if (hasRole(claims, 'teacher')) return <Navigate to="/me" replace />;
   if (hasRole(claims, 'super')) return <Navigate to="/super" replace />;
-  return <Navigate to="/login" replace />;
+  return <Navigate to="/register" replace />;
 }
 
 export function NotFound() {
@@ -66,15 +66,33 @@ function SuperSchoolLayout() {
   );
 }
 
+function SuperPrintLayout() {
+  const { sid } = useParams();
+  return (
+    <SchoolProvider sid={sid}>
+      <Outlet />
+    </SchoolProvider>
+  );
+}
+
+function rebase(route: RouteObject, from: string, to: string): RouteObject {
+  const { id: _id, ...rest } = route;
+  const path = route.path !== undefined && under(route.path, from) ? to + route.path.slice(from.length) : route.path;
+  const children = route.children?.map((c) => rebase(c, from, to));
+  return { ...rest, ...(path !== undefined && { path }), ...(children && { children }) } as RouteObject;
+}
+
 export function buildRoutes(featureRoutes: RouteObject[]): RouteObject[] {
   const admin: RouteObject[] = [];
+  const print: RouteObject[] = [];
   const me: RouteObject[] = [];
   const superRoutes: RouteObject[] = [];
   const schoolView: RouteObject[] = [];
   const pub: RouteObject[] = [];
 
   for (const route of featureRoutes) {
-    if (under(route.path, '/admin')) admin.push(route);
+    if (under(route.path, '/admin/print')) print.push(route);
+    else if (under(route.path, '/admin')) admin.push(route);
     else if (under(route.path, '/me')) me.push(route);
     else if (under(route.path, '/super')) superRoutes.push(route);
     else if (under(route.path, '/s/:sid')) schoolView.push(route);
@@ -90,6 +108,16 @@ export function buildRoutes(featureRoutes: RouteObject[]): RouteObject[] {
         </RequireRole>
       ),
       children: admin,
+    },
+    {
+      element: (
+        <RequireRole role="admin">
+          <SchoolProvider>
+            <Outlet />
+          </SchoolProvider>
+        </RequireRole>
+      ),
+      children: print,
     },
     {
       element: (
@@ -116,7 +144,16 @@ export function buildRoutes(featureRoutes: RouteObject[]): RouteObject[] {
           <SuperSchoolLayout />
         </RequireRole>
       ),
-      children: schoolView,
+      children: [...schoolView, ...admin.map((r) => rebase(r, '/admin', '/s/:sid'))],
+    },
+    {
+      path: '/s/:sid',
+      element: (
+        <RequireRole role="super">
+          <SuperPrintLayout />
+        </RequireRole>
+      ),
+      children: print.map((r) => rebase(r, '/admin', '/s/:sid')),
     },
     ...pub,
     { path: '*', element: <NotFound /> },

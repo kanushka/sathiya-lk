@@ -1,4 +1,4 @@
-import type { Lang } from '@sathiya/core';
+import { paths, type Lang } from '@sathiya/core';
 import { createI18n } from '@sathiya/i18n';
 import { doc, getDoc, setDoc } from 'firebase/firestore';
 import { createContext, useCallback, useContext, useEffect, useMemo, useState, type ReactNode } from 'react';
@@ -56,7 +56,7 @@ export function LangProvider({ children }: { children: ReactNode }) {
   useEffect(() => {
     if (!uid) return;
     let cancelled = false;
-    getDoc(doc(db, 'users', uid))
+    getDoc(doc(db, paths.user(uid)))
       .then((snap) => {
         const saved: unknown = snap.data()?.lang;
         if (!cancelled && isLang(saved)) {
@@ -74,7 +74,7 @@ export function LangProvider({ children }: { children: ReactNode }) {
     (next: Lang) => {
       setLangState(next);
       store(next);
-      if (uid) void setDoc(doc(db, 'users', uid), { lang: next }, { merge: true }).catch(() => undefined);
+      if (uid) void setDoc(doc(db, paths.user(uid)), { lang: next }, { merge: true }).catch(() => undefined);
     },
     [uid],
   );
@@ -85,6 +85,10 @@ export function LangProvider({ children }: { children: ReactNode }) {
       <I18nextProvider i18n={i18n}>{children}</I18nextProvider>
     </LangCtx.Provider>
   );
+}
+
+export function LangContextProvider({ value, children }: { value: LangState; children: ReactNode }) {
+  return <LangCtx.Provider value={value}>{children}</LangCtx.Provider>;
 }
 
 export function useMaybeLang(): LangState | null {

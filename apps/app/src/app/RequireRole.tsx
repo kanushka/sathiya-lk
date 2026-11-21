@@ -16,6 +16,7 @@ export function RequireRole({ role, children }: { role: Role; children: ReactNod
   const { user, claims, loading } = useAuth();
   const location = useLocation();
   if (loading) return <LoadingState />;
-  if (!user || !hasRole(claims, role)) return <Navigate to="/login" replace state={{ from: location }} />;
+  if (!user) return <Navigate to="/login" replace state={{ from: location }} />;
+  if (!hasRole(claims, role)) return <Navigate to="/" replace />;
   return <>{children}</>;
 }

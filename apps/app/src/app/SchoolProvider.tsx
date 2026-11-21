@@ -19,13 +19,15 @@ import { EmptyState } from '../ui/EmptyState';
 import { LoadingState } from '../ui/LoadingState';
 import { useAuth } from './AuthProvider';
 
-export type SchoolState = SchoolContext & { loading: boolean };
+export type SchoolState = SchoolContext & { loading: boolean; error?: Error };
 
 export interface YearState {
   years: Year[];
   yearId: string;
   setYearId(id: string): void;
   entries: Entry[];
+  loading: boolean;
+  error?: Error;
 }
 
 const SchoolCtx = createContext<SchoolState | null>(null);
@@ -88,6 +90,7 @@ export function SchoolProvider({ sid: sidProp, scope = 'full', children }: Schoo
 
   const loading =
     teachers.loading || subjects.loading || templates.loading || grades.loading || classes.loading || years.loading;
+  const error = [school, teachers, subjects, templates, grades, classes, years].find((l) => l.error)?.error;
 
   const schoolValue = useMemo<SchoolState | null>(
     () =>
@@ -100,17 +103,18 @@ export function SchoolProvider({ sid: sidProp, scope = 'full', children }: Schoo
             grades: grades.data,
             classes: classes.data,
             loading,
+            ...(error && { error }),
           }
         : null,
-    [school.data, teachers.data, subjects.data, templates.data, grades.data, classes.data, loading],
+    [school.data, teachers.data, subjects.data, templates.data, grades.data, classes.data, loading, error],
   );
 
   const yearValue = useMemo<YearState>(
     () =>
       full
-        ? { years: sortedYears, yearId, setYearId, entries: entries.data }
-        : { years: noYears, yearId, setYearId, entries: noEntries },
-    [full, sortedYears, yearId, entries.data],
+        ? { years: sortedYears, yearId, setYearId, entries: entries.data, loading: entries.loading, ...(entries.error && { error: entries.error }) }
+        : { years: noYears, yearId, setYearId, entries: noEntries, loading: false },
+    [full, sortedYears, yearId, entries.data, entries.loading, entries.error],
   );
 
   if (school.loading) return <LoadingState />;
@@ -120,6 +124,14 @@ export function SchoolProvider({ sid: sidProp, scope = 'full', children }: Schoo
   return (
     <SchoolCtx.Provider value={schoolValue}>
       <YearCtx.Provider value={yearValue}>{children}</YearCtx.Provider>
+    </SchoolCtx.Provider>
+  );
+}
+
+export function SchoolContextProvider({ school, year, children }: { school: SchoolState; year: YearState; children: ReactNode }) {
+  return (
+    <SchoolCtx.Provider value={school}>
+      <YearCtx.Provider value={year}>{children}</YearCtx.Provider>
     </SchoolCtx.Provider>
   );
 }

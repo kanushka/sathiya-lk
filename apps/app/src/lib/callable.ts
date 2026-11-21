@@ -1,4 +1,4 @@
-import type { ApiErrorCode, callables } from '@sathiya/core';
+import type { ApiErrorCode, CallableName, CallableTypes } from '@sathiya/core';
 import { httpsCallable } from 'firebase/functions';
 import { functions } from './firebase';
 
@@ -33,7 +33,10 @@ export function toApiError(err: unknown): ApiError {
   return new ApiError('invalid', message, e.details);
 }
 
-export async function call<Req, Res>(name: keyof typeof callables, req: Req): Promise<Res> {
+export function call<K extends CallableName>(name: K, req: CallableTypes[K]['req']): Promise<CallableTypes[K]['res']>;
+// NoInfer + never defaults keep this overload for explicit call<Req, Res>() only, so untyped calls get CallableTypes.
+export function call<Req = never, Res = never>(name: CallableName, req: NoInfer<Req>): Promise<Res>;
+export async function call<Req, Res>(name: CallableName, req: Req): Promise<Res> {
   try {
     const result = await httpsCallable<Req, Res>(functions, name)(req);
     return result.data;
