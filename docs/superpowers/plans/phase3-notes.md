@@ -27,3 +27,13 @@
 - Reuses `register/ColorSwatches` (swatches prop) with a pastel palette; its custom-hex label comes from the `register` namespace.
 - Add modal: empty short defaults to first 10 chars of the English name. Inline edit commits on blur/Enter; an emptied English name or short reverts; cleared Sinhala name removes the field (`deleteField`).
 - "Used in" counts entries in the selected year via core `usageCount`.
+
+## Task 3.6 — Dashboard, members, profile
+
+- Invite doc shape assumed at `schools/{sid}/invites/{id}`: `{ email, teacherId?, createdAt? }` (`Invite` in `features/members/api.ts`). Admin must be able to read `members` and `invites`.
+- Profile edits update only the school doc. `schoolDirectory/{sid}` (nameEn/nameSi/nameLower/district) is not written from the client; syncing it on profile edit is a Phase 1 concern (trigger on school doc update).
+- Profile adds `city` (required), `address?`, `phone?` via local `SchoolWithContact` type (core `School` gains these in Phase 6). Cleared optional fields (and `nameSi`) are removed with `deleteField()`. `registerSchool` does not yet collect city.
+- Contrast helper (`profile/contrast.ts`) is local since core `color.ts` keeps luminance private; warns when primary vs white < 4.5:1.
+- Dashboard attention/stat links assume Phase 4 query params `/admin/timetable/class?c=<classId>` and `/admin/timetable/teacher?t=<teacherId>`; links keep the `/s/:sid` base in the super-admin mirror.
+- Dashboard "clashes" counts unique conflicting entry pairs via `findConflicts`; "empty slots" = per-class week capacity minus entries placed in that class.
+- New year: created as draft, then selected via `setYearId(newId)` (shell keeps it until the snapshot arrives).
