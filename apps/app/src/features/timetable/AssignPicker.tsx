@@ -14,7 +14,7 @@ import {
   type EntryDraft,
   type Teacher,
 } from '@sathiya/core';
-import { useEffect, useMemo, useRef, useState, type KeyboardEvent } from 'react';
+import { useEffect, useId, useMemo, useRef, useState, type KeyboardEvent } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useLang } from '../../app/LangProvider';
 import { useSchool } from '../../app/SchoolProvider';
@@ -72,6 +72,9 @@ function AssignPickerBody({ classId, slot, subjectId: initialSubject, entries, o
   const [teacherQuery, setTeacherQuery] = useState('');
   const [picked, setPicked] = useState<string | null | undefined>(undefined);
   const [busy, setBusy] = useState(false);
+  const [subjectActive, setSubjectActive] = useState(0);
+  const [teacherActive, setTeacherActive] = useState<number | null>(null);
+  const baseId = useId();
   const subjectInput = useRef<HTMLInputElement>(null);
   const teacherInput = useRef<HTMLInputElement>(null);
 
@@ -84,6 +87,11 @@ function AssignPickerBody({ classId, slot, subjectId: initialSubject, entries, o
   useEffect(() => {
     (subjectId ? teacherInput : subjectInput).current?.focus();
   }, [subjectId]);
+
+  useEffect(() => {
+    const id = (subjectId ? teacherInput : subjectInput).current?.getAttribute('aria-activedescendant');
+    if (id) document.getElementById(id)?.scrollIntoView?.({ block: 'nearest' });
+  });
 
   const candidates = useMemo<Candidate[]>(() => {
     if (!subjectId || !grade) return [];
@@ -148,6 +156,17 @@ function AssignPickerBody({ classId, slot, subjectId: initialSubject, entries, o
   const shown = candidates.filter(
     (c) => !tq || teacherDisplayName(c.teacher, lang).toLowerCase().includes(tq) || c.teacher.staffId.toLowerCase().includes(tq),
   );
+  const options = shown.filter((c) => c.selectable);
+  const blockedTop = shown.filter((c) => !c.selectable && c.preferred);
+  const blockedRest = shown.filter((c) => !c.selectable && !c.preferred);
+  const subjectIndex = Math.min(subjectActive, Math.max(0, subjectOptions.length - 1));
+  const selectedIndex = options.findIndex((c) => c.teacher.id === selected);
+  const teacherIndex = options.length === 0 ? -1 : Math.min(teacherActive ?? Math.max(0, selectedIndex), options.length - 1);
+
+  const subjectListId = `${baseId}-subjects`;
+  const teacherListId = `${baseId}-teachers`;
+  const subjectOptionId = (i: number) => `${subjectListId}-${i}`;
+  const teacherOptionId = (i: number) => `${teacherListId}-${i}`;
 
   function choose(p: PickItem) {
     if (p.item.kind === 'group') {
@@ -158,6 +177,7 @@ function AssignPickerBody({ classId, slot, subjectId: initialSubject, entries, o
     setQuery('');
     setTeacherQuery('');
     setPicked(undefined);
+    setTeacherActive(null);
   }
 
   function back() {
@@ -165,6 +185,7 @@ function AssignPickerBody({ classId, slot, subjectId: initialSubject, entries, o
     setQuery('');
     setTeacherQuery('');
     setPicked(undefined);
+    setSubjectActive(0);
   }
 
   async function confirm(teacherId: string | null = selected) {
@@ -182,27 +203,38 @@ function AssignPickerBody({ classId, slot, subjectId: initialSubject, entries, o
     onClose();
   }
 
+  const step = (n: number, len: number, d: number) => (len === 0 ? 0 : Math.max(0, Math.min(len - 1, n + d)));
+
   function onSubjectKey(e: KeyboardEvent<HTMLInputElement>) {
-    if (e.key !== 'Enter') return;
-    e.preventDefault();
-    const top = subjectOptions[0];
-    if (top) choose(top);
+    if (e.key === 'ArrowDown' || e.key === 'ArrowUp') {
+      e.preventDefault();
+      setSubjectActive(step(subjectIndex, subjectOptions.length, e.key === 'ArrowDown' ? 1 : -1));
+    } else if (e.key === 'Enter') {
+      e.preventDefault();
+      const p = subjectOptions[subjectIndex];
+      if (p) choose(p);
+    }
   }
 
   function onTeacherKey(e: KeyboardEvent<HTMLInputElement>) {
-    if (e.key !== 'Enter') return;
-    e.preventDefault();
-    const top = shown.find((c) => c.selectable);
-    if (!top) return;
-    if (top.teacher.id === selected) void confirm(top.teacher.id);
-    else setPicked(top.teacher.id);
+    if (e.key === 'ArrowDown' || e.key === 'ArrowUp') {
+      e.preventDefault();
+      setTeacherActive(step(teacherIndex, options.length, e.key === 'ArrowDown' ? 1 : -1));
+    } else if (e.key === 'Enter') {
+      e.preventDefault();
+      const c = options[teacherIndex];
+      if (!c) return;
+      if (c.teacher.id === selected) void confirm(c.teacher.id);
+      else setPicked(c.teacher.id);
+    }
   }
 
   const need = (p: PickItem) => (p.placed < p.needed ? t('picker.needs', { count: p.needed - p.placed }) : t('picker.done', { placed: p.placed, needed: p.needed }));
   const preferredName = (p: PickItem) => {
     if (p.item.kind === 'group') return t('assign.groupTag');
     const id = preferredTeacherFor({ entries, classId, subjectId: p.item.subjectId });
-    return ctx.teachers.find((x) => x.id === id)?.name ?? '';
+    const teacher = ctx.teachers.find((x) => x.id === id);
+    return teacher ? teacherDisplayName(teacher, lang) : '';
   };
 
   const footer = subjectId ? (
@@ -218,6 +250,55 @@ function AssignPickerBody({ classId, slot, subjectId: initialSubject, entries, o
     </>
   ) : undefined;
 
+  const teacherBody = (c: Candidate) => (
+    <>
+      <span
+        aria-hidden="true"
+        className={cx(
+          'flex h-8 w-8 shrink-0 items-center justify-center rounded-full text-xs font-extrabold',
+          c.selectable ? 'bg-[#E4F2E7] text-[#1F6B34]' : 'bg-[#E9EBF0] text-ink-muted',
+        )}
+      >
+        {initials(c.teacher.name)}
+      </span>
+      <span className="min-w-0 flex-1">
+        <span className="flex flex-wrap items-center gap-1.5">
+          <strong className="text-sm">{teacherDisplayName(c.teacher, lang)}</strong>
+          {c.preferred && (
+            <span className="rounded-full bg-brand/10 px-2 py-0.5 text-[11px] font-bold text-brand">
+              <span aria-hidden="true">★ </span>
+              {t('picker.teaches', { class: cls.name, subject: subjectName })}
+            </span>
+          )}
+        </span>
+        <span className={cx('mt-0.5 block text-xs', c.warn ? 'font-semibold text-[#7A5A12]' : 'text-ink-muted')}>{c.note}</span>
+      </span>
+    </>
+  );
+
+  const blockedList = (list: Candidate[]) =>
+    list.length > 0 && (
+      <ul className="m-0 mb-1.5 flex list-none flex-col gap-1.5 p-0">
+        {list.map((c) => (
+          <li key={c.teacher.id} className="flex items-center gap-2.5 rounded-[10px] border border-line bg-[#F6F7F9] px-3 py-2.5 text-ink-muted">
+            {teacherBody(c)}
+            {c.canPinElsewhere && subjectId && (
+              <Button
+                size="sm"
+                className="shrink-0 whitespace-nowrap text-xs"
+                onClick={() => {
+                  onPin({ subjectId, teacherId: c.teacher.id });
+                  onClose();
+                }}
+              >
+                {t('assign.useOther')}
+              </Button>
+            )}
+          </li>
+        ))}
+      </ul>
+    );
+
   return (
     <Modal
       open
@@ -231,32 +312,43 @@ function AssignPickerBody({ classId, slot, subjectId: initialSubject, entries, o
         <>
           <input
             ref={subjectInput}
-            type="search"
+            type="text"
+            role="combobox"
+            aria-expanded="true"
+            aria-autocomplete="list"
+            aria-controls={subjectListId}
+            aria-activedescendant={subjectOptions.length ? subjectOptionId(subjectIndex) : undefined}
             aria-label={t('assign.searchSubjects')}
             placeholder={t('picker.subjectSearch')}
             value={query}
-            onChange={(e) => setQuery(e.target.value)}
+            onChange={(e) => {
+              setQuery(e.target.value);
+              setSubjectActive(0);
+            }}
             onKeyDown={onSubjectKey}
             className={inputClass}
           />
           <p className={cx(capClass, 'mb-1.5 mt-3 text-[#7A5410]')}>{t('assign.neededFirst', { count: subjectOptions.length })}</p>
           {subjectOptions.length === 0 && <p className="mx-0.5 my-2 text-[13px] text-ink-muted">{t('assign.noSubjectMatch', { q: query.trim() })}</p>}
-          <ul aria-label={t('assign.subjects')} className="m-0 flex max-h-[360px] list-none flex-col gap-0.5 overflow-y-auto p-0">
-            {subjectOptions.map((p) => (
-              <li key={p.key}>
-                <button
-                  type="button"
-                  onClick={() => choose(p)}
-                  className={cx(
-                    'flex w-full items-center gap-2.5 rounded-lg px-2 py-[9px] text-left text-sm text-ink hover:bg-[#FBF1DC] focus-visible:outline focus-visible:outline-2 focus-visible:outline-brand',
-                    p.placed < p.needed && 'bg-[#FFFCF5]',
-                  )}
-                >
-                  <span className="h-3 w-3 shrink-0 rounded-[3px]" style={{ background: planItemColor(p.item, ctx) }} />
-                  <span className="flex-1 font-semibold">{p.name}</span>
-                  <span className="text-xs text-ink-muted">{preferredName(p)}</span>
-                  <span className={cx('w-16 text-right text-xs', p.placed < p.needed ? 'font-bold text-[#7A5410]' : 'text-ink-muted')}>{need(p)}</span>
-                </button>
+          <ul id={subjectListId} role="listbox" aria-label={t('assign.subjects')} className="m-0 flex max-h-[360px] list-none flex-col gap-0.5 overflow-y-auto p-0">
+            {subjectOptions.map((p, i) => (
+              <li
+                key={p.key}
+                id={subjectOptionId(i)}
+                role="option"
+                aria-selected={i === subjectIndex}
+                onClick={() => choose(p)}
+                onMouseMove={() => i !== subjectIndex && setSubjectActive(i)}
+                className={cx(
+                  'flex w-full cursor-pointer items-center gap-2.5 rounded-lg px-2 py-[9px] text-left text-sm text-ink',
+                  p.placed < p.needed && 'bg-[#FFFCF5]',
+                  i === subjectIndex && 'bg-[#FBF1DC] shadow-[inset_0_0_0_1.5px_var(--brand)]',
+                )}
+              >
+                <span className="h-3 w-3 shrink-0 rounded-[3px]" style={{ background: planItemColor(p.item, ctx) }} />
+                <span className="flex-1 font-semibold">{p.name}</span>
+                <span className="text-xs text-ink-muted">{preferredName(p)}</span>
+                <span className={cx('w-16 text-right text-xs', p.placed < p.needed ? 'font-bold text-[#7A5410]' : 'text-ink-muted')}>{need(p)}</span>
               </li>
             ))}
           </ul>
@@ -277,88 +369,63 @@ function AssignPickerBody({ classId, slot, subjectId: initialSubject, entries, o
           <p className="mb-2 mt-0 text-xs text-ink-muted">{slot ? t('assign.hintSlot') : t('assign.hintWeek')}</p>
           <input
             ref={teacherInput}
-            type="search"
+            type="text"
+            role="combobox"
+            aria-expanded="true"
+            aria-autocomplete="list"
+            aria-controls={teacherListId}
+            aria-activedescendant={teacherIndex >= 0 ? teacherOptionId(teacherIndex) : undefined}
             aria-label={t('assign.searchTeachers')}
             placeholder={t('picker.teacherSearch')}
             value={teacherQuery}
-            onChange={(e) => setTeacherQuery(e.target.value)}
+            onChange={(e) => {
+              setTeacherQuery(e.target.value);
+              setTeacherActive(0);
+            }}
             onKeyDown={onTeacherKey}
             className={cx(inputClass, 'mb-2.5')}
           />
           {shown.length === 0 && <p className="mx-0.5 mb-2 mt-1 text-[13px] text-ink-muted">{t('picker.noTeacherMatch', { subject: subjectName, q: teacherQuery.trim() })}</p>}
-          <ul aria-label={t('assign.teachers')} className="m-0 flex list-none flex-col gap-1.5 p-0">
-            {shown.map((c) => {
-              const name = teacherDisplayName(c.teacher, lang);
-              const on = c.selectable && c.teacher.id === selected;
-              const tag = c.preferred && (
-                <span className="rounded-full bg-brand/10 px-2 py-0.5 text-[11px] font-bold text-brand">
-                  <span aria-hidden="true">★ </span>
-                  {t('picker.teaches', { class: cls.name, subject: subjectName })}
-                </span>
-              );
-              const body = (
-                <>
+          {blockedList(blockedTop)}
+          <ul id={teacherListId} role="listbox" aria-label={t('assign.teachers')} className="m-0 mb-1.5 flex list-none flex-col gap-1.5 p-0">
+            {options.map((c, i) => {
+              const on = c.teacher.id === selected;
+              return (
+                <li
+                  key={c.teacher.id}
+                  id={teacherOptionId(i)}
+                  role="option"
+                  aria-selected={on}
+                  aria-disabled={busy || undefined}
+                  onClick={() => {
+                    if (busy) return;
+                    setPicked(c.teacher.id);
+                    setTeacherActive(i);
+                  }}
+                  onDoubleClick={() => void confirm(c.teacher.id)}
+                  className={cx(
+                    'flex w-full cursor-pointer items-center gap-2.5 rounded-[10px] border px-3 py-2.5 text-left text-ink',
+                    c.warn ? 'border-[#F0DDB0] bg-[#FFF9EC] hover:bg-[#FBF0D6]' : 'border-[#CFE6D4] bg-[#F5FBF6] hover:bg-[#EAF6ED]',
+                    on && 'shadow-[inset_0_0_0_2px_var(--brand)]',
+                    i === teacherIndex && 'outline outline-2 outline-offset-1 outline-brand/40',
+                    busy && 'opacity-60',
+                  )}
+                >
+                  {teacherBody(c)}
                   <span
                     aria-hidden="true"
                     className={cx(
-                      'flex h-8 w-8 shrink-0 items-center justify-center rounded-full text-xs font-extrabold',
-                      c.selectable ? 'bg-[#E4F2E7] text-[#1F6B34]' : 'bg-[#E9EBF0] text-ink-muted',
+                      'flex h-[22px] w-[22px] shrink-0 items-center justify-center rounded-full border-[1.5px]',
+                      on ? 'border-brand bg-brand text-on-brand' : 'border-line-strong bg-white text-transparent',
                     )}
                   >
-                    {initials(c.teacher.name)}
+                    <Icon name="check" size={14} strokeWidth={2.4} />
                   </span>
-                  <span className="min-w-0 flex-1">
-                    <span className="flex flex-wrap items-center gap-1.5">
-                      <strong className="text-sm">{name}</strong>
-                      {tag}
-                    </span>
-                    <span className={cx('mt-0.5 block text-xs', c.warn ? 'font-semibold text-[#7A5A12]' : 'text-ink-muted')}>{c.note}</span>
-                  </span>
-                </>
-              );
-              return (
-                <li key={c.teacher.id}>
-                  {c.selectable ? (
-                    <button
-                      type="button"
-                      aria-pressed={on}
-                      disabled={busy}
-                      onClick={() => setPicked(c.teacher.id)}
-                      onDoubleClick={() => void confirm(c.teacher.id)}
-                      className={cx(
-                        'flex w-full items-center gap-2.5 rounded-[10px] border px-3 py-2.5 text-left text-ink focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-1 focus-visible:outline-brand disabled:opacity-60',
-                        c.warn ? 'border-[#F0DDB0] bg-[#FFF9EC] hover:bg-[#FBF0D6]' : 'border-[#CFE6D4] bg-[#F5FBF6] hover:bg-[#EAF6ED]',
-                        on && 'shadow-[inset_0_0_0_2px_var(--brand)]',
-                      )}
-                    >
-                      {body}
-                      <span
-                        aria-hidden="true"
-                        className={cx(
-                          'flex h-[22px] w-[22px] shrink-0 items-center justify-center rounded-full border-[1.5px]',
-                          on ? 'border-brand bg-brand text-on-brand' : 'border-line-strong bg-white text-transparent',
-                        )}
-                      >
-                        <Icon name="check" size={14} strokeWidth={2.4} />
-                      </span>
-                    </button>
-                  ) : (
-                    <div className="flex items-center gap-2.5 rounded-[10px] border border-line bg-[#F6F7F9] px-3 py-2.5 text-ink-muted">
-                      {body}
-                      {c.canPinElsewhere && (
-                        <Button size="sm" className="shrink-0 whitespace-nowrap text-xs" onClick={() => {
-                          onPin({ subjectId: subjectId, teacherId: c.teacher.id });
-                          onClose();
-                        }}>
-                          {t('assign.useOther')}
-                        </Button>
-                      )}
-                    </div>
-                  )}
                 </li>
               );
             })}
           </ul>
+          {blockedList(blockedRest)}
         </>
       )}
     </Modal>

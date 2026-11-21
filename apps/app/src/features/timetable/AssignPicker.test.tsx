@@ -22,12 +22,12 @@ function setup(props: Partial<AssignPickerProps> = {}, entries: Entry[] = entrie
 }
 
 const dialog = () => screen.getByRole('dialog');
-const subjectSearch = () => screen.getByRole('searchbox', { name: 'Search subjects' });
-const teacherSearch = () => screen.getByRole('searchbox', { name: 'Search teachers' });
-const teacherRow = (name: RegExp) => within(dialog()).getByRole('button', { name });
+const subjectSearch = () => screen.getByRole('combobox', { name: 'Search subjects' });
+const teacherSearch = () => screen.getByRole('combobox', { name: 'Search teachers' });
+const teacherRow = (name: RegExp) => within(dialog()).getByRole('option', { name });
 
 async function pickSubject(name: string) {
-  await userEvent.click(within(dialog()).getByRole('button', { name: new RegExp(`^${name}`) }));
+  await userEvent.click(within(dialog()).getByRole('option', { name: new RegExp(`^${name}`) }));
 }
 
 describe('AssignPicker', () => {
@@ -37,10 +37,10 @@ describe('AssignPicker', () => {
     expect(screen.getByText('Wednesday · Period 4 · 09:50–10:30')).toBeInTheDocument();
     await waitFor(() => expect(subjectSearch()).toHaveFocus());
     expect(screen.getByText('Needed first · 11 subjects')).toBeInTheDocument();
-    const names = within(screen.getByRole('list', { name: 'Subjects' }))
-      .getAllByRole('button')
+    const names = within(screen.getByRole('listbox', { name: 'Subjects' }))
+      .getAllByRole('option')
       .map((b) => b.textContent);
-    expect(names.slice(0, 3)).toEqual(['ScienceS. Gunasekaraneeds 2', 'Health & PES. Kumaraneeds 1', 'Practical & Technical SkillsD. Fonsekaneeds 1']);
+    expect(names.slice(0, 3)).toEqual(['ScienceMrs. S. Gunasekaraneeds 2', 'Health & PEMr. S. Kumaraneeds 1', 'Practical & Technical SkillsMr. D. Fonsekaneeds 1']);
     expect(names[3]).toContain('Mathematics');
     expect(names[3]).toContain('6/6');
   });
@@ -58,12 +58,12 @@ describe('AssignPicker', () => {
   it('preselects the preferred free teacher on top; Assign saves, enters pin mode and closes', async () => {
     const h = setup();
     await pickSubject('Sinhala');
-    const rows = within(screen.getByRole('list', { name: 'Teachers' })).getAllByRole('button');
+    const rows = within(screen.getByRole('listbox', { name: 'Teachers' })).getAllByRole('option');
     expect(rows[0]).toHaveAccessibleName(/Mr\. R\. Silva/);
     expect(rows[0]).toHaveTextContent('★ Teaches 6B Sinhala');
     expect(rows[0]).toHaveTextContent('SCC011 · Free · 2/7 periods on Wednesday');
-    expect(rows[0]).toHaveAttribute('aria-pressed', 'true');
-    expect(teacherRow(/Mrs\. J\. Ranasinghe/)).toHaveAttribute('aria-pressed', 'false');
+    expect(rows[0]).toHaveAttribute('aria-selected', 'true');
+    expect(teacherRow(/Mrs\. J\. Ranasinghe/)).toHaveAttribute('aria-selected', 'false');
     await userEvent.click(screen.getByRole('button', { name: 'Assign' }));
     expect(h.onSave).toHaveBeenCalledWith({ day: 2, period: 4, classIds: [C.c6b], lessons: [{ subjectId: S.sinhala, teacherId: T.rSilva }] });
     await waitFor(() => expect(h.onPin).toHaveBeenCalledWith({ subjectId: S.sinhala, teacherId: T.rSilva }));
@@ -74,8 +74,8 @@ describe('AssignPicker', () => {
     const h = setup();
     await pickSubject('Sinhala');
     await userEvent.click(teacherRow(/Mrs\. J\. Ranasinghe/));
-    expect(teacherRow(/Mrs\. J\. Ranasinghe/)).toHaveAttribute('aria-pressed', 'true');
-    expect(teacherRow(/Mr\. R\. Silva/)).toHaveAttribute('aria-pressed', 'false');
+    expect(teacherRow(/Mrs\. J\. Ranasinghe/)).toHaveAttribute('aria-selected', 'true');
+    expect(teacherRow(/Mr\. R\. Silva/)).toHaveAttribute('aria-selected', 'false');
     await userEvent.click(screen.getByRole('button', { name: 'Assign' }));
     expect(h.onSave).toHaveBeenCalledWith(expect.objectContaining({ lessons: [{ subjectId: S.sinhala, teacherId: T.ranasinghe }] }));
   });
@@ -91,8 +91,9 @@ describe('AssignPicker', () => {
   it('greys a busy teacher with the detailed reason and offers using them for other slots', async () => {
     const h = setup({}, [...entries6B, entry('x', 2, 4, [C.c6a], [[S.sinhala, T.rSilva]])]);
     await pickSubject('Sinhala');
-    expect(within(dialog()).queryByRole('button', { name: /^Mr\. R\. Silva/ })).not.toBeInTheDocument();
-    const silva = within(screen.getByRole('list', { name: 'Teachers' })).getAllByRole('listitem')[0]!;
+    expect(within(dialog()).queryByRole('option', { name: /^Mr\. R\. Silva/ })).not.toBeInTheDocument();
+    const silva = screen.getByText('Mr. R. Silva').closest('li')!;
+    expect(silva.compareDocumentPosition(screen.getByRole('listbox', { name: 'Teachers' })) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
     expect(silva).toHaveTextContent('Mr. R. Silva');
     expect(silva).toHaveTextContent('★ Teaches 6B Sinhala');
     expect(silva).toHaveTextContent('SCC011 · Teaching 6A · Sinhala');
@@ -109,13 +110,13 @@ describe('AssignPicker', () => {
     const bandara = teacherRow(/Mr\. P\. Bandara/);
     expect(bandara).toHaveTextContent('⚠ Limit reached · 7/7 today');
     await userEvent.click(bandara);
-    expect(bandara).toHaveAttribute('aria-pressed', 'true');
+    expect(bandara).toHaveAttribute('aria-selected', 'true');
   });
 
   it('lists subject teachers outside the grade with the reason, hiding non-subject teachers', async () => {
     setup();
     await pickSubject('Mathematics');
-    expect(within(dialog()).queryByRole('button', { name: /Jayawardena/ })).not.toBeInTheDocument();
+    expect(within(dialog()).queryByRole('option', { name: /Jayawardena/ })).not.toBeInTheDocument();
     expect(screen.getByText('Mr. T. Jayawardena').closest('li')).toHaveTextContent("Doesn't teach Grade 6");
     expect(screen.queryByText('Mr. K. Herath')).not.toBeInTheDocument();
   });
@@ -124,7 +125,7 @@ describe('AssignPicker', () => {
     const h = setup();
     await pickSubject('Sinhala');
     await userEvent.type(teacherSearch(), 'scc016{Enter}');
-    expect(teacherRow(/Mrs\. J\. Ranasinghe/)).toHaveAttribute('aria-pressed', 'true');
+    expect(teacherRow(/Mrs\. J\. Ranasinghe/)).toHaveAttribute('aria-selected', 'true');
     expect(within(dialog()).queryByRole('button', { name: /Mr\. R\. Silva/ })).not.toBeInTheDocument();
     await userEvent.type(teacherSearch(), '{Enter}');
     expect(h.onSave).toHaveBeenCalledWith(expect.objectContaining({ lessons: [{ subjectId: S.sinhala, teacherId: T.ranasinghe }] }));
@@ -179,7 +180,7 @@ describe('AssignPicker', () => {
       expect(screen.getByText('Whole week')).toBeInTheDocument();
       const silva = teacherRow(/Mr\. R\. Silva/);
       expect(silva).toHaveTextContent('SCC011 · 4 free periods for 6B this week');
-      expect(silva).toHaveAttribute('aria-pressed', 'true');
+      expect(silva).toHaveAttribute('aria-selected', 'true');
       expect(screen.queryByRole('button', { name: 'Combine with other classes' })).not.toBeInTheDocument();
       await userEvent.click(screen.getByRole('button', { name: 'Start pinning' }));
       expect(h.onPin).toHaveBeenCalledWith({ subjectId: S.sinhala, teacherId: T.rSilva });
@@ -190,8 +191,41 @@ describe('AssignPicker', () => {
     it('hides group subjects after going back', async () => {
       setup({ slot: null, subjectId: S.sinhala });
       await userEvent.click(screen.getByRole('button', { name: 'Back to subjects' }));
-      expect(within(dialog()).queryByRole('button', { name: /^Religion/ })).not.toBeInTheDocument();
+      expect(within(dialog()).queryByRole('option', { name: /^Religion/ })).not.toBeInTheDocument();
       expect(screen.getByText('Needed first · 9 subjects')).toBeInTheDocument();
+    });
+  });
+
+  describe('combobox keyboard pattern', () => {
+    it('wires the subject search to its listbox and moves the active option with arrows', async () => {
+      setup();
+      const input = subjectSearch();
+      const list = screen.getByRole('listbox', { name: 'Subjects' });
+      expect(input).toHaveAttribute('aria-controls', list.id);
+      expect(input).toHaveAttribute('aria-expanded', 'true');
+      const options = within(list).getAllByRole('option');
+      expect(input).toHaveAttribute('aria-activedescendant', options[0]!.id);
+      await userEvent.type(input, '{ArrowDown}');
+      expect(input).toHaveAttribute('aria-activedescendant', options[1]!.id);
+      await userEvent.type(input, '{ArrowUp}{ArrowUp}');
+      expect(input).toHaveAttribute('aria-activedescendant', options[0]!.id);
+      await userEvent.type(input, '{ArrowDown}{Enter}');
+      expect(screen.getByRole('button', { name: 'Back to subjects' })).toHaveTextContent('Health & PE');
+    });
+
+    it('ArrowDown then Enter picks the second teacher, Enter again assigns', async () => {
+      const h = setup();
+      await pickSubject('Sinhala');
+      const input = teacherSearch();
+      const list = screen.getByRole('listbox', { name: 'Teachers' });
+      expect(input).toHaveAttribute('aria-controls', list.id);
+      const options = within(list).getAllByRole('option');
+      expect(input).toHaveAttribute('aria-activedescendant', options[0]!.id);
+      await userEvent.type(input, '{ArrowDown}{Enter}');
+      expect(teacherRow(/Mrs\. J\. Ranasinghe/)).toHaveAttribute('aria-selected', 'true');
+      expect(teacherRow(/Mr\. R\. Silva/)).toHaveAttribute('aria-selected', 'false');
+      await userEvent.type(input, '{Enter}');
+      expect(h.onSave).toHaveBeenCalledWith(expect.objectContaining({ lessons: [{ subjectId: S.sinhala, teacherId: T.ranasinghe }] }));
     });
   });
 });

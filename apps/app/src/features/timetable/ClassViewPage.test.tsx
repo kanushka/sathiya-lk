@@ -85,8 +85,8 @@ describe('ClassViewPage', () => {
     const api = setup();
     await activate('Wednesday', 4);
     const popup = screen.getByRole('dialog', { name: 'Choose a subject' });
-    await userEvent.type(within(popup).getByRole('searchbox', { name: 'Search subjects' }), 'Science{Enter}');
-    await userEvent.click(within(screen.getByRole('dialog')).getByRole('button', { name: /^Mrs\. S\. Gunasekara/ }));
+    await userEvent.type(within(popup).getByRole('combobox', { name: 'Search subjects' }), 'Science{Enter}');
+    await userEvent.click(within(screen.getByRole('dialog')).getByRole('option', { name: /^Mrs\. S\. Gunasekara/ }));
     await userEvent.click(within(screen.getByRole('dialog')).getByRole('button', { name: 'Assign' }));
     await waitFor(() => expect(screen.queryByRole('dialog')).not.toBeInTheDocument());
     expect(api.saveEntry).toHaveBeenCalledWith({
@@ -100,7 +100,7 @@ describe('ClassViewPage', () => {
   it('opens the block editor for a group subject', async () => {
     setup();
     await activate('Wednesday', 4);
-    await userEvent.click(within(screen.getByRole('dialog')).getByRole('button', { name: /^Religion/ }));
+    await userEvent.click(within(screen.getByRole('dialog')).getByRole('option', { name: /^Religion/ }));
     const dialog = await screen.findByRole('dialog', { name: 'Religion' });
     expect(within(dialog).getByText('Classes')).toBeInTheDocument();
   });
@@ -138,7 +138,7 @@ describe('ClassViewPage', () => {
   it('keeps a saved block visible after the block editor closes', async () => {
     const api = setup();
     await activate('Wednesday', 4);
-    await userEvent.click(within(screen.getByRole('dialog')).getByRole('button', { name: /^Religion/ }));
+    await userEvent.click(within(screen.getByRole('dialog')).getByRole('option', { name: /^Religion/ }));
     const dialog = await screen.findByRole('dialog', { name: 'Religion' });
     await userEvent.click(within(dialog).getByRole('button', { name: 'Save' }));
     await waitFor(() => expect(screen.queryByRole('dialog')).not.toBeInTheDocument());
@@ -228,8 +228,8 @@ describe('ClassViewPage', () => {
     async function assignScience(api: TimetableApi = makeApi()) {
       setup(C.c6b, api);
       await activate('Wednesday', 4);
-      await userEvent.type(screen.getByRole('searchbox', { name: 'Search subjects' }), 'Science{Enter}');
-      await userEvent.click(within(screen.getByRole('dialog')).getByRole('button', { name: /^Mrs\. S\. Gunasekara/ }));
+      await userEvent.type(screen.getByRole('combobox', { name: 'Search subjects' }), 'Science{Enter}');
+      await userEvent.click(within(screen.getByRole('dialog')).getByRole('option', { name: /^Mrs\. S\. Gunasekara/ }));
       await userEvent.click(within(screen.getByRole('dialog')).getByRole('button', { name: 'Assign' }));
       await waitFor(() => expect(screen.queryByRole('dialog')).not.toBeInTheDocument());
       return api;
