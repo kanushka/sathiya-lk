@@ -154,6 +154,51 @@ describe('teachers page', () => {
     await waitFor(() => expect(api.updateTeacher).toHaveBeenCalled());
   });
 
+  it('creates a teacher with a title kept apart from the name', async () => {
+    const user = userEvent.setup();
+    vi.mocked(api.createTeacher).mockResolvedValue({ teacherId: 'tNew', password: 'k7m4x9pq' });
+    render();
+    const dialog = await openAdd(user);
+    const title = within(dialog).getByLabelText('Title');
+    expect(within(title).getAllByRole('option').map((o) => o.textContent)).toEqual(['—', 'Mr.', 'Mrs.', 'Miss', 'Ms.', 'Dr.', 'Rev.', 'Ven.', 'Thero']);
+    await user.selectOptions(title, 'Thero');
+    await user.type(within(dialog).getByLabelText('Name'), 'Ananda');
+    await user.click(within(dialog).getByRole('button', { name: 'Mathematics' }));
+    await user.click(within(dialog).getByRole('button', { name: '6' }));
+    await user.click(within(dialog).getByRole('button', { name: 'Save teacher' }));
+    await waitFor(() => expect(api.createTeacher).toHaveBeenCalled());
+    expect(api.createTeacher).toHaveBeenCalledWith('siripura', expect.objectContaining({ title: 'Thero', name: 'Ananda' }));
+  });
+
+  it('moves a legacy name prefix into the title when editing', async () => {
+    const user = userEvent.setup();
+    vi.mocked(api.updateTeacher).mockResolvedValue(undefined);
+    const legacy = { ...ctx, teachers: ctx.teachers.map(({ title: _, ...t }) => (t.staffId === 'SCC024' ? { ...t, name: 'Mrs. N. Perera' } : t)) };
+    const perera = legacy.teachers.find((t) => t.staffId === 'SCC024')!;
+    renderWithSchool(<TeachersPage />, { ctx: legacy, entries });
+    const row = screen.getByText('Mrs. N. Perera').closest('tr')!;
+    await user.click(within(row).getByRole('button', { name: 'Edit' }));
+    const dialog = screen.getByRole('dialog');
+    expect(within(dialog).getByLabelText('Title')).toHaveValue('Mrs');
+    expect(within(dialog).getByLabelText('Name')).toHaveValue('N. Perera');
+    await user.click(within(dialog).getByRole('button', { name: 'Save teacher' }));
+    await waitFor(() => expect(api.updateTeacher).toHaveBeenCalled());
+    expect(api.updateTeacher).toHaveBeenCalledWith('siripura', perera.id, expect.objectContaining({ title: 'Mrs', name: 'N. Perera' }));
+  });
+
+  it('clears a title when set back to none', async () => {
+    const user = userEvent.setup();
+    vi.mocked(api.updateTeacher).mockResolvedValue(undefined);
+    render();
+    const row = screen.getByText('Mrs. N. Perera').closest('tr')!;
+    await user.click(within(row).getByRole('button', { name: 'Edit' }));
+    const dialog = screen.getByRole('dialog');
+    await user.selectOptions(within(dialog).getByLabelText('Title'), '—');
+    await user.click(within(dialog).getByRole('button', { name: 'Save teacher' }));
+    await waitFor(() => expect(api.updateTeacher).toHaveBeenCalled());
+    expect(vi.mocked(api.updateTeacher).mock.calls[0]![2]).not.toHaveProperty('title');
+  });
+
   it('read-only hides every write control', () => {
     flags.readOnly = true;
     render();

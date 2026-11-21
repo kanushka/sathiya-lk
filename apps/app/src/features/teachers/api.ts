@@ -17,9 +17,10 @@ export async function resetTeacherPassword(schoolId: string, teacherId: string):
 }
 
 export async function updateTeacher(schoolId: string, teacherId: string, teacher: TeacherInput): Promise<void> {
-  const { phone, email, ...rest } = teacher;
+  const { title, phone, email, ...rest } = teacher;
   await updateDoc(doc(db, paths.teachers(schoolId), teacherId), {
     ...rest,
+    title: title ? title : deleteField(),
     phone: phone ? phone : deleteField(),
     email: email ? email : deleteField(),
   });

@@ -27,6 +27,8 @@
     "titleAdd": "Add teacher",
     "titleEdit": "Edit teacher",
     "staffId": "Staff ID",
+    "title": "Title",
+    "noTitle": "—",
     "name": "Name",
     "primary": "Primary teacher",
     "primaryHint": "Can teach every subject in their grades.",
