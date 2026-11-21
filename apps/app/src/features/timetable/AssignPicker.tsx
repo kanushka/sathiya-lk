@@ -20,6 +20,7 @@ import { useLang } from '../../app/LangProvider';
 import { useSchool } from '../../app/SchoolProvider';
 import { useReadOnly } from '../../ui/AdminLayout';
 import { Button } from '../../ui/Button';
+import { isComposing } from '../../ui/composing';
 import { cx } from '../../ui/cx';
 import { Icon } from '../../ui/Icon';
 import { Modal } from '../../ui/Modal';
@@ -73,7 +74,6 @@ function AssignPickerBody({ classId, slot, subjectId: initialSubject, entries, o
   const [picked, setPicked] = useState<string | null | undefined>(undefined);
   const [busy, setBusy] = useState(false);
   const [subjectActive, setSubjectActive] = useState(0);
-  const [teacherActive, setTeacherActive] = useState<number | null>(null);
   const baseId = useId();
   const subjectInput = useRef<HTMLInputElement>(null);
   const teacherInput = useRef<HTMLInputElement>(null);
@@ -152,16 +152,18 @@ function AssignPickerBody({ classId, slot, subjectId: initialSubject, entries, o
     return ctx.subjects.find((s) => s.id === id)?.short.toLowerCase() ?? '';
   }
 
-  const tq = teacherQuery.trim().toLowerCase();
-  const shown = candidates.filter(
-    (c) => !tq || teacherDisplayName(c.teacher, lang).toLowerCase().includes(tq) || c.teacher.staffId.toLowerCase().includes(tq),
-  );
+  const matching = (text: string) => {
+    const needle = text.trim().toLowerCase();
+    return candidates.filter(
+      (c) => !needle || teacherDisplayName(c.teacher, lang).toLowerCase().includes(needle) || c.teacher.staffId.toLowerCase().includes(needle),
+    );
+  };
+  const shown = matching(teacherQuery);
   const options = shown.filter((c) => c.selectable);
   const blockedTop = shown.filter((c) => !c.selectable && c.preferred);
   const blockedRest = shown.filter((c) => !c.selectable && !c.preferred);
   const subjectIndex = Math.min(subjectActive, Math.max(0, subjectOptions.length - 1));
-  const selectedIndex = options.findIndex((c) => c.teacher.id === selected);
-  const teacherIndex = options.length === 0 ? -1 : Math.min(teacherActive ?? Math.max(0, selectedIndex), options.length - 1);
+  const teacherIndex = options.findIndex((c) => c.teacher.id === selected);
 
   const subjectListId = `${baseId}-subjects`;
   const teacherListId = `${baseId}-teachers`;
@@ -177,7 +179,6 @@ function AssignPickerBody({ classId, slot, subjectId: initialSubject, entries, o
     setQuery('');
     setTeacherQuery('');
     setPicked(undefined);
-    setTeacherActive(null);
   }
 
   function back() {
@@ -210,6 +211,7 @@ function AssignPickerBody({ classId, slot, subjectId: initialSubject, entries, o
       e.preventDefault();
       setSubjectActive(step(subjectIndex, subjectOptions.length, e.key === 'ArrowDown' ? 1 : -1));
     } else if (e.key === 'Enter') {
+      if (isComposing(e)) return;
       e.preventDefault();
       const p = subjectOptions[subjectIndex];
       if (p) choose(p);
@@ -219,14 +221,21 @@ function AssignPickerBody({ classId, slot, subjectId: initialSubject, entries, o
   function onTeacherKey(e: KeyboardEvent<HTMLInputElement>) {
     if (e.key === 'ArrowDown' || e.key === 'ArrowUp') {
       e.preventDefault();
-      setTeacherActive(step(teacherIndex, options.length, e.key === 'ArrowDown' ? 1 : -1));
+      const next = teacherIndex < 0 ? 0 : step(teacherIndex, options.length, e.key === 'ArrowDown' ? 1 : -1);
+      const c = options[next];
+      if (c) setPicked(c.teacher.id);
     } else if (e.key === 'Enter') {
+      if (isComposing(e)) return;
       e.preventDefault();
-      const c = options[teacherIndex];
-      if (!c) return;
-      if (c.teacher.id === selected) void confirm(c.teacher.id);
-      else setPicked(c.teacher.id);
+      if (selected && teacherIndex >= 0) void confirm(selected);
     }
+  }
+
+  function onTeacherQuery(text: string) {
+    setTeacherQuery(text);
+    const next = matching(text).filter((c) => c.selectable);
+    const top = next[0];
+    if (top && !next.some((c) => c.teacher.id === selected)) setPicked(top.teacher.id);
   }
 
   const need = (p: PickItem) => (p.placed < p.needed ? t('picker.needs', { count: p.needed - p.placed }) : t('picker.done', { placed: p.placed, needed: p.needed }));
@@ -378,10 +387,7 @@ function AssignPickerBody({ classId, slot, subjectId: initialSubject, entries, o
             aria-label={t('assign.searchTeachers')}
             placeholder={t('picker.teacherSearch')}
             value={teacherQuery}
-            onChange={(e) => {
-              setTeacherQuery(e.target.value);
-              setTeacherActive(0);
-            }}
+            onChange={(e) => onTeacherQuery(e.target.value)}
             onKeyDown={onTeacherKey}
             className={cx(inputClass, 'mb-2.5')}
           />
@@ -400,14 +406,12 @@ function AssignPickerBody({ classId, slot, subjectId: initialSubject, entries, o
                   onClick={() => {
                     if (busy) return;
                     setPicked(c.teacher.id);
-                    setTeacherActive(i);
                   }}
                   onDoubleClick={() => void confirm(c.teacher.id)}
                   className={cx(
                     'flex w-full cursor-pointer items-center gap-2.5 rounded-[10px] border px-3 py-2.5 text-left text-ink',
                     c.warn ? 'border-[#F0DDB0] bg-[#FFF9EC] hover:bg-[#FBF0D6]' : 'border-[#CFE6D4] bg-[#F5FBF6] hover:bg-[#EAF6ED]',
                     on && 'shadow-[inset_0_0_0_2px_var(--brand)]',
-                    i === teacherIndex && 'outline outline-2 outline-offset-1 outline-brand/40',
                     busy && 'opacity-60',
                   )}
                 >

@@ -3,7 +3,7 @@
 
 import type { Entry } from '@sathiya/core';
 import { C, ctx, entries6B, entry, S, T } from '@sathiya/core/fixtures';
-import { screen, waitFor, within } from '@testing-library/react';
+import { fireEvent, screen, waitFor, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { describe, expect, it, vi } from 'vitest';
 import { renderWithSchool } from '../../test/renderWithSchool';
@@ -121,15 +121,35 @@ describe('AssignPicker', () => {
     expect(screen.queryByText('Mr. K. Herath')).not.toBeInTheDocument();
   });
 
-  it('searches teachers by staff ID; Enter picks the top match, Enter again assigns', async () => {
+  it('searching selects the top match, so the outline, the check and Enter all agree', async () => {
     const h = setup();
     await pickSubject('Sinhala');
-    await userEvent.type(teacherSearch(), 'scc016{Enter}');
-    expect(teacherRow(/Mrs\. J\. Ranasinghe/)).toHaveAttribute('aria-selected', 'true');
-    expect(within(dialog()).queryByRole('button', { name: /Mr\. R\. Silva/ })).not.toBeInTheDocument();
+    await userEvent.type(teacherSearch(), 'scc016');
+    const ranasinghe = teacherRow(/Mrs\. J\. Ranasinghe/);
+    expect(ranasinghe).toHaveAttribute('aria-selected', 'true');
+    expect(teacherSearch()).toHaveAttribute('aria-activedescendant', ranasinghe.id);
+    expect(within(dialog()).queryByRole('option', { name: /Mr\. R\. Silva/ })).not.toBeInTheDocument();
     await userEvent.type(teacherSearch(), '{Enter}');
     expect(h.onSave).toHaveBeenCalledWith(expect.objectContaining({ lessons: [{ subjectId: S.sinhala, teacherId: T.ranasinghe }] }));
-    await userEvent.clear(teacherSearch());
+  });
+
+  it('keeps the selected teacher while it still matches the search', async () => {
+    setup();
+    await pickSubject('Sinhala');
+    await userEvent.type(teacherSearch(), 's');
+    const silva = teacherRow(/Mr\. R\. Silva/);
+    expect(silva).toHaveAttribute('aria-selected', 'true');
+    expect(teacherSearch()).toHaveAttribute('aria-activedescendant', silva.id);
+  });
+
+  it('ignores Enter while an IME is composing', async () => {
+    const h = setup();
+    fireEvent.keyDown(subjectSearch(), { key: 'Enter', isComposing: true });
+    expect(screen.getByRole('dialog', { name: 'Choose a subject' })).toBeInTheDocument();
+    await pickSubject('Sinhala');
+    fireEvent.keyDown(teacherSearch(), { key: 'Enter', isComposing: true });
+    fireEvent.keyDown(teacherSearch(), { key: 'Enter', keyCode: 229 });
+    expect(h.onSave).not.toHaveBeenCalled();
   });
 
   it('says when no teacher matches', async () => {
@@ -213,7 +233,7 @@ describe('AssignPicker', () => {
       expect(screen.getByRole('button', { name: 'Back to subjects' })).toHaveTextContent('Health & PE');
     });
 
-    it('ArrowDown then Enter picks the second teacher, Enter again assigns', async () => {
+    it('ArrowDown selects the second teacher and Enter assigns it', async () => {
       const h = setup();
       await pickSubject('Sinhala');
       const input = teacherSearch();
@@ -221,9 +241,10 @@ describe('AssignPicker', () => {
       expect(input).toHaveAttribute('aria-controls', list.id);
       const options = within(list).getAllByRole('option');
       expect(input).toHaveAttribute('aria-activedescendant', options[0]!.id);
-      await userEvent.type(input, '{ArrowDown}{Enter}');
+      await userEvent.type(input, '{ArrowDown}');
       expect(teacherRow(/Mrs\. J\. Ranasinghe/)).toHaveAttribute('aria-selected', 'true');
       expect(teacherRow(/Mr\. R\. Silva/)).toHaveAttribute('aria-selected', 'false');
+      expect(input).toHaveAttribute('aria-activedescendant', options[1]!.id);
       await userEvent.type(input, '{Enter}');
       expect(h.onSave).toHaveBeenCalledWith(expect.objectContaining({ lessons: [{ subjectId: S.sinhala, teacherId: T.ranasinghe }] }));
     });
