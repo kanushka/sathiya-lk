@@ -12,6 +12,7 @@ import { LoadingState } from '../../ui/LoadingState';
 import { cx } from '../../ui/cx';
 import { ChangePasswordModal } from './ChangePasswordModal';
 import type { ChangePasswordFn } from './firebasePassword';
+import { colomboNow } from './colomboNow';
 import { useNow, type NowFn } from './useNow';
 
 export interface TeacherViewProps {
@@ -35,7 +36,7 @@ export function TeacherFrame({ view, now: nowFn, snapshot, changePassword, child
   const { lang, setLang } = useLang();
   const { claims, signOut } = useAuth();
   const { school } = useSchool();
-  const now = useNow(nowFn);
+  const now = colomboNow(useNow(nowFn));
   const [pwOpen, setPwOpen] = useState(false);
 
   const yearId = school.activeYearId;

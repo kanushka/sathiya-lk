@@ -4,6 +4,7 @@ import { act, screen, waitFor, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { renderWithSchool } from '../../test/renderWithSchool';
+import { colomboNow } from './colomboNow';
 import { ChangePasswordModal } from './ChangePasswordModal';
 import { TodayPage } from './TodayPage';
 import { WeekPage } from './WeekPage';
@@ -18,10 +19,22 @@ function snapshotFor(tid: string, extra = entries): TeacherSnapshot {
   return found;
 }
 
-const wed0920 = () => new Date(2026, 10, 25, 9, 20);
-const sat = () => new Date(2026, 10, 21, 10, 0);
+const wed0920 = () => new Date('2026-11-25T03:50:00Z');
+const sat = () => new Date('2026-11-21T04:30:00Z');
 
 afterEach(() => vi.useRealTimers());
+
+describe('colomboNow', () => {
+  it('maps an instant to Colombo wall-clock fields', () => {
+    const d = colomboNow(new Date('2026-11-25T03:50:00Z'));
+    expect([d.getDay(), d.getHours(), d.getMinutes()]).toEqual([3, 9, 20]);
+  });
+
+  it('rolls Friday 20:00Z into Saturday', () => {
+    const d = colomboNow(new Date('2026-11-20T20:00:00Z'));
+    expect([d.getDay(), d.getHours(), d.getMinutes()]).toEqual([6, 1, 30]);
+  });
+});
 
 describe('TodayPage', () => {
   it('shows P3 in the now card on Wednesday 09:20', () => {
@@ -61,13 +74,13 @@ describe('TodayPage', () => {
 
   it('refreshes now every 30 seconds', () => {
     vi.useFakeTimers();
-    let current = new Date(2026, 10, 25, 9, 20);
+    let current = new Date('2026-11-25T03:50:00Z');
     renderWithSchool(<TodayPage now={() => current} snapshot={{ loading: false, data: snapshotFor(T.perera) }} />, {
       ctx,
       claims: claims(T.perera),
     });
     expect(screen.getByText(/30 min left/)).toBeInTheDocument();
-    current = new Date(2026, 10, 25, 9, 40);
+    current = new Date('2026-11-25T04:10:00Z');
     act(() => {
       vi.advanceTimersByTime(30_000);
     });
