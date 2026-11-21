@@ -2,10 +2,14 @@
 // Copyright (C) 2026 Kanushka Gayan
 import { paths } from '@sathiya/core';
 import {
+  applyActionCode,
+  checkActionCode,
+  confirmPasswordReset,
   GoogleAuthProvider,
   sendPasswordResetEmail,
   signInWithEmailAndPassword,
   signInWithPopup,
+  verifyPasswordResetCode,
 } from 'firebase/auth';
 import { collection, doc, getDoc, getDocs, limit, orderBy, query, where } from 'firebase/firestore';
 import { auth, db, functions } from '../../lib/firebase';
@@ -83,4 +87,21 @@ export async function reportSchool(req: ReportSchoolReq): Promise<void> {
   } catch (err) {
     throw toApiError(err);
   }
+}
+
+export async function applyEmailCode(oobCode: string): Promise<void> {
+  await applyActionCode(auth, oobCode);
+}
+
+export async function getResetEmail(oobCode: string): Promise<string> {
+  return verifyPasswordResetCode(auth, oobCode);
+}
+
+export async function confirmNewPassword(oobCode: string, password: string): Promise<void> {
+  await confirmPasswordReset(auth, oobCode, password);
+}
+
+export async function getRecoveredEmail(oobCode: string): Promise<string> {
+  const info = await checkActionCode(auth, oobCode);
+  return info.data.email ?? '';
 }

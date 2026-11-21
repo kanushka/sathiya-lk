@@ -14,7 +14,7 @@ import { ToastProvider } from '../../ui/Toast';
 
 export interface AuthHarnessOptions {
   route?: string;
-  at?: '/login' | '/register';
+  at?: string;
   signedIn?: boolean;
   passwordUser?: boolean;
   emailVerified?: boolean;

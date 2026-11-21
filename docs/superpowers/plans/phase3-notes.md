@@ -53,3 +53,9 @@
 - Verify-email gate placement: new accounts are created at step 3, so the gate cannot precede step 1 for them. Gate = `VerifyEmailGate` shown in place of the wizard when (a) the signed-in user has a `password` provider and `!emailVerified` (before step 1, as in the artboard), or (b) immediately after account creation at step 3 (verification email is sent in `createAccount`), or (c) `registerSchool` returns `email-unverified`. "I've confirmed it" = `user.reload()` + `getIdToken(true)`, proceeds only if `emailVerified`. `registerSchool` is therefore never called in the same submit that creates the account; the user presses "Create school" again after confirming (wizard state is preserved). Google users skip the gate.
 - Artboard note "Checked when you press Next" (census pre-check at step 1) is not implemented: it needs a callable that does not exist. Census uniqueness is only checked at create time; the error returns the user to step 1.
 - Private/international without "No census number" ticked must enter a valid census (assumption).
+
+## Task 3.9 — Branded auth email action handler
+
+- Public route `/auth/action` (`features/auth/ActionPage`) handles Firebase `mode` = `verifyEmail | resetPassword | recoverEmail` with `oobCode`.
+- Deploy requirement: in the Firebase console (Authentication > Templates > each email template > customize action URL) set the action URL to `https://<app-domain>/auth/action`, otherwise emails keep pointing at the default firebaseapp.com handler.
+- `continueUrl` / `lang` params are not used; the page uses the app's own language toggle.
