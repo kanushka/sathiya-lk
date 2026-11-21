@@ -28,6 +28,7 @@ function setup(teacherId: string = T.ananda, opts: { entries?: Entry[]; ctx?: Sc
       <Routes>
         <Route path="/admin/timetable/teacher" element={<TeacherIndexRedirect />} />
         <Route path="/admin/timetable/teacher/:teacherId" element={<TeacherViewPage />} />
+        <Route path="/s/:sid/timetable/teacher/:teacherId" element={<TeacherViewPage />} />
       </Routes>
     </TimetableApiContext.Provider>,
     { ctx: opts.ctx ?? ctx, entries: opts.entries ?? entries, route: opts.route ?? `/admin/timetable/teacher/${teacherId}` },
@@ -190,5 +191,21 @@ describe('TeacherViewPage', () => {
   it('shows an empty state when there are no teachers', () => {
     setup(T.ananda, { ctx: { ...ctx, teachers: [] }, route: '/admin/timetable/teacher' });
     expect(screen.getByText('No teachers yet')).toBeInTheDocument();
+  });
+
+  it('opens the teacher print view in a new tab', async () => {
+    const open = vi.spyOn(window, 'open').mockReturnValue(null);
+    setup();
+    await userEvent.click(screen.getByRole('button', { name: 'Print' }));
+    expect(open).toHaveBeenCalledWith(`/admin/print/teacher/${T.ananda}?year=y-2026&auto=1`, '_blank', 'noopener');
+    open.mockRestore();
+  });
+
+  it('prefixes the print URL with the super-admin mirror base', async () => {
+    const open = vi.spyOn(window, 'open').mockReturnValue(null);
+    setup(T.ananda, { route: `/s/siripura/timetable/teacher/${T.ananda}` });
+    await userEvent.click(screen.getByRole('button', { name: 'Print' }));
+    expect(open).toHaveBeenCalledWith(`/s/siripura/print/teacher/${T.ananda}?year=y-2026&auto=1`, '_blank', 'noopener');
+    open.mockRestore();
   });
 });

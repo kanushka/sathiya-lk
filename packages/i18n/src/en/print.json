@@ -1,0 +1,28 @@
+{
+  "toolbar": { "print": "Print", "close": "Close" },
+  "sheet": {
+    "classTitle": "Grade {{grade}} · {{name}}",
+    "teacherTitle": "{{name}} · {{staffId}}",
+    "subtitle": "Timetable {{year}}",
+    "classTeacher": "Class teacher {{name}}",
+    "interval": "Interval · {{start}} – {{end}}",
+    "group": "Group",
+    "groupWith": "Group · with {{classes}}",
+    "joined": "⧉ {{classes}}",
+    "joinedWithTeacher": "⧉ {{classes}} · {{teacher}}",
+    "groupNote": "{{groups}} run as groups — students go to their chosen option.",
+    "printed": "Printed {{date}}",
+    "madeWith": "Made with Sathiya",
+    "empty": "Empty",
+    "slotLabel": "{{day}}, period {{n}}"
+  },
+  "states": {
+    "loading": "Preparing printout…",
+    "notPublishedTitle": "Not published yet",
+    "notPublishedBody": "This timetable has not been published for the selected year.",
+    "classNotFoundTitle": "Class not found",
+    "classNotFoundBody": "This class does not exist in the selected year.",
+    "teacherNotFoundTitle": "Teacher not found",
+    "teacherNotFoundBody": "This teacher does not exist in the selected year."
+  }
+}

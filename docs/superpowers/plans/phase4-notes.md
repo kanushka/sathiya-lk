@@ -41,4 +41,15 @@
 - `findClass`/`gradeOf`/`templateOf` are not exported from `@sathiya/core` index, so resolved from `ctx` inline.
 - Busy and not-qualified teachers are disabled `<option>`s; a previously chosen teacher who becomes busy stays selected, flagged, and Save is disabled.
 
+### 4.5 Print
+- Routes `/admin/print/class/:id` and `/admin/print/teacher/:id` (`year`, `published`, `auto`); router mirrors them to `/s/:sid/print*`. `usePrintSnapshot` builds the draft with `buildSnapshots` (unknown `?year=` ignored; a known different year calls `setYearId` and shows loading until entries of that year arrive). `?published=1` reads `publishedClass`/`publishedTeacher` via `useDoc` (string paths); `PublishedDocContext` is the test seam. Missing doc: "Not published yet".
+- `PrintSheet` is a pure render of a Class/TeacherSnapshot (`logoUrl` passed in from `useSchool()`, not in the snapshot; shield fallback). A4 sheet is 1123x794px on screen, `@page` A4 landscape margin 10mm and full-width in print; toolbar hidden in print.
+- Cell colours are not printed (artboard is monochrome). Group cell sub is built from `otherClasses`, never the English `sub`. Group note lists the distinct group cell titles ("Religion & Aesthetic run as groups ..."); no note when no group cells.
+- Gap: `buildSnapshots` only sets `otherClasses` on group cells, so combined single-lesson (non-group) class cells print the snapshot teacher name without the "⧉ 6A+6B" label. `PrintSheet` already renders it when `otherClasses` is present. Request below.
+- Teacher snapshot cells: title "6A+6B" is prefixed "⧉" when group or multi-class; sub = `subSi` in Sinhala. Several cells in one row are stacked (dashed divider, smaller text).
+- Per-day rows: rows are aligned by index; a full-width interval band is drawn when every day has an interval at that index, otherwise per-cell. Row label time is the first day's; cells show their own time only when days differ. Slots beyond a day's rows are not rendered (O8).
+- Close button: `window.close()`, falling back to `navigate(-1)`.
+- The TeacherViewPage Print button already existed (4.3); 4.5 only added tests for it.
+
 ## Requests for shell/core
+- `buildSnapshots` (core/publish.ts): set `otherClasses` on combined non-group class cells too (classes other than `cls`), so print and published views can show "⧉ 6A+6B".
