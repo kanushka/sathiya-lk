@@ -67,7 +67,7 @@ export function TeacherModal({ teacher, onClose }: TeacherModalProps) {
   const [resetError, setResetError] = useState(false);
 
   const teacherId = teacher?.id ?? savedId;
-  const locked = readOnly || savedId !== null;
+  const locked = readOnly;
   const set = <K extends keyof Form>(key: K, value: Form[K]) => setForm((f) => ({ ...f, [key]: value }));
 
   const maxPerDay = Number(form.maxPerDay);
@@ -77,7 +77,7 @@ export function TeacherModal({ teacher, onClose }: TeacherModalProps) {
       ? null
       : !isValidStaffId(school.staffPrefix, form.staffId)
         ? t('modal.errors.staffId', { example: formatStaffId(school.staffPrefix, 24) })
-        : teachers.some((x) => x.staffId === form.staffId)
+        : teachers.some((x) => x.staffId === form.staffId && x.id !== teacherId)
           ? t('modal.errors.staffIdTaken')
           : null,
     subjects: form.isPrimary || form.subjectIds.length > 0 ? null : t('modal.errors.subjects'),
@@ -169,7 +169,8 @@ export function TeacherModal({ teacher, onClose }: TeacherModalProps) {
         )
       }
     >
-      <div className="grid gap-8 md:grid-cols-[1fr_300px]">
+      <div className={savedId ? 'mx-auto max-w-[340px]' : 'grid gap-8 md:grid-cols-[1fr_300px]'}>
+        {!savedId && (
         <form id="teacher-form" onSubmit={save} noValidate className="flex flex-col gap-4">
           <fieldset disabled={locked} className="m-0 flex min-w-0 flex-col gap-4 border-0 p-0">
             <div className="grid grid-cols-[140px_110px_1fr] gap-3">
@@ -267,6 +268,7 @@ export function TeacherModal({ teacher, onClose }: TeacherModalProps) {
             </div>
           </fieldset>
         </form>
+        )}
         <LoginSlip
           slip={{
             schoolName: pickName(school, lang),

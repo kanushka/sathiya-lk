@@ -80,6 +80,24 @@ describe('teachers page', () => {
     );
   });
 
+  it('shows only the login slip after creating a teacher', async () => {
+    const user = userEvent.setup();
+    vi.mocked(api.createTeacher).mockResolvedValue({ teacherId: 'tNew', password: 'k7m4x9pq' });
+    render();
+    const dialog = await openAdd(user);
+    await user.type(within(dialog).getByLabelText('Name'), 'New Teacher');
+    await user.click(within(dialog).getByRole('button', { name: 'Mathematics' }));
+    await user.click(within(dialog).getByRole('button', { name: '6' }));
+    await user.click(within(dialog).getByRole('button', { name: 'Save teacher' }));
+
+    expect(await within(dialog).findByText('k7m4x9pq')).toBeInTheDocument();
+    expect(within(dialog).queryByLabelText('Name')).not.toBeInTheDocument();
+    expect(within(dialog).queryByLabelText('Staff ID')).not.toBeInTheDocument();
+    expect(within(dialog).queryByText(/already used/i)).not.toBeInTheDocument();
+    expect(within(dialog).getByRole('button', { name: 'Print slip' })).toBeInTheDocument();
+    expect(within(dialog).getByRole('button', { name: 'Done' })).toBeInTheDocument();
+  });
+
   it('shows a new password after reset', async () => {
     const user = userEvent.setup();
     vi.mocked(api.resetTeacherPassword).mockResolvedValue('n3w8pass');
