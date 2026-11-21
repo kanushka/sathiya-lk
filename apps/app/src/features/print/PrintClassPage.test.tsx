@@ -2,7 +2,7 @@
 // Copyright (C) 2026 Kanushka Gayan
 
 import type { ClassSnapshot } from '@sathiya/core';
-import { C, ctx, entries } from '@sathiya/core/fixtures';
+import { C, S, T, ctx, entries, entry } from '@sathiya/core/fixtures';
 import { screen, waitFor, within } from '@testing-library/react';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { renderWithSchool } from '../../test/renderWithSchool';
@@ -50,6 +50,13 @@ describe('PrintClassPage', () => {
     expect(mon2).toHaveTextContent('Group · with 6A');
     expect(mon2).not.toHaveTextContent('Group · 6A');
     expect(screen.getByText(/run as groups/)).toBeInTheDocument();
+  });
+
+  it('shows the joined classes on a combined non-group lesson', () => {
+    const combined = [...entries, entry('x-6b-0-5', 0, 5, [C.c6a, C.c6b], [[S.maths, T.perera]])];
+    renderWithSchool(<PrintClassPage />, { ctx, entries: combined, route: `/admin/print/class/${C.c6b}`, path: '/admin/print/class/:id' });
+    const slot = screen.getAllByTestId('print-slot').find((s) => s.dataset.day === '0' && s.dataset.period === '5')!;
+    expect(slot).toHaveTextContent('⧉ 6A+6B');
   });
 
   it('uses Sinhala labels when lang is si', () => {

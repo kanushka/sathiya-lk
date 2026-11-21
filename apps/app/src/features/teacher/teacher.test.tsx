@@ -154,6 +154,15 @@ describe('WeekPage', () => {
   });
 });
 
+describe('combined classes', () => {
+  it('shows the joined class names on the week grid', () => {
+    const extra = [...entries, entry('x-comb', 0, 5, [C.c6a, C.c6b], [[S.maths, T.wickramasinghe]])];
+    const snap = snapshotFor(T.wickramasinghe, extra);
+    renderWithSchool(<WeekPage now={wed0920} snapshot={{ loading: false, data: snap }} />, { ctx, claims: claims(T.wickramasinghe) });
+    expect(within(screen.getByTestId('week-cell-0-5')).getByText('6A+6B')).toBeInTheDocument();
+  });
+});
+
 describe('WeekPage per-day templates', () => {
   it('keeps lessons from a day with more periods than another day', () => {
     const base = snapshotFor(T.perera);

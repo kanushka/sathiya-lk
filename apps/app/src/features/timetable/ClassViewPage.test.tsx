@@ -2,7 +2,7 @@
 // Copyright (C) 2026 Kanushka Gayan
 
 import { fillWithClassTeacher } from '@sathiya/core';
-import { C, ctx, entries6B, S, T } from '@sathiya/core/fixtures';
+import { C, ctx, entries6B, entry, S, T } from '@sathiya/core/fixtures';
 import { fireEvent, screen, waitFor, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { Route, Routes } from 'react-router-dom';
@@ -56,6 +56,19 @@ describe('ClassViewPage', () => {
     expect(slot('Wednesday', 2)).toHaveTextContent('Religion');
     expect(slot('Wednesday', 2)).toHaveTextContent('⧉ 6A+6B');
     expect(slot('Friday', 3)).toHaveTextContent('Group · 3 teachers');
+  });
+
+  it('labels a combined non-group lesson with the joined classes', () => {
+    const combined = [...entries6B, entry('x-6b-0-5', 0, 5, [C.c6a, C.c6b], [[S.maths, T.perera]])];
+    renderWithSchool(
+      <TimetableApiContext.Provider value={makeApi()}>
+        <Routes>
+          <Route path="/admin/timetable/class/:classId" element={<ClassViewPage />} />
+        </Routes>
+      </TimetableApiContext.Provider>,
+      { ctx, entries: combined, route: `/admin/timetable/class/${C.c6b}` },
+    );
+    expect(slot('Monday', 5)).toHaveTextContent('⧉ 6A+6B');
   });
 
   it('moves between classes with prev/next', async () => {
