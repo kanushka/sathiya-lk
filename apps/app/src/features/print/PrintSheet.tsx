@@ -45,11 +45,17 @@ export function PrintSheet(props: Props) {
     byKey.set(key, [...(byKey.get(key) ?? []), c]);
   }
 
-  function textOf(c: SnapshotCell): CellText {
+  function textOf(c: SnapshotCell, row: TemplateRow, stacked: boolean): CellText {
     const title = lang === 'si' && c.titleSi ? c.titleSi : c.title;
     if (kind === 'teacher') {
-      const classes = c.isGroup || c.title.includes('+') ? t('sheet.joined', { classes: c.title }) : c.title;
-      return { title: classes, sub: lang === 'si' && c.subSi ? c.subSi : c.sub };
+      const names = c.title
+        .split('+')
+        .sort((a, b) => a.localeCompare(b, undefined, { numeric: true }))
+        .join('+');
+      const classes = c.isGroup || c.title.includes('+') ? t('sheet.joined', { classes: names }) : names;
+      const subject = lang === 'si' && c.subSi ? c.subSi : c.sub;
+      const showTime = stacked || c.start !== row.start || c.end !== row.end;
+      return { title: classes, sub: showTime ? t('sheet.cellTime', { subject, time: `${c.start}–${c.end}` }) : subject };
     }
     const others = c.otherClasses ?? [];
     if (c.isGroup) return { title, sub: others.length ? t('sheet.groupWith', { classes: others.join('+') }) : t('sheet.group') };
@@ -123,7 +129,7 @@ export function PrintSheet(props: Props) {
             </span>
           )}
           {cells.map((c, k) => {
-            const text = textOf(c);
+            const text = textOf(c, row, cells.length > 1);
             return (
               <div key={k} data-testid="print-cell" style={{ display: 'flex', flexDirection: 'column', borderTop: k > 0 ? '1px dashed #C4C9D4' : undefined, paddingTop: k > 0 ? 2 : 0 }}>
                 <b style={{ fontSize: cells.length > 1 ? 12 : 14 }}>{text.title}</b>

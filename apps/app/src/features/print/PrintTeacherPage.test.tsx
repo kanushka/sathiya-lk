@@ -59,6 +59,35 @@ describe('PrintTeacherPage', () => {
       </I18nextProvider>,
     );
     const slot = screen.getByTestId('print-slot');
-    expect(within(slot).getAllByTestId('print-cell')).toHaveLength(2);
+    const cells = within(slot).getAllByTestId('print-cell');
+    expect(cells).toHaveLength(2);
+    expect(cells[0]).toHaveTextContent('Maths · 07:45–08:30');
+    expect(cells[1]).toHaveTextContent('Sinhala · 07:45–08:30');
+  });
+
+  function sheet(cells: object[]) {
+    const rows = { 0: [{ type: 'period', start: '07:45', end: '08:30' }], 1: [], 2: [], 3: [], 4: [] };
+    const snap = { teacherId: 't', name: 'T One', staffId: 'S1', rows, yearLabel: '2026', schoolName: { nameEn: 'X' }, cells } as unknown as TeacherSnapshot;
+    render(
+      <I18nextProvider i18n={testI18n}>
+        <PrintSheet kind="teacher" snapshot={snap} lang="en" />
+      </I18nextProvider>,
+    );
+    return screen.getAllByTestId('print-cell');
+  }
+
+  it('sorts class names in a joined cell title', () => {
+    const [cell] = sheet([{ day: 0, period: 1, start: '07:45', end: '08:30', title: '6B+10A+6A', sub: 'Buddhism', color: '', isGroup: true }]);
+    expect(cell).toHaveTextContent('⧉ 6A+6B+10A');
+  });
+
+  it('shows the cell time only when it differs from the row', () => {
+    const [same] = sheet([{ day: 0, period: 1, start: '07:45', end: '08:30', title: '6A', sub: 'Maths', color: '', isGroup: false }]);
+    expect(same).toHaveTextContent(/^6AMaths$/);
+  });
+
+  it('shows the cell time for a single cell at a different clock time', () => {
+    const [cell] = sheet([{ day: 0, period: 1, start: '07:50', end: '08:15', title: '1A', sub: 'Sinhala', color: '', isGroup: false }]);
+    expect(cell).toHaveTextContent('Sinhala · 07:50–08:15');
   });
 });

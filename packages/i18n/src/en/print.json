@@ -16,6 +16,7 @@
     "groupNote": "{{groups}} run as groups — students go to their chosen option.",
     "printed": "Printed {{date}}",
     "madeWith": "Made with Sathiya",
+    "cellTime": "{{subject}} · {{time}}",
     "slotLabel": "{{day}}, period {{n}}"
   },
   "states": {

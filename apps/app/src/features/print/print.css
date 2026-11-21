@@ -1,7 +1,7 @@
 /* SPDX-License-Identifier: AGPL-3.0-or-later */
 /* Copyright (C) 2026 Kanushka Gayan */
 
-@page {
+@page sheet {
   size: A4 landscape;
   margin: 10mm;
 }
@@ -20,6 +20,7 @@
 }
 
 .print-sheet {
+  page: sheet;
   box-sizing: border-box;
   width: 1123px;
   height: 794px;
