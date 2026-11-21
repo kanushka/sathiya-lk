@@ -1,3 +1,6 @@
+// SPDX-License-Identifier: AGPL-3.0-or-later
+// Copyright (C) 2026 Kanushka Gayan
+
 import { describe, expect, it } from 'vitest';
 import { C, ctx, defaultTemplate, entries, entry, S, T, TPL } from './fixtures';
 import { orphanedEntries, usageCount, warnings } from './usage';

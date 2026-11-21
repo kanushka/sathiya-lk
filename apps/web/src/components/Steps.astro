@@ -1,0 +1,22 @@
+---
+// SPDX-License-Identifier: AGPL-3.0-or-later
+// Copyright (C) 2026 Kanushka Gayan
+import { content, type Lang } from '../lib/links';
+
+interface Props {
+  lang: Lang;
+}
+const t = content(Astro.props.lang);
+---
+<section id="how" class="wrap section">
+  <h2 class="steps-title">{t.steps.title}</h2>
+  <ol class="step-grid">
+    {t.steps.items.map((s, i) => (
+      <li class="step">
+        <p class="step-n">{t.steps.step} {i + 1}</p>
+        <h3>{s.title}</h3>
+        <p>{s.body}</p>
+      </li>
+    ))}
+  </ol>
+</section>

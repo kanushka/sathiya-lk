@@ -1,0 +1,17 @@
+---
+// SPDX-License-Identifier: AGPL-3.0-or-later
+// Copyright (C) 2026 Kanushka Gayan
+import { content, pagePath, type Lang, type Page } from '../lib/links';
+
+interface Props {
+  lang: Lang;
+  page: Page;
+  class?: string;
+}
+const { lang, page, class: className } = Astro.props;
+const t = content(lang);
+---
+<div class:list={['lang-switch', className]} role="group" aria-label={t.nav.language}>
+  <a href={pagePath('si', page)} lang="si" hreflang="si" aria-label={t.nav.sinhala} aria-current={lang === 'si' ? 'page' : undefined}>සිං</a>
+  <a href={pagePath('en', page)} lang="en" hreflang="en" aria-label={t.nav.english} aria-current={lang === 'en' ? 'page' : undefined}>EN</a>
+</div>

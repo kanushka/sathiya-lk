@@ -1,3 +1,6 @@
+// SPDX-License-Identifier: AGPL-3.0-or-later
+// Copyright (C) 2026 Kanushka Gayan
+
 import { describe, expect, it } from 'vitest';
 import { withTeacherIds } from './clash';
 import { fillWithClassTeacher } from './fill';
@@ -79,4 +82,21 @@ describe('buildSnapshots', () => {
     const perera = snap.teachers.find((t) => t.teacherId === T.perera)!;
     expect(perera.cells.find((c) => c.sub === 'Mathematics')).not.toHaveProperty('subSi');
   });
+
+  it('marks combined (non-group) class cells with the other classes', () => {
+    const combined: Entry = { id: 'cmb', day: 0, period: 1, classIds: [C.c6a, C.c6b], lessons: [{ subjectId: 's-maths', teacherId: T.bandara }], teacherIds: [T.bandara] };
+    const snap = buildSnapshots(ctx, [combined], year);
+    expect(snap.classes.find((c) => c.classId === C.c6a)!.cells[0]).toMatchObject({ isGroup: false, title: 'Maths', sub: 'Mr. P. Bandara', otherClasses: ['6B'] });
+    expect(snap.classes.find((c) => c.classId === C.c6b)!.cells[0]).toMatchObject({ otherClasses: ['6A'] });
+    expect(sixB.cells.find((c) => c.day === 0 && c.period === 1)).not.toHaveProperty('otherClasses');
+  });
+
+  it('keeps a teacher cell whose class period overlaps no default period', () => {
+    const late = { ...ctx.templates.find((t) => t.id === 'tpl-primary')!, rows: [...ctx.templates.find((t) => t.id === 'tpl-primary')!.rows, { type: 'period' as const, start: '13:40', end: '14:20' }] };
+    const lateCtx = { ...ctx, templates: ctx.templates.map((t) => (t.id === late.id ? late : t)) };
+    const e: Entry = { id: 'late', day: 0, period: 7, classIds: [C.c1a], lessons: [{ subjectId: 's-sinhala', teacherId: T.wickramasinghe }], teacherIds: [T.wickramasinghe] };
+    const w = buildSnapshots(lateCtx, [e], year).teachers.find((t) => t.teacherId === T.wickramasinghe)!;
+    expect(w.cells).toEqual([expect.objectContaining({ day: 0, period: 8, start: '13:40', end: '14:20', title: '1A' })]);
+  });
 });
+

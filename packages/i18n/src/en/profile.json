@@ -1,0 +1,26 @@
+{
+  "page": {
+    "title": "School profile & colours",
+    "subtitle": "Names, logo and colours shown to everyone at your school.",
+    "save": "Save changes",
+    "saving": "Saving…",
+    "saved": "School profile saved",
+    "saveFailed": "Could not save. Try again."
+  },
+  "fields": {
+    "nameEn": "School name (English)",
+    "nameSi": "School name (Sinhala)",
+    "district": "District",
+    "prefix": "Staff ID prefix",
+    "prefixHint": "2 to 5 capital letters. Warning: existing staff IDs are not changed, only new teachers use the new prefix.",
+    "prefixError": "2 to 5 capital letters",
+    "required": "Required",
+    "city": "City",
+    "cityError": "City is required",
+    "address": "Address (optional)",
+    "phone": "Phone (optional)"
+  },
+  "contrast": {
+    "low": "This primary colour is too light for white text (contrast {{ratio}}:1, needs 4.5:1). Buttons and headers may be hard to read. Pick a darker colour."
+  }
+}

@@ -1,0 +1,55 @@
+{
+  "page": {
+    "title": "{{year}} timetable",
+    "noYear": "No timetable year yet",
+    "noYearBody": "Create a year to start building the timetable.",
+    "continue": "Continue editing"
+  },
+  "year": {
+    "select": "Timetable year",
+    "draft": "draft",
+    "published": "published",
+    "new": "New year",
+    "newTitle": "New timetable year",
+    "label": "Year label",
+    "labelHint": "For example 2027. It starts as an empty draft.",
+    "create": "Create year",
+    "cancel": "Cancel",
+    "created": "Year created",
+    "createFailed": "Could not create the year. Try again."
+  },
+  "publish": {
+    "button": "Publish to teachers",
+    "title": "Publish the {{year}} timetable?",
+    "body": "Teachers will see the timetable as it is now. You can publish again after making changes.",
+    "clashes": "There are still {{n}} clashes in this timetable.",
+    "confirm": "Publish",
+    "cancel": "Cancel",
+    "done": "Published: {{classes}} classes, {{teachers}} teachers",
+    "failed": "Could not publish. Try again."
+  },
+  "stats": {
+    "complete": "Classes complete",
+    "completeSub": "all subjects placed",
+    "empty": "Empty slots",
+    "emptySub": "across all classes",
+    "clashes": "Clashes",
+    "clashesSub": "double-bookings",
+    "over": "Over daily limit",
+    "overSub": "teachers"
+  },
+  "classes": {
+    "title": "Classes",
+    "legend": "periods placed / needed",
+    "grade": "Grade {{n}}",
+    "none": "No classes yet. Add them under Grades & classes."
+  },
+  "attention": {
+    "title": "Needs attention",
+    "none": "Nothing needs attention.",
+    "over-limit": { "title": "{{teacher}} — {{n}} periods on {{dayName}}", "detail": "Daily limit is {{max}}" },
+    "over-target": { "title": "{{class}} {{subject}} {{placed}} / {{needed}}", "detail": "{{extra}} too many periods" },
+    "group-no-teacher": { "title": "{{group}} has an option without a teacher", "detail": "{{class}} · {{dayName}} P{{period}}" },
+    "orphaned": { "title": "{{class}} {{dayName}} P{{period}} is outside the period template", "detail": "Move or remove this entry" }
+  }
+}

@@ -1,3 +1,6 @@
+// SPDX-License-Identifier: AGPL-3.0-or-later
+// Copyright (C) 2026 Kanushka Gayan
+
 import { forwardRef, type ButtonHTMLAttributes } from 'react';
 import { cx } from './cx';
 
@@ -12,7 +15,7 @@ export interface ButtonProps extends ButtonHTMLAttributes<HTMLButtonElement> {
 const variants: Record<ButtonVariant, string> = {
   primary: 'border border-transparent bg-brand text-on-brand hover:brightness-110',
   secondary: 'border border-line-strong bg-white text-ink hover:bg-slate-50',
-  danger: 'border border-[#E8C3C3] bg-white text-[#A3262A] hover:bg-[#FBEFEF]',
+  danger: 'border border-[#E8C3C3] bg-white text-danger hover:bg-[#FBEFEF]',
   ghost: 'border border-transparent bg-transparent text-ink-soft hover:bg-slate-100',
 };
 

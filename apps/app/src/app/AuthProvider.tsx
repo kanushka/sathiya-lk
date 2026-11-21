@@ -1,6 +1,10 @@
+// SPDX-License-Identifier: AGPL-3.0-or-later
+// Copyright (C) 2026 Kanushka Gayan
+
 import type { Claims } from '@sathiya/core';
 import { onAuthStateChanged, signOut as fbSignOut, type User } from 'firebase/auth';
 import { createContext, useCallback, useContext, useEffect, useMemo, useState, type ReactNode } from 'react';
+import { clearSessionPasswords } from '../features/teachers/sessionPasswords';
 import { auth } from '../lib/firebase';
 
 export interface AuthState {
@@ -38,6 +42,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         setLoading(true);
         setUser(next);
         if (!next) {
+          clearSessionPasswords();
           setClaims({});
           setLoading(false);
           return;
@@ -64,7 +69,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     setClaims(current ? await readClaims(current, true) : {});
   }, []);
 
-  const signOut = useCallback(() => fbSignOut(auth), []);
+  const signOut = useCallback(async () => {
+    clearSessionPasswords();
+    await fbSignOut(auth);
+  }, []);
 
   const value = useMemo(
     () => ({ user, claims, loading, refreshClaims, signOut }),

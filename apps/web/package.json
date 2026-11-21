@@ -1,0 +1,23 @@
+{
+  "name": "web",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "astro dev",
+    "build": "astro build",
+    "build:staging": "PUBLIC_SITE_URL=https://staging.sathiya.kanushka.com PUBLIC_APP_URL=https://app.staging.sathiya.kanushka.com astro build",
+    "preview": "astro preview",
+    "test": "astro build && vitest run",
+    "typecheck": "astro check"
+  },
+  "dependencies": {
+    "astro": "4.16.19"
+  },
+  "devDependencies": {
+    "@astrojs/check": "~0.9.12",
+    "@types/node": "^20.19.43",
+    "typescript": "^5.6.0",
+    "vitest": "^2.1.0"
+  }
+}

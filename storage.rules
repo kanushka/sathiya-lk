@@ -1,0 +1,20 @@
+// SPDX-License-Identifier: AGPL-3.0-or-later
+// Copyright (C) 2026 Kanushka Gayan
+rules_version = '2';
+service firebase.storage {
+  match /b/{bucket}/o {
+    function isAdmin(sid) {
+      return request.auth != null
+        && request.auth.token.get('sid', null) == sid
+        && request.auth.token.get('role', null) == 'admin';
+    }
+
+    match /schools/{sid}/{file} {
+      allow read: if file.matches('logo[.][^/]+');
+      allow create, update: if file.matches('logo[.][^/]+') && isAdmin(sid)
+        && request.resource.size <= 1024 * 1024
+        && request.resource.contentType.matches('image/png|image/svg[+]xml');
+      allow delete: if file.matches('logo[.][^/]+') && isAdmin(sid);
+    }
+  }
+}

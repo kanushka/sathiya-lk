@@ -1,3 +1,6 @@
+// SPDX-License-Identifier: AGPL-3.0-or-later
+// Copyright (C) 2026 Kanushka Gayan
+
 import { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState, type ReactNode } from 'react';
 import { createPortal } from 'react-dom';
 import { useTranslation } from 'react-i18next';
@@ -21,7 +24,7 @@ const ToastCtx = createContext<ToastApi | null>(null);
 const kindClass: Record<ToastKind, string> = {
   info: 'border-l-navy',
   success: 'border-l-teal',
-  error: 'border-l-[#A3262A]',
+  error: 'border-l-danger',
 };
 
 export function ToastProvider({ children, duration = 4000 }: { children: ReactNode; duration?: number }) {

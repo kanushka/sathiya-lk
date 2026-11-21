@@ -1,8 +1,11 @@
+// SPDX-License-Identifier: AGPL-3.0-or-later
+// Copyright (C) 2026 Kanushka Gayan
+
 import type { ApiErrorCode, CallableName, CallableTypes } from '@sathiya/core';
 import { httpsCallable } from 'firebase/functions';
 import { functions } from './firebase';
 
-const apiCodes: readonly ApiErrorCode[] = ['clash', 'in-use', 'not-allowed', 'invalid'];
+const apiCodes: readonly ApiErrorCode[] = ['clash', 'in-use', 'not-allowed', 'invalid', 'census-taken', 'email-unverified', 'already-has-school', 'rate-limited'];
 
 export class ApiError extends Error {
   code: ApiErrorCode;

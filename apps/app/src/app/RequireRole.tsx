@@ -1,3 +1,6 @@
+// SPDX-License-Identifier: AGPL-3.0-or-later
+// Copyright (C) 2026 Kanushka Gayan
+
 import type { Claims } from '@sathiya/core';
 import type { ReactNode } from 'react';
 import { Navigate, useLocation } from 'react-router-dom';

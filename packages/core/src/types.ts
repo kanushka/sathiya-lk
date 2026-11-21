@@ -1,8 +1,24 @@
+// SPDX-License-Identifier: AGPL-3.0-or-later
+// Copyright (C) 2026 Kanushka Gayan
+
 export type Lang = 'en' | 'si';
 export type DayIndex = 0 | 1 | 2 | 3 | 4;
 export type Hhmm = string;
 export interface Bilingual { nameEn: string; nameSi?: string }
-export interface School extends Bilingual { id: string; district: string; grades: number[]; staffPrefix: string; logoUrl?: string; colors: { primary: string; second: string }; status: 'active' | 'disabled'; termsVersion: string; activeYearId?: string; createdAt: number }
+export interface School extends Bilingual { id: string; district: string; city: string; address?: string; phone?: string; type: SchoolType; censusNo?: string; grades: number[]; staffPrefix: string; logoUrl?: string; colors: { primary: string; second: string }; status: 'active' | 'disabled'; termsVersion: string; activeYearId?: string; createdAt: number }
+export const SCHOOL_TYPES = ['government', 'private', 'international'] as const;
+export type SchoolType = (typeof SCHOOL_TYPES)[number];
+export const REPORT_REASONS = ['fake', 'duplicate', 'abuse', 'other'] as const;
+export type ReportReason = (typeof REPORT_REASONS)[number];
+export const AUTH_EMAIL_KINDS = ['verify', 'reset'] as const;
+export type AuthEmailKind = (typeof AUTH_EMAIL_KINDS)[number];
+export interface SchoolReport { id: string; schoolId: string; reason: ReportReason; details?: string; email?: string; createdAt: number; status: 'open' | 'closed' }
+export interface SchoolDirectoryEntry extends Bilingual { district: string; city: string; status: 'active' | 'disabled' }
+export interface Announcement { textEn: string; textSi?: string; active: boolean; updatedAt: number }
+export interface PlatformConfig { currentTermsVersion: string; announcement?: Announcement }
+export interface DefaultSubject { nameEn: string; nameSi: string; short: string; color: string }
+export interface DefaultSubjectsDoc { subjects: DefaultSubject[]; updatedAt: number }
+export interface TermsVersion { version: string; termsMd: string; privacyMd: string; publishedAt: number }
 export interface Teacher { id: string; staffId: string; name: string; isPrimary: boolean; subjectIds: string[]; grades: number[]; maxPerDay: number; phone?: string; email?: string; uid?: string; lastLoginAt?: number }
 export interface Subject extends Bilingual { id: string; short: string; color: string }
 export interface TemplateRow { type: 'period' | 'interval'; start: Hhmm; end: Hhmm }

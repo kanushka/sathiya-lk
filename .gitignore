@@ -9,3 +9,7 @@ firebase-export-*
 .superpowers/
 .env*.local
 .DS_Store
+dist-e2e
+e2e/__screenshots__/
+e2e/test-results/
+e2e/playwright-report/

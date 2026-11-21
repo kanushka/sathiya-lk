@@ -1,0 +1,20 @@
+---
+// SPDX-License-Identifier: AGPL-3.0-or-later
+// Copyright (C) 2026 Kanushka Gayan
+import { appLinks, content, type Lang } from '../lib/links';
+
+interface Props {
+  lang: Lang;
+}
+const t = content(Astro.props.lang);
+const app = appLinks();
+---
+<section class="wrap cta-wrap">
+  <div class="cta">
+    <div class="cta-copy">
+      <h2>{t.cta.title}</h2>
+      <p lang={t.cta.subLang}>{t.cta.sub}</p>
+    </div>
+    <a class="btn btn-accent" href={app.register}>{t.cta.button}</a>
+  </div>
+</section>

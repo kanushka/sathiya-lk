@@ -1,3 +1,6 @@
+// SPDX-License-Identifier: AGPL-3.0-or-later
+// Copyright (C) 2026 Kanushka Gayan
+
 import i18next, { type i18n } from 'i18next';
 import type { Lang } from '@sathiya/core';
 

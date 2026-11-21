@@ -1,0 +1,76 @@
+{
+  "page": {
+    "title": "Grade {{n}} settings",
+    "empty": "No grades yet",
+    "emptyBody": "Add a grade to set up its classes and subjects.",
+    "saveFailed": "Could not save the change. Try again."
+  },
+  "rail": {
+    "title": "Grades",
+    "grade": "Grade {{n}}",
+    "addGrade": "+ Add grade"
+  },
+  "addGrade": {
+    "title": "Add grade",
+    "number": "Grade",
+    "add": "Add grade",
+    "cancel": "Cancel"
+  },
+  "classes": {
+    "title": "Classes",
+    "add": "+ Add class {{name}}",
+    "empty": "No classes in this grade yet.",
+    "remove": "Remove",
+    "teacher": "Class teacher",
+    "noTeacher": "Not assigned",
+    "template": "Period template",
+    "templateOption": "{{name}} ({{count}} periods)",
+    "customPlan": "Custom plan",
+    "ownPlan": "Own plan"
+  },
+  "plan": {
+    "title": "Subjects & periods per week",
+    "periodsInWeek": "periods in the week",
+    "intro": "A group runs its options at the same time. Students split, and each option has its own teacher.",
+    "empty": "No subjects in this plan yet.",
+    "group": "Group",
+    "perWeek": "per week",
+    "perWeekFor": "Periods per week for {{name}}",
+    "addSubject": "+ Add subject",
+    "addGroup": "+ Add group",
+    "editGroup": "Edit",
+    "removeItem": "Remove {{name}}",
+    "removeOption": "Remove {{name}} from {{group}}",
+    "addOption": "Add option to {{group}}",
+    "optionPlaceholder": "+ option"
+  },
+  "group": {
+    "addTitle": "Add group",
+    "editTitle": "Edit group",
+    "subtitle": "Options in a group are taught at the same time.",
+    "nameEn": "Group name in English",
+    "nameSi": "Group name in Sinhala",
+    "nameSiHint": "Optional. If empty, the English name is shown.",
+    "perWeek": "Periods per week",
+    "options": "Option subjects",
+    "addOption": "Add option subject",
+    "addOptionPlaceholder": "Choose a subject",
+    "removeOption": "Remove {{name}}",
+    "add": "Add group",
+    "save": "Save group",
+    "cancel": "Cancel",
+    "errors": {
+      "name": "Enter the group name in English",
+      "options": "Add at least one option subject"
+    }
+  },
+  "classPlan": {
+    "title": "Custom plan for {{name}}",
+    "subtitle": "Only this class uses this plan. The grade plan stays unchanged.",
+    "save": "Save custom plan",
+    "useGrade": "Use grade plan",
+    "cancel": "Cancel",
+    "saved": "{{name}} now has its own plan",
+    "cleared": "{{name}} uses the grade plan"
+  }
+}
