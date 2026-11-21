@@ -23,6 +23,15 @@ describe('createTeacher', () => {
     expect(await t.claims()).toEqual({ sid, role: 'teacher', tid: teacherId });
   });
 
+  it('stores a known title and rejects an unknown one', async () => {
+    const { admin, sid } = await adminWithSchool();
+    const { teacherId } = await admin.call('createTeacher', { schoolId: sid, teacher: { ...teacherInput('SCC025'), name: 'K. Perera', title: 'Ven.' } });
+    expect((await adminDb.doc(`${paths.teachers(sid)}/${teacherId}`).get()).data()).toMatchObject({ title: 'Ven.', name: 'K. Perera' });
+    const { teacherId: untitled } = await admin.call('createTeacher', { schoolId: sid, teacher: { ...teacherInput('SCC026'), title: '' } });
+    expect((await adminDb.doc(`${paths.teachers(sid)}/${untitled}`).get()).data()).not.toHaveProperty('title');
+    await expectFnError(admin.call('createTeacher', { schoolId: sid, teacher: { ...teacherInput('SCC027'), title: 'King' } }), 'invalid-argument', 'invalid');
+  });
+
   it('refuses a caller who is not admin of the school', async () => {
     const { sid } = await adminWithSchool();
     const { admin: other } = await adminWithSchool();

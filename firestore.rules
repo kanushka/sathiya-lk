@@ -36,7 +36,9 @@ service cloud.firestore {
 
       match /teachers/{tid} {
         allow read: if adminRead(sid) || (isTeacher(sid) && claim('tid') == tid);
-        allow update: if adminWrite(sid) && !changed().hasAny(['uid', 'staffId']);
+        allow update: if adminWrite(sid) && !changed().hasAny(['uid', 'staffId'])
+          && (!('title' in request.resource.data)
+            || request.resource.data.title in ['Mr', 'Mrs', 'Miss', 'Ms', 'Dr', 'Rev', 'Ven.', 'Thero']);
       }
 
       match /subjects/{id} {
