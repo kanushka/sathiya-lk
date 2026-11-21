@@ -1,3 +1,5 @@
+// SPDX-License-Identifier: AGPL-3.0-or-later
+// Copyright (C) 2026 Kanushka Gayan
 import { paths } from '@sathiya/core';
 import { doc, runTransaction, setDoc } from 'firebase/firestore';
 import { db } from '../../lib/firebase';

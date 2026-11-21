@@ -1,3 +1,5 @@
+// SPDX-License-Identifier: AGPL-3.0-or-later
+// Copyright (C) 2026 Kanushka Gayan
 import type { School } from '@sathiya/core';
 import { ctx } from '@sathiya/core/fixtures';
 import { screen, waitFor, within } from '@testing-library/react';

@@ -1,3 +1,5 @@
+// SPDX-License-Identifier: AGPL-3.0-or-later
+// Copyright (C) 2026 Kanushka Gayan
 import { buildSnapshots, type TeacherSnapshot, type Year } from '@sathiya/core';
 import { C, S, T, ctx as baseCtx, entries, entry } from '@sathiya/core/fixtures';
 import { act, screen, waitFor, within } from '@testing-library/react';

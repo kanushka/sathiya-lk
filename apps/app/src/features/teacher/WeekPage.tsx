@@ -1,3 +1,5 @@
+// SPDX-License-Identifier: AGPL-3.0-or-later
+// Copyright (C) 2026 Kanushka Gayan
 import type { TeacherSnapshot } from '@sathiya/core';
 import { useTranslation } from 'react-i18next';
 import { useLang } from '../../app/LangProvider';

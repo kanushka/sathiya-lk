@@ -1,3 +1,5 @@
+// SPDX-License-Identifier: AGPL-3.0-or-later
+// Copyright (C) 2026 Kanushka Gayan
 const fmt = new Intl.DateTimeFormat('en-US', {
   timeZone: 'Asia/Colombo',
   hourCycle: 'h23',
