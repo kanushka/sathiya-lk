@@ -118,6 +118,7 @@ export const en = {
         a: 'Your administrator adds each teacher and hands them a login slip. Teachers tap "Teacher login", pick the school, and enter their staff ID and password from the slip.',
       },
     ],
+    report: 'Seen a fake or duplicate school registration?',
   },
   cta: {
     title: 'A contribution to the Sri Lankan school community.',
@@ -131,6 +132,7 @@ export const en = {
     terms: 'Terms & Conditions',
     privacy: 'Privacy Policy',
     contact: 'Contact',
+    report: 'Report a school',
     analytics: 'Analytics settings',
   },
   consent: {
@@ -178,6 +180,13 @@ export const en = {
         body: [
           "Do not use Sathiya for anything unlawful, to store information that has nothing to do with timetables, or to try to reach another school's data.",
         ],
+      },
+      {
+        title: 'Fake or duplicate registrations',
+        body: [
+          'Register only a real school that you are allowed to act for, and only once. Fake or duplicate registrations may be suspended.',
+        ],
+        report: true,
       },
       {
         title: 'No guarantees',

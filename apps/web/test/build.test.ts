@@ -72,6 +72,25 @@ describe('built site', () => {
     expect(hrefs).toContain(`${APP}/login?as=teacher`);
   });
 
+  it.each(allPaths)('%s footer links to report a school', (p) => {
+    const footer = read(p).match(/<footer\b[\s\S]*?<\/footer>/)?.[0] ?? '';
+    expect(attrs(footer, 'a', 'href')).toContain(`${APP}/login?report=1`);
+  });
+
+  it.each(['index.html', 'si/index.html'])('%s FAQ links to report a school', (p) => {
+    const faq = read(p).match(/<section id="faq"[\s\S]*?<\/section>/)?.[0] ?? '';
+    expect(attrs(faq, 'a', 'href')).toContain(`${APP}/login?report=1`);
+  });
+
+  it.each(['terms/index.html', 'si/terms/index.html'])('%s links to report a school', (p) => {
+    const article = read(p).match(/<article\b[\s\S]*?<\/article>/)?.[0] ?? '';
+    expect(attrs(article, 'a', 'href')).toContain(`${APP}/login?report=1`);
+  });
+
+  it('terms say fake or duplicate registrations may be suspended', () => {
+    expect(read('terms/index.html')).toMatch(/fake or duplicate registrations may be suspended/i);
+  });
+
   it('language switch points at the same page in the other language', () => {
     expect(attrs(read('terms/index.html'), 'a', 'href')).toContain('/si/terms/');
     expect(attrs(read('si/privacy/index.html'), 'a', 'href')).toContain('/privacy/');

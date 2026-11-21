@@ -15,6 +15,7 @@ export function appLinks(base: string = import.meta.env.PUBLIC_APP_URL || DEFAUL
     register: `${root}/register`,
     login: `${root}/login`,
     teacherLogin: `${root}/login?as=teacher`,
+    report: `${root}/login?report=1`,
   };
 }
 

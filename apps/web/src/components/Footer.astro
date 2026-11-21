@@ -1,7 +1,7 @@
 ---
 // SPDX-License-Identifier: AGPL-3.0-or-later
 // Copyright (C) 2026 Kanushka Gayan
-import { content, pagePath, type Lang } from '../lib/links';
+import { appLinks, content, pagePath, type Lang } from '../lib/links';
 
 interface Props {
   lang: Lang;
@@ -16,6 +16,7 @@ const t = content(lang);
       <a href={pagePath(lang, 'terms')}>{t.footer.terms}</a>
       <a href={pagePath(lang, 'privacy')}>{t.footer.privacy}</a>
       <a href={pagePath(lang, 'contact')}>{t.footer.contact}</a>
+      <a href={appLinks().report}>{t.footer.report}</a>
       <button type="button" class="link-button consent-open" data-consent-open>{t.footer.analytics}</button>
     </nav>
   </div>

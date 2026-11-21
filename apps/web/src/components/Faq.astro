@@ -1,7 +1,7 @@
 ---
 // SPDX-License-Identifier: AGPL-3.0-or-later
 // Copyright (C) 2026 Kanushka Gayan
-import { content, type Lang } from '../lib/links';
+import { appLinks, content, type Lang } from '../lib/links';
 
 interface Props {
   lang: Lang;
@@ -18,4 +18,5 @@ const t = content(Astro.props.lang);
       </details>
     ))}
   </div>
+  <p class="faq-report">{t.faq.report} <a href={appLinks().report}>{t.footer.report}</a></p>
 </section>

@@ -624,6 +624,15 @@ h3 {
   line-height: 1.6;
 }
 
+.faq-report {
+  margin: 20px 0 0;
+  color: var(--ink-2);
+}
+
+.faq-report a {
+  font-weight: 600;
+}
+
 .cta-wrap {
   margin-bottom: 72px;
 }

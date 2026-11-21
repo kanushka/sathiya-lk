@@ -1,7 +1,7 @@
 ---
 // SPDX-License-Identifier: AGPL-3.0-or-later
 // Copyright (C) 2026 Kanushka Gayan
-import { LEGAL_VERSION, content, type Lang } from '../lib/links';
+import { LEGAL_VERSION, appLinks, content, type Lang } from '../lib/links';
 
 interface Props {
   lang: Lang;
@@ -19,6 +19,7 @@ const d = t[doc];
     <section>
       <h2>{s.title}</h2>
       {s.body.map((p) => <p>{p}</p>)}
+      {'report' in s && s.report && <p><a href={appLinks().report}>{t.footer.report}</a></p>}
     </section>
   ))}
 </article>
