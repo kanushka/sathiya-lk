@@ -3,7 +3,7 @@
 
 import { appConfigFor } from '@sathiya/firebase-config';
 import { initializeApp } from 'firebase/app';
-import { ReCaptchaEnterpriseProvider, initializeAppCheck } from 'firebase/app-check';
+import { ReCaptchaV3Provider, initializeAppCheck } from 'firebase/app-check';
 import { connectAuthEmulator, getAuth } from 'firebase/auth';
 import { connectFirestoreEmulator, getFirestore } from 'firebase/firestore';
 import { connectFunctionsEmulator, getFunctions } from 'firebase/functions';
@@ -20,7 +20,7 @@ if (mode === 'debug') {
 }
 if (mode !== 'off') {
   initializeAppCheck(app, {
-    provider: new ReCaptchaEnterpriseProvider(import.meta.env.VITE_APPCHECK_SITE_KEY!),
+    provider: new ReCaptchaV3Provider(import.meta.env.VITE_APPCHECK_SITE_KEY!),
     isTokenAutoRefreshEnabled: true,
   });
 }

@@ -3,8 +3,8 @@
   "targets": {
     "sathiya-lk": {
       "hosting": {
-        "web": ["sathiya-lk-web"],
-        "app": ["sathiya-lk-app"]
+        "web": ["sathiya-lk"],
+        "app": ["sathiya-lk-portal"]
       }
     },
     "sathiya-lk-staging": {
