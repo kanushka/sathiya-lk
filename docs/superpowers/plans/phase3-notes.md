@@ -12,3 +12,10 @@
 - Register shows one step card at a time (stepper pills on top) rather than all three stacked as on the canvas. Logo colour auto-pick ("Picked from your logo") not built; hint text shows the chosen hex instead.
 - Reusable for 3.6: `features/register/{ColorSwatches,LogoUpload,BrandPreview}.tsx`, `api.uploadLogo(schoolId, file)`; strings live in the `register` i18n namespace.
 - Auth tests: `features/auth/testHarness.tsx` provides a stateful auth context plus real `HomeRedirect` for route-by-claims assertions.
+
+## Task 3.2 — Teachers
+
+- Dependency exception: added `qrcode` and `@types/qrcode` (dev) to `apps/app`. QR is rendered as an SVG data URI (`features/teachers/qr.ts`, `QRCode.toString`), no canvas needed.
+- Reusable delete guard for 3.3/3.4/3.5: `useDeleteSetupItem()` and `<DeleteSetupModal schoolId kind id name onClose onDeleted? />` from `features/teachers`. Strings live in `teachers` namespace under `deleteGuard.*` (`body.<kind>`, `inUse.<kind>`; template copy says "classes").
+- Edits of an existing teacher are a direct Firestore `updateDoc` (`teachers/api.ts`); cleared phone/email use `deleteField()`. Staff ID is not editable after creation (the login email derives from it). Rules must allow admin updates of `teachers/{id}`.
+- Session passwords are a module-level store (`sessionPasswords.ts`); lost on reload, so "Print all login slips" prints every teacher but shows "Reset needed" for those without a password this session.

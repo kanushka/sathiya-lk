@@ -1,0 +1,92 @@
+{
+  "page": {
+    "title": "Teachers",
+    "search": "Search by name or staff ID",
+    "printAll": "Print all login slips",
+    "add": "+ Add teacher",
+    "edit": "Edit",
+    "delete": "Delete",
+    "empty": "No teachers yet",
+    "emptyBody": "Add your first teacher to give them a login.",
+    "noMatch": "No teachers match your search",
+    "primaryTeacher": "Primary teacher",
+    "neverLoggedIn": "Not logged in yet",
+    "printBlocked": "Allow pop-ups to print the slips",
+    "cols": {
+      "staffId": "Staff ID",
+      "name": "Name",
+      "teaches": "Teaches",
+      "grades": "Grades",
+      "maxPerDay": "Max / day",
+      "classTeacher": "Class teacher",
+      "login": "Login",
+      "actions": "Actions"
+    }
+  },
+  "modal": {
+    "titleAdd": "Add teacher",
+    "titleEdit": "Edit teacher",
+    "staffId": "Staff ID",
+    "name": "Name",
+    "primary": "Primary teacher",
+    "primaryHint": "Can teach every subject in their grades.",
+    "subjects": "Subjects",
+    "grades": "Grades",
+    "maxPerDay": "Max periods / day",
+    "phone": "Phone (optional)",
+    "email": "Email (optional)",
+    "save": "Save teacher",
+    "saving": "Saving…",
+    "done": "Done",
+    "cancel": "Cancel",
+    "saved": "Teacher saved",
+    "saveFailed": "Could not save the teacher. Try again.",
+    "errors": {
+      "name": "Enter the teacher's name",
+      "staffId": "Use the school prefix and 3 digits, e.g. {{example}}",
+      "staffIdTaken": "This staff ID is already used",
+      "subjects": "Pick at least one subject",
+      "grades": "Pick at least one grade",
+      "maxPerDay": "Enter a number from 1 to 10"
+    }
+  },
+  "slip": {
+    "title": "Login slip",
+    "staffId": "Staff ID",
+    "password": "Password",
+    "resetNeeded": "Reset needed",
+    "resetHint": "Reset to get a new password",
+    "afterSave": "The password appears here after you save",
+    "shownOnce": "Shown only now. Print or share it before closing.",
+    "loginAt": "Log in at",
+    "print": "Print slip",
+    "whatsapp": "Share on WhatsApp",
+    "reset": "Reset password",
+    "resetting": "Resetting…",
+    "resetFailed": "Could not reset the password. Try again.",
+    "qrAlt": "QR code to the teacher login page"
+  },
+  "deleteGuard": {
+    "title": "Delete {{name}}?",
+    "cancel": "Cancel",
+    "close": "Close",
+    "confirm": "Delete",
+    "deleted": "{{name}} deleted",
+    "failed": "Could not delete. Try again.",
+    "body": {
+      "teacher": "This removes the teacher and their login. It cannot be undone.",
+      "subject": "This removes the subject. It cannot be undone.",
+      "class": "This removes the class. It cannot be undone.",
+      "template": "This removes the period template. It cannot be undone."
+    },
+    "inUse": {
+      "teacher": "Used in {{count}} slots. Remove them from the timetable first.",
+      "subject": "Used in {{count}} slots. Remove them from the timetable first.",
+      "class": "Used in {{count}} slots. Remove them from the timetable first.",
+      "template": "Used by {{count}} classes. Move those classes to another template first."
+    }
+  },
+  "print": {
+    "title": "Teacher login slips"
+  }
+}
