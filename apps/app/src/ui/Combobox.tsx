@@ -1,10 +1,12 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
 // Copyright (C) 2026 Kanushka Gayan
 
-import { useEffect, useId, useMemo, useRef, useState, type KeyboardEvent, type ReactNode } from 'react';
+import { useEffect, useId, useLayoutEffect, useMemo, useRef, useState, type KeyboardEvent, type ReactNode } from 'react';
+import { createPortal } from 'react-dom';
 import { useTranslation } from 'react-i18next';
 import { cx } from './cx';
 import { Icon } from './Icon';
+import { placePopover, type Placement } from './popoverPlacement';
 
 export interface ComboboxProps<T> {
   items: T[];
@@ -18,6 +20,8 @@ export interface ComboboxProps<T> {
   searchPlaceholder: string;
   id?: string;
 }
+
+const LIST_MAX = 288;
 
 interface Group<T> {
   name: string;
@@ -47,6 +51,8 @@ export function Combobox<T>({
   const triggerRef = useRef<HTMLButtonElement>(null);
   const searchRef = useRef<HTMLInputElement>(null);
   const listRef = useRef<HTMLDivElement>(null);
+  const popRef = useRef<HTMLDivElement>(null);
+  const [pos, setPos] = useState<(Placement & { listMax: number }) | null>(null);
 
   const groups = useMemo<Group<T>[]>(() => {
     const q = query.trim().toLowerCase();
@@ -72,11 +78,42 @@ export function Combobox<T>({
   useEffect(() => {
     if (!open) return;
     function onDown(e: MouseEvent) {
-      if (rootRef.current && !rootRef.current.contains(e.target as Node)) setOpen(false);
+      const target = e.target as Node;
+      if (rootRef.current?.contains(target) || popRef.current?.contains(target)) return;
+      setOpen(false);
     }
     document.addEventListener('mousedown', onDown);
     return () => document.removeEventListener('mousedown', onDown);
   }, [open]);
+
+  useLayoutEffect(() => {
+    if (!open) {
+      setPos(null);
+      return;
+    }
+    function reposition() {
+      const trigger = triggerRef.current;
+      const pop = popRef.current;
+      if (!trigger || !pop) return;
+      const r = trigger.getBoundingClientRect();
+      const list = listRef.current;
+      const chrome = pop.offsetHeight - (list?.offsetHeight ?? 0);
+      const contentHeight = chrome + Math.min(list?.scrollHeight ?? 0, LIST_MAX);
+      const placed = placePopover({
+        anchor: { top: r.top, bottom: r.bottom, left: r.left, width: r.width },
+        contentHeight,
+        viewportHeight: window.innerHeight,
+      });
+      setPos({ ...placed, listMax: Math.max(0, Math.min(LIST_MAX, placed.maxHeight - chrome)) });
+    }
+    reposition();
+    window.addEventListener('scroll', reposition, true);
+    window.addEventListener('resize', reposition);
+    return () => {
+      window.removeEventListener('scroll', reposition, true);
+      window.removeEventListener('resize', reposition);
+    };
+  }, [open, flat.length, query]);
 
   useEffect(() => {
     listRef.current?.querySelector('[data-active="true"]')?.scrollIntoView?.({ block: 'nearest' });
@@ -101,7 +138,7 @@ export function Combobox<T>({
   function onKeyDown(e: KeyboardEvent) {
     if (e.key === 'ArrowDown') {
       e.preventDefault();
-      setActive((a) => Math.min(a + 1, flat.length - 1));
+      setActive((a) => Math.max(0, Math.min(a + 1, flat.length - 1)));
     } else if (e.key === 'ArrowUp') {
       e.preventDefault();
       setActive((a) => Math.max(a - 1, 0));
@@ -114,7 +151,7 @@ export function Combobox<T>({
       e.stopPropagation();
       close();
     } else if (e.key === 'Tab') {
-      close(false);
+      close();
     }
   }
 
@@ -143,8 +180,20 @@ export function Combobox<T>({
         </span>
         <Icon name="chevronDown" size={16} className="shrink-0 text-ink-muted" />
       </button>
-      {open && (
-        <div className="absolute left-0 right-0 z-40 mt-1.5 rounded-xl border border-line-strong bg-white p-2 shadow-[0_14px_30px_-18px_rgba(20,33,61,.4)]">
+      {open &&
+        createPortal(
+        <div
+          ref={popRef}
+          data-combobox-popover=""
+          style={{
+            position: 'fixed',
+            top: pos?.top ?? 0,
+            left: pos?.left ?? 0,
+            width: pos?.width,
+            opacity: pos ? 1 : 0,
+          }}
+          className="z-[60] flex flex-col rounded-xl border border-line-strong bg-white p-2 shadow-[0_14px_30px_-18px_rgba(20,33,61,.4)]"
+        >
           <div className="relative">
             <Icon name="search" size={16} className="pointer-events-none absolute left-2.5 top-1/2 -translate-y-1/2 text-ink-muted" />
             <input
@@ -166,7 +215,14 @@ export function Combobox<T>({
               className="h-[38px] w-full rounded-lg border border-line-strong pl-8 pr-2.5 text-sm focus:border-brand focus:outline-none focus:ring-2 focus:ring-brand/30"
             />
           </div>
-          <div ref={listRef} id={listId} role="listbox" aria-label={placeholder} className="mt-1 max-h-72 overflow-y-auto">
+          <div
+            ref={listRef}
+            id={listId}
+            role="listbox"
+            aria-label={placeholder}
+            style={{ maxHeight: pos?.listMax ?? LIST_MAX }}
+            className="mt-1 overflow-y-auto"
+          >
             {flat.length === 0 && <p className="px-2 py-3 text-sm text-ink-muted">{t('noMatches')}</p>}
             {groups.map((g) => {
               if (g.items.length === 0) return null;
@@ -210,8 +266,9 @@ export function Combobox<T>({
               );
             })}
           </div>
-        </div>
-      )}
+        </div>,
+        document.body,
+        )}
     </div>
   );
 }

@@ -6,6 +6,7 @@ import userEvent from '@testing-library/user-event';
 import { describe, expect, it, vi } from 'vitest';
 import { renderWithI18n } from '../test/render';
 import { Combobox } from './Combobox';
+import { Modal } from './Modal';
 
 interface Subj { id: string; name: string; group: string }
 const items: Subj[] = [
@@ -94,5 +95,49 @@ describe('Combobox', () => {
     await user.click(screen.getByRole('button', { name: 'History' }));
     expect(screen.getByRole('option', { name: 'History' })).toHaveAttribute('aria-selected', 'true');
     expect(screen.getByRole('option', { name: 'Mathematics' })).toHaveAttribute('aria-selected', 'false');
+  });
+
+  it('renders the listbox in document.body, outside a modal body, and keeps the modal open on pick and Escape', async () => {
+    const user = userEvent.setup();
+    const onClose = vi.fn();
+    const onChange = vi.fn();
+    renderWithI18n(
+      <Modal open title="Choose a subject" onClose={onClose}>
+        <Combobox
+          items={items}
+          getKey={(s) => s.id}
+          getLabel={(s) => s.name}
+          onChange={onChange}
+          placeholder="Click to search a subject"
+          searchPlaceholder="Search subject…"
+        />
+      </Modal>,
+    );
+    await user.click(screen.getByRole('button', { name: /click to search/i }));
+    const listbox = screen.getByRole('listbox');
+    expect(screen.getByRole('dialog').contains(listbox)).toBe(false);
+    expect(listbox.closest('[data-combobox-popover]')?.parentElement).toBe(document.body);
+
+    await user.keyboard('{Escape}');
+    expect(screen.queryByRole('listbox')).not.toBeInTheDocument();
+    expect(onClose).not.toHaveBeenCalled();
+
+    await user.click(screen.getByRole('button', { name: /click to search/i }));
+    await user.click(screen.getByRole('option', { name: 'Science' }));
+    expect(onChange).toHaveBeenCalledWith(items[1]);
+    expect(onClose).not.toHaveBeenCalled();
+    expect(screen.getByRole('dialog')).toBeInTheDocument();
+  });
+
+  it('clears aria-activedescendant when nothing matches, then restores it', async () => {
+    const { user } = setup();
+    await user.click(screen.getByRole('button', { name: /click to search/i }));
+    const input = screen.getByRole('combobox');
+    await user.type(input, 'zzz');
+    await user.keyboard('{ArrowDown}');
+    expect(input).not.toHaveAttribute('aria-activedescendant');
+    await user.clear(input);
+    await user.keyboard('{ArrowDown}');
+    expect(input).toHaveAttribute('aria-activedescendant');
   });
 });
