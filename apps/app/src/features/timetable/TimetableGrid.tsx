@@ -137,7 +137,7 @@ export function TimetableGrid({ rows, cellsFor, selected, onSelect, onActivate, 
               const raw = cellsFor(d, r.n);
               const cells = raw === null ? [] : Array.isArray(raw) ? raw : [raw];
               const on = selected?.day === d && selected.period === r.n;
-              const over = overlay?.(d, r.n) ?? null;
+              const ov = overlay?.(d, r.n) ?? null;
               const label = {
                 day: tc(`days.long.${d}`),
                 n: r.n,
@@ -152,22 +152,22 @@ export function TimetableGrid({ rows, cellsFor, selected, onSelect, onActivate, 
                   data-period={r.n}
                   tabIndex={tabSlot && tabSlot.day === d && tabSlot.period === r.n ? 0 : -1}
                   aria-pressed={on}
-                  aria-disabled={over?.disabled || undefined}
-                  aria-label={over ? over.label : cells.length ? t('grid.cell', label) : t(readOnly ? 'grid.cellEmpty' : 'grid.cellAdd', label)}
+                  aria-disabled={ov?.disabled || undefined}
+                  aria-label={ov ? ov.label : cells.length ? t('grid.cell', label) : t(readOnly ? 'grid.cellEmpty' : 'grid.cellAdd', label)}
                   onClick={() => onClick(d, r.n)}
                   onKeyDown={(e) => onKeyDown(e, d, r.n)}
                   className={cx(
                     'box-border flex min-h-[58px] flex-col justify-center rounded-[10px] border p-1 text-left',
-                    over
-                      ? over.className
+                    ov
+                      ? ov.className
                       : cells.length === 0
-                        ? 'border-[1.5px] border-dashed border-[#C9CDD6] bg-white text-ink text-[#8A91A3] px-2.5 items-center'
+                        ? 'border-[1.5px] border-dashed border-[#C9CDD6] bg-white text-[#8A91A3] px-2.5 items-center'
                         : 'border-transparent text-ink',
                     on && 'shadow-[0_0_0_2px_#fff,0_0_0_4px_var(--brand)]',
-                    readOnly || over?.disabled ? 'cursor-default' : 'cursor-pointer',
+                    readOnly || ov?.disabled ? 'cursor-default' : 'cursor-pointer',
                   )}
                 >
-                  {over ? over.content : <CellBody cells={cells} readOnly={readOnly} />}
+                  {ov ? ov.content : <CellBody cells={cells} readOnly={readOnly} />}
                 </button>
               );
             }),
