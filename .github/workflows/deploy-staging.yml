@@ -2,6 +2,9 @@ name: Deploy staging
 on:
   workflow_dispatch:
 
+permissions:
+  contents: read
+
 concurrency:
   group: deploy-staging
   cancel-in-progress: false
@@ -18,6 +21,12 @@ jobs:
         with:
           node-version-file: .nvmrc
           cache: pnpm
+      - name: Require staging Firebase config
+        run: |
+          if grep -q REPLACE_WITH packages/firebase-config/src/index.ts; then
+            echo "packages/firebase-config/src/index.ts still has REPLACE_WITH_* placeholders; fill in the staging web app config first." >&2
+            exit 1
+          fi
       - run: pnpm install --frozen-lockfile
       - run: pnpm --filter functions build
       - run: pnpm build:staging
@@ -27,7 +36,7 @@ jobs:
         run: |
           key="$RUNNER_TEMP/staging-sa.json"
           printf '%s' "$FIREBASE_SERVICE_ACCOUNT_STAGING" > "$key"
+          trap 'rm -f "$key"' EXIT
           chmod 600 "$key"
           export GOOGLE_APPLICATION_CREDENTIALS="$key"
           pnpm exec firebase deploy -P staging --only hosting,functions,firestore,storage --non-interactive
-          rm -f "$key"
