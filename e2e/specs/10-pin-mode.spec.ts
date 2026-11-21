@@ -18,11 +18,11 @@ test('class view: assign once, then pin, unpin, go over plan and exit pin mode',
   await plus.click();
   await plus.press('Enter');
   const popup = page.getByRole('dialog', { name: 'Choose a subject' });
-  await expect(popup.getByRole('searchbox', { name: 'Search subjects' })).toBeFocused();
+  await expect(popup.getByRole('combobox', { name: 'Search subjects' })).toBeFocused();
   await page.keyboard.type('History');
   await page.keyboard.press('Enter');
   const teachers = page.getByRole('dialog', { name: 'Choose a teacher' });
-  await teachers.getByRole('button', { name: /^Mr\. R\. Silva/ }).click();
+  await teachers.getByRole('option', { name: /^Mr\. R\. Silva/ }).click();
   await teachers.getByRole('button', { name: 'Assign' }).click();
   await expect(teachers).toBeHidden();
 
@@ -58,12 +58,12 @@ test('class view: assign once, then pin, unpin, go over plan and exit pin mode',
 
 test('class view: a pin that clashes on the server is rolled back with the conflict', async ({ page }) => {
   await loginAdmin(page, ADMIN.email, ADMIN.password);
-  await page.goto('/admin/timetable/class/c-6a');
-  await page.getByRole('button', { name: 'Pin History' }).click();
+  await page.goto('/admin/timetable/class/c-6c');
+  await page.getByRole('button', { name: 'Pin Geography' }).click();
   const teachers = page.getByRole('dialog', { name: 'Choose a teacher' });
-  await teachers.getByRole('button', { name: /^Mr\. R\. Silva/ }).click();
+  await teachers.getByRole('option', { name: /^Mr\. K\. Herath/ }).click();
   await teachers.getByRole('button', { name: 'Start pinning' }).click();
-  await expect(page.getByRole('region', { name: 'Pin mode' })).toContainText('History · Mr. R. Silva');
+  await expect(page.getByRole('region', { name: 'Pin mode' })).toContainText('Geography · Mr. K. Herath');
 
   let release!: () => void;
   const gate = new Promise<void>((r) => (release = r));
@@ -71,16 +71,16 @@ test('class view: a pin that clashes on the server is rolled back with the confl
     await gate;
     await route.continue();
   });
-  await pinCell(page, 'Friday', 6).click();
-  await expect(pinnedCell(page, 'Friday', 6)).toBeVisible();
+  await page.getByRole('button', { name: /^Monday, period 3, [0-9:–]+: pin Geography with Mr\. K\. Herath$/ }).click();
+  await expect(page.getByRole('button', { name: /^Monday, period 3, [0-9:–]+: Geography Mr\. K\. Herath, pinned, click to unpin$/ })).toBeVisible();
   await callAs(await idToken(ADMIN.email, ADMIN.password), 'saveEntry', {
     schoolId: SID,
     yearId: YEAR_ID,
-    entry: { day: 4, period: 6, classIds: ['c-6c'], lessons: [{ subjectId: S.history, teacherId: T.rSilva }] },
+    entry: { day: 0, period: 3, classIds: ['c-12a'], lessons: [{ subjectId: S.geography, teacherId: T.herath }] },
   });
   release();
 
-  await expect(page.getByText('Clash: Mr. R. Silva is already teaching at this time')).toBeVisible();
-  await expect(page.getByRole('button', { name: /^Friday, period 6, [0-9:–]+: busy, Teaching 6C · History$/ })).toBeVisible();
+  await expect(page.getByText('Clash: Mr. K. Herath is already teaching at this time')).toBeVisible();
+  await expect(page.getByRole('button', { name: /^Monday, period 3, [0-9:–]+: busy, Teaching 12A · Geography$/ })).toBeVisible();
   await page.unroute('**/saveEntry');
 });
