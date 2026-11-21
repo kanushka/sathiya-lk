@@ -1,0 +1,17 @@
+{
+  "grid": {
+    "label": "Timetable grid",
+    "add": "+ Add",
+    "interval": "Interval · {{time}}",
+    "cell": "{{day}}, period {{n}}, {{time}}: {{title}}",
+    "cellEmpty": "{{day}}, period {{n}}, {{time}}: empty"
+  },
+  "errors": {
+    "clash": "Clash: {{items}}",
+    "conflict": {
+      "teacher": "{{name}} is already teaching at this time",
+      "class": "Class {{name}} already has a lesson at this time"
+    },
+    "generic": "Could not save the timetable. Please try again."
+  }
+}
