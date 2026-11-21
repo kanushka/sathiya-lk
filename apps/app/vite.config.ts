@@ -2,10 +2,26 @@
 // Copyright (C) 2026 Kanushka Gayan
 
 import react from '@vitejs/plugin-react';
+import type { Plugin } from 'vite';
 import { defineConfig } from 'vitest/config';
+import { BUILD_ENV_FILE, buildEnvInfo } from './deploy/appCheckGuard.mjs';
+
+function buildEnvFile(): Plugin {
+  let info = buildEnvInfo('production', {});
+  return {
+    name: 'sathiya-build-env',
+    apply: 'build',
+    configResolved(config) {
+      info = buildEnvInfo(config.mode, config.env);
+    },
+    generateBundle() {
+      this.emitFile({ type: 'asset', fileName: BUILD_ENV_FILE, source: `${JSON.stringify(info)}\n` });
+    },
+  };
+}
 
 export default defineConfig({
-  plugins: [react()],
+  plugins: [react(), buildEnvFile()],
   build: {
     rollupOptions: {
       output: {

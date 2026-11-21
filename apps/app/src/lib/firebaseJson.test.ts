@@ -9,9 +9,15 @@ interface Block {
   headers: { key: string; value: string }[];
 }
 const config = JSON.parse(readFileSync(join(__dirname, '../../../../firebase.json'), 'utf8')) as {
-  hosting: { target: string; headers: Block[] }[];
+  hosting: { target: string; headers: Block[]; predeploy?: string[] }[];
   functions: { source: string; ignore: string[] }[];
 };
+
+describe('app hosting deploy', () => {
+  it('runs the App Check site key check before upload', () => {
+    expect(config.hosting.find((h) => h.target === 'app')!.predeploy).toContain('node apps/app/deploy/check-app-check.mjs');
+  });
+});
 
 describe('functions deploy', () => {
   it('keeps the CLI default ignores that a custom list replaces', () => {

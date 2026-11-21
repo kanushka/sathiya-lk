@@ -26,6 +26,7 @@
     {
       "target": "app",
       "public": "apps/app/dist",
+      "predeploy": ["node apps/app/deploy/check-app-check.mjs"],
       "ignore": ["firebase.json", "**/.*", "**/node_modules/**"],
       "rewrites": [{ "source": "**", "destination": "/index.html" }],
       "headers": [

@@ -16,8 +16,8 @@ Production deploys only from `main`, after the same build was checked on staging
 4. Firestore database: create in the same location as production (native mode). Storage: create the default bucket.
 5. Hosting: add two sites, `sathiya-lk-staging-web` and `sathiya-lk-staging-app` (these ids are what `.firebaserc` maps; if the console gives different ids, update `.firebaserc`).
 6. Project settings → add two web apps (website and app). Copy their config into `stagingWebConfig` / `stagingAppConfig` in `packages/firebase-config/src/index.ts` (replace the `REPLACE_WITH_...` placeholders; these are public values, not secrets). The app picks them when built with `VITE_FIREBASE_ENV=staging` (already set in `apps/app/.env.staging`).
-7. App Check: register the app with reCAPTCHA Enterprise, create a site key for `app.staging.sathiya.kanushka.com`, then put it in `apps/app/.env.staging.local` as `VITE_APPCHECK_SITE_KEY` (git-ignored). Enforce App Check for Functions once it works. For a debug token (local testing against staging): create it in App Check → Apps → Manage debug tokens and put it in `.env.staging.local` as `VITE_APPCHECK_DEBUG_TOKEN`; staging builds honour it because `VITE_APPCHECK_ALLOW_DEBUG=true`. Production builds ignore it.
-8. Email: install the Trigger Email from Firestore extension in the staging project and set up Resend as in `docs/email/setup.md` (use a sender on a domain Resend has verified). Functions params for staging live in `functions/.env.sathiya-lk-staging` (URLs and `MAIL_SUBJECT_PREFIX=[staging]`, so test mails are marked).
+7. App Check: follow "App Check" below for `sathiya-lk-staging`, with a key for `app.staging.sathiya.kanushka.com`, committed in `apps/app/.env.staging`. For a debug token (local testing against staging): App Check → Apps → Manage debug tokens; put it in `apps/app/.env.staging.local` (git-ignored) as `VITE_APPCHECK_DEBUG_TOKEN`. Staging-mode builds honour it because `.env.staging` sets `VITE_APPCHECK_ALLOW_DEBUG=true`; production-mode builds never use it.
+8. Email: install the Trigger Email from Firestore extension in the staging project and set up Resend as in `docs/email/setup.md` (use a sender on a domain Resend has verified). Functions params for staging live in `functions/.env.sathiya-lk-staging` (URLs and `MAIL_SUBJECT_PREFIX=[staging]`, so test mails are marked). Authentication → Templates → Customize action URL → `https://app.staging.sathiya.kanushka.com/auth/action` (required: verify/reset links use this setting, see `docs/email/setup.md` §4).
 9. Custom domains: Hosting → connect `staging.sathiya.kanushka.com` to the staging `web` site and `app.staging.sathiya.kanushka.com` to the staging `app` site; add the DNS records shown.
 10. Deploy rules/indexes once with the commands below.
 
@@ -31,7 +31,7 @@ firebase deploy -P staging --only hosting,functions,firestore,storage
 The same can be run from GitHub Actions: Actions → "Deploy staging" → Run workflow. It needs the repository secret `FIREBASE_SERVICE_ACCOUNT_STAGING` (JSON key of a service account in the staging project with Firebase Admin and Cloud Functions Admin roles; also Service Account User on the default compute service account).
 
 ## 3. Deploy to production
-From `main`, after checking the change on staging:
+From `main`, after checking the change on staging. Before the first production deploy, do "App Check" below for `sathiya-lk` and the console steps in `docs/email/setup.md` (including the custom Auth action URL `https://app.sathiya.kanushka.com/auth/action`).
 ```bash
 pnpm install --frozen-lockfile
 pnpm --filter functions build
@@ -39,6 +39,18 @@ pnpm build                  # app and web with production URLs
 firebase deploy -P default --only hosting,functions,firestore,storage
 ```
 There is no production deploy workflow; production is deployed by hand.
+
+## App Check
+Every callable function enforces App Check (`functions/src/lib/callOptions.ts`) unless `ENFORCE_APP_CHECK=false` is set in the project's functions env. An app built without `VITE_APPCHECK_SITE_KEY` sends no App Check token, so every callable (register, save, publish, …) fails with `unauthenticated`. The `app` hosting target's predeploy (`apps/app/deploy/check-app-check.mjs`, also a step in the staging workflow) therefore refuses to deploy a build without a site key while the target project enforces App Check. It reads `apps/app/dist/.build-env.json` (written by the build, never uploaded) and `functions/.env` + `functions/.env.<project id>`. `firebase deploy --only functions` does not run it, so keep the order below.
+
+Per project (production `sathiya-lk` / app domain `app.sathiya.kanushka.com`; staging `sathiya-lk-staging` / `app.staging.sathiya.kanushka.com`):
+1. Google Cloud console (that project) → Security → reCAPTCHA → create a **website** key, score-based (no checkbox challenge), domains: the app domain plus `<site>.web.app` / `<site>.firebaseapp.com` if those are used.
+2. Firebase console → App Check → Apps → the **app** web app → reCAPTCHA Enterprise → paste the site key → Save. This registers the web app with App Check.
+3. Put the site key in `apps/app/.env.production` (production) or `apps/app/.env.staging` (staging) as `VITE_APPCHECK_SITE_KEY=…` and commit it. Site keys are public; they are not secrets.
+4. Deploy the app with the key **before** functions that enforce App Check: `pnpm build` (or `pnpm build:staging`), then `firebase deploy -P <alias> --only hosting:app`. Open the app, sign in, and check App Check → APIs → Cloud Functions shows verified requests.
+5. Then deploy functions (`--only functions`, or the full deploy above). If the key is not ready yet and the backend must go out first, set `ENFORCE_APP_CHECK=false` in `functions/.env.<project id>` (`functions/.env.sathiya-lk` is git-ignored), deploy, and remove the line and redeploy functions once step 4 is live.
+6. Debug tokens (local testing against staging only): App Check → Apps → ⋮ → Manage debug tokens → add one; put it in `apps/app/.env.staging.local` as `VITE_APPCHECK_DEBUG_TOKEN`. Never register debug tokens on production; production-mode builds ignore them anyway.
+7. Later, once App Check metrics show (nearly) all requests verified: App Check → APIs → enforce for Authentication, Cloud Firestore and Cloud Storage. Old app versions without App Check stop working at that point.
 
 ## Preview channels
 `firebase hosting:channel:deploy <name> -P default` previews frontend changes only. A preview channel still talks to the production database and functions, so use staging for anything that needs backend changes or writes test data.
