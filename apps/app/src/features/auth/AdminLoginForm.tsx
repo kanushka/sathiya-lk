@@ -6,7 +6,7 @@ import { Button } from '../../ui/Button';
 import { Field, inputClass } from '../../ui/Field';
 import { useToast } from '../../ui/Toast';
 import { claimInvites, sendReset, signInWithGoogle, signInWithPassword } from './api';
-import { authErrorKind } from './errors';
+import { authErrorMessage } from './errors';
 
 function GoogleMark() {
   return (
@@ -33,18 +33,7 @@ export function AdminLoginForm() {
     try {
       await signIn();
     } catch (err) {
-      const kind = authErrorKind(err);
-      if (kind !== 'cancelled') {
-        setError(
-          kind === 'credentials'
-            ? t('errors.adminCredentials')
-            : kind === 'tooMany'
-              ? t('errors.tooMany')
-              : kind === 'network'
-                ? t('errors.network')
-                : t('errors.generic'),
-        );
-      }
+      setError(authErrorMessage(err, t, 'errors.adminCredentials'));
       setBusy(false);
       return;
     }
@@ -55,9 +44,10 @@ export function AdminLoginForm() {
     }
     try {
       await refreshClaims();
-    } finally {
-      navigate('/', { replace: true });
+    } catch {
+      // Signed in; HomeRedirect decides from whatever claims are loaded.
     }
+    navigate('/', { replace: true });
   }
 
   function submit(e: FormEvent) {

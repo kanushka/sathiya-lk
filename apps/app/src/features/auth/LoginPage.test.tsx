@@ -35,10 +35,10 @@ describe('teacher login', () => {
     renderAuth(<LoginPage />, { signedIn: true, claimsAfterRefresh: { sid: 'siripura', role: 'teacher', tid: 't1' } });
     await pickSchool(user);
     await user.type(screen.getByLabelText('Staff ID'), 'scc024');
-    await user.type(within(teacherCard()).getByLabelText('Password'), '482913');
+    await user.type(within(teacherCard()).getByLabelText('Password'), 'k7m4x9pq');
     await user.click(within(teacherCard()).getByRole('button', { name: 'Log in' }));
     await waitFor(() =>
-      expect(api.signInWithPassword).toHaveBeenCalledWith('scc024@siripura.teachers.sathiya.lk', '482913'),
+      expect(api.signInWithPassword).toHaveBeenCalledWith('scc024@siripura.teachers.sathiya.lk', 'k7m4x9pq'),
     );
     expect(await screen.findByTestId('where')).toHaveTextContent('/me');
   });
@@ -75,7 +75,7 @@ describe('teacher login', () => {
     const user = userEvent.setup();
     renderAuth(<LoginPage />);
     await user.type(screen.getByLabelText('Staff ID'), 'SCC024');
-    await user.type(within(teacherCard()).getByLabelText('Password'), '482913');
+    await user.type(within(teacherCard()).getByLabelText('Password'), 'k7m4x9pq');
     await user.click(within(teacherCard()).getByRole('button', { name: 'Log in' }));
     expect(api.signInWithPassword).not.toHaveBeenCalled();
     expect(await screen.findByText('Choose your school first')).toBeInTheDocument();
@@ -148,5 +148,29 @@ describe('admin login', () => {
     await user.click(within(adminCard()).getByRole('button', { name: 'Continue with Google' }));
     expect(screen.queryByRole('alert')).not.toBeInTheDocument();
     expect(api.claimInvites).not.toHaveBeenCalled();
+  });
+});
+
+describe('refreshClaims failure after sign-in', () => {
+  const failing = async () => {
+    throw new Error('token');
+  };
+
+  it('teacher still navigates home without an error', async () => {
+    const user = userEvent.setup();
+    renderAuth(<LoginPage />, { signedIn: true, claims: { sid: 's', role: 'teacher', tid: 't' }, refreshClaims: failing });
+    await pickSchool(user);
+    await user.type(screen.getByLabelText('Staff ID'), 'SCC024');
+    await user.type(within(teacherCard()).getByLabelText('Password'), 'k7m4x9pq');
+    await user.click(within(teacherCard()).getByRole('button', { name: 'Log in' }));
+    expect(await screen.findByTestId('where')).toHaveTextContent('/me');
+  });
+
+  it('admin still navigates home without an error', async () => {
+    const user = userEvent.setup();
+    renderAuth(<LoginPage />, { signedIn: true, claims: { sid: 's', role: 'admin' }, refreshClaims: failing });
+    const card = within(screen.getByRole('heading', { name: 'Admin login' }).closest('form') as HTMLElement);
+    await user.click(card.getByRole('button', { name: 'Continue with Google' }));
+    expect(await screen.findByTestId('where')).toHaveTextContent('/admin');
   });
 });

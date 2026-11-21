@@ -34,7 +34,7 @@ export async function searchSchools(prefix: string): Promise<DirectorySchool[]> 
     query(
       collection(db, 'schoolDirectory'),
       where('nameLower', '>=', q),
-      where('nameLower', '<=', `${q}`),
+      where('nameLower', '<=', `${q}\uf8ff`),
       orderBy('nameLower'),
       limit(10),
     ),

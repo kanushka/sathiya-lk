@@ -168,4 +168,70 @@ describe('register', () => {
     expect(await screen.findByText('That email already has an account. Log in instead.')).toBeInTheDocument();
     expect(api.registerSchool).not.toHaveBeenCalled();
   });
+
+  async function submitStep3(user: ReturnType<typeof userEvent.setup>) {
+    await user.type(screen.getByLabelText('Your name'), 'Nimal');
+    await user.type(screen.getByLabelText('Email'), 'nimal@siripura.lk');
+    await user.type(screen.getByLabelText('Password'), 'secret12');
+    await user.click(screen.getByRole('checkbox'));
+    await user.click(screen.getByRole('button', { name: 'Create school' }));
+  }
+
+  it('refreshes claims before uploading the logo', async () => {
+    const user = userEvent.setup();
+    const order: string[] = [];
+    vi.mocked(api.uploadLogo).mockImplementation(async () => {
+      order.push('upload');
+      return 'u';
+    });
+    vi.mocked(api.registerSchool).mockImplementation(async () => {
+      order.push('register');
+      return 'siripura';
+    });
+    renderAuth(<RegisterPage />, {
+      route: '/register',
+      at: '/register',
+      claimsAfterRefresh: { sid: 'siripura', role: 'admin' },
+      refreshClaims: async () => void order.push('refresh'),
+    });
+    await toStep3(user, true);
+    await submitStep3(user);
+    await waitFor(() => expect(screen.getByTestId('where')).toHaveTextContent('/admin'));
+    expect(order).toEqual(['register', 'refresh', 'upload']);
+  });
+
+  it('retries after a registerSchool failure without creating a second account', async () => {
+    const user = userEvent.setup();
+    vi.mocked(api.registerSchool).mockRejectedValueOnce(new Error('down'));
+    renderAuth(<RegisterPage />, {
+      route: '/register',
+      at: '/register',
+      claimsAfterRefresh: { sid: 'siripura', role: 'admin' },
+    });
+    await toStep3(user);
+    await submitStep3(user);
+    expect(await screen.findByRole('alert')).toBeInTheDocument();
+    await user.click(screen.getByRole('button', { name: 'Create school' }));
+    await waitFor(() => expect(screen.getByTestId('where')).toHaveTextContent('/admin'));
+    expect(api.createAccount).toHaveBeenCalledTimes(1);
+    expect(api.registerSchool).toHaveBeenCalledTimes(2);
+  });
+
+  it('goes home when refreshClaims fails after registering', async () => {
+    const user = userEvent.setup();
+    renderAuth(<RegisterPage />, {
+      route: '/register',
+      at: '/register',
+      signedIn: true,
+      refreshClaims: async () => {
+        throw new Error('token');
+      },
+    });
+    await toStep3(user);
+    await user.type(screen.getByLabelText('Your name'), 'Nimal');
+    await user.click(screen.getByRole('checkbox'));
+    await user.click(screen.getByRole('button', { name: 'Create school' }));
+    await waitFor(() => expect(api.registerSchool).toHaveBeenCalled());
+    expect(await screen.findByRole('button', { name: 'Next: logo & colours' })).toBeInTheDocument();
+  });
 });

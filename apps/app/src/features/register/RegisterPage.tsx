@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../../app/AuthProvider';
@@ -17,6 +17,7 @@ const steps = ['school', 'brand', 'account'] as const;
 
 export function RegisterPage() {
   const { t } = useTranslation('register');
+  const { t: ta } = useTranslation('auth');
   const { user, refreshClaims } = useAuth();
   const navigate = useNavigate();
   const toast = useToast();
@@ -25,13 +26,17 @@ export function RegisterPage() {
   const [brand, setBrand] = useState<BrandDraft>(defaultBrand);
   const [account, setAccount] = useState<AccountDraft>({ ...emptyAccount, adminName: user?.displayName ?? '' });
   const [busy, setBusy] = useState(false);
+  const accountCreated = useRef(false);
   const [error, setError] = useState<{ field: 'email' | 'password' | null; message: string } | null>(null);
 
   async function submit() {
     setBusy(true);
     setError(null);
     try {
-      if (!user) await api.createAccount(account.email.trim(), account.password, account.adminName.trim());
+      if (!user && !accountCreated.current) {
+        await api.createAccount(account.email.trim(), account.password, account.adminName.trim());
+        accountCreated.current = true;
+      }
     } catch (err) {
       const code = (err as { code?: string }).code;
       setError(
@@ -69,6 +74,12 @@ export function RegisterPage() {
       return;
     }
 
+    let refreshed = true;
+    try {
+      await refreshClaims();
+    } catch {
+      refreshed = false;
+    }
     if (brand.logo) {
       try {
         await api.uploadLogo(schoolId, brand.logo);
@@ -76,11 +87,7 @@ export function RegisterPage() {
         toast.show(t('errors.logoUpload'), 'error');
       }
     }
-    try {
-      await refreshClaims();
-    } finally {
-      navigate('/admin', { replace: true });
-    }
+    navigate(refreshed ? '/admin' : '/', { replace: true });
   }
 
   return (
@@ -89,7 +96,7 @@ export function RegisterPage() {
         <div className="mb-7 flex flex-wrap items-center justify-between gap-4">
           <div className="flex items-center gap-2.5">
             <BrandMark />
-            <span className="text-xl font-extrabold">Sathiya</span>
+            <span className="text-xl font-extrabold">{ta('brand')}</span>
           </div>
           <ol aria-label={t('steps.label')} className="m-0 flex list-none flex-wrap gap-2 p-0 text-sm font-semibold">
             {steps.map((key, i) => {

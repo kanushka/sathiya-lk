@@ -7,7 +7,7 @@ import { Button } from '../../ui/Button';
 import { Field, inputClass } from '../../ui/Field';
 import { SchoolSearch } from './SchoolSearch';
 import { getDirectorySchool, signInWithPassword, type DirectorySchool } from './api';
-import { authErrorKind } from './errors';
+import { authErrorMessage } from './errors';
 import { readRememberedSchool, rememberSchool } from './schoolMemory';
 
 export function TeacherLoginForm({ focus }: { focus?: boolean }) {
@@ -60,21 +60,17 @@ export function TeacherLoginForm({ focus }: { focus?: boolean }) {
     setError(null);
     try {
       await signInWithPassword(syntheticEmail(staffId.trim().toUpperCase(), school.id), password);
-      await refreshClaims();
-      navigate('/', { replace: true });
     } catch (err) {
-      const kind = authErrorKind(err);
-      setError(
-        kind === 'credentials'
-          ? t('errors.teacherCredentials')
-          : kind === 'tooMany'
-            ? t('errors.tooMany')
-            : kind === 'network'
-              ? t('errors.network')
-              : t('errors.generic'),
-      );
+      setError(authErrorMessage(err, t, 'errors.teacherCredentials'));
       setBusy(false);
+      return;
     }
+    try {
+      await refreshClaims();
+    } catch {
+      // Signed in; HomeRedirect decides from whatever claims are loaded.
+    }
+    navigate('/', { replace: true });
   }
 
   return (
@@ -111,7 +107,6 @@ export function TeacherLoginForm({ focus }: { focus?: boolean }) {
         <input
           className={inputClass}
           type="password"
-          inputMode="numeric"
           autoComplete="current-password"
           value={password}
           onChange={(e) => setPassword(e.target.value)}

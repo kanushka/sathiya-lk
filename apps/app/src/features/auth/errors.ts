@@ -20,3 +20,22 @@ export function authErrorKind(err: unknown): AuthErrorKind {
       return 'generic';
   }
 }
+
+export function authErrorMessage(
+  err: unknown,
+  t: (key: string) => string,
+  credentialsKey: 'errors.teacherCredentials' | 'errors.adminCredentials',
+): string | null {
+  switch (authErrorKind(err)) {
+    case 'cancelled':
+      return null;
+    case 'credentials':
+      return t(credentialsKey);
+    case 'tooMany':
+      return t('errors.tooMany');
+    case 'network':
+      return t('errors.network');
+    default:
+      return t('errors.generic');
+  }
+}
