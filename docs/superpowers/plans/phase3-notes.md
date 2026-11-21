@@ -79,3 +79,8 @@
 - Replace hardcoded danger colour `#A3262A` with a danger design token.
 - Session teacher passwords are in-memory only, keyed by `uid:schoolId`.
 - Shell: call `clearSessionPasswords()` (features/teachers/sessionPasswords.ts) from the AuthProvider sign-out path so teacher plaintext passwords never survive sign-out in the same tab (store is already scoped by uid:sid, so other users/schools never see them).
+
+## Auth emails (sendAuthEmail)
+
+- Auth emails (verify, password reset) go through the backend callable `sendAuthEmail` req `{ kind: 'verify' | 'reset'; email?: string; lang: 'en' | 'si' }` res `{ ok: true }`. The contract is mirrored locally in `features/auth/authEmail.ts`; replace it with `call('sendAuthEmail', ...)` once it is in core `CallableTypes` (Phase 6).
+- Backend must send `details.code: 'rate-limited'` (HttpsError details) when throttling; the client shows a "too many requests" message for it. Reset always shows the neutral "if an account exists" message on any other outcome.

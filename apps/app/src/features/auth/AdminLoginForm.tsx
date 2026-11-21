@@ -4,11 +4,13 @@ import { useState, type FormEvent } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '../../app/AuthProvider';
+import { useLang } from '../../app/LangProvider';
 import { Button } from '../../ui/Button';
 import { Field, inputClass } from '../../ui/Field';
 import { useToast } from '../../ui/Toast';
-import { claimInvites, sendReset, signInWithGoogle, signInWithPassword } from './api';
-import { authErrorMessage } from './errors';
+import { claimInvites, signInWithGoogle, signInWithPassword } from './api';
+import { sendAuthEmail } from './authEmail';
+import { authErrorMessage, detailCode } from './errors';
 
 function GoogleMark() {
   return (
@@ -24,6 +26,7 @@ export function AdminLoginForm() {
   const { refreshClaims } = useAuth();
   const navigate = useNavigate();
   const toast = useToast();
+  const { lang } = useLang();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState<string | null>(null);
@@ -63,10 +66,11 @@ export function AdminLoginForm() {
       return;
     }
     try {
-      await sendReset(email.trim());
+      await sendAuthEmail({ kind: 'reset', email: email.trim(), lang });
       toast.show(t('admin.resetSent'), 'success');
-    } catch {
-      toast.show(t('errors.generic'), 'error');
+    } catch (err) {
+      if (detailCode(err) === 'rate-limited') toast.show(t('admin.resetRateLimited'), 'error');
+      else toast.show(t('admin.resetSent'), 'success');
     }
   }
 

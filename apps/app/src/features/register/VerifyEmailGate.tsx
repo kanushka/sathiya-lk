@@ -2,7 +2,10 @@
 // Copyright (C) 2026 Kanushka Gayan
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
+import { useLang } from '../../app/LangProvider';
 import { Button } from '../../ui/Button';
+import { sendAuthEmail } from '../auth/authEmail';
+import { detailCode } from '../auth/errors';
 import * as api from './api';
 
 export interface VerifyEmailGateProps {
@@ -12,6 +15,7 @@ export interface VerifyEmailGateProps {
 
 export function VerifyEmailGate({ email, onConfirmed }: VerifyEmailGateProps) {
   const { t } = useTranslation('register');
+  const { lang } = useLang();
   const [busy, setBusy] = useState(false);
   const [message, setMessage] = useState<{ kind: 'info' | 'error'; text: string } | null>(null);
 
@@ -35,10 +39,10 @@ export function VerifyEmailGate({ email, onConfirmed }: VerifyEmailGateProps) {
     setBusy(true);
     setMessage(null);
     try {
-      await api.resendVerification();
+      await sendAuthEmail({ kind: 'verify', lang });
       setMessage({ kind: 'info', text: t('verify.sent') });
-    } catch {
-      setMessage({ kind: 'error', text: t('verify.sendFailed') });
+    } catch (err) {
+      setMessage({ kind: 'error', text: t(detailCode(err) === 'rate-limited' ? 'errors.rateLimited' : 'verify.sendFailed') });
     } finally {
       setBusy(false);
     }

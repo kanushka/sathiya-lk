@@ -4,9 +4,11 @@ import { useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../../app/AuthProvider';
+import { useLang } from '../../app/LangProvider';
 import { cx } from '../../ui/cx';
 import { useToast } from '../../ui/Toast';
 import { BrandMark, LanguageToggle } from '../auth/AuthChrome';
+import { sendAuthEmail } from '../auth/authEmail';
 import { ReportSchoolModal } from '../auth/ReportSchoolModal';
 import { StepAccount } from './StepAccount';
 import { StepBrand } from './StepBrand';
@@ -23,6 +25,7 @@ export function RegisterPage() {
   const { t } = useTranslation('register');
   const { t: ta } = useTranslation('auth');
   const { user, refreshClaims } = useAuth();
+  const { lang } = useLang();
   const navigate = useNavigate();
   const toast = useToast();
   const [step, setStep] = useState<Step>(1);
@@ -50,6 +53,7 @@ export function RegisterPage() {
       if (!user && !accountCreated.current) {
         await api.createAccount(account.email.trim(), account.password, account.adminName.trim());
         accountCreated.current = true;
+        await sendAuthEmail({ kind: 'verify', lang }).catch(() => undefined);
         setConfirmed(false);
         setGate(true);
         setBusy(false);

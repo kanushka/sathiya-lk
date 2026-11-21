@@ -6,7 +6,6 @@ import {
   checkActionCode,
   confirmPasswordReset,
   GoogleAuthProvider,
-  sendPasswordResetEmail,
   signInWithEmailAndPassword,
   signInWithPopup,
   verifyPasswordResetCode,
@@ -63,10 +62,6 @@ export async function signInWithPassword(email: string, password: string): Promi
 
 export async function signInWithGoogle(): Promise<void> {
   await signInWithPopup(auth, new GoogleAuthProvider());
-}
-
-export async function sendReset(email: string): Promise<void> {
-  await sendPasswordResetEmail(auth, email);
 }
 
 export async function claimInvites(): Promise<void> {

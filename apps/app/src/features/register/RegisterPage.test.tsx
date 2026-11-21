@@ -5,12 +5,14 @@ import userEvent from '@testing-library/user-event';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { ApiError } from '../../lib/callable';
 import * as authApi from '../auth/api';
+import { sendAuthEmail } from '../auth/authEmail';
 import { renderAuth } from '../auth/testHarness';
 import { RegisterPage } from './RegisterPage';
 import * as api from './api';
 
 vi.mock('./api');
 vi.mock('../auth/api');
+vi.mock('../auth/authEmail');
 
 beforeEach(() => {
   vi.resetAllMocks();
@@ -19,7 +21,7 @@ beforeEach(() => {
   vi.mocked(api.registerSchool).mockResolvedValue('siripura');
   vi.mocked(api.uploadLogo).mockResolvedValue('https://x/logo.png');
   vi.mocked(api.confirmVerified).mockResolvedValue(true);
-  vi.mocked(api.resendVerification).mockResolvedValue(undefined);
+  vi.mocked(sendAuthEmail).mockResolvedValue(undefined);
   vi.mocked(authApi.getDirectorySchool).mockResolvedValue(null);
   vi.mocked(authApi.searchSchools).mockResolvedValue([]);
 });
@@ -449,8 +451,16 @@ describe('register', () => {
       const user = userEvent.setup();
       renderAuth(<RegisterPage />, { route: '/register', at: '/register', signedIn: true, passwordUser: true, emailVerified: false });
       await user.click(screen.getByRole('button', { name: 'Send again' }));
-      expect(api.resendVerification).toHaveBeenCalled();
+      expect(sendAuthEmail).toHaveBeenCalledWith({ kind: 'verify', lang: 'en' });
       expect(await screen.findByText('Verification email sent.')).toBeInTheDocument();
+    });
+
+    it('shows the rate-limit message when resending is rate-limited', async () => {
+      const user = userEvent.setup();
+      vi.mocked(sendAuthEmail).mockRejectedValue(new ApiError('invalid', 'x', { code: 'rate-limited' }));
+      renderAuth(<RegisterPage />, { route: '/register', at: '/register', signedIn: true, passwordUser: true, emailVerified: false });
+      await user.click(screen.getByRole('button', { name: 'Send again' }));
+      expect(await screen.findByRole('alert')).toHaveTextContent(/Too many attempts/);
     });
 
     it('skips the gate for Google and verified users', () => {
@@ -469,6 +479,7 @@ describe('register', () => {
       await user.click(screen.getByRole('button', { name: 'Create school' }));
       expect(await screen.findByRole('heading', { name: 'Check your email' })).toBeInTheDocument();
       expect(api.createAccount).toHaveBeenCalledTimes(1);
+      expect(sendAuthEmail).toHaveBeenCalledWith({ kind: 'verify', lang: 'en' });
       expect(api.registerSchool).not.toHaveBeenCalled();
     });
   });
