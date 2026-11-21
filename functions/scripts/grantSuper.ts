@@ -10,7 +10,7 @@ if (!email) {
   process.exit(1);
 }
 
-if (!getApps().length) initializeApp(process.env.GCLOUD_PROJECT ? { projectId: process.env.GCLOUD_PROJECT } : undefined);
+if (!getApps().length) initializeApp({ projectId: process.env.GCLOUD_PROJECT ?? process.env.GOOGLE_CLOUD_PROJECT ?? 'sathiya-lk' });
 
 grantSuper(getAuth(), email).then(
   ({ uid, claims }) => {
