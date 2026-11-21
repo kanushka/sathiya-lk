@@ -80,6 +80,24 @@ describe('suggestPins', () => {
     expect(new Set(picks.map((p) => p.day)).size).toBe(5);
   });
 
+  it('treats a clock-time overlap in another template as busy and never suggests it', () => {
+    const primary = entry('p', 0, 5, [C.c1a], [[S.sinhala, T.ranasinghe]]);
+    const slots = pinSlots({ ...target, entries: [primary] });
+    expect(cellAt(slots, 0, 5)).toEqual({ kind: 'busy', busy: expect.objectContaining({ kind: 'teacher', entryId: 'p', classIds: [C.c1a] }) });
+    expect(cellAt(slots, 0, 6)?.kind).toBe('free');
+    const mondayOnly = { ...ctx, teachers: ctx.teachers.map((t) => (t.id === T.ranasinghe ? { ...t, maxPerDay: 10 } : t)) };
+    const busyElse = [1, 2, 3, 4].flatMap((d) => [1, 2, 3, 4, 5, 6, 7, 8].map((p) => entry(`b${d}${p}`, d as 1 | 2 | 3 | 4, p, [C.c12a], [[S.sinhala, T.ranasinghe]])));
+    const picks = suggestPins({ ...target, ctx: mondayOnly, entries: [primary, ...busyElse], count: 8 });
+    expect(picks.map((p) => p.period)).toEqual([1, 2, 3, 4, 6, 7, 8]);
+  });
+
+  it('only suggests periods that exist on a Short Friday', () => {
+    const roomy = { ...ctx, teachers: ctx.teachers.map((t) => (t.id === T.ranasinghe ? { ...t, maxPerDay: 10 } : t)) };
+    const busyElse = [0, 1, 2, 3].flatMap((d) => [1, 2, 3, 4, 5, 6, 7, 8].map((p) => entry(`b${d}${p}`, d as 0 | 1 | 2 | 3, p, [C.c12a], [[S.sinhala, T.ranasinghe]])));
+    const picks = suggestPins({ ...target, ctx: roomy, classId: C.c6c, entries: busyElse, count: 8 });
+    expect(picks).toEqual([1, 2, 3, 4, 5, 6, 7].map((period) => ({ day: 4, period })));
+  });
+
   it('returns nothing for a zero count', () => {
     expect(suggestPins({ ...target, entries: [], count: 0 })).toEqual([]);
   });
