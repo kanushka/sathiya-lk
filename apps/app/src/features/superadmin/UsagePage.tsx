@@ -5,7 +5,7 @@ import { useCollection, type CollectionState } from '../../lib/firestore';
 import { EmptyState } from '../../ui/EmptyState';
 import { LoadingState } from '../../ui/LoadingState';
 import { Table, TBody, Td, Th, THead, Tr } from '../../ui/Table';
-import { formatDate } from './format';
+import { formatActivity } from './format';
 import { useUsageCounts } from './source';
 
 export function UsagePage({ schools: injected }: { schools?: CollectionState<School> }) {
@@ -17,13 +17,19 @@ export function UsagePage({ schools: injected }: { schools?: CollectionState<Sch
   const counts = useUsageCounts(state.data);
   const dash = t('usage.noData');
 
-  const complete = schools.every((s) => counts[s.id] && counts[s.id]?.status !== 'loading');
+  const rows = schools.map((s) => counts[s.id]);
+  const anyError = rows.some((c) => c?.status === 'error');
+  const complete = rows.every((c) => c?.status === 'ready');
   const sum = (pick: (c: { teachers: number; classes: number; entries: number | null }) => number | null) =>
-    schools.reduce((n, s) => {
-      const c = counts[s.id];
-      return n + (c?.status === 'ready' ? (pick(c.counts) ?? 0) : 0);
-    }, 0);
-  const total = (pick: Parameters<typeof sum>[0]) => (complete ? sum(pick) : t('usage.loading'));
+    rows.reduce((n, c) => n + (c?.status === 'ready' ? (pick(c.counts) ?? 0) : 0), 0);
+  const total = (pick: Parameters<typeof sum>[0]) =>
+    complete ? (
+      sum(pick)
+    ) : anyError ? (
+      <span title={t('usage.countError')}>{dash}</span>
+    ) : (
+      t('usage.loading')
+    );
 
   return (
     <div>
@@ -57,7 +63,7 @@ export function UsagePage({ schools: injected }: { schools?: CollectionState<Sch
                   <Td>{ready ? ready.teachers : fallback}</Td>
                   <Td>{ready ? ready.classes : fallback}</Td>
                   <Td>{ready ? (ready.entries ?? dash) : fallback}</Td>
-                  <Td>{ready ? (ready.lastActivity ? formatDate(ready.lastActivity, lang) : t('usage.never')) : fallback}</Td>
+                  <Td>{ready ? formatActivity(ready.lastActivity, lang, t('usage.never'), dash) : fallback}</Td>
                 </Tr>
               );
             })}

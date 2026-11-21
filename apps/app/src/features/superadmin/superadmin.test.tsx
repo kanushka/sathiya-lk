@@ -2,6 +2,7 @@ import type { School } from '@sathiya/core';
 import { ctx } from '@sathiya/core/fixtures';
 import { screen, waitFor, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
+import { useMemo, useState } from 'react';
 import { Route, Routes } from 'react-router-dom';
 import { describe, expect, it, vi } from 'vitest';
 import { renderWithSchool } from '../../test/renderWithSchool';
@@ -10,7 +11,7 @@ import { SchoolsPage } from './SchoolsPage';
 import { SuperAdminLink } from './SuperAdminLink';
 import { SuperLayout } from './SuperLayout';
 import { UsagePage } from './UsagePage';
-import { UsageSourceProvider, type UsageSource } from './source';
+import { UsageSourceProvider, useUsageCounts, type UsageSource } from './source';
 
 const base = ctx.school;
 const make = (id: string, over: Partial<School>): School => ({ ...base, id, activeYearId: undefined, ...over });
@@ -135,6 +136,78 @@ describe('UsagePage', () => {
     await waitFor(() => expect(within(total).getByText('64')).toBeInTheDocument());
     expect(within(total).getByText('36')).toBeInTheDocument();
     expect(within(total).getByText('410')).toBeInTheDocument();
+  });
+});
+
+describe('UsagePage totals', () => {
+  const totalRow = () => screen.getByText('Total').closest('tr') as HTMLElement;
+
+  it('shows loading totals until every row is ready', async () => {
+    const pending: UsageSource = { counts: () => new Promise(() => undefined) };
+    renderWithSchool(
+      <UsageSourceProvider value={pending}>
+        <UsagePage schools={loaded} />
+      </UsageSourceProvider>,
+      opts,
+    );
+    expect(within(totalRow()).getAllByText('Loading…')).toHaveLength(3);
+  });
+
+  it('shows incomplete totals, not a partial sum, when a row errors', async () => {
+    const partial: UsageSource = {
+      counts: async (s) => {
+        if (s.id === 'b') throw new Error('boom');
+        return { teachers: 5, classes: 2, entries: 1, lastActivity: null };
+      },
+    };
+    renderWithSchool(
+      <UsageSourceProvider value={partial}>
+        <UsagePage schools={loaded} />
+      </UsageSourceProvider>,
+      opts,
+    );
+    const lake = screen.getByText('Lakeside Girls').closest('tr') as HTMLElement;
+    await waitFor(() => expect(within(lake).getAllByText('Error').length).toBeGreaterThan(0));
+    await waitFor(() => expect(within(totalRow()).queryByText('Loading…')).toBeNull());
+    expect(within(totalRow()).getAllByText('—')).toHaveLength(3);
+    expect(within(totalRow()).getAllByTitle('Error')).toHaveLength(3);
+    expect(within(totalRow()).queryByText('10')).toBeNull();
+  });
+});
+
+describe('UsagePage last activity', () => {
+  it('does not show Never when the last-login lookup failed', async () => {
+    const src: UsageSource = { counts: async () => ({ teachers: 1, classes: 1, entries: null, lastActivity: 'error' }) };
+    renderWithSchool(
+      <UsageSourceProvider value={src}>
+        <UsagePage schools={{ loading: false, data: [schools[1]!] }} />
+      </UsageSourceProvider>,
+      opts,
+    );
+    const row = (await screen.findByText('Lakeside Girls')).closest('tr') as HTMLElement;
+    await waitFor(() => expect(within(row).queryByText('Loading…')).toBeNull());
+    expect(within(row).queryByText('Never')).toBeNull();
+  });
+});
+
+describe('useUsageCounts', () => {
+  it('refetches when the active year changes', async () => {
+    const counts = vi.fn(source.counts);
+    function Host() {
+      const [year, setYear] = useState('y1');
+      const list = useMemo(() => [{ ...schools[0]!, activeYearId: year }], [year]);
+      useUsageCounts(list);
+      return <button onClick={() => setYear('y2')}>switch</button>;
+    }
+    renderWithSchool(
+      <UsageSourceProvider value={{ counts }}>
+        <Host />
+      </UsageSourceProvider>,
+      opts,
+    );
+    await waitFor(() => expect(counts).toHaveBeenCalledTimes(1));
+    await userEvent.click(screen.getByText('switch'));
+    await waitFor(() => expect(counts).toHaveBeenCalledTimes(2));
   });
 });
 

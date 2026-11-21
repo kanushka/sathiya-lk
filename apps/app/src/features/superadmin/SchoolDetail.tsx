@@ -7,7 +7,7 @@ import { useDoc, type DocState } from '../../lib/firestore';
 import { EmptyState } from '../../ui/EmptyState';
 import { LoadingState } from '../../ui/LoadingState';
 import { StatusButton, StatusPill } from './StatusControl';
-import { formatDate } from './format';
+import { formatActivity, formatDate } from './format';
 import { useUsageCounts } from './source';
 import { defaultSetStatus, type SetStatusFn } from './status';
 
@@ -72,7 +72,7 @@ export function SchoolDetail({ school: injected, setStatus = defaultSetStatus }:
         <Row label={t('usage.columns.classes')}>{ready ? ready.classes : pending}</Row>
         <Row label={t('usage.columns.entries')}>{ready ? (ready.entries ?? t('usage.noData')) : pending}</Row>
         <Row label={t('usage.columns.lastActivity')}>
-          {ready ? (ready.lastActivity ? formatDate(ready.lastActivity, lang) : t('usage.never')) : pending}
+          {ready ? formatActivity(ready.lastActivity, lang, t('usage.never'), t('usage.noData')) : pending}
         </Row>
       </dl>
     </div>

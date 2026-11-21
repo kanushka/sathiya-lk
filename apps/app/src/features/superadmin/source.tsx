@@ -7,7 +7,7 @@ export interface UsageCounts {
   teachers: number;
   classes: number;
   entries: number | null;
-  lastActivity: number | null;
+  lastActivity: number | null | 'error';
 }
 
 export interface UsageSource {
@@ -19,13 +19,13 @@ async function count(path: string): Promise<number> {
   return snap.data().count;
 }
 
-async function lastLogin(sid: string): Promise<number | null> {
+async function lastLogin(sid: string): Promise<number | null | 'error'> {
   try {
     const snap = await getDocs(query(collection(db, paths.teachers(sid)), orderBy('lastLoginAt', 'desc'), limit(1)));
     const v = snap.docs[0]?.data().lastLoginAt;
     return typeof v === 'number' ? v : null;
   } catch {
-    return null;
+    return 'error';
   }
 }
 
@@ -70,8 +70,9 @@ export function useUsageCounts(schools: School[]): Record<string, CountState> {
       setState({});
     }
     for (const school of schools) {
-      if (requested.current.has(school.id)) continue;
-      requested.current.add(school.id);
+      const key = `${school.id}:${school.activeYearId ?? ''}`;
+      if (requested.current.has(key)) continue;
+      requested.current.add(key);
       const issuedBy = source;
       source.counts(school).then(
         (counts) => {
