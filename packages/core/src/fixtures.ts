@@ -1,5 +1,5 @@
 import { withTeacherIds } from './clash';
-import type { DayIndex, Entry, Grade, PeriodTemplate, School, SchoolClass, SchoolContext, Subject, Teacher, TemplateRow } from './types';
+import type { DayIndex, Entry, Grade, PeriodTemplate, PlanItem, School, SchoolClass, SchoolContext, Subject, Teacher, TemplateRow } from './types';
 
 export const T = {
   wickramasinghe: 't-wickramasinghe',
@@ -42,11 +42,11 @@ export const S = {
   pali: 's-pali',
 } as const;
 
-export const C = { c1a: 'c-1a', c6a: 'c-6a', c6b: 'c-6b', c6c: 'c-6c' } as const;
+export const C = { c1a: 'c-1a', c6a: 'c-6a', c6b: 'c-6b', c6c: 'c-6c', c12a: 'c-12a' } as const;
 
 export const TPL = { default: 'tpl-default', shortFriday: 'tpl-short-friday', primary: 'tpl-primary' } as const;
 
-export const G = { g1: 'g-1', g6: 'g-6' } as const;
+export const G = { g1: 'g-1', g6: 'g-6', g12: 'g-12' } as const;
 
 const p = (start: string, end: string): TemplateRow => ({ type: 'period', start, end });
 const interval = (start: string, end: string): TemplateRow => ({ type: 'interval', start, end });
@@ -195,6 +195,24 @@ export const grades: Grade[] = [
       { kind: 'subject', subjectId: S.pts, perWeek: 2 },
     ],
   },
+  {
+    id: G.g12,
+    number: 12,
+    plan: [
+      { kind: 'subject', subjectId: S.maths, perWeek: 18 },
+      { kind: 'subject', subjectId: S.science, perWeek: 18 },
+      { kind: 'subject', subjectId: S.english, perWeek: 4 },
+    ],
+  },
+];
+
+export const plan12A: PlanItem[] = [
+  { kind: 'subject', subjectId: S.buddhism, perWeek: 8 },
+  { kind: 'subject', subjectId: S.pali, perWeek: 8 },
+  { kind: 'subject', subjectId: S.sinhala, perWeek: 8 },
+  { kind: 'subject', subjectId: S.history, perWeek: 8 },
+  { kind: 'subject', subjectId: S.geography, perWeek: 4 },
+  { kind: 'subject', subjectId: S.english, perWeek: 4 },
 ];
 
 export const classes: SchoolClass[] = [
@@ -202,6 +220,7 @@ export const classes: SchoolClass[] = [
   { id: C.c6a, gradeId: G.g6, name: '6A', classTeacherId: T.bandara, templateId: TPL.default },
   { id: C.c6b, gradeId: G.g6, name: '6B', classTeacherId: T.perera, templateId: TPL.default },
   { id: C.c6c, gradeId: G.g6, name: '6C', classTeacherId: T.dissanayake, templateId: TPL.shortFriday },
+  { id: C.c12a, gradeId: G.g12, name: '12A', classTeacherId: T.ananda, templateId: TPL.default, planOverride: plan12A },
 ];
 
 export const ctx: SchoolContext = { school, teachers, subjects, templates, grades, classes };
