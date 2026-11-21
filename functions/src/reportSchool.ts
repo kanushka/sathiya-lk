@@ -1,13 +1,12 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
 // Copyright (C) 2026 Kanushka Gayan
-import { paths } from '@sathiya/core';
+import { paths, REPORT_REASONS, type ReportReason, type ReportSchoolRes } from '@sathiya/core';
 import { onCall } from 'firebase-functions/v2/https';
 import { db } from './lib/admin';
 import { mailConfig } from './email/params';
 import { sendMail } from './email/send';
 import { reportReceived } from './email/templates';
 import { callOpts } from './lib/callOptions';
-import { REPORT_REASONS, type ReportReason, type ReportSchoolRes } from '@sathiya/core';
 import { docId, email, fail, invalid, obj, optStr } from './lib/guards';
 import { clientIp, consumeRateLimits, hashIp, REPORT_PER_IP_PER_DAY } from './lib/rateLimit';
 
