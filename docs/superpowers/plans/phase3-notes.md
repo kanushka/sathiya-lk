@@ -32,7 +32,7 @@
 
 - Invite doc shape assumed at `schools/{sid}/invites/{id}`: `{ email, teacherId?, createdAt? }` (`Invite` in `features/members/api.ts`). Admin must be able to read `members` and `invites`.
 - Profile edits update only the school doc. `schoolDirectory/{sid}` (nameEn/nameSi/nameLower/district) is not written from the client; syncing it on profile edit is a Phase 1 concern (trigger on school doc update).
-- Profile adds `city` (required), `address?`, `phone?` via local `SchoolWithContact` type (core `School` gains these in Phase 6). Cleared optional fields (and `nameSi`) are removed with `deleteField()`. `registerSchool` does not yet collect city.
+- Profile adds `city` (required), `address?`, `phone?` via local `SchoolWithContact` type (core `School` gains these in Phase 6). Cleared optional fields (and `nameSi`) are removed with `deleteField()`.
 - Contrast helper (`profile/contrast.ts`) is local since core `color.ts` keeps luminance private; warns when primary vs white < 4.5:1.
 - Dashboard attention/stat links assume Phase 4 query params `/admin/timetable/class?c=<classId>` and `/admin/timetable/teacher?t=<teacherId>`; links keep the `/s/:sid` base in the super-admin mirror.
 - Dashboard "clashes" counts unique conflicting entry pairs via `findConflicts`; "empty slots" = per-class week capacity minus entries placed in that class.
@@ -59,3 +59,22 @@
 - Public route `/auth/action` (`features/auth/ActionPage`) handles Firebase `mode` = `verifyEmail | resetPassword | recoverEmail` with `oobCode`.
 - Deploy requirement: in the Firebase console (Authentication > Templates > each email template > customize action URL) set the action URL to `https://<app-domain>/auth/action`, otherwise emails keep pointing at the default firebaseapp.com handler.
 - `continueUrl` / `lang` params are not used; the page uses the app's own language toggle.
+
+## Backend / rules dependencies (consolidated)
+
+- Admin create/update (direct Firestore) of `grades` (plan, perWeek), `classes` (incl. `planOverride` set/`deleteField`, `classTeacherId`, `templateId`), and `periodTemplates` (incl. batched `isDefault` flip across templates in one write).
+- `deleteSetupItem` kinds `class` and `template` (template `usedIn` = classes using it) in addition to teacher/subject. In-use errors carry `details: { code: 'in-use', usedIn }`; the `{ deleted:false, usedIn }` result is also handled.
+- New year = client `addDoc` to `years`. Rules should only let admins create `status: 'draft'`; publishing only via the `publishYear` callable.
+- Profile writes `staffPrefix`, `colors`, `logoUrl`, names, `district`, `city`/`address`/`phone` on the school doc. Rules must forbid admin writes to `status`, `activeYearId`, `termsVersion`.
+- `schoolDirectory` is publicly readable (unauthenticated) with `nameLower`, `cityLower`, `city` kept in sync by the backend on school create/update.
+- Subject delete should count grade plans and teacher `subjectIds` as usage, otherwise the UI can show raw subject ids.
+- Teacher edits are direct `updateDoc` by admins (name, subjects, grades, maxPerDay, phone, email); `staffId` is never changed, and edit validation ignores the current prefix for existing teachers.
+- Members and invites collections must be admin-readable.
+- `platform/defaultSubjects` shape `{ subjects: [{ nameEn, nameSi?, short, color }] }`, admin-readable. `platform/config.currentTermsVersion` is read for terms.
+- Logo Storage path `schools/{sid}/logo.png` or `.svg` (<= 1 MB), written by admins of that school; app then writes `logoUrl`.
+
+## Phase 6 cleanup
+
+- Move shared pieces to `ui/` with a shared i18n namespace: delete guard (`features/teachers/useDeleteSetupItem`, `DeleteSetupModal`), `ColorSwatches` / `LogoUpload` / `BrandPreview` (`features/register`), `ReportSchoolModal` and `errors` (`features/auth`).
+- Replace hardcoded danger colour `#A3262A` with a danger design token.
+- Session teacher passwords are in-memory only, keyed by `uid:schoolId`.
