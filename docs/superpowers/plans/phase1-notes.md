@@ -115,3 +115,47 @@ Uses `buildSnapshots(ctx, entries, year)` and the phase0 paths `publishedClasses
 - `registerSchool` requires `school.city` (trimmed, non-empty, ≤ 80) and accepts optional `school.address` (≤ 200) and `school.phone` (≤ 30), all trimmed; non-strings → `invalid-argument`/`invalid`. Stored on `schools/{sid}`; `city` is also written to `schoolDirectory/{sid}` (address/phone are not).
 - `@sathiya/core` types don't have these fields yet (added on another branch, merged in Phase 6). Functions read them through the local `RegisterSchoolInput` type in `functions/src/registerSchool.ts`; drop it once `RegisterSchoolReq['school']` / `School` / the directory doc type gain `city`, `address?`, `phone?`.
 - Phase 3 register form must send `city` (required) or registration fails.
+
+## Task 1.3 — Security rules
+
+`firestore.rules`, `storage.rules`; tests in `tests/rules` (workspace package `rules`, Vitest + `@firebase/rules-unit-testing` 3.x, project id `demo-sathiya-rules`), run by `pnpm test:emulators` after the functions tests. `pnpm --filter rules typecheck` is part of `pnpm typecheck`. No index changes were needed.
+
+Roles in rules: admin of sid = `token.sid == sid && token.role == 'admin'` (an admin with `tid` is still an admin); teacher of sid = `token.role == 'teacher'`; super = `token.super == true` (read only on school data, O3). Claims are read with `token.get(k, null)`.
+
+### Firestore — who can do what
+| Path | Read | Client write |
+|---|---|---|
+| `schoolDirectory/{sid}` | anyone (signed out too) | none (functions) |
+| `schools/{sid}` | admin, teacher of sid, super | admin **update** only; changed keys must be within `nameEn, nameSi, district, grades, staffPrefix, logoUrl, colors, city, address, phone`; `city` (if changed) string, non-blank, ≤ 80, can't be removed; `address` ≤ 200 / `phone` ≤ 30 strings if present. `status`, `activeYearId`, `termsVersion`, `acceptedTerms`, `createdAt` and any other key are functions-only. No create/delete. |
+| `teachers/{tid}` | admin, super; teacher only own `tid` | admin update, `uid` and `staffId` unchanged (incl. not added). No create (`createTeacher`) / delete (`deleteSetupItem`). |
+| `subjects`, `periodTemplates`, `classes` | admin, super | admin create/update; delete via `deleteSetupItem` only |
+| `grades` | admin, super | admin create/update/delete |
+| `members/{uid}` | admin, super; teacher only own uid | none |
+| `invites` | admin, super | none |
+| `years/{yid}` | admin, teacher, super | admin create with `status:'draft'` and no `publishedAt`; update may not touch `status`/`publishedAt` (`publishYear`); no delete |
+| `years/{yid}/entries` | admin, super (teachers can't read drafts) | none (`saveEntry`/`deleteEntry`) |
+| `years/{yid}/publishedClasses` | admin, teacher, super | none |
+| `years/{yid}/publishedTeachers/{tid}` | admin, super; teacher only own `tid` | none |
+| `years/{yid}/slotLocks` | nobody | none |
+| `users/{uid}` | owner | owner create/update, only key `lang` in `en`/`si`; no delete |
+| `platform/**` | any signed-in user | super |
+| anything else | nobody | none |
+
+Every admin write also requires `schools/{sid}.status != 'disabled'` (one `get()` per write). Reads stay open on disabled schools (super view, read-only admin).
+
+### Storage
+`schools/{sid}/logo.<ext>` (single path segment, any extension): public read; admin of sid create/update ≤ 1 MB with contentType exactly `image/png` or `image/svg+xml`; admin of sid delete. Everything else denied. The disabled-school check is **not** applied in storage rules (would need a cross-service `firestore.get()` plus an IAM grant); a disabled-school admin can still replace the logo.
+
+### For later phases
+- Phase 3 (setup screens): write subjects/templates/classes/grades and teacher profile fields directly with the client SDK; create/delete teachers and delete subjects/templates/classes via callables. The school-profile screen writes `schools/{sid}` directly — only the whitelisted keys above; any new school field needs a rules change. Uploading the logo: put to `schools/{sid}/logo.png|svg` with the right `contentType`, then write the download URL to `logoUrl`.
+- **Open item — directory sync:** `schoolDirectory/{sid}` is functions-only; a name/district/city change on the school doc does **not** update the directory. Phase 3 must not expect it; add a callable or a Firestore trigger later.
+- Phase 4 (teacher views): a teacher can list `publishedClasses` and read only `publishedTeachers/{own tid}` (get by id — a list query on `publishedTeachers` is denied). Teachers can't list `teachers`, `members`, `entries`, or read setup collections; `useCollection` on those from `/me` will fail with permission-denied.
+- `teachers.lastLoginAt` has no client writer (teachers can't write their teacher doc). If Phase 3/4 wants it, set it from a callable.
+- Phase 6 (super): super reads everything under `schools/**` (incl. members/invites) but every client write is denied; status changes go through `setSchoolStatus`.
+- Year creation: admin writes `years/{yid}` with `status:'draft'` from the client; only `publishYear` publishes.
+- App Check for Firestore and Storage is enforced in the console later (see Task 1.1 App Check steps); rules don't check `request.app`.
+- Hosting (O6): `app` target sends `X-Frame-Options: DENY`, `Content-Security-Policy: frame-ancestors 'none'`, `X-Content-Type-Options: nosniff`, `Referrer-Policy: strict-origin-when-cross-origin` on every path. A full CSP (script/connect sources) is not set.
+
+### Concerns
+- SVG logos are publicly served from the Storage domain; an SVG can contain script. It runs on the storage origin (not the app origin) and the app should render logos with `<img>` (scripts don't run there), but consider sanitising or PNG-only later.
+- `grades` delete has no usage check (no callable); a deleted grade can orphan classes.
