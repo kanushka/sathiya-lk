@@ -1,0 +1,23 @@
+---
+import { content, type Lang } from '../lib/links';
+
+interface Props {
+  lang: Lang;
+}
+const t = content(Astro.props.lang);
+---
+<section id="features" class="band">
+  <div class="wrap section">
+    <h2>{t.features.title}</h2>
+    <p class="section-intro">{t.features.intro}</p>
+    <ul class="feature-grid">
+      {t.features.items.map((f, i) => (
+        <li class="feature">
+          <span class="feature-n" aria-hidden="true">{i + 1}</span>
+          <h3>{f.title}</h3>
+          <p>{f.body}</p>
+        </li>
+      ))}
+    </ul>
+  </div>
+</section>

@@ -1,0 +1,57 @@
+---
+import { appLinks, content, type Lang } from '../lib/links';
+import type { Content } from '../content/en';
+
+interface Props {
+  lang: Lang;
+}
+const { lang } = Astro.props;
+const t = content(lang);
+const app = appLinks();
+
+type Subject = keyof Content['grid']['subjects'];
+const week: (Subject | null)[][] = [
+  ['maths', 'sinhala', 'english', 'maths', 'science'],
+  ['science', 'maths', 'religion', 'history', 'maths'],
+  ['english', 'science', 'maths', 'sinhala', 'aesthetic'],
+  ['religion', 'geography', 'science', 'maths', 'english'],
+  ['sinhala', 'pe', 'aesthetic', 'english', null],
+  ['history', 'english', 'sinhala', 'religion', 'health'],
+];
+const tint: Partial<Record<Subject, string>> = {
+  maths: 'tint-teal',
+  science: 'tint-blue',
+  religion: 'tint-saffron',
+  aesthetic: 'tint-violet',
+};
+---
+<section class="wrap hero">
+  <div class="hero-copy">
+    <p class="pill">{t.hero.pill}</p>
+    <h1>{t.hero.title}</h1>
+    <p class="hero-sub" lang={t.hero.subLang}>{t.hero.sub}</p>
+    <p class="hero-body">{t.hero.body}</p>
+    <div class="actions">
+      <a class="btn btn-primary" href={app.register}>{t.hero.register}</a>
+      <a class="btn btn-secondary" href={app.teacherLogin}>{t.hero.teacherLogin}</a>
+    </div>
+  </div>
+  <figure class="grid-card" role="img" aria-label={t.grid.label}>
+    <div class="grid-head" aria-hidden="true">
+      <strong>{t.grid.title}</strong>
+      <span>{t.grid.summary}</span>
+    </div>
+    <div class="tt" aria-hidden="true">
+      <span></span>
+      {t.grid.days.map((d) => <b>{d}</b>)}
+      {week.map((row, i) => (
+        <>
+          <span class="tt-p">{t.grid.period}{i + 1}</span>
+          {row.map((s) =>
+            s ? <span class:list={['tt-cell', tint[s] ?? 'tint-grey']}>{t.grid.subjects[s]}</span> : <span class="tt-cell tt-empty">+</span>,
+          )}
+        </>
+      ))}
+    </div>
+  </figure>
+</section>

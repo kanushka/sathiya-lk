@@ -1,0 +1,65 @@
+---
+import { content, type Lang } from '../lib/links';
+
+interface Props {
+  lang: Lang;
+}
+const t = content(Astro.props.lang);
+---
+<div id="consent" class="consent" role="region" aria-label={t.consent.label} hidden>
+  <p>{t.consent.text}</p>
+  <div class="consent-actions">
+    <button type="button" class="btn btn-primary btn-sm" data-consent="granted">{t.consent.allow}</button>
+    <button type="button" class="btn btn-secondary btn-sm" data-consent="denied">{t.consent.deny}</button>
+  </div>
+</div>
+<script is:inline>
+  (function () {
+    var KEY = 'sathiya.consent';
+    var ID = 'G-Z7BE11T4C9';
+    var banner = document.getElementById('consent');
+    function read() {
+      try {
+        return localStorage.getItem(KEY);
+      } catch (e) {
+        return null;
+      }
+    }
+    function write(v) {
+      try {
+        localStorage.setItem(KEY, v);
+      } catch (e) {}
+    }
+    function load() {
+      if (window.gtag) return;
+      window.dataLayer = window.dataLayer || [];
+      window.gtag = function () {
+        window.dataLayer.push(arguments);
+      };
+      window.gtag('js', new Date());
+      window.gtag('config', ID);
+      var s = document.createElement('script');
+      s.async = true;
+      s.src = 'https://www.googletagmanager.com/gtag/js?id=' + ID;
+      document.head.appendChild(s);
+    }
+    var choice = read();
+    if (choice === 'granted') load();
+    else if (choice !== 'denied') banner.hidden = false;
+    banner.addEventListener('click', function (e) {
+      var b = e.target.closest('[data-consent]');
+      if (!b) return;
+      var v = b.getAttribute('data-consent');
+      write(v);
+      banner.hidden = true;
+      if (v === 'granted') load();
+      else window['ga-disable-' + ID] = true;
+    });
+    document.addEventListener('click', function (e) {
+      if (e.target.closest('[data-consent-open]')) {
+        banner.hidden = false;
+        banner.querySelector('button').focus();
+      }
+    });
+  })();
+</script>

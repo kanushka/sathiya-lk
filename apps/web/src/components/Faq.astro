@@ -1,0 +1,19 @@
+---
+import { content, type Lang } from '../lib/links';
+
+interface Props {
+  lang: Lang;
+}
+const t = content(Astro.props.lang);
+---
+<section id="faq" class="wrap section faq">
+  <h2>{t.faq.title}</h2>
+  <div class="faq-list">
+    {t.faq.items.map((item) => (
+      <details>
+        <summary>{item.q}</summary>
+        <p>{item.a}</p>
+      </details>
+    ))}
+  </div>
+</section>
