@@ -1,57 +1,23 @@
+import type { Claims, Year } from '@sathiya/core';
+import { ctx } from '@sathiya/core/fixtures';
 import { screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
-import { MemoryRouter } from 'react-router-dom';
-import { beforeEach, describe, expect, it, vi } from 'vitest';
-import { renderWithI18n } from '../test/render';
+import { describe, expect, it } from 'vitest';
+import { renderWithSchool } from '../test/renderWithSchool';
+import { Sidebar, navItems } from './Sidebar';
 
-const auth = vi.hoisted(() => ({ value: { claims: { sid: 's1', role: 'admin' } as Record<string, unknown> } }));
-const yearState = vi.hoisted(() => ({
-  years: [
-    { id: 'y27', label: '2027', status: 'draft' },
-    { id: 'y26', label: '2026', status: 'published' },
-  ],
-}));
+const twoYears: Year[] = [
+  { id: 'y27', label: '2027', status: 'draft' },
+  { id: 'y26', label: '2026', status: 'published' },
+];
 
-vi.mock('../lib/firebase', () => ({ app: {}, auth: {}, db: {}, functions: {}, storage: {} }));
-vi.mock('../app/AuthProvider', () => ({
-  useAuth: () => ({ user: { uid: 'u1' }, loading: false, claims: auth.value.claims, refreshClaims: vi.fn(), signOut: vi.fn() }),
-}));
-vi.mock('../app/SchoolProvider', () => ({
-  useSchool: () => ({
-    loading: false,
-    school: { id: 's1', nameEn: 'Siripura Central College', colors: { primary: '#7A1F3D', second: '#D9A441' } },
-    teachers: [], subjects: [], templates: [], grades: [], classes: [],
-  }),
-  useYear: () => ({
-    years: yearState.years,
-    yearId: 'y27',
-    setYearId: vi.fn(),
-    entries: [],
-  }),
-}));
-
-const { Sidebar, navItems } = await import('./Sidebar');
-
-function renderSidebar(path = '/admin/teachers') {
-  return renderWithI18n(
-    <MemoryRouter initialEntries={[path]}>
-      <Sidebar />
-    </MemoryRouter>,
-  );
+function renderSidebar(path = '/admin/teachers', opts: { years?: Year[]; claims?: Claims } = {}) {
+  return renderWithSchool(<Sidebar />, { ctx, years: opts.years ?? twoYears, route: path, ...(opts.claims && { claims: opts.claims }) });
 }
 
 describe('Sidebar', () => {
-  beforeEach(() => {
-    auth.value.claims = { sid: 's1', role: 'admin' };
-    yearState.years = [
-      { id: 'y27', label: '2027', status: 'draft' },
-      { id: 'y26', label: '2026', status: 'published' },
-    ];
-  });
-
   it('shows the year heading as plain text when there are no years', () => {
-    yearState.years = [];
-    renderSidebar();
+    renderSidebar('/admin/teachers', { years: [] });
     expect(screen.getByText('No years yet')).toBeInTheDocument();
     expect(screen.getByText('Timetable year').tagName).toBe('P');
     expect(document.querySelector('label[for]')).toBeNull();
@@ -69,6 +35,13 @@ describe('Sidebar', () => {
       '/admin/members',
       '/admin/profile',
     ]);
+  });
+
+  it('switches the selected year', async () => {
+    const user = userEvent.setup();
+    renderSidebar();
+    await user.selectOptions(screen.getByLabelText('Timetable year'), 'y26');
+    expect(screen.getByLabelText('Timetable year')).toHaveValue('y26');
   });
 
   it('shows school name, year select and active link', () => {
@@ -101,17 +74,12 @@ describe('Sidebar', () => {
   it('shows My timetable only when the admin teaches', () => {
     renderSidebar();
     expect(screen.queryByRole('link', { name: 'My timetable' })).not.toBeInTheDocument();
-    auth.value.claims = { sid: 's1', role: 'admin', tid: 't1' };
-    renderSidebar();
+    renderSidebar('/admin/teachers', { claims: { sid: 's1', role: 'admin', tid: 't1' } });
     expect(screen.getByRole('link', { name: 'My timetable' })).toHaveAttribute('href', '/me');
   });
 
   it('rewrites links under a super admin school view', () => {
-    renderWithI18n(
-      <MemoryRouter initialEntries={['/s/s1/teachers']}>
-        <Sidebar basePath="/s/s1" />
-      </MemoryRouter>,
-    );
+    renderWithSchool(<Sidebar basePath="/s/s1" />, { ctx, route: '/s/s1/teachers', claims: { super: true } });
     expect(screen.getByRole('link', { name: 'Teachers' })).toHaveAttribute('href', '/s/s1/teachers');
     expect(screen.getByRole('link', { name: 'Dashboard' })).toHaveAttribute('href', '/s/s1');
   });
