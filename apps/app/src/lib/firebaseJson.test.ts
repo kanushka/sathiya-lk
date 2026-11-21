@@ -10,7 +10,17 @@ interface Block {
 }
 const config = JSON.parse(readFileSync(join(__dirname, '../../../../firebase.json'), 'utf8')) as {
   hosting: { target: string; headers: Block[] }[];
+  functions: { source: string; ignore: string[] }[];
 };
+
+describe('functions deploy', () => {
+  it('keeps the CLI default ignores that a custom list replaces', () => {
+    const ignore = config.functions.find((f) => f.source === 'functions')!.ignore;
+    for (const pattern of ['node_modules', '.git', 'firebase-debug.log', 'firebase-debug.*.log', '*.local']) {
+      expect(ignore, pattern).toContain(pattern);
+    }
+  });
+});
 
 describe.each([
   ['web', '/_astro/**'],
