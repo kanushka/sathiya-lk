@@ -67,7 +67,7 @@ describe('teacherOptionsForSlot', () => {
     ]);
     expect(r.available[0]?.reason).toBeUndefined();
     const tie = teacherOptionsForSlot({ ctx, entries: [], classIds: [C.c6b], day: 2, period: 4, subjectId: S.maths });
-    expect(ids(tie.available)).toEqual([T.bandara, T.perera]);
+    expect(ids(tie.available)).toEqual([T.perera, T.bandara]);
   });
 
   it('editingEntryId excludes the entry itself from busy and load', () => {

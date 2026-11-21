@@ -2,7 +2,7 @@
 // Copyright (C) 2026 Kanushka Gayan
 
 import { withTeacherIds } from './clash';
-import type { DayIndex, Entry, Grade, PeriodTemplate, PlanItem, School, SchoolClass, SchoolContext, Subject, Teacher, TemplateRow } from './types';
+import type { DayIndex, Entry, Grade, PeriodTemplate, PlanItem, School, SchoolClass, SchoolContext, Subject, Teacher, TeacherTitle, TemplateRow } from './types';
 
 export const T = {
   wickramasinghe: 't-wickramasinghe',
@@ -134,9 +134,10 @@ export const subjects: Subject[] = [
 
 const range = (from: number, to: number): number[] => Array.from({ length: to - from + 1 }, (_, i) => from + i);
 
-const teacher = (id: string, staffId: string, name: string, subjectIds: string[], grades: number[], maxPerDay: number, isPrimary = false): Teacher => ({
+const teacher = (id: string, staffId: string, title: TeacherTitle, name: string, subjectIds: string[], grades: number[], maxPerDay: number, isPrimary = false): Teacher => ({
   id,
   staffId,
+  title,
   name,
   isPrimary,
   subjectIds,
@@ -145,25 +146,25 @@ const teacher = (id: string, staffId: string, name: string, subjectIds: string[]
 });
 
 export const teachers: Teacher[] = [
-  teacher(T.wickramasinghe, 'SCC003', 'Mrs. S. Wickramasinghe', [], [1], 8, true),
-  teacher(T.kumari, 'SCC007', 'Mrs. D. Kumari', [], [2], 8, true),
-  teacher(T.rSilva, 'SCC011', 'Mr. R. Silva', [S.sinhala, S.history], [6, 7, 8, 9], 7),
-  teacher(T.perera, 'SCC024', 'Mrs. N. Perera', [S.maths, S.science], [6, 7, 8, 10], 7),
-  teacher(T.rizan, 'SCC031', 'Mr. A. Rizan', [S.islam, S.english], range(6, 11), 7),
-  teacher(T.mSilva, 'SCC036', 'Rev. Fr. M. Silva', [S.catholicism], range(6, 11), 6),
-  teacher(T.ananda, 'SCC042', 'Ven. Ananda Thero', [S.buddhism, S.pali], range(6, 13), 6),
-  teacher(T.fernando, 'SCC048', 'Mrs. K. Fernando', [S.music, S.dancing], range(6, 11), 7),
-  teacher(T.bandara, 'SCC014', 'Mr. P. Bandara', [S.maths], range(6, 11), 7),
-  teacher(T.gunasekara, 'SCC019', 'Mrs. S. Gunasekara', [S.science], range(6, 11), 7),
-  teacher(T.jayawardena, 'SCC052', 'Mr. T. Jayawardena', [S.maths], range(7, 11), 7),
-  teacher(T.ranasinghe, 'SCC016', 'Mrs. J. Ranasinghe', [S.sinhala], range(6, 11), 7),
-  teacher(T.wijesekara, 'SCC021', 'Ms. A. Wijesekara', [S.english], range(6, 11), 7),
-  teacher(T.herath, 'SCC033', 'Mr. K. Herath', [S.geography], range(6, 11), 7),
-  teacher(T.kumara, 'SCC038', 'Mr. S. Kumara', [S.health], range(6, 11), 7),
-  teacher(T.rajan, 'SCC046', 'Mrs. V. Rajan', [S.tamil], range(6, 11), 7),
-  teacher(T.fonseka, 'SCC050', 'Mr. D. Fonseka', [S.pts], range(6, 11), 7),
-  teacher(T.dissanayake, 'SCC055', 'Mrs. L. Dissanayake', [S.art], range(6, 11), 7),
-  teacher(T.senanayake, 'SCC058', 'Ms. R. Senanayake', [S.dancing], range(6, 11), 7),
+  teacher(T.wickramasinghe, 'SCC003', 'Mrs', 'S. Wickramasinghe', [], [1], 8, true),
+  teacher(T.kumari, 'SCC007', 'Mrs', 'D. Kumari', [], [2], 8, true),
+  teacher(T.rSilva, 'SCC011', 'Mr', 'R. Silva', [S.sinhala, S.history], [6, 7, 8, 9], 7),
+  teacher(T.perera, 'SCC024', 'Mrs', 'N. Perera', [S.maths, S.science], [6, 7, 8, 10], 7),
+  teacher(T.rizan, 'SCC031', 'Mr', 'A. Rizan', [S.islam, S.english], range(6, 11), 7),
+  teacher(T.mSilva, 'SCC036', 'Rev', 'Fr. M. Silva', [S.catholicism], range(6, 11), 6),
+  teacher(T.ananda, 'SCC042', 'Ven.', 'Ananda Thero', [S.buddhism, S.pali], range(6, 13), 6),
+  teacher(T.fernando, 'SCC048', 'Mrs', 'K. Fernando', [S.music, S.dancing], range(6, 11), 7),
+  teacher(T.bandara, 'SCC014', 'Mr', 'P. Bandara', [S.maths], range(6, 11), 7),
+  teacher(T.gunasekara, 'SCC019', 'Mrs', 'S. Gunasekara', [S.science], range(6, 11), 7),
+  teacher(T.jayawardena, 'SCC052', 'Mr', 'T. Jayawardena', [S.maths], range(7, 11), 7),
+  teacher(T.ranasinghe, 'SCC016', 'Mrs', 'J. Ranasinghe', [S.sinhala], range(6, 11), 7),
+  teacher(T.wijesekara, 'SCC021', 'Ms', 'A. Wijesekara', [S.english], range(6, 11), 7),
+  teacher(T.herath, 'SCC033', 'Mr', 'K. Herath', [S.geography], range(6, 11), 7),
+  teacher(T.kumara, 'SCC038', 'Mr', 'S. Kumara', [S.health], range(6, 11), 7),
+  teacher(T.rajan, 'SCC046', 'Mrs', 'V. Rajan', [S.tamil], range(6, 11), 7),
+  teacher(T.fonseka, 'SCC050', 'Mr', 'D. Fonseka', [S.pts], range(6, 11), 7),
+  teacher(T.dissanayake, 'SCC055', 'Mrs', 'L. Dissanayake', [S.art], range(6, 11), 7),
+  teacher(T.senanayake, 'SCC058', 'Ms', 'R. Senanayake', [S.dancing], range(6, 11), 7),
 ];
 
 const religion = { kind: 'group', key: 'religion', nameEn: 'Religion', nameSi: 'ආගම', optionSubjectIds: [S.buddhism, S.catholicism, S.islam] } as const;

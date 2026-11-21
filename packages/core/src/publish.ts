@@ -2,13 +2,14 @@
 // Copyright (C) 2026 Kanushka Gayan
 
 import { findClass, gradeOf, templateOf } from './lookup';
+import { teacherDisplayName } from './names';
 import { effectivePlan } from './plan';
 import { bestOverlapPeriod, periodsFor, rowsFor, toMinutes } from './time';
-import type { Bilingual, DayIndex, Entry, Hhmm, PeriodTemplate, SchoolClass, SchoolContext, Subject, TemplateRow, Year } from './types';
+import type { Bilingual, DayIndex, Entry, Hhmm, PeriodTemplate, SchoolClass, SchoolContext, Subject, Teacher, TemplateRow, Year } from './types';
 
 export interface SnapshotCell { day: DayIndex; period: number; start: Hhmm; end: Hhmm; title: string; titleSi?: string; sub: string; subSi?: string; otherClasses?: string[]; color: string; isGroup: boolean }
-export interface ClassSnapshot { classId: string; className: string; gradeNumber: number; classTeacher?: string; rows: Record<DayIndex, TemplateRow[]>; cells: SnapshotCell[]; yearLabel: string; schoolName: Bilingual }
-export interface TeacherSnapshot { teacherId: string; name: string; staffId: string; rows: Record<DayIndex, TemplateRow[]>; cells: SnapshotCell[]; yearLabel: string; schoolName: Bilingual }
+export interface ClassSnapshot { classId: string; className: string; gradeNumber: number; classTeacher?: string; classTeacherSi?: string; rows: Record<DayIndex, TemplateRow[]>; cells: SnapshotCell[]; yearLabel: string; schoolName: Bilingual }
+export interface TeacherSnapshot { teacherId: string; name: string; nameSi?: string; staffId: string; rows: Record<DayIndex, TemplateRow[]>; cells: SnapshotCell[]; yearLabel: string; schoolName: Bilingual }
 
 function weekRows(t: PeriodTemplate | undefined): Record<DayIndex, TemplateRow[]> {
   const get = (d: DayIndex): TemplateRow[] => (t ? rowsFor(t, d) : []);
@@ -36,6 +37,12 @@ function teacherRowPeriod(t: PeriodTemplate, day: DayIndex, window: { start: num
   return nearest;
 }
 
+function displayNames(teacher: Teacher): { en: string; si?: string } {
+  const en = teacherDisplayName(teacher, 'en');
+  const si = teacherDisplayName(teacher, 'si');
+  return si === en ? { en } : { en, si };
+}
+
 const byDayStart = (a: SnapshotCell, b: SnapshotCell): number => a.day - b.day || toMinutes(a.start) - toMinutes(b.start);
 
 function withSi<T extends object>(base: T, nameSi: string | undefined): T & { titleSi?: string } {
@@ -57,8 +64,9 @@ function classCell(ctx: SchoolContext, cls: SchoolClass, e: Entry, slot: { start
   const lesson = e.lessons[0];
   const subject = lesson && subjects.get(lesson.subjectId);
   const teacher = lesson?.teacherId != null ? ctx.teachers.find((t) => t.id === lesson.teacherId) : undefined;
+  const names = teacher && displayNames(teacher);
   const others = e.classIds.filter((id) => id !== cls.id).map((id) => findClass(ctx, id)?.name ?? id);
-  return withSi({ ...base, title: subject?.short ?? '', sub: teacher?.name ?? '', ...(others.length ? { otherClasses: others } : {}), color: subject?.color ?? '' }, subject?.nameSi);
+  return withSi({ ...base, title: subject?.short ?? '', sub: names?.en ?? '', ...(names?.si ? { subSi: names.si } : {}), ...(others.length ? { otherClasses: others } : {}), color: subject?.color ?? '' }, subject?.nameSi);
 }
 
 export function buildSnapshots(ctx: SchoolContext, entries: Entry[], year: Year): { classes: ClassSnapshot[]; teachers: TeacherSnapshot[] } {
@@ -70,10 +78,11 @@ export function buildSnapshots(ctx: SchoolContext, entries: Entry[], year: Year)
   });
 
   const classes = ctx.classes.map((cls): ClassSnapshot => {
-    const classTeacher = ctx.teachers.find((t) => t.id === cls.classTeacherId)?.name;
+    const ct = ctx.teachers.find((t) => t.id === cls.classTeacherId);
+    const names = ct && displayNames(ct);
     const cells = slotted.filter(({ e }) => e.classIds.includes(cls.id)).map(({ e, slot }) => classCell(ctx, cls, e, slot, subjects)).sort(byDayStart);
     const snap: ClassSnapshot = { classId: cls.id, className: cls.name, gradeNumber: gradeOf(ctx, cls)?.number ?? 0, rows: weekRows(templateOf(ctx, cls)), cells, yearLabel: year.label, schoolName };
-    return classTeacher === undefined ? snap : { ...snap, classTeacher };
+    return names === undefined ? snap : { ...snap, classTeacher: names.en, ...(names.si ? { classTeacherSi: names.si } : {}) };
   });
 
   const defaultTemplate = ctx.templates.find((t) => t.isDefault);
@@ -91,7 +100,8 @@ export function buildSnapshots(ctx: SchoolContext, entries: Entry[], year: Year)
       cells.push({ day: e.day, period, start: slot.start, end: slot.end, title, sub: subject?.nameEn ?? '', ...(subSi ? { subSi } : {}), color: subject?.color ?? '', isGroup: e.groupKey !== undefined });
     }
     cells.sort(byDayStart);
-    return { teacherId: teacher.id, name: teacher.name, staffId: teacher.staffId, rows: teacherRows, cells, yearLabel: year.label, schoolName };
+    const names = displayNames(teacher);
+    return { teacherId: teacher.id, name: names.en, ...(names.si ? { nameSi: names.si } : {}), staffId: teacher.staffId, rows: teacherRows, cells, yearLabel: year.label, schoolName };
   });
 
   return { classes, teachers };
