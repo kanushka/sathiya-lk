@@ -56,6 +56,7 @@ const seed: Record<string, Record<string, unknown>> = {
   [paths.user('u-admin')]: { lang: 'en', schoolId: 's1' },
   'censusIndex/12345': { schoolId: 's1' },
   'rateLimits/register-uid_2026-11-21_u-admin': { scope: 'register-uid', day: '2026-11-21', count: 1 },
+  'mail/m1': { to: ['a@example.com'], message: { subject: 's', html: 'h', text: 't' } },
   'reports/r1': { schoolId: 's1', reason: 'fake', status: 'open', createdAt: 1 },
   [paths.user('u-teacher')]: { lang: 'si' },
   [paths.platform.config]: { maintenance: false },
@@ -421,6 +422,19 @@ describe('censusIndex (functions only)', () => {
   deny([['admin', 'censusIndex'], ['super', 'censusIndex']], list);
   deny([['noClaims', n], ['admin', n], ['super', n], ['anon', n]], (r, p) => set(r, p, { schoolId: 'x' }));
   deny([['admin', c], ['super', c]], del);
+});
+
+describe('mail (functions only)', () => {
+  const m = 'mail/m1';
+  const n = 'mail/m2';
+  deny([['admin', m], ['teacher', m], ['adminTid', m], ['super', m], ['otherAdmin', m], ['otherTeacher', m], ['disabledAdmin', m], ['noClaims', m], ['anon', m]], read);
+  deny([['admin', 'mail'], ['teacher', 'mail'], ['super', 'mail'], ['anon', 'mail']], list);
+  deny(
+    [['admin', n], ['teacher', n], ['adminTid', n], ['super', n], ['otherAdmin', n], ['otherTeacher', n], ['disabledAdmin', n], ['noClaims', n], ['anon', n]],
+    (r, p) => set(r, p, { to: ['a@example.com'], message: { subject: 's', html: 'h', text: 't' } }),
+  );
+  deny([['admin', m], ['teacher', m], ['super', m], ['anon', m]], (r, p) => update(r, p, { to: ['x@example.com'] }));
+  deny([['admin', m], ['teacher', m], ['super', m], ['anon', m]], del);
 });
 
 describe('rateLimits (functions only)', () => {

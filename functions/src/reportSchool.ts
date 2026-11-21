@@ -3,6 +3,9 @@
 import { paths } from '@sathiya/core';
 import { onCall } from 'firebase-functions/v2/https';
 import { db } from './lib/admin';
+import { mailConfig } from './email/params';
+import { sendMail } from './email/send';
+import { reportReceived } from './email/templates';
 import { callOpts } from './lib/callOptions';
 import { REPORT_REASONS, type ReportReason, type ReportSchoolRes } from './lib/contract';
 import { docId, email, fail, invalid, obj, optStr } from './lib/guards';
@@ -20,7 +23,8 @@ export const reportSchool = onCall(callOpts, async (req): Promise<ReportSchoolRe
   if (!REPORT_REASONS.includes(reason)) invalid(`reason must be one of ${REPORT_REASONS.join(', ')}`);
   const details = optStr(data.details, 'details', 1000);
   const from = data.email === undefined || data.email === null || data.email === '' ? undefined : email(data.email);
-  if (!(await db.doc(paths.school(schoolId)).get()).exists) fail('not-found', 'invalid', 'Unknown school');
+  const school = await db.doc(paths.school(schoolId)).get();
+  if (!school.exists) fail('not-found', 'invalid', 'Unknown school');
 
   await db.collection(REPORTS).add({
     schoolId,
@@ -30,6 +34,12 @@ export const reportSchool = onCall(callOpts, async (req): Promise<ReportSchoolRe
     uid: req.auth?.uid,
     status: 'open',
     createdAt: Date.now(),
+  });
+  await sendMail('reportReceived', async () => {
+    const { superEmails, appUrl, webUrl } = mailConfig();
+    if (!superEmails.length) return undefined;
+    const schoolName = (school.get('nameEn') as string | undefined) ?? schoolId;
+    return { to: superEmails, message: reportReceived({ schoolName, schoolId, reason, details, reporterEmail: from, loginUrl: `${appUrl}/login`, webUrl }) };
   });
   return { ok: true };
 });

@@ -11,3 +11,4 @@ export { deleteEntry } from './deleteEntry';
 export { deleteSetupItem } from './deleteSetupItem';
 export { publishYear } from './publishYear';
 export { reportSchool } from './reportSchool';
+export { sendAuthEmail } from './sendAuthEmail';

@@ -5,6 +5,9 @@ import { defaultTemplate } from '@sathiya/core/fixtures';
 import { logger } from 'firebase-functions/v2';
 import { onCall } from 'firebase-functions/v2/https';
 import { auth, db } from './lib/admin';
+import { mailConfig } from './email/params';
+import { sendMail } from './email/send';
+import { schoolRegistered } from './email/templates';
 import { callOpts } from './lib/callOptions';
 import { setSchoolClaims } from './lib/claims';
 import { CENSUS_NO_RE, SCHOOL_TYPES, type SchoolType } from './lib/contract';
@@ -110,5 +113,12 @@ export const registerSchool = onCall(callOpts, async (req): Promise<RegisterScho
   }
   // Re-assert after commit: a concurrent losing attempt by the same user may have restored the old claims meanwhile.
   await setSchoolClaims(uid, { sid, role: 'admin' }).catch((e) => logger.error('registerSchool: claims re-assert failed', { sid, e }));
+  await sendMail('schoolRegistered', async () => {
+    const { appUrl, webUrl } = mailConfig();
+    const to = token.email?.toLowerCase();
+    if (!to) return undefined;
+    const school = { nameEn, nameSi, colors: { primary } };
+    return { to: [to], message: schoolRegistered({ adminName, school, loginUrl: `${appUrl}/login`, webUrl }) };
+  });
   return { schoolId: sid };
 });

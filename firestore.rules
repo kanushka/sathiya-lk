@@ -109,7 +109,7 @@ service cloud.firestore {
         && optText('note', 1000);
     }
 
-    // censusIndex, rateLimits: functions only, no client access.
+    // censusIndex, rateLimits, mail (Trigger Email queue): functions only, no client access.
 
     match /platform/{path=**} {
       allow read: if signedIn();

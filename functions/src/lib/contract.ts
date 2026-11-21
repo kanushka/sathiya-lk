@@ -26,3 +26,14 @@ export interface ReportSchoolReq {
 export interface ReportSchoolRes {
   ok: true;
 }
+
+export const AUTH_EMAIL_KINDS = ['verify', 'reset'] as const;
+export type AuthEmailKind = (typeof AUTH_EMAIL_KINDS)[number];
+export interface SendAuthEmailReq {
+  kind: AuthEmailKind;
+  email?: string;
+  lang: 'en' | 'si';
+}
+export interface SendAuthEmailRes {
+  ok: true;
+}
