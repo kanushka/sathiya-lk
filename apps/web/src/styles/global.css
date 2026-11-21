@@ -52,8 +52,26 @@ a:hover {
 }
 
 :focus-visible {
-  outline: 3px solid var(--saffron);
+  outline: 3px solid var(--navy);
   outline-offset: 2px;
+  box-shadow: 0 0 0 5px var(--saffron);
+}
+
+.cta :focus-visible {
+  outline-color: var(--saffron);
+  box-shadow: none;
+}
+
+#main:focus {
+  outline: none;
+}
+
+.consent-open {
+  display: none;
+}
+
+.js .consent-open {
+  display: inline;
 }
 
 .wrap {
@@ -777,4 +795,13 @@ h3 {
   html {
     scroll-behavior: auto;
   }
+}
+
+.lang-switch a:focus-visible {
+  outline-offset: -3px;
+  box-shadow: none;
+}
+
+.lang-switch a[aria-current]:focus-visible {
+  outline-color: var(--saffron);
 }

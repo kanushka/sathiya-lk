@@ -15,6 +15,7 @@ const { title, description } = t.meta[page];
 const site = Astro.site ?? new URL('https://sathiya.lk');
 const url = (l: Lang) => new URL(pagePath(l, page), site).href;
 const ogImage = new URL('/og.png', site).href;
+const notFound = page === '404';
 ---
 <!doctype html>
 <html lang={lang}>
@@ -23,10 +24,16 @@ const ogImage = new URL('/og.png', site).href;
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <title>{title}</title>
     <meta name="description" content={description} />
-    <link rel="canonical" href={url(lang)} />
-    <link rel="alternate" hreflang="en" href={url('en')} />
-    <link rel="alternate" hreflang="si" href={url('si')} />
-    <link rel="alternate" hreflang="x-default" href={url('en')} />
+    {notFound ? (
+      <meta name="robots" content="noindex" />
+    ) : (
+      <>
+        <link rel="canonical" href={url(lang)} />
+        <link rel="alternate" hreflang="en" href={url('en')} />
+        <link rel="alternate" hreflang="si" href={url('si')} />
+        <link rel="alternate" hreflang="x-default" href={url('en')} />
+      </>
+    )}
     <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
     <meta name="theme-color" content="#0E6B6A" />
     <meta property="og:type" content="website" />

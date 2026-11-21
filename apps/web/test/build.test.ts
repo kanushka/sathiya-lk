@@ -103,6 +103,20 @@ describe('built site', () => {
     expect(inline + external).toBeLessThan(150 * 1024);
   });
 
+  it('emits a noindex bilingual 404 page that links home', () => {
+    const p = '404.html';
+    expect(existsSync(join(dist, p))).toBe(true);
+    const html = read(p);
+    expect(html).toMatch(/<html[^>]*\slang="en"/);
+    expect(html).toMatch(/<title>[^<\s][^<]*<\/title>/);
+    expect(html).toContain('<meta name="robots" content="noindex"');
+    expect(html).not.toContain('rel="canonical"');
+    expect(html).toMatch(/<section lang="si"/);
+    const hrefs = attrs(html, 'a', 'href');
+    expect(hrefs).toEqual(expect.arrayContaining(['/', '/si/']));
+    expect(hrefs).not.toContain('#');
+  });
+
   it('ships og image and favicon', () => {
     expect(existsSync(join(dist, 'og.png'))).toBe(true);
     expect(existsSync(join(dist, 'favicon.svg'))).toBe(true);

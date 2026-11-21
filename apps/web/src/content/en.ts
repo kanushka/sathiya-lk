@@ -19,6 +19,15 @@ export const en = {
       title: 'Contact — Sathiya',
       description: 'How to reach the people who run Sathiya.',
     },
+    '404': {
+      title: 'Page not found — Sathiya',
+      description: 'This page does not exist on sathiya.lk.',
+    },
+  },
+  notFound: {
+    title: 'Page not found',
+    body: 'Sorry, we could not find that page. It may have moved, or the link may be wrong.',
+    home: 'Go to the home page',
   },
   nav: {
     label: 'Main',
@@ -91,7 +100,7 @@ export const en = {
       },
       {
         q: "Who can see our school's data?",
-        a: "Only people your school's administrators add. Administrators manage the timetable; teachers see their own timetable and the school's timetables. Other schools cannot see your data, and we do not sell it.",
+        a: "Only people your school's administrators add. Administrators manage the timetable; teachers see their own timetable and the school's timetables. The only public details are your school's name, district and whether it is active, so teachers can find the school when they log in. We do not sell your data.",
       },
       {
         q: 'Does it work on phones?',
@@ -189,7 +198,10 @@ export const en = {
       {
         title: 'What we collect',
         body: [
-          'School details (name, address, logo and colours); teacher names and staff IDs; subjects, grades, classes and timetables; and, only if your school chooses to add them, teacher phone numbers and email addresses.',
+          'School details: name in English and Sinhala, district, grades offered, staff ID prefix, logo and colours.',
+          'Administrator accounts: email address, and your name as shown on your Google account if you sign in with Google. We also record which version of the Terms & Conditions and Privacy Policy was accepted, and when.',
+          'Teachers: name, staff ID, subjects, grades and the time they last logged in; phone numbers and email addresses only if your school chooses to add them.',
+          'Timetables: subjects, grades, classes, period times and timetable entries. Firebase Authentication also keeps the records it needs to let people sign in.',
           'We do not collect National Identity Card (NIC) numbers. Please do not enter them anywhere in Sathiya.',
         ],
       },
@@ -202,7 +214,8 @@ export const en = {
       {
         title: 'Who can see it',
         body: [
-          "Your school's administrators can see and change your school's data. Teachers can see timetables in their school. Other schools cannot see your data.",
+          "Your school's administrators can see and change your school's data. Teachers can see timetables in their school.",
+          "Your school's name (in English and Sinhala), district and whether it is active are listed publicly, so teachers can find the school on the login screen. Nothing else about your school is shown to other schools or the public.",
         ],
       },
       {
@@ -218,9 +231,10 @@ export const en = {
         ],
       },
       {
-        title: 'Website analytics',
+        title: 'Website analytics and fonts',
         body: [
           'This website (sathiya.lk) uses Google Analytics only after you click "Allow analytics". You can change your choice at any time with "Analytics settings" at the bottom of every page.',
+          "The website's fonts are loaded from Google Fonts, so your browser contacts Google's servers on every visit, whatever your analytics choice.",
         ],
       },
       {

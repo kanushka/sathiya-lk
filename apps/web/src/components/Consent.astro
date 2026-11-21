@@ -30,7 +30,9 @@ const t = content(Astro.props.lang);
         localStorage.setItem(KEY, v);
       } catch (e) {}
     }
+    var opener = null;
     function load() {
+      window['ga-disable-' + ID] = false;
       if (window.gtag) return;
       window.dataLayer = window.dataLayer || [];
       window.gtag = function () {
@@ -54,9 +56,15 @@ const t = content(Astro.props.lang);
       banner.hidden = true;
       if (v === 'granted') load();
       else window['ga-disable-' + ID] = true;
+      var target = opener || document.getElementById('main');
+      opener = null;
+      if (target === document.getElementById('main')) target.setAttribute('tabindex', '-1');
+      target.focus({ preventScroll: true });
     });
     document.addEventListener('click', function (e) {
-      if (e.target.closest('[data-consent-open]')) {
+      var o = e.target.closest('[data-consent-open]');
+      if (o) {
+        opener = o;
         banner.hidden = false;
         banner.querySelector('button').focus();
       }

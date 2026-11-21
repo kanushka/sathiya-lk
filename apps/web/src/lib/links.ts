@@ -2,7 +2,7 @@ import { en, type Content } from '../content/en';
 import { si } from '../content/si';
 
 export type Lang = 'en' | 'si';
-export type Page = 'index' | 'terms' | 'privacy' | 'contact';
+export type Page = 'index' | 'terms' | 'privacy' | 'contact' | '404';
 
 export const DEFAULT_APP_URL = 'https://app.sathiya.lk';
 
@@ -17,7 +17,7 @@ export function appLinks(base: string = import.meta.env.PUBLIC_APP_URL || DEFAUL
 
 export function pagePath(lang: Lang, page: Page): string {
   const prefix = lang === 'si' ? '/si/' : '/';
-  return page === 'index' ? prefix : `${prefix}${page}/`;
+  return page === 'index' || page === '404' ? prefix : `${prefix}${page}/`;
 }
 
 export function sectionHref(lang: Lang, current: Page, id: string): string {
