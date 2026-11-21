@@ -90,5 +90,43 @@
     "confirm": "Fill {{count}} periods",
     "running": "Filling {{done}}/{{count}}…",
     "cancel": "Cancel"
+  },
+  "teacherView": {
+    "teacherLabel": "Teacher",
+    "teacherOption": "{{name}} · {{staffId}}",
+    "teacherSearch": "Search name or staff ID…",
+    "prev": "Previous teacher",
+    "next": "Next teacher",
+    "primary": "Primary teacher",
+    "grade": "Grade {{grades}}",
+    "grades": "Grades {{grades}}",
+    "max": "max {{max}} / day",
+    "week": "{{count}} periods this week",
+    "print": "Print",
+    "load": "{{day}} load",
+    "loadValue": "{{load}}/{{max}}",
+    "cellTime": "{{subject}} · {{time}}",
+    "hint": "A slot click goes subject → class. Only classes in this teacher's grades that are free in that period can be picked. Cells with ⧉ are group or combined blocks.",
+    "outside": "Outside school hours",
+    "outsideHint": "These lessons do not overlap any period of the school default template.",
+    "outsideItem": "{{day}} · {{classes}} {{subject}} · {{time}}",
+    "chooseTitle": "Choose a lesson",
+    "chooseBody": "This period holds more than one lesson. Pick the one to edit.",
+    "noTeachersTitle": "No teachers yet",
+    "noTeachersBody": "Add teachers in Setup before building the timetable.",
+    "notFoundTitle": "Teacher not found",
+    "notFoundBody": "This teacher may have been deleted. Pick another teacher.",
+    "noDefaultTitle": "No default period template",
+    "noDefaultBody": "Mark one period template as the school default in Setup."
+  },
+  "teacherPicker": {
+    "titleClass": "Choose a class",
+    "free": "Free classes ({{count}})",
+    "taken": "Not free ({{count}})",
+    "busy": "Busy",
+    "classPeriod": "P{{n}} {{time}}",
+    "viaGroup": "{{group}} block",
+    "noClasses": "No class takes {{subject}} with this teacher at this time.",
+    "currentLesson": "Now: {{classes}} · {{subject}}"
   }
 }

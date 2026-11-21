@@ -23,6 +23,17 @@
 - Refactored BlockEditor's reason text into shared `teacherReason` (labels.ts); no behaviour change.
 - ~~Known gap: `BlockEditor` calls its own `useTimetable()`~~ — fixed in 4.3: BlockEditor receives `entries`/`onSave`/`onRemove` from the page's `useTimetable`.
 
+### 4.3 Teacher view
+- Routes `/admin/timetable/teacher` (redirects to first teacher by `name.localeCompare`) and `/admin/timetable/teacher/:teacherId`. Teacher picker is the searchable `Combobox` (label "Name · staffID", search matches name or staff ID) between prev/next buttons, not a native select.
+- Rows = default template (`isDefault`); no default template → empty state. Each entry with a lesson for the teacher goes to `bestOverlapPeriod(default, day, entryWindow(entry))`; several in one row render stacked (sorted by start). Entries with no overlap are listed under the grid as "Outside school hours" (text list, not editable from there).
+- Cell: title = class names joined "+" (prefixed "⧉ " when group or multi-class, incl. single-class groups), sub = full subject name the teacher teaches (`pickName`), colour = that subject's colour. When the class period's clock time differs from the default row (e.g. Primary), sub becomes "Sinhala · 10:40–11:05" so stacked cells are distinguishable.
+- Load bar per day header: `role="meter"` with `aria-valuetext` "5/6" and `data-over`; fill `--brand`, red `#B4441C` when load > maxPerDay (artboard's green/amber-at-limit not used, per controller ruling). Counts entries (`teacherDayLoad`), so two stacked Primary lessons count 2.
+- `TeacherSlotPicker` (Modal): subject Combobox (teacher.subjectIds; primary → every subject/group option in plans of their grades incl. class plan overrides), then classes from `classOptionsForTeacherSlot` split into "Free classes" (clickable) and "Not free" (disabled buttons, reason "Busy"). Class period time shown as "P6 11:05–11:30" only when its clock time differs from the default row. Group-option classes are tagged "Religion block" and open BlockEditor (group mode, `preset` teacher) at the matched class period instead of saving.
+- Filled single-class non-group entry → TeacherSlotPicker in edit mode ("Now: 6B · Mathematics", Clear slot, reassign keeps the entry id). Group/combined → BlockEditor with base class = `entry.classIds[0]`. Converting an edited lesson into a group passes the entry to BlockEditor only when the class and period are unchanged; otherwise a new block is created and the old lesson stays.
+- Row with 2+ entries: activation or Delete opens a "Choose a lesson" modal listing them; Delete never removes several entries at once.
+- Print button opens `${base}/print/teacher/:id?year=…&auto=1` (route arrives in 4.5).
+- `blockState.ts` holds the shared `BlockState`/`blockKey`/`blockStateFor`/`isBlock` used by both views (class view keeps the current class as block base).
+
 ### 4.4 Block editor
 - `BlockEditor` props: `{ open, onClose, baseClassId, day, period, mode: {kind:'group', item} | {kind:'combined', subjectId}, entry?, entries, onSave, onRemove, preset? }`; closes itself on successful save/remove. Since 4.3 it no longer calls `useTimetable()` itself: the page passes its `entries`/`save`/`remove` so the optimistic overlay survives the modal closing. `preset {subjectId, teacherId}` preselects a teacher for one option (teacher view).
 - Combined mode requires 2+ classes to enable Save; group mode allows base class alone.
