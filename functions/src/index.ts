@@ -1,3 +1,5 @@
+// SPDX-License-Identifier: AGPL-3.0-or-later
+// Copyright (C) 2026 Kanushka Gayan
 export { registerSchool } from './registerSchool';
 export { createTeacher } from './createTeacher';
 export { resetTeacherPassword } from './resetTeacherPassword';

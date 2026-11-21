@@ -1,3 +1,5 @@
+// SPDX-License-Identifier: AGPL-3.0-or-later
+// Copyright (C) 2026 Kanushka Gayan
 import { randomUUID } from 'node:crypto';
 import type { CallableName, CallableTypes, Claims, RegisterSchoolReq } from '@sathiya/core';
 import { initializeApp as initAdmin, getApps as getAdminApps } from 'firebase-admin/app';

@@ -1,3 +1,5 @@
+// SPDX-License-Identifier: AGPL-3.0-or-later
+// Copyright (C) 2026 Kanushka Gayan
 import { isValidStaffId, paths, syntheticEmail, type CreateTeacherRes, type Teacher } from '@sathiya/core';
 import { onCall } from 'firebase-functions/v2/https';
 import { auth, db } from './lib/admin';

@@ -1,3 +1,5 @@
+// SPDX-License-Identifier: AGPL-3.0-or-later
+// Copyright (C) 2026 Kanushka Gayan
 import { paths } from '@sathiya/core';
 import { describe, expect, it } from 'vitest';
 import { adminAuth, adminDb, adminWithSchool, expectFnError, signInGoogle, signUp, teacherInput, uniq } from './helpers';

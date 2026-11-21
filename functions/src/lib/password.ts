@@ -1,3 +1,5 @@
+// SPDX-License-Identifier: AGPL-3.0-or-later
+// Copyright (C) 2026 Kanushka Gayan
 import { randomInt } from 'node:crypto';
 
 export const PASSWORD_ALPHABET = 'abcdefghjkmnpqrstuvwxyz23456789';

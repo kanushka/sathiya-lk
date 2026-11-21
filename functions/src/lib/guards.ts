@@ -1,3 +1,5 @@
+// SPDX-License-Identifier: AGPL-3.0-or-later
+// Copyright (C) 2026 Kanushka Gayan
 import { paths, type ApiErrorCode, type Claims, type School } from '@sathiya/core';
 import { HttpsError, type CallableRequest, type FunctionsErrorCode } from 'firebase-functions/v2/https';
 import { db } from './admin';

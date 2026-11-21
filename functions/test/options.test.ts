@@ -1,3 +1,5 @@
+// SPDX-License-Identifier: AGPL-3.0-or-later
+// Copyright (C) 2026 Kanushka Gayan
 import { describe, expect, it } from 'vitest';
 import { appCheckEnforced } from '../src/lib/callOptions';
 import { newPassword, PASSWORD_ALPHABET } from '../src/lib/password';

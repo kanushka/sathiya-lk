@@ -1,3 +1,5 @@
+// SPDX-License-Identifier: AGPL-3.0-or-later
+// Copyright (C) 2026 Kanushka Gayan
 import { build } from 'esbuild';
 import { fileURLToPath } from 'node:url';
 
