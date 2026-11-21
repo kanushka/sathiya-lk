@@ -78,3 +78,4 @@
 - Move shared pieces to `ui/` with a shared i18n namespace: delete guard (`features/teachers/useDeleteSetupItem`, `DeleteSetupModal`), `ColorSwatches` / `LogoUpload` / `BrandPreview` (`features/register`), `ReportSchoolModal` and `errors` (`features/auth`).
 - Replace hardcoded danger colour `#A3262A` with a danger design token.
 - Session teacher passwords are in-memory only, keyed by `uid:schoolId`.
+- Shell: call `clearSessionPasswords()` (features/teachers/sessionPasswords.ts) from the AuthProvider sign-out path so teacher plaintext passwords never survive sign-out in the same tab (store is already scoped by uid:sid, so other users/schools never see them).
