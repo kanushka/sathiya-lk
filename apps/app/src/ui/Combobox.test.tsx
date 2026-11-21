@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
 // Copyright (C) 2026 Kanushka Gayan
 
-import { screen, within } from '@testing-library/react';
+import { fireEvent, screen, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { describe, expect, it, vi } from 'vitest';
 import { renderWithI18n } from '../test/render';
@@ -63,6 +63,14 @@ describe('Combobox', () => {
     await user.click(screen.getByRole('option', { name: 'History' }));
     expect(onChange).toHaveBeenCalledWith(items[3]);
     expect(screen.queryByRole('listbox')).not.toBeInTheDocument();
+  });
+
+  it('ignores Enter while an IME is composing', async () => {
+    const onChange = vi.fn();
+    setup(onChange);
+    await userEvent.click(screen.getByRole('button'));
+    fireEvent.keyDown(screen.getByPlaceholderText('Search subject…'), { key: 'Enter', isComposing: true });
+    expect(onChange).not.toHaveBeenCalled();
   });
 
   it('supports arrows, Enter and Escape', async () => {

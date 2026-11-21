@@ -4,6 +4,7 @@
 import { useEffect, useId, useLayoutEffect, useMemo, useRef, useState, type KeyboardEvent, type ReactNode } from 'react';
 import { createPortal } from 'react-dom';
 import { useTranslation } from 'react-i18next';
+import { isComposing } from './composing';
 import { cx } from './cx';
 import { Icon } from './Icon';
 import { placePopover, type Placement } from './popoverPlacement';
@@ -147,6 +148,7 @@ export function Combobox<T>({
       e.preventDefault();
       setActive((a) => Math.max(a - 1, 0));
     } else if (e.key === 'Enter') {
+      if (isComposing(e)) return;
       e.preventDefault();
       const item = flat[active];
       if (item !== undefined) pick(item);

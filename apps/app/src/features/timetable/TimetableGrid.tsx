@@ -4,6 +4,7 @@
 import type { DayIndex, TemplateRow } from '@sathiya/core';
 import { useRef, type KeyboardEvent, type ReactNode } from 'react';
 import { useTranslation } from 'react-i18next';
+import { isComposing } from '../../ui/composing';
 import { cx } from '../../ui/cx';
 import { CellBody, type CellView } from './Cell';
 
@@ -83,7 +84,7 @@ export function TimetableGrid({ rows, cellsFor, selected, onSelect, onActivate, 
       return;
     }
     if (readOnly || overlay?.(day, period)?.disabled) return;
-    if (e.key === 'Enter' && onActivate) {
+    if (e.key === 'Enter' && onActivate && !isComposing(e)) {
       e.preventDefault();
       onActivate(day, period);
     } else if ((e.key === 'Delete' || e.key === 'Backspace') && onClear) {
