@@ -1,0 +1,11 @@
+{
+  "projects": { "default": "sathiya-lk" },
+  "targets": {
+    "sathiya-lk": {
+      "hosting": {
+        "web": ["sathiya-lk-web"],
+        "app": ["sathiya-lk-app"]
+      }
+    }
+  }
+}

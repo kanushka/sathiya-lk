@@ -1,0 +1,57 @@
+{
+  "nav": {
+    "menu": "Menu",
+    "dashboard": "Dashboard",
+    "groups": {
+      "timetable": "Timetable",
+      "setup": "Setup",
+      "school": "School"
+    },
+    "byClass": "By class",
+    "byTeacher": "By teacher",
+    "teachers": "Teachers",
+    "subjects": "Subjects",
+    "grades": "Grades & classes",
+    "templates": "Period templates",
+    "members": "Members",
+    "profile": "School profile & colours",
+    "myTimetable": "My timetable"
+  },
+  "sidebar": {
+    "collapse": "Collapse menu",
+    "expand": "Expand menu",
+    "year": "Timetable year",
+    "admin": "Admin",
+    "readOnly": "Read-only view",
+    "noYears": "No years yet",
+    "signOut": "Sign out",
+    "language": "Language",
+    "langShort": {
+      "en": "EN",
+      "si": "සිං"
+    }
+  },
+  "year": {
+    "draft": "draft",
+    "published": "published",
+    "option": "{{label}} · {{status}}"
+  },
+  "search": "Search",
+  "noMatches": "No matches",
+  "loading": "Loading…",
+  "notFound": {
+    "title": "Page not found",
+    "body": "The page you are looking for does not exist or has moved.",
+    "home": "Go to home"
+  },
+  "toast": {
+    "close": "Dismiss notification"
+  },
+  "modal": {
+    "close": "Close"
+  },
+  "school": {
+    "missingTitle": "School not found",
+    "missingBody": "This school does not exist or you no longer have access to it."
+  }
+}

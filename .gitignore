@@ -1,0 +1,11 @@
+node_modules
+dist
+.firebase
+*.log
+coverage
+.emulator-data
+emulator-data
+firebase-export-*
+.superpowers/
+.env*.local
+.DS_Store
