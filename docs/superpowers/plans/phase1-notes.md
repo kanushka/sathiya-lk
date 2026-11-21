@@ -56,6 +56,7 @@ All use `callOpts` (`lib/callOptions.ts`: `region: 'us-central1'`, `enforceAppCh
 | `deleteSetupItem` `{schoolId, kind, id}` → `{deleted, usedIn}` | admin | deletes the item; a teacher also deletes its Auth user (not-found ignored), `members/{uid}`, and unsets `teacherId` on admin members linked to it | unknown kind → `invalid-argument`; unknown item → `not-found` |
 | `publishYear` `{schoolId, yearId}` → `{classes, teachers}` | admin | `publishedClasses/{cid}`, `publishedTeachers/{tid}` (batches ≤ 450 ops), deletes stale published docs, year `{status:'published', publishedAt: ms}`, school `activeYearId` | unknown year → `invalid-argument`/`invalid` |
 | `reportSchool` `{schoolId, reason, details?, email?}` → `{ok}` | anyone (signed out too), per-IP limit | `reports/{autoId}` `{schoolId, reason, details?, email?, uid?, status:'open', createdAt}` | §4 |
+| `sendAuthEmail` `{kind: 'verify'\|'reset', email?, lang}` → `{ok}` | verify: signed in; reset: anyone | `mail` doc with a verify / reset link (§8) | bad input → `invalid-argument`/`invalid`; limits → `resource-exhausted`/`rate-limited` |
 
 ### Details
 - **claimInvites:** claims hold one school, so it claims invites only for the caller's current `sid` (if any) or the first invite of an active school; others stay pending. Invites of disabled schools are skipped. An invite without `teacherId` keeps the existing `tid` / member `teacherId`. Claims are set before the invite is consumed, so a failed call can be retried.
@@ -131,7 +132,18 @@ Composite `entries` (collection) `day ASC + teacherIds CONTAINS` and `day ASC + 
 ## 7. Hosting (O6)
 `app` target sends `X-Frame-Options: DENY`, `Content-Security-Policy: frame-ancestors 'none'`, `X-Content-Type-Options: nosniff`, `Referrer-Policy: strict-origin-when-cross-origin` on every path. No full CSP (script/connect sources) yet.
 
-## 8. For later phases
+## 8. Emails (1.5)
+App emails go through the **Trigger Email from Firestore** extension (collection `mail`, Resend SMTP); setup steps for the user are in `docs/email/setup.md`. Functions only write `mail` docs `{to: string[], from?, replyTo?, message: {subject, html, text}}` (`email/send.ts`); rules deny all client access to `mail`. Teachers never get email.
+
+- **Templates** (`functions/src/email/templates/`, pure functions → `{subject, html, text}`): `adminInvite`, `schoolRegistered`, `reportReceived`, `schoolSuspended`, `schoolReactivated`, `verifyEmail`, `passwordReset`. Table layout, inline CSS, English block then Sinhala block, plain-text twin. Header = school `colors.primary` (text colour via core `onColor`; invalid colour → Sathiya teal `#0E6B6A`), else Sathiya teal; CTA is always teal. Every interpolated value is HTML-escaped; URLs must be http(s) (else dropped) and are escaped in attributes; subjects have newlines stripped. Sinhala copy other than the design's invite/verify text was written by the implementer: **have a Sinhala speaker review it**. The school name is used uninflected in Sinhala sentences.
+- **Where sent** (after the main write; `sendMail` logs and swallows any failure, so mail never fails the callable): `inviteAdmin` → invitee, `replyTo` = inviting admin's email, names inviter (member `name`) and school; `registerSchool` → the registering admin (welcome + first steps); `reportSchool` → `SUPER_EMAILS` (none configured → nothing sent); `setSchoolStatus` → admin members of the school with an email, only when the status actually changes.
+- **`sendAuthEmail`** `{kind: 'verify'|'reset', email?, lang: 'en'|'si'}` → `{ok: true}` (mirrored in `lib/contract.ts`; add to core in Phase 6). `verify`: signed in, mails the caller's own address with an Admin SDK verification link (no-op if already verified); limit 5/uid/day. `reset`: signed out allowed, always `{ok: true}` (unknown address swallowed → no account enumeration), limits 10/IP/day and 3/email/day (hashed; counted for unknown addresses too). Both links use `actionCodeSettings.url = ${APP_URL}/login`. `lang` only orders the bilingual subject. Phase 3 should call it instead of `sendEmailVerification` / `sendPasswordResetEmail` (those use Firebase's own template).
+- **Params** (`email/params.ts`, `firebase-functions/params`; defaults also in committed `functions/.env` so the CLI doesn't prompt; override in `functions/.env.<project>`): `MAIL_FROM` `Sathiya <noreply@sathiya.kanushka.com>`, `MAIL_REPLY_TO` `sathiya@kanushka.com` (default reply-to when a mail has none), `APP_URL` `https://app.sathiya.kanushka.com`, `WEB_URL` `https://sathiya.kanushka.com` (footer link), `SUPER_EMAILS` (comma-separated, default empty). Super emails live in a param, not in `platform/config`, because `platform/**` is readable by every signed-in user.
+- **Tests:** `emailTemplates.test.ts` (snapshots in `functions/test/__snapshots__`, escaping, colours, subjects; no emulator) and `email.test.ts` (emulator: mail docs per callable, none for teachers, failure tolerance, `sendAuthEmail`); rules test for `mail`. Update snapshots with `vitest -u` after a deliberate template change.
+- **User steps / later:** follow `docs/email/setup.md` (Resend domain + DNS, API key as extension secret, extension install, Auth action URL `https://app.sathiya.kanushka.com/auth/action`, authorised domain, Hosting custom domains). **Phase 3/6:** the app needs an `/auth/action` route (handles `mode`/`oobCode` if Firebase's own template emails are ever used) and `/login` must cope with being the landing page of our links; reports email links to `/login` (no super reports route yet).
+- **Open:** no unsubscribe/bounce handling (extension writes `delivery` status on the `mail` doc; nothing cleans old docs — add a TTL on `mail` if volume grows). The invite CTA goes to `/login`; the invite is claimed by `claimInvites` after sign-in.
+
+## 9. For later phases
 
 ### Phase 3 (register, login, setup, members)
 - Register form sends `school.city` (required), `address?`, `phone?`, `type` (required) and `censusNo` (required for government, 4–6 digits). Cast until the core types merge (§2).
@@ -157,7 +169,7 @@ Composite `entries` (collection) `day ASC + teacherIds CONTAINS` and `day ASC + 
 ### Phase 6
 - Add the functions predeploy build (§1), App Check client init (§6), merge the core types and delete `functions/src/lib/contract.ts` (§2).
 
-## 9. Open items and concerns
+## 10. Open items and concerns
 - SVG logos are publicly served from the Storage domain and can contain script; render with `<img>` only, consider sanitising or PNG-only later.
 - `grades` delete has no usage check (no callable); a deleted grade can orphan classes.
 - A non-default template can be set `isDefault: true` by the client, giving two defaults (only true→false is blocked).
