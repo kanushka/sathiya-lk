@@ -25,7 +25,7 @@ test('class view: fill a slot, then a busy teacher cannot be picked for an overl
   await openSlot(page, 'Wednesday, period 4, 09:50–10:30: empty, Add lesson');
   await chooseSubject(page, /^Science needs 2/);
   const picker = page.getByRole('dialog', { name: 'Choose a teacher' });
-  await expect(picker.getByRole('listitem').filter({ hasText: 'Mrs. N. Perera' })).toContainText('Busy · 6A Mathematics');
+  await expect(picker.getByRole('listitem').filter({ hasText: 'Mrs. N. Perera' })).toContainText('Teaching 6A · Mathematics');
   await expect(picker.getByRole('button', { name: /Mrs\. N\. Perera/ })).toHaveCount(0);
   await shot(page, 'class-view-slot-picker');
   await picker.getByRole('button', { name: /^Mrs\. S\. Gunasekara/ }).click();
@@ -39,6 +39,6 @@ test('class view: fill a slot, then a busy teacher cannot be picked for an overl
   await openSlot(page, 'Wednesday, period 4, 09:50–10:30: empty, Add lesson');
   await chooseSubject(page, /^Science/);
   const clash = page.getByRole('dialog', { name: 'Choose a teacher' });
-  await expect(clash.getByRole('listitem').filter({ hasText: 'Mrs. S. Gunasekara' })).toContainText('Busy · 6B Science');
+  await expect(clash.getByRole('listitem').filter({ hasText: 'Mrs. S. Gunasekara' })).toContainText('Teaching 6B · Science');
   await expect(clash.getByRole('button', { name: /Mrs\. S\. Gunasekara/ })).toHaveCount(0);
 });

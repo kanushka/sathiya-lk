@@ -27,7 +27,6 @@
     "unavailable": "ලබාගත නොහැක",
     "free": "✓ නිදහස්",
     "load": "{{load}}/{{max}}",
-    "busy": "කාර්යබහුල · {{classes}} {{subject}}",
     "limit": "සීමාවට ළඟා වී ඇත · අද {{load}}/{{max}}",
     "notQualified": "{{grade}} ශ්‍රේණියට උගන්වන්නේ නැත",
     "limitWarn": "⚠ සීමාවට ළඟා වී ඇත · අද {{load}}/{{max}}",
@@ -77,7 +76,8 @@
     "current": "වත්මන්",
     "combine": "වෙනත් පන්ති සමඟ ඒකාබද්ධ කරන්න",
     "groupHint": "කණ්ඩායම් විෂයයක්ද? එක් එක් විකල්පයට ගුරුවරුන් පත් කර වෙනත් පන්ති එක් කිරීමට {{groups}} තෝරන්න.",
-    "clear": "කාලච්ඡේදය හිස් කරන්න"
+    "clear": "කාලච්ඡේදය හිස් කරන්න",
+    "teaches": "{{class}} {{subject}} උගන්වයි"
   },
   "progress": {
     "title": "{{class}} විෂයයන්",
@@ -127,10 +127,14 @@
     "titleClass": "පන්තියක් තෝරන්න",
     "free": "නිදහස් පන්ති ({{count}})",
     "taken": "නිදහස් නැත ({{count}})",
-    "busy": "කාර්යබහුලයි",
     "classPeriod": "P{{n}} {{time}}",
     "viaGroup": "{{group}} කණ්ඩායම",
     "noClasses": "මෙම වේලාවේ මෙම ගුරුවරයා සමඟ {{subject}} ඉගෙන ගන්නා පන්තියක් නැත.",
     "currentLesson": "දැනට: {{classes}} · {{subject}}"
+  },
+  "busy": {
+    "teaching": "{{classes}} · {{subject}} උගන්වයි",
+    "class": "{{classes}} · {{subject}}",
+    "classWithTeacher": "{{classes}} · {{subject}} · {{teacher}}"
   }
 }

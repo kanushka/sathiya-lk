@@ -48,7 +48,23 @@ describe('TeacherSlotPicker', () => {
     expect(screen.getByRole('button', { name: /^12A/ })).toBeEnabled();
     const busy = screen.getByRole('button', { name: /^6B/ });
     expect(busy).toBeDisabled();
-    expect(busy).toHaveTextContent('Busy');
+    expect(busy).toHaveTextContent('6B · Aesthetic');
+  });
+
+  it("shows another teacher's lesson that takes the class: class, subject and teacher", async () => {
+    setup({ teacherId: T.perera, day: 2, period: 5 }, [...entries6B, entry('x', 2, 5, [C.c6a], [[S.science, T.gunasekara]])]);
+    await chooseSubject('Mathematics');
+    const row = screen.getByRole('button', { name: /^6A/ });
+    expect(row).toBeDisabled();
+    expect(row).toHaveTextContent('6A · Science · Mrs. S. Gunasekara');
+  });
+
+  it('shows where the teacher is teaching when they are busy elsewhere', async () => {
+    setup({ teacherId: T.perera, day: 2, period: 4 }, [...entries6B, entry('x', 2, 4, [C.c6a], [[S.science, T.perera]])]);
+    await chooseSubject('Mathematics');
+    const row = screen.getByRole('button', { name: /^6C/ });
+    expect(row).toBeDisabled();
+    expect(row).toHaveTextContent('Teaching 6A · Science');
   });
 
   it('assigns a plain subject with a one-class draft', async () => {

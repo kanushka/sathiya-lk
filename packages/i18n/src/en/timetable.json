@@ -27,7 +27,6 @@
     "unavailable": "Not available",
     "free": "✓ free",
     "load": "{{load}}/{{max}}",
-    "busy": "Busy · {{classes}} {{subject}}",
     "limit": "Limit reached · {{load}}/{{max}} today",
     "notQualified": "Doesn't teach Grade {{grade}}",
     "limitWarn": "⚠ Limit reached · {{load}}/{{max}} today",
@@ -77,7 +76,8 @@
     "current": "Current",
     "combine": "Combine with other classes",
     "groupHint": "Group subject? Pick {{groups}} to set teachers per option and join other classes.",
-    "clear": "Clear slot"
+    "clear": "Clear slot",
+    "teaches": "Teaches {{class}} {{subject}}"
   },
   "progress": {
     "title": "{{class}} subjects",
@@ -127,10 +127,14 @@
     "titleClass": "Choose a class",
     "free": "Free classes ({{count}})",
     "taken": "Not free ({{count}})",
-    "busy": "Busy",
     "classPeriod": "P{{n}} {{time}}",
     "viaGroup": "{{group}} block",
     "noClasses": "No class takes {{subject}} with this teacher at this time.",
     "currentLesson": "Now: {{classes}} · {{subject}}"
+  },
+  "busy": {
+    "teaching": "Teaching {{classes}} · {{subject}}",
+    "class": "{{classes}} · {{subject}}",
+    "classWithTeacher": "{{classes}} · {{subject}} · {{teacher}}"
   }
 }

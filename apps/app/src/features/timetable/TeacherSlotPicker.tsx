@@ -24,6 +24,7 @@ import { useReadOnly } from '../../ui/AdminLayout';
 import { Button } from '../../ui/Button';
 import { Combobox } from '../../ui/Combobox';
 import { Modal } from '../../ui/Modal';
+import { busyLabel } from './conflictLabel';
 import { classNames, limitWarning } from './labels';
 import type { GroupItem } from './SlotPicker';
 
@@ -140,7 +141,7 @@ function TeacherSlotPickerBody({ onClose, teacherId, day, period, entries, editi
     const notes = [
       item?.kind === 'group' ? t('teacherPicker.viaGroup', { group: pickName(item, lang) }) : null,
       at,
-      o.free ? null : t('teacherPicker.busy'),
+      o.busy ? busyLabel(t, o.busy, ctx, lang) : null,
     ].filter(Boolean);
     return (
       <li key={o.cls.id}>
