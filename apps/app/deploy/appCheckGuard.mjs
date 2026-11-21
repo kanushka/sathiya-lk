@@ -52,7 +52,7 @@ export function appCheckDeployError({ build, functionsEnv, project }) {
   if (build.appCheckSiteKey || functionsEnv.ENFORCE_APP_CHECK === 'false') return null;
   return [
     `The app build (mode "${build.mode}") has no VITE_APPCHECK_SITE_KEY, but functions in ${project} enforce App Check, so every callable would fail.`,
-    `Set the reCAPTCHA v3 site key in apps/app/.env.${build.mode} and rebuild,`,
+    `Set the reCAPTCHA Enterprise (Fraud Defense) site key in apps/app/.env.${build.mode} and rebuild,`,
     `or turn enforcement off with ENFORCE_APP_CHECK=false in functions/.env.${project} (see docs/deploy.md).`,
   ].join('\n');
 }
