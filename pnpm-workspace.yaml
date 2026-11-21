@@ -3,6 +3,7 @@ packages:
   - packages/*
   - functions
   - tests/*
+  - e2e
 allowBuilds:
   '@firebase/util': false
   esbuild: true
