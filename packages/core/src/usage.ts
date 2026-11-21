@@ -5,7 +5,7 @@ import { effectivePlan } from './plan';
 import { classProgress } from './progress';
 import type { DayIndex, Entry, PlanItem, SchoolContext } from './types';
 
-export interface Warning { kind: 'over-limit' | 'over-target' | 'group-no-teacher' | 'orphaned'; refId: string; day?: DayIndex; detail: string }
+export interface Warning { kind: 'over-limit' | 'over-target' | 'group-no-teacher' | 'orphaned'; refId: string; day?: DayIndex; detail: string; planKey?: string }
 
 const DAY_NAMES = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri'] as const;
 
@@ -44,7 +44,7 @@ export function warnings(entries: Entry[], ctx: SchoolContext): Warning[] {
     if (!grade) continue;
     for (const row of classProgress(cls.id, entries, effectivePlan(cls, grade))) {
       if (row.placed <= row.needed) continue;
-      out.push({ kind: 'over-target', refId: cls.id, detail: `${itemName(row.item, ctx)} ${row.placed}/${row.needed}` });
+      out.push({ kind: 'over-target', refId: cls.id, detail: `${itemName(row.item, ctx)} ${row.placed}/${row.needed}`, planKey: row.key });
     }
   }
   for (const e of entries) {

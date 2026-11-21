@@ -153,4 +153,10 @@ describe('classOptionsForTeacherSlot', () => {
       [C.c6b, 8, true],
     ]);
   });
+
+  it('editingEntryId frees the class of the entry being edited', () => {
+    expect(opts(T.perera, 2, 3, S.maths)).toContainEqual([C.c6b, 3, false]);
+    const editing = classOptionsForTeacherSlot({ ctx, entries, teacherId: T.perera, day: 2, defaultPeriod: 3, subjectId: S.maths, editingEntryId: 'e-6b-2-3' });
+    expect(editing.find((o) => o.cls.id === C.c6b)).toMatchObject({ period: 3, free: true });
+  });
 });

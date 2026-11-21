@@ -1,5 +1,7 @@
 import { describe, expect, it } from 'vitest';
-import { C, ctx, entries6B } from './fixtures';
+import { withTeacherIds } from './clash';
+import { fillWithClassTeacher } from './fill';
+import { C, ctx, entries6B, T } from './fixtures';
 import { currentAndNext } from './now';
 import { buildSnapshots } from './publish';
 
@@ -41,5 +43,39 @@ describe('currentAndNext', () => {
     expect(before.current).toBeUndefined();
     expect(before.next).toMatchObject({ period: 1, start: '07:45' });
     expect(currentAndNext(sixB.cells, sixB.rows, wed(15, 0))).toEqual({ day: 2 });
+  });
+
+  describe('teacher with classes on another template', () => {
+    const filled1A = fillWithClassTeacher({ ctx, entries: [], classId: C.c1a }).map((d, i) => ({ ...withTeacherIds(d), id: `f-${i}` }));
+    const w = buildSnapshots(ctx, filled1A, { id: 'y', label: '2026', status: 'draft' }).teachers.find((t) => t.teacherId === T.wickramasinghe)!;
+    const mon = (h: number, m: number) => new Date(2026, 10, 23, h, m);
+
+    it('picks the cell whose own clock times cover now', () => {
+      const r = currentAndNext(w.cells, w.rows, mon(9, 5));
+      expect(r.current).toMatchObject({ start: '09:00', end: '09:40', title: '1A' });
+      expect(r.minutesLeft).toBe(35);
+      expect(r.next).toMatchObject({ start: '09:40', end: '10:20' });
+    });
+
+    it('distinguishes two cells mapped to the same default period', () => {
+      expect(w.cells.filter((c) => c.day === 0 && c.period === 5)).toHaveLength(2);
+      const r = currentAndNext(w.cells, w.rows, mon(11, 10));
+      expect(r.current).toMatchObject({ start: '11:05', end: '11:30' });
+      expect(r.minutesLeft).toBe(20);
+      expect(r.next).toBeUndefined();
+    });
+
+    it('is free inside a default period row no cell covers', () => {
+      const r = currentAndNext(w.cells, w.rows, mon(10, 25));
+      expect(r.current).toEqual({ free: true, start: '09:50', end: '10:30' });
+      expect(r.minutesLeft).toBe(5);
+      expect(r.next).toMatchObject({ start: '10:40', end: '11:05' });
+    });
+
+    it('has no current during the default interval', () => {
+      const r = currentAndNext(w.cells, w.rows, mon(10, 35));
+      expect(r.current).toBeUndefined();
+      expect(r.next).toMatchObject({ start: '10:40' });
+    });
   });
 });

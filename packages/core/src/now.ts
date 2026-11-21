@@ -1,5 +1,5 @@
-import { periodsFor, toMinutes } from './time';
-import type { DayIndex, Hhmm, PeriodTemplate, TemplateRow } from './types';
+import { toMinutes } from './time';
+import type { DayIndex, Hhmm, TemplateRow } from './types';
 import type { SnapshotCell } from './publish';
 
 export function currentAndNext(
@@ -11,11 +11,12 @@ export function currentAndNext(
   if (weekday === 0 || weekday === 6) return { day: null };
   const day = (weekday - 1) as DayIndex;
   const minutes = now.getHours() * 60 + now.getMinutes();
+  const covers = (x: { start: Hhmm; end: Hhmm }) => toMinutes(x.start) <= minutes && minutes < toMinutes(x.end);
   const today = cells.filter((c) => c.day === day).sort((a, b) => toMinutes(a.start) - toMinutes(b.start));
-  const dayTemplate: PeriodTemplate = { id: '', name: '', isDefault: false, mode: 'same', rows: rows[day] };
-  const row = periodsFor(dayTemplate, day).find((p) => minutes >= toMinutes(p.start) && minutes < toMinutes(p.end));
-  const current = row && (today.find((c) => c.period === row.period) ?? { free: true as const, start: row.start, end: row.end });
-  const minutesLeft = row && toMinutes(row.end) - minutes;
+  const cell = today.find(covers);
+  const row = cell ? undefined : (rows[day] ?? []).find((r) => r.type === 'period' && covers(r));
+  const current = cell ?? (row && { free: true as const, start: row.start, end: row.end });
+  const minutesLeft = current && toMinutes(current.end) - minutes;
   const after = current ? toMinutes(current.end) : minutes;
   const next = today.find((c) => toMinutes(c.start) >= after);
   return { day, ...(current && { current, minutesLeft }), ...(next && { next }) };

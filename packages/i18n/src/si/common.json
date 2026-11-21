@@ -6,7 +6,7 @@
   "periods": { "period": "කාලච්ඡේදය", "periodN": "P{{n}}", "interval": "විවේකය", "free": "නිදහස්" },
   "buttons": {
     "save": "සුරකින්න", "cancel": "අවලංගු කරන්න", "close": "වසන්න", "add": "එක් කරන්න",
-    "delete": "මකන්න", "print": "මුද්‍රණය කරන්න", "edit": "සංස්කරණය"
+    "delete": "මකන්න", "print": "මුද්‍රණය කරන්න", "edit": "සංස්කරණය කරන්න"
   },
   "languages": { "en": "English", "si": "සිංහල" }
 }

@@ -34,9 +34,9 @@ describe('buildSnapshots', () => {
 
   it('renders group cells with the group name and the other classes', () => {
     const religion = sixB.cells.find((c) => c.day === 2 && c.period === 2)!;
-    expect(religion).toMatchObject({ isGroup: true, title: 'Religion', titleSi: 'ආගම', sub: 'Group · 6A', color: '#FBEAC9' });
+    expect(religion).toMatchObject({ isGroup: true, title: 'Religion', titleSi: 'ආගම', sub: 'Group · 6A', otherClasses: ['6A'], color: '#FBEAC9' });
     const aesthetic = sixB.cells.find((c) => c.day === 4 && c.period === 3)!;
-    expect(aesthetic).toMatchObject({ isGroup: true, title: 'Aesthetic', sub: 'Group', color: '#EBDDF2' });
+    expect(aesthetic).toMatchObject({ isGroup: true, title: 'Aesthetic', sub: 'Group', otherClasses: [], color: '#EBDDF2' });
   });
 
   it('gives the teacher snapshot the class and subject per cell', () => {
@@ -44,7 +44,7 @@ describe('buildSnapshots', () => {
     expect(perera).toMatchObject({ name: 'Mrs. N. Perera', staffId: 'SCC024', yearLabel: '2026' });
     const maths = perera.cells.filter((c) => c.title === '6B' && c.sub === 'Mathematics');
     expect(maths).toHaveLength(6);
-    expect(maths[0]).toEqual({ day: 0, period: 1, start: '07:45', end: '08:30', title: '6B', sub: 'Mathematics', color: '#D4ECEA', isGroup: false });
+    expect(maths[0]).toEqual({ day: 0, period: 1, start: '07:45', end: '08:30', title: '6B', sub: 'Mathematics', subSi: 'ගණිතය', color: '#D4ECEA', isGroup: false });
     expect(perera.rows[0]).toEqual(ctx.templates.find((t) => t.isDefault)!.rows);
   });
 
@@ -68,5 +68,15 @@ describe('buildSnapshots', () => {
     const sixC = cls.find((c) => c.classId === C.c6c)!;
     expect(sixC.rows[4].filter((r) => r.type === 'period')).toHaveLength(7);
     expect(sixC.cells).toEqual([]);
+  });
+
+  it('omits whitespace-only Sinhala names and trims the rest', () => {
+    const blank = { ...ctx, subjects: ctx.subjects.map((s) => (s.id === 's-maths' ? { ...s, nameSi: '   ' } : s.id === 's-science' ? { ...s, nameSi: ' විද්‍යාව ' } : s)) };
+    const snap = buildSnapshots(blank, filled6B, year);
+    const sixBCells = snap.classes.find((c) => c.classId === C.c6b)!.cells;
+    expect(sixBCells.find((c) => c.day === 0 && c.period === 1)).not.toHaveProperty('titleSi');
+    expect(sixBCells.find((c) => c.day === 0 && c.period === 2)?.titleSi).toBe('විද්‍යාව');
+    const perera = snap.teachers.find((t) => t.teacherId === T.perera)!;
+    expect(perera.cells.find((c) => c.sub === 'Mathematics')).not.toHaveProperty('subSi');
   });
 });

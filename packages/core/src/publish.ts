@@ -3,7 +3,7 @@ import { effectivePlan } from './plan';
 import { bestOverlapPeriod, periodsFor, rowsFor, toMinutes } from './time';
 import type { Bilingual, DayIndex, Entry, Hhmm, PeriodTemplate, SchoolClass, SchoolContext, Subject, TemplateRow, Year } from './types';
 
-export interface SnapshotCell { day: DayIndex; period: number; start: Hhmm; end: Hhmm; title: string; titleSi?: string; sub: string; color: string; isGroup: boolean }
+export interface SnapshotCell { day: DayIndex; period: number; start: Hhmm; end: Hhmm; title: string; titleSi?: string; sub: string; subSi?: string; otherClasses?: string[]; color: string; isGroup: boolean }
 export interface ClassSnapshot { classId: string; className: string; gradeNumber: number; classTeacher?: string; rows: Record<DayIndex, TemplateRow[]>; cells: SnapshotCell[]; yearLabel: string; schoolName: Bilingual }
 export interface TeacherSnapshot { teacherId: string; name: string; staffId: string; rows: Record<DayIndex, TemplateRow[]>; cells: SnapshotCell[]; yearLabel: string; schoolName: Bilingual }
 
@@ -21,7 +21,8 @@ function entrySlot(ctx: SchoolContext, e: Entry): { start: Hhmm; end: Hhmm } | n
 const byDayStart = (a: SnapshotCell, b: SnapshotCell): number => a.day - b.day || toMinutes(a.start) - toMinutes(b.start);
 
 function withSi<T extends object>(base: T, nameSi: string | undefined): T & { titleSi?: string } {
-  return nameSi ? { ...base, titleSi: nameSi } : base;
+  const si = nameSi?.trim();
+  return si ? { ...base, titleSi: si } : base;
 }
 
 function classCell(ctx: SchoolContext, cls: SchoolClass, e: Entry, slot: { start: Hhmm; end: Hhmm }, subjects: Map<string, Subject>): SnapshotCell {
@@ -33,7 +34,7 @@ function classCell(ctx: SchoolContext, cls: SchoolClass, e: Entry, slot: { start
     const others = e.classIds.filter((id) => id !== cls.id).map((id) => findClass(ctx, id)?.name ?? id);
     const firstOption = group?.optionSubjectIds[0] ?? e.lessons[0]?.subjectId;
     const color = (firstOption !== undefined ? subjects.get(firstOption)?.color : undefined) ?? '';
-    return withSi({ ...base, title: group?.nameEn ?? e.groupKey, sub: others.length ? `Group · ${others.join('+')}` : 'Group', color }, group?.nameSi);
+    return withSi({ ...base, title: group?.nameEn ?? e.groupKey, sub: others.length ? `Group · ${others.join('+')}` : 'Group', otherClasses: others, color }, group?.nameSi);
   }
   const lesson = e.lessons[0];
   const subject = lesson && subjects.get(lesson.subjectId);
@@ -67,7 +68,8 @@ export function buildSnapshots(ctx: SchoolContext, entries: Entry[], year: Year)
       if (period === null) continue;
       const subject = subjects.get(lesson.subjectId);
       const title = e.classIds.map((id) => findClass(ctx, id)?.name ?? id).join('+');
-      cells.push({ day: e.day, period, start: slot.start, end: slot.end, title, sub: subject?.nameEn ?? '', color: subject?.color ?? '', isGroup: e.groupKey !== undefined });
+      const subSi = subject?.nameSi?.trim();
+      cells.push({ day: e.day, period, start: slot.start, end: slot.end, title, sub: subject?.nameEn ?? '', ...(subSi ? { subSi } : {}), color: subject?.color ?? '', isGroup: e.groupKey !== undefined });
     }
     cells.sort(byDayStart);
     return { teacherId: teacher.id, name: teacher.name, staffId: teacher.staffId, rows: teacherRows, cells, yearLabel: year.label, schoolName };

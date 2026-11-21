@@ -45,7 +45,7 @@ describe('warnings', () => {
     const day = [1, 2, 3, 4, 5, 6, 7, 8].map((p) => entry(`m-${p}`, 0, p, [C.c6b], [[S.maths, T.perera]]));
     expect(warnings(day, ctx)).toEqual([
       { kind: 'over-limit', refId: T.perera, day: 0, detail: '8 periods on Mon, limit 7' },
-      { kind: 'over-target', refId: C.c6b, detail: 'Mathematics 8/6' },
+      { kind: 'over-target', refId: C.c6b, detail: 'Mathematics 8/6', planKey: `subject:${S.maths}` },
     ]);
   });
 

@@ -55,8 +55,9 @@ export function matchClassPeriod(cls: SchoolClass, ctx: SchoolContext, day: DayI
   return template ? bestOverlapPeriod(template, day, window) : null;
 }
 
-export function classOptionsForTeacherSlot(args: { ctx: SchoolContext; entries: Entry[]; teacherId: string; day: DayIndex; defaultPeriod: number; subjectId: string }): ClassOption[] {
-  const { ctx, entries, teacherId, day, defaultPeriod, subjectId } = args;
+export function classOptionsForTeacherSlot(args: { ctx: SchoolContext; entries: Entry[]; teacherId: string; day: DayIndex; defaultPeriod: number; subjectId: string; editingEntryId?: string }): ClassOption[] {
+  const { ctx, teacherId, day, defaultPeriod, subjectId, editingEntryId } = args;
+  const entries = args.entries.filter((e) => e.id !== editingEntryId);
   const teacher = ctx.teachers.find((t) => t.id === teacherId);
   const defaultTemplate = ctx.templates.find((t) => t.isDefault);
   if (!teacher || !defaultTemplate) return [];
