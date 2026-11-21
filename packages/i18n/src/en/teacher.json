@@ -24,7 +24,6 @@
     "body": "Your timetable will appear here once your school publishes it."
   },
   "loadError": "Could not load your timetable. Please try again.",
-  "language": "Language",
   "signOut": "Sign out",
   "changePassword": "Change password",
   "cp": {
