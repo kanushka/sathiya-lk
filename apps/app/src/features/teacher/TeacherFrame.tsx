@@ -14,7 +14,7 @@ import { LoadingState } from '../../ui/LoadingState';
 import { cx } from '../../ui/cx';
 import { ChangePasswordModal } from './ChangePasswordModal';
 import type { ChangePasswordFn } from './firebasePassword';
-import { colomboNow } from './colomboNow';
+import { colomboNow, greetingKey } from './colomboNow';
 import { useNow, type NowFn } from './useNow';
 
 export interface TeacherViewProps {
@@ -26,11 +26,6 @@ export interface TeacherViewProps {
 interface FrameProps extends TeacherViewProps {
   view: 'today' | 'week';
   children: (snap: TeacherSnapshot, now: Date) => ReactNode;
-}
-
-function greetingKey(hour: number): 'morning' | 'afternoon' | 'evening' {
-  if (hour < 12) return 'morning';
-  return hour < 17 ? 'afternoon' : 'evening';
 }
 
 export function TeacherFrame({ view, now: nowFn, snapshot, changePassword, children }: FrameProps) {
@@ -65,7 +60,7 @@ export function TeacherFrame({ view, now: nowFn, snapshot, changePassword, child
       aria-current={active ? 'page' : undefined}
       className={cx(
         'flex h-9 flex-1 items-center justify-center rounded-lg text-sm font-bold',
-        active ? 'bg-white text-ink' : 'opacity-90',
+        active ? 'bg-white text-ink' : 'text-on-brand opacity-90',
       )}
     >
       {label}

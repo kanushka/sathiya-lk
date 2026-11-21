@@ -62,7 +62,7 @@ export function StepSchool({ value, onChange, onNext, censusTaken, onReport }: S
               ))}
             </select>
           </Field>
-          <Field label={t('school.census')} hint={t('school.censusHint')} error={censusMsg} className="flex-1">
+          <Field label={t('school.census')} hint={t('school.censusHint')} error={censusMsg} required={!value.noCensus} className="flex-1">
             <input
               className={`${inputClass} tracking-[.08em]`}
               inputMode="numeric"
@@ -97,6 +97,7 @@ export function StepSchool({ value, onChange, onNext, censusTaken, onReport }: S
         <div className="flex gap-3">
           <Field
             label={t('school.city')}
+            required
             className="flex-1"
             error={cityTouched && value.city.trim() === '' ? t('school.cityError') : undefined}
           >

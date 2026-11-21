@@ -59,7 +59,7 @@ export function TemplatesPage() {
             >
               <strong className="block text-[15px]">{x.name}</strong>
               <span className="text-[13px] text-ink-soft">
-                {t('list.summary', { periods: periodCount(x.rows), classes: usageCount('template', x.id, school, entries) })}
+                {t('list.summary', { periods: periodCount(x.rows), count: usageCount('template', x.id, school, entries) })}
               </span>
             </button>
           ))}
@@ -151,13 +151,14 @@ function TemplateDetail({ template, readOnly, dialog, setDialog }: DetailProps) 
             <input
               aria-label={t('editor.templateName')}
               aria-invalid={nameError || undefined}
-              className="h-9 rounded-lg border border-transparent bg-transparent px-1 text-lg font-bold hover:border-line-strong focus:border-brand focus:outline-none"
+              size={Math.max(draft.name.length, 4)}
+              className="h-9 rounded-lg border border-transparent bg-transparent px-1 text-lg font-bold [field-sizing:content] hover:border-line-strong focus:border-brand focus:outline-none"
               value={draft.name}
               onChange={(e) => setDraft({ ...draft, name: e.target.value })}
             />
           )}
           {template.isDefault && <span className="ml-2 rounded-full bg-[#E4F2E7] px-2 py-0.5 text-xs font-bold text-[#1F6B34]">{t('editor.default')}</span>}
-          <p className="mb-0 mt-1 text-[13px] text-ink-soft">{t('editor.usedBy', { n: classes })}</p>
+          <p className="mb-0 mt-1 text-[13px] text-ink-soft">{t('editor.usedBy', { count: classes })}</p>
         </div>
         {!readOnly && (
           <div className="flex gap-2">

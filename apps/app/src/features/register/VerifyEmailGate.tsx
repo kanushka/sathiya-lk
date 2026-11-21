@@ -1,9 +1,10 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
 // Copyright (C) 2026 Kanushka Gayan
 import { useState } from 'react';
-import { useTranslation } from 'react-i18next';
+import { Trans, useTranslation } from 'react-i18next';
 import { useLang } from '../../app/LangProvider';
 import { Button } from '../../ui/Button';
+import { Icon } from '../../ui/Icon';
 import { sendAuthEmail } from '../auth/authEmail';
 import { detailCode } from '../auth/errors';
 import * as api from './api';
@@ -50,8 +51,13 @@ export function VerifyEmailGate({ email, onConfirmed }: VerifyEmailGateProps) {
 
   return (
     <section className="mx-auto max-w-[520px] rounded-2xl border-2 border-teal bg-white p-6 text-center sm:p-8">
+      <span className="mx-auto mb-4 flex h-[52px] w-[52px] items-center justify-center rounded-[14px] bg-[#E3F1F0] text-teal">
+        <Icon name="mail" size={26} strokeWidth={2} />
+      </span>
       <h2 className="mb-2 mt-0 text-xl font-bold">{t('verify.title')}</h2>
-      <p className="mb-5 mt-0 text-sm leading-relaxed text-ink-muted">{t('verify.body', { email: email ?? '' })}</p>
+      <p className="mb-5 mt-0 text-sm leading-relaxed text-ink-muted">
+        <Trans t={t} i18nKey="verify.body" values={{ email: email ?? '' }} components={{ b: <b className="text-ink" /> }} />
+      </p>
       <div className="flex flex-wrap justify-center gap-3">
         <Button variant="primary" size="lg" disabled={busy} onClick={() => void confirm()}>
           {t('verify.confirmed')}

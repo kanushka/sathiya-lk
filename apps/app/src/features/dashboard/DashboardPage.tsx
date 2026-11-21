@@ -3,12 +3,14 @@
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Link, useLocation } from 'react-router-dom';
+import { useAuth } from '../../app/AuthProvider';
 import { useSchool, useYear } from '../../app/SchoolProvider';
 import { useReadOnly } from '../../ui/AdminLayout';
 import { Button } from '../../ui/Button';
 import { cx } from '../../ui/cx';
 import { EmptyState } from '../../ui/EmptyState';
 import { Select } from '../../ui/Select';
+import { colomboNow, greetingKey } from '../teacher/colomboNow';
 import * as api from './api';
 import { attentionItems, classChips, dashboardStats, type ChipStatus } from './model';
 import { NewYearModal } from './NewYearModal';
@@ -32,6 +34,7 @@ export function DashboardPage() {
   const school = useSchool();
   const { years, yearId, setYearId, entries } = useYear();
   const readOnly = useReadOnly();
+  const { user } = useAuth();
   const base = useBase();
   const [dialog, setDialog] = useState<'new' | 'publish' | null>(null);
 
@@ -56,9 +59,17 @@ export function DashboardPage() {
   return (
     <div>
       <div className="mb-6 flex flex-wrap items-end justify-between gap-4">
-        <h1 className="m-0 text-[28px] font-bold tracking-tight text-ink">
-          {year ? t('page.title', { year: year.label }) : t('page.noYear')}
-        </h1>
+        <div>
+          {!readOnly && (
+            <p className="m-0 text-sm text-ink-soft">
+              {t(`teacher:greeting.${greetingKey(colomboNow(new Date()).getHours())}`)}
+              {user?.displayName ? `, ${user.displayName}` : ''}
+            </p>
+          )}
+          <h1 className="mb-0 mt-1 text-[28px] font-bold tracking-tight text-ink">
+            {year ? t('page.title', { year: year.label }) : t('page.noYear')}
+          </h1>
+        </div>
         <div className="flex flex-wrap items-center gap-2.5">
           {years.length > 0 && (
             <Select aria-label={t('year.select')} value={yearId} onChange={(e) => setYearId(e.target.value)} className="w-[200px]">

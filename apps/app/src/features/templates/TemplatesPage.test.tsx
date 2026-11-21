@@ -28,7 +28,7 @@ describe('templates page', () => {
   it('lists templates with class usage', () => {
     setup();
     expect(screen.getByText(/used by 3 classes/i)).toBeInTheDocument();
-    expect(screen.getByRole('button', { name: /Short Friday/ })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: /Short Friday/ })).toHaveTextContent(/· 1 class$/);
   });
 
   it('rejects overlapping rows', async () => {

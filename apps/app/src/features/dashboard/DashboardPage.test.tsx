@@ -35,6 +35,23 @@ describe('dashboard page', () => {
     expect(within(stat('Over daily limit')).getByText('0')).toBeInTheDocument();
   });
 
+  it('greets the admin by name in Colombo time', () => {
+    vi.useFakeTimers({ toFake: ['Date'] });
+    vi.setSystemTime(new Date('2026-11-23T03:00:00Z'));
+    try {
+      renderWithSchool(<DashboardPage />, { ctx, entries, user: { displayName: 'Mrs. Jayasinghe' } });
+      expect(screen.getByText('Good morning, Mrs. Jayasinghe')).toBeInTheDocument();
+    } finally {
+      vi.useRealTimers();
+    }
+  });
+
+  it('hides the greeting in the read-only super view', () => {
+    flags.readOnly = true;
+    renderWithSchool(<DashboardPage />, { ctx, entries, user: { displayName: 'Super' } });
+    expect(screen.queryByText(/^Good (morning|afternoon|evening)/)).not.toBeInTheDocument();
+  });
+
   it('links class chips to the class timetable', () => {
     setup();
     expect(screen.getByRole('link', { name: /^6B/ })).toHaveAttribute('href', '/admin/timetable/class?c=c-6b');

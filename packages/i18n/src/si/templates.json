@@ -9,7 +9,8 @@
     "saveFailed": "සුරැකීමට නොහැකි විය. නැවත උත්සාහ කරන්න."
   },
   "list": {
-    "summary": "කාලච්ඡේද {{periods}} · පන්ති {{classes}}",
+    "summary_one": "කාලච්ඡේද {{periods}} · පන්ති {{count}}",
+    "summary_other": "කාලච්ඡේද {{periods}} · පන්ති {{count}}",
     "new": "+ නව ආකෘතිය"
   },
   "new": {
@@ -22,7 +23,8 @@
   "editor": {
     "templateName": "ආකෘතියේ නම",
     "default": "පෙරනිමිය",
-    "usedBy": "පන්ති {{n}} කින් භාවිතා වේ",
+    "usedBy_one": "පන්ති {{count}} කින් භාවිතා වේ",
+    "usedBy_other": "පන්ති {{count}} කින් භාවිතා වේ",
     "same": "සෑම දිනකම සමාන",
     "perDay": "දිනපතා වෙනස්",
     "start": "ආරම්භය, පේළිය {{n}}",

@@ -25,16 +25,16 @@ export function LoginPage() {
         <TeacherLoginForm focus={teacherFirst} />
         <AdminLoginForm />
       </div>
-      <p className="mb-0 mt-6 text-[13px] text-ink-muted">
+      <div className="mt-8">
+        <LanguageToggle />
+      </div>
+      <p className="mb-0 mt-4 text-[13px] text-ink-muted">
         {t('report.prompt')}{' '}
         <button type="button" onClick={() => setReporting(true)} className="cursor-pointer border-0 bg-transparent p-0 text-brand underline">
           {t('report.link')}
         </button>
       </p>
       <ReportSchoolModal open={reporting} onClose={() => setReporting(false)} />
-      <div className="mt-8">
-        <LanguageToggle />
-      </div>
     </div>
   );
 }

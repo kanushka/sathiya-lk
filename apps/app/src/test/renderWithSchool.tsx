@@ -23,6 +23,7 @@ export interface RenderWithSchoolOptions {
   route?: string;
   path?: string;
   lang?: Lang;
+  user?: Partial<User>;
   renderOptions?: Omit<RenderOptions, 'wrapper'>;
 }
 
@@ -35,14 +36,15 @@ function Providers({ options, children }: { options: RenderWithSchoolOptions; ch
     years: options.years ?? [testYear],
     claims: options.claims ?? { sid: options.ctx.school.id, role: 'admin' as const },
     lang: options.lang ?? 'en',
+    user: { uid: 'test-user', ...options.user } as User,
   }));
-  const { ctx, entries, years, claims, lang } = fixed;
+  const { ctx, entries, years, claims, lang, user } = fixed;
   const [yearId, setYearId] = useState(options.yearId ?? years[0]?.id ?? '');
   const [i18n] = useState(() => (lang === 'en' ? testI18n : createI18n(lang)));
 
   const auth = useMemo<AuthState>(
-    () => ({ user: { uid: 'test-user' } as User, claims, loading: false, refreshClaims: async () => undefined, signOut: async () => undefined }),
-    [claims],
+    () => ({ user, claims, loading: false, refreshClaims: async () => undefined, signOut: async () => undefined }),
+    [user, claims],
   );
   const school = useMemo<SchoolState>(() => ({ ...ctx, loading: false }), [ctx]);
   const year = useMemo<YearState>(() => ({ years, yearId, setYearId, entries, loading: false }), [years, yearId, entries]);

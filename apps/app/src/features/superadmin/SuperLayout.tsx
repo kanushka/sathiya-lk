@@ -8,6 +8,7 @@ import { useAuth } from '../../app/AuthProvider';
 import { useMaybeLang } from '../../app/LangProvider';
 import type { CollectionState } from '../../lib/firestore';
 import { cx } from '../../ui/cx';
+import { BrandMark } from '../auth/AuthChrome';
 import { useOpenReports } from './reports';
 
 interface NavItem {
@@ -42,9 +43,12 @@ export function SuperLayout({ children, openReports }: { children: ReactNode; op
   return (
     <div className="flex min-h-screen bg-ground font-sans text-ink">
       <aside className="w-[230px] shrink-0 bg-navy px-3.5 py-5">
-        <div className="px-2 pb-[18px]">
-          <strong className="block text-white">{t('brand')}</strong>
-          <span className="text-xs font-bold text-saffron">{t('role')}</span>
+        <div className="flex items-center gap-2.5 px-2 pb-[18px]">
+          <BrandMark size={28} />
+          <div>
+            <strong className="block text-white">{t('brand')}</strong>
+            <span className="text-xs font-bold text-saffron">{t('role')}</span>
+          </div>
         </div>
         <nav aria-label={t('nav.label')}>
           <ul className="m-0 flex list-none flex-col gap-0.5 p-0">

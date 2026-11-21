@@ -58,6 +58,8 @@ describe('register', () => {
     const user = userEvent.setup();
     renderAuth(<RegisterPage />, { route: '/register', at: '/register' });
     const city = screen.getByLabelText('City');
+    expect(screen.getByText('City', { selector: 'label' })).toHaveAttribute('data-required', 'true');
+    expect(screen.getByText('Census number', { selector: 'label' })).toHaveAttribute('data-required', 'true');
     expect(screen.getByLabelText('Phone (optional)')).toHaveAttribute('type', 'tel');
     await user.type(city, 'K');
     await user.clear(city);
@@ -431,7 +433,7 @@ describe('register', () => {
       const user = userEvent.setup();
       renderAuth(<RegisterPage />, { route: '/register', at: '/register', signedIn: true, passwordUser: true, emailVerified: false });
       expect(screen.getByRole('heading', { name: 'Check your email' })).toBeInTheDocument();
-      expect(screen.getByText(/a@b\.lk/)).toBeInTheDocument();
+      expect(screen.getByText('a@b.lk', { selector: 'b' })).toBeInTheDocument();
       expect(screen.queryByLabelText('School name (English)')).not.toBeInTheDocument();
       await user.click(screen.getByRole('button', { name: "I've confirmed it" }));
       expect(await screen.findByLabelText('School name (English)')).toBeInTheDocument();

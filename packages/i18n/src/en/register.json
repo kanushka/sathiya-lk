@@ -87,7 +87,7 @@
   },
   "verify": {
     "title": "Check your email",
-    "body": "We sent a link to {{email}}. Open it to confirm your email, then come back here to register your school.",
+    "body": "We sent a link to <b>{{email}}</b>. Open it to confirm your email, then come back here to register your school.",
     "confirmed": "I've confirmed it",
     "resend": "Send again",
     "sent": "Verification email sent.",

@@ -58,19 +58,21 @@ export function TeachersPage() {
   );
 
   return (
-    <div className="mx-auto max-w-[1100px] p-8">
+    <div>
       <div className="mb-5 flex flex-wrap items-center gap-3">
         <h1 className="m-0 text-2xl font-bold text-ink">{t('page.title')}</h1>
         <span className="rounded-full bg-[#F1F2F5] px-2.5 py-0.5 text-sm font-semibold text-ink-soft">{teachers.length}</span>
         <div className="ml-auto flex flex-wrap items-center gap-2">
-          <input
-            type="search"
-            aria-label={t('page.search')}
-            placeholder={t('page.search')}
-            className={`${inputClass} w-64`}
-            value={search}
-            onChange={(e) => setSearch(e.target.value)}
-          />
+          <div className="w-[220px]">
+            <input
+              type="search"
+              aria-label={t('page.search')}
+              placeholder={t('page.search')}
+              className={inputClass}
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+            />
+          </div>
           <Button onClick={() => void printAll()} disabled={teachers.length === 0}>
             {t('page.printAll')}
           </Button>

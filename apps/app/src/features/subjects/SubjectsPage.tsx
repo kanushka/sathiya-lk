@@ -59,7 +59,7 @@ export function SubjectsPage() {
   );
 
   return (
-    <div className="mx-auto max-w-[1100px] p-8">
+    <div>
       <div className="mb-1.5 flex flex-wrap items-end justify-between gap-3">
         <h1 className="m-0 text-2xl font-bold text-ink">{t('page.title')}</h1>
         {!readOnly && (

@@ -9,7 +9,8 @@
     "saveFailed": "Could not save. Try again."
   },
   "list": {
-    "summary": "{{periods}} periods · {{classes}} classes",
+    "summary_one": "{{periods}} periods · {{count}} class",
+    "summary_other": "{{periods}} periods · {{count}} classes",
     "new": "+ New template"
   },
   "new": {
@@ -22,7 +23,8 @@
   "editor": {
     "templateName": "Template name",
     "default": "Default",
-    "usedBy": "Used by {{n}} classes",
+    "usedBy_one": "Used by {{count}} class",
+    "usedBy_other": "Used by {{count}} classes",
     "same": "Same every day",
     "perDay": "Different per day",
     "start": "Start, row {{n}}",
