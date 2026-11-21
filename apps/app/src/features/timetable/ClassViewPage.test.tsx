@@ -7,6 +7,7 @@ import { fireEvent, screen, waitFor, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { Route, Routes } from 'react-router-dom';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { ApiError } from '../../lib/callable';
 import { renderWithSchool } from '../../test/renderWithSchool';
 import { ClassIndexRedirect, ClassViewPage } from './ClassViewPage';
 import { TimetableApiContext, type TimetableApi } from './useTimetable';
@@ -80,12 +81,13 @@ describe('ClassViewPage', () => {
     expect(screen.getByRole('combobox', { name: 'Class' })).toHaveValue(C.c6a);
   });
 
-  it('assigns a lesson to an empty slot through the picker', async () => {
+  it('assigns a lesson to an empty slot through the two-step popup', async () => {
     const api = setup();
     await activate('Wednesday', 4);
-    await userEvent.click(screen.getByRole('button', { name: 'Subject' }));
-    await userEvent.click(screen.getByRole('option', { name: /^Science/ }));
-    await userEvent.click(within(screen.getByRole('dialog')).getByRole('button', { name: /Mrs. S. Gunasekara/ }));
+    const popup = screen.getByRole('dialog', { name: 'Choose a subject' });
+    await userEvent.type(within(popup).getByRole('searchbox', { name: 'Search subjects' }), 'Science{Enter}');
+    await userEvent.click(within(screen.getByRole('dialog')).getByRole('button', { name: /^Mrs\. S\. Gunasekara/ }));
+    await userEvent.click(within(screen.getByRole('dialog')).getByRole('button', { name: 'Assign' }));
     await waitFor(() => expect(screen.queryByRole('dialog')).not.toBeInTheDocument());
     expect(api.saveEntry).toHaveBeenCalledWith({
       schoolId: ctx.school.id,
@@ -98,8 +100,7 @@ describe('ClassViewPage', () => {
   it('opens the block editor for a group subject', async () => {
     setup();
     await activate('Wednesday', 4);
-    await userEvent.click(screen.getByRole('button', { name: 'Subject' }));
-    await userEvent.click(screen.getByRole('option', { name: /^Religion/ }));
+    await userEvent.click(within(screen.getByRole('dialog')).getByRole('button', { name: /^Religion/ }));
     const dialog = await screen.findByRole('dialog', { name: 'Religion' });
     expect(within(dialog).getByText('Classes')).toBeInTheDocument();
   });
@@ -137,8 +138,7 @@ describe('ClassViewPage', () => {
   it('keeps a saved block visible after the block editor closes', async () => {
     const api = setup();
     await activate('Wednesday', 4);
-    await userEvent.click(screen.getByRole('button', { name: 'Subject' }));
-    await userEvent.click(screen.getByRole('option', { name: /^Religion/ }));
+    await userEvent.click(within(screen.getByRole('dialog')).getByRole('button', { name: /^Religion/ }));
     const dialog = await screen.findByRole('dialog', { name: 'Religion' });
     await userEvent.click(within(dialog).getByRole('button', { name: 'Save' }));
     await waitFor(() => expect(screen.queryByRole('dialog')).not.toBeInTheDocument());
@@ -195,6 +195,8 @@ describe('ClassViewPage', () => {
     ro.value = true;
     const api = setup();
     expect(screen.queryByRole('button', { name: 'Fill empty with class teacher' })).not.toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: /^Pin / })).not.toBeInTheDocument();
+    expect(screen.queryByText(/Pin mode keeps the same subject/)).not.toBeInTheDocument();
     await userEvent.click(slot('Wednesday', 4));
     await userEvent.click(slot('Wednesday', 4));
     expect(screen.queryByRole('dialog')).not.toBeInTheDocument();
@@ -216,5 +218,135 @@ describe('ClassViewPage', () => {
       { ctx: { ...ctx, classes: [] }, route: '/admin/timetable/class' },
     );
     expect(screen.getByText('No classes yet')).toBeInTheDocument();
+  });
+
+  describe('pin mode', () => {
+    const pinBar = () => screen.getByRole('region', { name: 'Pin mode' });
+    const grid = () => screen.getByRole('group', { name: 'Timetable grid' });
+    const cellNamed = (name: RegExp) => within(grid()).getByRole('button', { name });
+
+    async function assignScience(api: TimetableApi = makeApi()) {
+      setup(C.c6b, api);
+      await activate('Wednesday', 4);
+      await userEvent.type(screen.getByRole('searchbox', { name: 'Search subjects' }), 'Science{Enter}');
+      await userEvent.click(within(screen.getByRole('dialog')).getByRole('button', { name: /^Mrs\. S\. Gunasekara/ }));
+      await userEvent.click(within(screen.getByRole('dialog')).getByRole('button', { name: 'Assign' }));
+      await waitFor(() => expect(screen.queryByRole('dialog')).not.toBeInTheDocument());
+      return api;
+    }
+
+    it('shows a hint before any pin mode starts', () => {
+      setup();
+      expect(screen.getByText(/Pin mode keeps the same subject and teacher/)).toBeInTheDocument();
+      expect(screen.queryByRole('region', { name: 'Pin mode' })).not.toBeInTheDocument();
+    });
+
+    it('enters pin mode after Assign with the subject, teacher, progress and grid outline', async () => {
+      await assignScience();
+      expect(pinBar()).toHaveTextContent('Science · Mrs. S. Gunasekara');
+      expect(pinBar()).toHaveTextContent('4 of 5 placed · 1 to go');
+      expect(grid().closest('section')).toHaveAttribute('data-pin-mode', 'true');
+      expect(screen.getByRole('button', { name: 'Stop pinning Science' }).closest('li')).toHaveAttribute('data-active', 'true');
+      await waitFor(() => expect(slot('Wednesday', 4)).toHaveFocus());
+    });
+
+    it('overlays the teacher week: pins on free cells, busy reasons, other lessons disabled', async () => {
+      const busy = entry('busy', 4, 5, [C.c6a], [[S.science, T.gunasekara]]);
+      renderWithSchool(
+        <TimetableApiContext.Provider value={makeApi()}>
+          <Routes>
+            <Route path="/admin/timetable/class/:classId" element={<ClassViewPage />} />
+          </Routes>
+        </TimetableApiContext.Provider>,
+        { ctx, entries: [...entries6B, busy], route: `/admin/timetable/class/${C.c6b}` },
+      );
+      await userEvent.click(screen.getByRole('button', { name: 'Pin Science' }));
+      await userEvent.click(within(screen.getByRole('dialog')).getByRole('button', { name: 'Start pinning' }));
+      const free = cellNamed(/^Thursday, period 7, 12:10–12:50: pin Science with Mrs\. S\. Gunasekara$/);
+      expect(free.querySelector('svg')).not.toBeNull();
+      const busyCell = cellNamed(/^Friday, period 5, .*: busy, Teaching 6A · Science$/);
+      expect(busyCell).toHaveAttribute('aria-disabled', 'true');
+      expect(busyCell).toHaveTextContent('Busy');
+      expect(cellNamed(/^Monday, period 1, .*Maths/)).toHaveAttribute('aria-disabled', 'true');
+      expect(cellNamed(/^Friday, period 1, .*Science Mrs\. S\. Gunasekara, pinned, click to unpin$/)).not.toHaveAttribute('aria-disabled');
+    });
+
+    it('pins a free cell with one click and unpins a pinned one, keeping other lessons untouched', async () => {
+      const api = await assignScience();
+      await userEvent.click(cellNamed(/^Thursday, period 7, .*: pin Science/));
+      await waitFor(() => expect(api.saveEntry).toHaveBeenCalledTimes(2));
+      expect(vi.mocked(api.saveEntry).mock.calls[1]![0].entry).toEqual({ day: 3, period: 7, classIds: [C.c6b], lessons: [{ subjectId: S.science, teacherId: T.gunasekara }] });
+      expect(await screen.findByText('Science pinned to Thursday, period 7.')).toBeInTheDocument();
+      expect(pinBar()).toHaveTextContent('5 of 5 placed · complete');
+      await userEvent.click(cellNamed(/^Friday, period 1, .*pinned, click to unpin$/));
+      await waitFor(() => expect(api.deleteEntry).toHaveBeenCalledWith(expect.objectContaining({ entryId: 'e-6b-4-1' })));
+      await userEvent.click(cellNamed(/^Monday, period 1, .*Maths/));
+      expect(api.deleteEntry).toHaveBeenCalledTimes(1);
+    });
+
+    it('pins the focused cell with Enter', async () => {
+      const api = await assignScience();
+      const target = cellNamed(/^Thursday, period 7, .*: pin Science/);
+      target.focus();
+      fireEvent.keyDown(target, { key: 'Enter' });
+      await waitFor(() => expect(api.saveEntry).toHaveBeenCalledTimes(2));
+    });
+
+    it('warns in the bar when pinned over the weekly plan', async () => {
+      await assignScience();
+      await userEvent.click(cellNamed(/^Thursday, period 7, .*: pin Science/));
+      await userEvent.click(await screen.findByRole('button', { name: /^Friday, period 5, .*: pin Science.*over plan$/ }));
+      await waitFor(() => expect(pinBar()).toHaveTextContent('6 of 5 placed'));
+      expect(within(pinBar()).getByText('+1 over')).toBeInTheDocument();
+    });
+
+    it('rolls back a clashing pin and shows the conflict', async () => {
+      const api = makeApi();
+      vi.mocked(api.saveEntry)
+        .mockResolvedValueOnce({ entryId: 'new' })
+        .mockRejectedValueOnce(new ApiError('clash', 'clash', { conflicts: [{ kind: 'teacher', id: T.gunasekara, entryId: 'x' }] }));
+      await assignScience(api);
+      await userEvent.click(cellNamed(/^Thursday, period 7, .*: pin Science/));
+      expect(await screen.findByText('Clash: Mrs. S. Gunasekara is already teaching at this time')).toBeInTheDocument();
+      expect(cellNamed(/^Thursday, period 7, .*: pin Science/)).toBeInTheDocument();
+    });
+
+    it('suggests and pins the remaining periods', async () => {
+      const api = await assignScience();
+      await userEvent.click(within(pinBar()).getByRole('button', { name: 'Suggest 1 slot' }));
+      expect(cellNamed(/^Thursday, period 7, .*: pin Science with Mrs\. S\. Gunasekara, suggested$/)).toHaveTextContent('Suggested');
+      await userEvent.click(within(pinBar()).getByRole('button', { name: 'Pin 1 suggested' }));
+      await waitFor(() => expect(api.saveEntry).toHaveBeenCalledTimes(2));
+      expect(await screen.findByText('Pinned 1 Science lesson.')).toBeInTheDocument();
+    });
+
+    it.each([
+      ['Done', async () => userEvent.click(within(pinBar()).getByRole('button', { name: 'Done' }))],
+      ['Escape', async () => userEvent.keyboard('{Escape}')],
+      ['the active subject row', async () => userEvent.click(screen.getByRole('button', { name: 'Stop pinning Science' }))],
+    ])('exits with %s, keeping the pins', async (_, exit) => {
+      const api = await assignScience();
+      await exit();
+      expect(screen.queryByRole('region', { name: 'Pin mode' })).not.toBeInTheDocument();
+      expect(grid().closest('section')).not.toHaveAttribute('data-pin-mode');
+      expect(api.deleteEntry).not.toHaveBeenCalled();
+      expect(slot('Wednesday', 4)).toHaveTextContent('Science');
+    });
+
+    it('starts from the lesson list pin button on the teacher step for the whole week', async () => {
+      const api = setup();
+      await userEvent.click(screen.getByRole('button', { name: 'Pin Sinhala' }));
+      const popup = screen.getByRole('dialog', { name: 'Choose a teacher' });
+      expect(popup).toHaveTextContent('Whole week');
+      await userEvent.click(within(popup).getByRole('button', { name: 'Start pinning' }));
+      expect(pinBar()).toHaveTextContent('Sinhala · Mr. R. Silva');
+      expect(api.saveEntry).not.toHaveBeenCalled();
+    });
+
+    it('edits a filled cell as before when not pinning', async () => {
+      setup();
+      await activate('Monday', 1);
+      expect(screen.getByRole('button', { name: 'Clear slot' })).toBeInTheDocument();
+    });
   });
 });
