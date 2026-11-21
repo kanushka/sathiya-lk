@@ -134,12 +134,12 @@ export function TimetableGrid({ rows, cellsFor, selected, onSelect, onActivate, 
                   data-period={r.n}
                   tabIndex={tabSlot && tabSlot.day === d && tabSlot.period === r.n ? 0 : -1}
                   aria-pressed={on}
-                  aria-label={cells.length ? t('grid.cell', label) : t('grid.cellEmpty', label)}
+                  aria-label={cells.length ? t('grid.cell', label) : t(readOnly ? 'grid.cellEmpty' : 'grid.cellAdd', label)}
                   onClick={() => onClick(d, r.n)}
                   onKeyDown={(e) => onKeyDown(e, d, r.n)}
                   className={cx(
                     'box-border flex min-h-[58px] flex-col justify-center rounded-[10px] border p-1 text-left text-ink',
-                    cells.length === 0 ? 'border-[1.5px] border-dashed border-[#C9CDD6] bg-white text-[#8A91A3] px-2.5' : 'border-transparent',
+                    cells.length === 0 ? 'border-[1.5px] border-dashed border-[#C9CDD6] bg-white text-[#8A91A3] px-2.5 items-center' : 'border-transparent',
                     on && 'shadow-[0_0_0_2px_#fff,0_0_0_4px_var(--brand)]',
                     readOnly ? 'cursor-default' : 'cursor-pointer',
                   )}

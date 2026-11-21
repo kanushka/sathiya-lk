@@ -111,4 +111,18 @@ describe('TimetableGrid', () => {
     setup({ headerExtra: (d) => <i>extra{d}</i> });
     expect(screen.getByText('extra3')).toBeInTheDocument();
   });
+
+  it('empty editable slot shows only a plus glyph with Add lesson label', () => {
+    setup();
+    const btn = screen.getByRole('button', { name: /Tuesday, period 2, .*Add lesson/ });
+    expect(btn).toHaveTextContent(/^\+$/);
+    expect(btn).not.toHaveTextContent(/Add/);
+  });
+
+  it('empty read-only slot has no plus', () => {
+    setup({ readOnly: true });
+    const btn = screen.getByRole('button', { name: /Tuesday, period 2, .*empty/ });
+    expect(btn).toBeEmptyDOMElement();
+    expect(btn.getAttribute('aria-label')).not.toMatch(/Add lesson/);
+  });
 });

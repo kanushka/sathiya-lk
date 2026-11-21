@@ -1,10 +1,11 @@
 {
   "grid": {
     "label": "Timetable grid",
-    "add": "+ Add",
+    "add": "Add lesson",
     "interval": "Interval · {{time}}",
     "cell": "{{day}}, period {{n}}, {{time}}: {{title}}",
-    "cellEmpty": "{{day}}, period {{n}}, {{time}}: empty"
+    "cellEmpty": "{{day}}, period {{n}}, {{time}}: empty",
+    "cellAdd": "{{day}}, period {{n}}, {{time}}: empty, Add lesson"
   },
   "errors": {
     "clash": "Clash: {{items}}",

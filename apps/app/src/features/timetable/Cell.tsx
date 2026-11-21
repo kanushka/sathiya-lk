@@ -1,5 +1,3 @@
-import { useTranslation } from 'react-i18next';
-
 export interface CellView {
   title: string;
   sub: string;
@@ -9,9 +7,12 @@ export interface CellView {
 }
 
 export function CellBody({ cells, readOnly }: { cells: CellView[]; readOnly?: boolean }) {
-  const { t } = useTranslation('timetable');
   if (cells.length === 0) {
-    return <span className="text-[13px] font-semibold">{readOnly ? '' : t('grid.add')}</span>;
+    return readOnly ? null : (
+      <span aria-hidden="true" className="text-center text-xl font-semibold leading-none">
+        +
+      </span>
+    );
   }
   return (
     <span className="flex flex-col gap-1">
