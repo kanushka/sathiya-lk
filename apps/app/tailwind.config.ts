@@ -16,6 +16,7 @@ export default {
         navy: '#14213D',
         saffron: '#F2A541',
         ground: '#FBFAF7',
+        canvas: '#F3F2EE',
         ink: { DEFAULT: '#14213D', soft: '#3B4560', muted: '#5A6378' },
         line: { DEFAULT: '#E4E6EC', soft: '#ECEDF1', strong: '#CDD1DA' },
       },

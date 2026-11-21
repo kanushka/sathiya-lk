@@ -15,7 +15,7 @@ export function LoginPage() {
   const teacherFirst = params.get('as') === 'teacher';
 
   return (
-    <div className="flex min-h-screen flex-col items-center bg-ground px-4 py-10 sm:py-12">
+    <div className="flex min-h-screen flex-col items-center bg-canvas px-4 py-10 sm:py-12">
       <div className="mb-3 flex items-center gap-2.5">
         <BrandMark />
         <span className="text-2xl font-extrabold">{t('brand')}</span>

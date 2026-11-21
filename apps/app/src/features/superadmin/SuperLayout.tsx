@@ -41,7 +41,7 @@ export function SuperLayout({ children, openReports }: { children: ReactNode; op
   const openCount = reports.loading || reports.error ? 0 : reports.data.filter((r) => r.status === 'open').length;
   const isAdmin = claims?.role === 'admin' && !!claims.sid;
   return (
-    <div className="flex min-h-screen bg-ground font-sans text-ink">
+    <div className="flex min-h-screen bg-canvas font-sans text-ink">
       <aside className="w-[230px] shrink-0 bg-navy px-3.5 py-5">
         <div className="flex items-center gap-2.5 px-2 pb-[18px]">
           <BrandMark size={28} />
