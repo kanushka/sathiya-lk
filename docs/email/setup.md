@@ -28,7 +28,7 @@ Firebase console → Extensions → install "Trigger Email from Firestore" (proj
 Override in `functions/.env.sathiya-lk` (kept out of git if it holds addresses you don't want public), then `firebase deploy --only functions`.
 
 ## 4. Firebase console (Authentication)
-- Templates → set the email action URL (Customize action URL) to `https://app.sathiya.kanushka.com/auth/action` (only needed while Firebase's own template emails are used; `sendAuthEmail` links go to `${APP_URL}/login`).
+- **Required:** Templates → any template → edit → Customize action URL → `https://app.sathiya.kanushka.com/auth/action` (staging: `https://app.staging.sathiya.kanushka.com/auth/action`). `sendAuthEmail` builds verify and reset links with `generateEmailVerificationLink` / `generatePasswordResetLink`, which use this project setting as the link's host and path (`${APP_URL}/login` is only the `continueUrl`). Without it the links open Firebase's default `…firebaseapp.com/__/auth/action` page instead of the app's `/auth/action` page.
 - Settings → Authorized domains → add `app.sathiya.kanushka.com`.
 
 ## 5. Hosting custom domains
