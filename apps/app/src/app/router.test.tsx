@@ -71,6 +71,18 @@ function renderAt(path: string) {
 const pathname = () => screen.getByTestId('path').textContent;
 
 describe('router', () => {
+  it('guards a feature route written without the leading slash', async () => {
+    state.user = null;
+    state.claims = {};
+    renderWithI18n(
+      <MemoryRouter initialEntries={['/admin/subjects']}>
+        <App routes={buildRoutes([{ path: 'admin/subjects', element: <p>subjects screen</p> }, { path: '/login', element: <p>login screen</p> }])} />
+      </MemoryRouter>,
+    );
+    expect(await screen.findByText('login screen')).toBeInTheDocument();
+    expect(screen.queryByText('subjects screen')).toBeNull();
+  });
+
   it('collects routes from feature modules (named and default exports)', () => {
     const paths = featureRoutesFrom(fakeModules).map((r) => r.path);
     expect(paths).toEqual(['/admin/teachers', '/me', '/login', '/super', '/s/:sid/teachers', '/admin/classes/:id', '/admin/print/class/:id', '/register', '/admin']);
