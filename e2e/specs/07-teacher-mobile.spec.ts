@@ -10,7 +10,7 @@ test.use({ viewport: { width: 390, height: 844 }, isMobile: true, hasTouch: true
 test('teacher signs in on a phone and sees the current lesson', async ({ page }) => {
   await callAs(await idToken(ADMIN.email, ADMIN.password), 'publishYear', { schoolId: SID, yearId: YEAR_ID });
   // Monday 08:00 in Asia/Colombo: period 1 (07:45–08:30), Mrs. N. Perera teaches Maths in 6B.
-  await page.clock.install({ time: new Date('2026-11-23T08:00:00+05:30') });
+  await page.clock.setFixedTime(new Date('2026-11-23T08:00:00+05:30'));
 
   const perera = teacherLogin(T.perera);
   await page.goto('/login?as=teacher');
