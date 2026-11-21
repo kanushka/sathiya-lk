@@ -105,6 +105,22 @@ describe('WeekPage', () => {
   });
 });
 
+describe('WeekPage per-day templates', () => {
+  it('keeps lessons from a day with more periods than another day', () => {
+    const base = snapshotFor(T.perera);
+    const row = (type: 'period' | 'interval', start: string, end: string) => ({ type, start, end });
+    const short = [row('period', '07:45', '08:30'), row('period', '08:30', '09:10'), row('interval', '09:10', '09:30'), row('period', '09:30', '10:10')];
+    const long = [row('period', '07:45', '08:30'), row('period', '08:30', '09:10'), row('period', '09:10', '09:50'), row('period', '09:50', '10:30')];
+    const snap: TeacherSnapshot = {
+      ...base,
+      rows: { 0: short, 1: short, 2: short, 3: long, 4: short },
+      cells: [{ day: 3, period: 4, start: '09:50', end: '10:30', title: '7A', sub: 'Science', color: '', isGroup: false }],
+    };
+    renderWithSchool(<WeekPage now={wed0920} snapshot={{ loading: false, data: snap }} />, { ctx, claims: claims(T.perera) });
+    expect(within(screen.getByTestId('week-cell-3-4')).getByText('7A')).toBeInTheDocument();
+  });
+});
+
 describe('ChangePasswordModal', () => {
   const fill = async (cur: string, next: string, confirm: string) => {
     const user = userEvent.setup();

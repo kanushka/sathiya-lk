@@ -47,7 +47,7 @@ export function TeacherFrame({ view, now: nowFn, snapshot, changePassword, child
 
   const schoolName = pickName(school, lang);
   const dateLine = new Intl.DateTimeFormat(lang === 'si' ? 'si-LK' : 'en-GB', { weekday: 'long', day: 'numeric', month: 'long' }).format(now);
-  const firstName = snap?.name;
+  const fullName = snap?.name;
 
   let body: ReactNode;
   if (state.loading) body = <LoadingState />;
@@ -98,7 +98,7 @@ export function TeacherFrame({ view, now: nowFn, snapshot, changePassword, child
         </div>
         <p className="mt-4 text-[22px] font-extrabold leading-tight">
           {t(`teacher:greeting.${greetingKey(now.getHours())}`)}
-          {firstName ? `, ${firstName}` : ''}
+          {fullName ? `, ${fullName}` : ''}
         </p>
         <p className="mt-0.5 text-sm opacity-85">{dateLine}</p>
         {snap && (

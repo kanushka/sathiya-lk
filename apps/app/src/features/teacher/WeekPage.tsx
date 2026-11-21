@@ -1,8 +1,8 @@
-import type { DayIndex, TeacherSnapshot } from '@sathiya/core';
+import type { TeacherSnapshot } from '@sathiya/core';
 import { useTranslation } from 'react-i18next';
 import { useLang } from '../../app/LangProvider';
 import { cx } from '../../ui/cx';
-import { cellText, cellsAt, clock, slotsOf, weekdays } from './cells';
+import { cellText, cellsAt, clock, weekSkeleton, weekdays } from './cells';
 import { TeacherFrame, type TeacherViewProps } from './TeacherFrame';
 
 export function WeekPage(props: TeacherViewProps) {
@@ -16,8 +16,7 @@ export function WeekPage(props: TeacherViewProps) {
 function WeekBody({ snap, todayWeekday }: { snap: TeacherSnapshot; todayWeekday: number }) {
   const { t } = useTranslation(['teacher', 'common']);
   const { lang } = useLang();
-  const baseDay = weekdays.reduce<DayIndex>((best, d) => (snap.rows[d].length > snap.rows[best].length ? d : best), 0);
-  const slots = slotsOf(snap.rows[baseDay]);
+  const slots = weekSkeleton(snap.rows);
 
   return (
     <section aria-label={t('teacher:weekGrid')} className="overflow-x-auto rounded-2xl border border-line bg-white shadow-[0_14px_30px_-18px_rgba(20,33,61,.45)]">
@@ -34,10 +33,11 @@ function WeekBody({ snap, todayWeekday }: { snap: TeacherSnapshot; todayWeekday:
         {slots.map((slot, i) =>
           slot.kind === 'interval' ? (
             <div key={i} className="col-span-6 bg-[#FBF7EC] py-0.5 text-center text-[10px] font-bold tracking-widest text-[#7A5410]">
-              {t('teacher:interval')} · {clock(slot.row.start)} – {clock(slot.row.end)}
+              {t('teacher:interval')}
+              {slot.start && slot.end ? ` · ${clock(slot.start)} – ${clock(slot.end)}` : ''}
             </div>
           ) : (
-            <WeekRow key={i} n={slot.n} start={slot.row.start} snap={snap} lang={lang} />
+            <WeekRow key={i} n={slot.n} start={slot.start} snap={snap} lang={lang} />
           ),
         )}
       </div>
@@ -45,13 +45,13 @@ function WeekBody({ snap, todayWeekday }: { snap: TeacherSnapshot; todayWeekday:
   );
 }
 
-function WeekRow({ n, start, snap, lang }: { n: number; start: string; snap: TeacherSnapshot; lang: 'en' | 'si' }) {
+function WeekRow({ n, start, snap, lang }: { n: number; start?: string; snap: TeacherSnapshot; lang: 'en' | 'si' }) {
   const { t } = useTranslation('common');
   return (
     <>
       <div className="bg-white px-1 py-2 text-center">
         <b className="block text-[11px]">{t('periods.periodN', { n })}</b>
-        <span className="text-[10px] text-[#6B7385]">{clock(start)}</span>
+        {start && <span className="text-[10px] text-[#6B7385]">{clock(start)}</span>}
       </div>
       {weekdays.map((d) => {
         const cells = cellsAt(snap, d, n);
@@ -70,6 +70,7 @@ function WeekRow({ n, start, snap, lang }: { n: number; start: string; snap: Tea
                   >
                     <b className="block truncate text-xs">{text.title}</b>
                     <span className="block truncate text-[10px] text-ink-muted">{text.sub}</span>
+                    {!start && <span className="block text-[10px] text-[#6B7385]">{clock(cell.start)}</span>}
                   </div>
                 );
               })
