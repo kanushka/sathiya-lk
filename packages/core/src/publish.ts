@@ -18,6 +18,21 @@ function entrySlot(ctx: SchoolContext, e: Entry): { start: Hhmm; end: Hhmm } | n
   return (template && periodsFor(template, e.day).find((p) => p.period === e.period)) ?? null;
 }
 
+function teacherRowPeriod(t: PeriodTemplate, day: DayIndex, window: { start: number; end: number }): number | null {
+  const best = bestOverlapPeriod(t, day, window);
+  if (best !== null) return best;
+  let nearest: number | null = null;
+  let gap = Infinity;
+  for (const p of periodsFor(t, day)) {
+    const d = Math.max(toMinutes(p.start) - window.end, window.start - toMinutes(p.end));
+    if (d < gap) {
+      nearest = p.period;
+      gap = d;
+    }
+  }
+  return nearest;
+}
+
 const byDayStart = (a: SnapshotCell, b: SnapshotCell): number => a.day - b.day || toMinutes(a.start) - toMinutes(b.start);
 
 function withSi<T extends object>(base: T, nameSi: string | undefined): T & { titleSi?: string } {
@@ -39,7 +54,8 @@ function classCell(ctx: SchoolContext, cls: SchoolClass, e: Entry, slot: { start
   const lesson = e.lessons[0];
   const subject = lesson && subjects.get(lesson.subjectId);
   const teacher = lesson?.teacherId != null ? ctx.teachers.find((t) => t.id === lesson.teacherId) : undefined;
-  return withSi({ ...base, title: subject?.short ?? '', sub: teacher?.name ?? '', color: subject?.color ?? '' }, subject?.nameSi);
+  const others = e.classIds.filter((id) => id !== cls.id).map((id) => findClass(ctx, id)?.name ?? id);
+  return withSi({ ...base, title: subject?.short ?? '', sub: teacher?.name ?? '', ...(others.length ? { otherClasses: others } : {}), color: subject?.color ?? '' }, subject?.nameSi);
 }
 
 export function buildSnapshots(ctx: SchoolContext, entries: Entry[], year: Year): { classes: ClassSnapshot[]; teachers: TeacherSnapshot[] } {
@@ -64,7 +80,7 @@ export function buildSnapshots(ctx: SchoolContext, entries: Entry[], year: Year)
     for (const { e, slot } of slotted) {
       const lesson = e.lessons.find((l) => l.teacherId === teacher.id);
       if (!lesson || !defaultTemplate) continue;
-      const period = bestOverlapPeriod(defaultTemplate, e.day, { start: toMinutes(slot.start), end: toMinutes(slot.end) });
+      const period = teacherRowPeriod(defaultTemplate, e.day, { start: toMinutes(slot.start), end: toMinutes(slot.end) });
       if (period === null) continue;
       const subject = subjects.get(lesson.subjectId);
       const title = e.classIds.map((id) => findClass(ctx, id)?.name ?? id).join('+');
