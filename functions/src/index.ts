@@ -4,3 +4,7 @@ export { resetTeacherPassword } from './resetTeacherPassword';
 export { inviteAdmin } from './inviteAdmin';
 export { claimInvites } from './claimInvites';
 export { setSchoolStatus } from './setSchoolStatus';
+export { saveEntry } from './saveEntry';
+export { deleteEntry } from './deleteEntry';
+export { deleteSetupItem } from './deleteSetupItem';
+export { publishYear } from './publishYear';

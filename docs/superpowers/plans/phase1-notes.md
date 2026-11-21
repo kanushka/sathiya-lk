@@ -74,3 +74,38 @@ Every callable: signed out → `unauthenticated` / `not-allowed`. Bad input → 
 - `createTeacher` does not check that `subjectIds` exist.
 - Two concurrent `registerSchool` calls by the same user could create two schools (claims check is not transactional).
 - Local dev ran on Node 26 (functions emulator warns: requested node 20, using host 26).
+
+## Task 1.2 — Entries, delete guard, publishing
+
+All four callables use `callOpts` + `requireSchoolAdmin` (admin of sid, school active; super alone is denied — O3). `loadContext(sid)` (`functions/src/lib/loadContext.ts`) reads the school doc + teachers/subjects/periodTemplates/grades/classes; `loadEntries(sid, yid)` reads a year's entries.
+
+| Callable | Writes | Errors |
+|---|---|---|
+| `saveEntry` `{schoolId, yearId, entry}` → `{entryId}` | `years/{yid}/entries/{id}` (`teacherIds` via `withTeacherIds`), slot locks | bad shape, day not 0–4, period not in the class template for that day (O8), unknown class/subject/teacher, block classes of different grade or template (O7), unknown year → `invalid-argument`/`invalid`; `entry.id` given but missing → `not-found`/`invalid`; clash → `failed-precondition` `{code:'clash', conflicts}` |
+| `deleteEntry` `{schoolId, yearId, entryId}` → `{ok:true}` | deletes the entry | unknown entry → `not-found`/`invalid` |
+| `deleteSetupItem` `{schoolId, kind, id}` → `{deleted, usedIn}` | deletes the item; teacher also deletes Auth user (not-found ignored), `members/{uid}`, and unsets `teacherId` on admin members linked to it | unknown kind → `invalid-argument`/`invalid`; unknown item → `not-found`/`invalid`. In use is **not** an error. |
+| `publishYear` `{schoolId, yearId}` → `{classes, teachers}` | `publishedClasses/{cid}`, `publishedTeachers/{tid}` (batches ≤ 450 ops), deletes stale published docs, year `{status:'published', publishedAt: ms}`, school `activeYearId` | unknown year → `invalid-argument`/`invalid` |
+
+### saveEntry concurrency (R6)
+Inside the transaction, after reading the year (and the old entry when editing), it `getAll`s lock docs at
+`schools/{sid}/years/{yid}/slotLocks/{day}_t_{teacherId}` and `{day}_c_{classId}` for the draft and the old version (sorted keys), then queries same-day entries with `teacherIds array-contains-any` / `classIds array-contains-any` (chunks of 30), runs `findConflicts`, then writes the locks (`updatedAt`, `entryId`) and the entry. Any clash shares a (day, teacher) or (day, class) key, so competing saves conflict on a lock doc and one retries and sees the other.
+- `slotLocks` is functions-only and **not** in core `paths` (`functions/src/lib/slotLocks.ts`). **Task 1.3: rules must deny all client access to `slotLocks`.**
+- The emulator serialises these transactions even without the locks (its query locking is stricter than production), so the concurrency tests pass either way there; the locks are for production phantom inserts. Tests: 5 rounds of two parallel callable saves (6A/6B, same teacher, same slot) and 5 rounds of three parallel in-process `saveEntry.run` saves (6A/6B/12A) — exactly one fulfilled each, the rest `clash`.
+- Setup data (`loadContext`) is read outside the transaction; a template/class edit racing a save is not serialised.
+
+### deleteSetupItem usage (R9 / O4)
+`usedIn` = core `usageCount` over entries of **all** years of the school + setup references:
+- subject: each grade plan item and class `planOverride` item that is the subject or lists it in `optionSubjectIds`;
+- teacher: classes with `classTeacherId` = teacher;
+- template: core counts classes using it; the default template adds 1 (so it is never deleted; `usedIn` ≥ 1);
+- class: entries only.
+The check and delete are not transactional with `saveEntry` (a save racing a delete can leave an entry pointing at a deleted item; `warnings`/`orphanedEntries` will surface it). Invites with the deleted `teacherId` are left in place; a linked admin's `tid` claim is not cleared until their next claims change.
+
+### publishYear
+Uses `buildSnapshots(ctx, entries, year)` and the phase0 paths `publishedClasses` / `publishedTeachers`. Snapshot docs are written as returned (no `id` field; `classTeacher` omitted when unset). Published docs not in the new set (deleted classes/teachers) are deleted. A partial failure leaves the year in its old status; re-running is safe. Publishing does not refuse a timetable with clashes or warnings.
+
+### Indexes (R11)
+`firestore.indexes.json`: composite indexes on `entries` (collection scope) `day ASC + teacherIds CONTAINS` and `day ASC + classIds CONTAINS`. The `invites.email` override is kept.
+
+### Tests
+`functions/test/seed.ts` replaces a registered school's setup with the Siripura fixtures (same ids, registered default template removed) and adds draft year `y2027`. `entries.test.ts` (saveEntry/deleteEntry), `setup.test.ts` (deleteSetupItem/publishYear).
