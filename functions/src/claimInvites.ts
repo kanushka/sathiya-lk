@@ -5,7 +5,7 @@ import { onCall } from 'firebase-functions/v2/https';
 import { auth, db } from './lib/admin';
 import { callOpts } from './lib/callOptions';
 import { setSchoolClaims } from './lib/claims';
-import { notAllowed, requireAuth } from './lib/guards';
+import { isVerified, notAllowed, requireAuth } from './lib/guards';
 
 const INVITES = paths.invites('_').split('/').pop()!;
 
@@ -16,8 +16,7 @@ interface Invite {
 
 export const claimInvites = onCall(callOpts, async (req): Promise<ClaimInvitesRes> => {
   const { uid, token } = requireAuth(req);
-  const verified = token.email_verified === true || token.firebase.sign_in_provider === 'google.com';
-  if (!token.email || !verified) notAllowed('A verified email is required');
+  if (!token.email || !isVerified(token)) notAllowed('A verified email is required');
   const email = token.email!.toLowerCase();
 
   // Claims hold one school: claim the first invite of an active school, or any for the school the user already belongs to.

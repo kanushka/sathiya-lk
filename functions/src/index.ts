@@ -10,3 +10,4 @@ export { saveEntry } from './saveEntry';
 export { deleteEntry } from './deleteEntry';
 export { deleteSetupItem } from './deleteSetupItem';
 export { publishYear } from './publishYear';
+export { reportSchool } from './reportSchool';

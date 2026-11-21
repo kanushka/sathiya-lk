@@ -2,7 +2,7 @@
 // Copyright (C) 2026 Kanushka Gayan
 import { paths } from '@sathiya/core';
 import { describe, expect, it } from 'vitest';
-import { adminAuth, adminDb, adminWithSchool, expectFnError, signInGoogle, signUp, teacherInput, uniq } from './helpers';
+import { adminAuth, adminDb, adminWithSchool, expectFnError, signInGoogle, signUp, teacherInput, uniq, unverifiedSignUp } from './helpers';
 
 describe('inviteAdmin', () => {
   it('stores the invite under the lowercased email', async () => {
@@ -34,7 +34,7 @@ describe('claimInvites', () => {
     const { admin, sid } = await adminWithSchool();
     const email = `unverified-${uniq()}@example.com`;
     await admin.call('inviteAdmin', { schoolId: sid, email });
-    const c = await signUp(email);
+    const c = await unverifiedSignUp(email);
     await expectFnError(c.call('claimInvites', {}), 'permission-denied', 'not-allowed');
     expect((await adminDb.doc(`${paths.invites(sid)}/${email}`).get()).exists).toBe(true);
   });

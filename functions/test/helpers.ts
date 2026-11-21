@@ -16,8 +16,8 @@ import {
   type Auth,
 } from 'firebase/auth';
 import { connectFunctionsEmulator, getFunctions, httpsCallable, type Functions } from 'firebase/functions';
-import { afterAll, expect } from 'vitest';
-import type { RegisterSchoolInput } from '../src/registerSchool';
+import { afterAll, beforeEach, expect } from 'vitest';
+import type { RegisterSchoolInput } from '../src/lib/contract';
 
 export const PROJECT_ID = 'sathiya-lk';
 const HOST = '127.0.0.1';
@@ -32,6 +32,11 @@ export const adminAuth = getAdminAuth();
 const apps: FirebaseApp[] = [];
 afterAll(async () => {
   await Promise.all(apps.splice(0).map((a) => deleteApp(a)));
+});
+
+// Every SDK call comes from the same emulator IP; reset per-IP/per-uid counters so tests don't hit each other's limits.
+beforeEach(async () => {
+  await adminDb.recursiveDelete(adminDb.collection('rateLimits'));
 });
 
 export interface Client {
@@ -73,11 +78,17 @@ export function client(): Client {
   };
 }
 
-export async function signUp(email = `u-${uniq()}@example.com`, password = 'secret123'): Promise<Client> {
+export async function signUp(email = `u-${uniq()}@example.com`, password = 'secret123', verified = true): Promise<Client> {
   const c = client();
   await createUserWithEmailAndPassword(c.auth, email, password);
+  if (verified) {
+    await adminAuth.updateUser(c.uid, { emailVerified: true });
+    await c.auth.currentUser!.getIdToken(true);
+  }
   return c;
 }
+
+export const unverifiedSignUp = (email?: string) => signUp(email, undefined, false);
 
 export async function signInGoogle(email: string, emailVerified = false): Promise<Client> {
   const c = client();
@@ -109,6 +120,7 @@ export function schoolReq(over: Partial<RegisterSchoolInput['school']> = {}): Re
       staffPrefix: 'SCC',
       colors: { primary: '#7A1F3D', second: '#D9A441' },
       termsVersion: '1',
+      type: 'private',
       ...over,
     },
     adminName: 'Principal',
@@ -131,6 +143,26 @@ export const teacherInput = (staffId: string) => ({
   grades: [6, 7],
   maxPerDay: 6,
 });
+
+export const randomCensus = () => String(100_000 + Math.floor(Math.random() * 900_000));
+
+export interface RawResult {
+  status: number;
+  result?: unknown;
+  error?: { status: string; message: string; details?: { code?: string } };
+}
+
+// Callable over plain HTTP so a test can set X-Forwarded-For (the client SDK can't set headers).
+export async function rawCall(name: string, data: unknown, opts: { ip?: string; client?: Client } = {}): Promise<RawResult> {
+  const headers: Record<string, string> = { 'Content-Type': 'application/json' };
+  if (opts.ip) headers['X-Forwarded-For'] = `${opts.ip}, 10.0.0.1`;
+  const user = opts.client?.auth.currentUser;
+  if (user) headers.Authorization = `Bearer ${await user.getIdToken()}`;
+  const res = await fetch(`http://${HOST}:5001/${PROJECT_ID}/us-central1/${name}`, { method: 'POST', headers, body: JSON.stringify({ data }) });
+  return { status: res.status, ...((await res.json()) as object) };
+}
+
+export const rawErr = (r: RawResult) => ({ status: r.error?.status, code: r.error?.details?.code });
 
 export async function expectFnError(p: Promise<unknown>, code: string, apiCode: string): Promise<void> {
   const err = (await p.then(

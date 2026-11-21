@@ -4,7 +4,7 @@ import { callables, paths, type PeriodTemplate } from '@sathiya/core';
 import { defaultTemplate } from '@sathiya/core/fixtures';
 import { httpsCallable } from 'firebase/functions';
 import { describe, expect, it } from 'vitest';
-import type { RegisterSchoolInput } from '../src/registerSchool';
+import type { RegisterSchoolInput } from '../src/lib/contract';
 import { adminDb, client, expectFnError, makeSuper, schoolReq, signUp } from './helpers';
 
 describe('unauthenticated', () => {
@@ -32,6 +32,7 @@ describe('registerSchool', () => {
       district: 'Kurunegala',
       city: 'Siripura',
       staffPrefix: 'SCC',
+      type: 'private',
       status: 'active',
       termsVersion: '1',
       acceptedTerms: { version: '1' },
@@ -45,6 +46,7 @@ describe('registerSchool', () => {
       nameSi: 'සිරිපුර මධ්‍ය විද්‍යාලය',
       district: 'Kurunegala',
       city: 'Siripura',
+      type: 'private',
       status: 'active',
     });
 
@@ -60,11 +62,11 @@ describe('registerSchool', () => {
     expect(tpl.rows.filter((r) => r.type === 'interval')).toHaveLength(1);
   });
 
-  it('refuses a caller that already has a school', async () => {
+  it('refuses a caller that already has a school (sid claim)', async () => {
     const c = await signUp();
     await c.call('registerSchool', schoolReq());
     await c.auth.currentUser!.getIdToken(true);
-    await expectFnError(c.call('registerSchool', schoolReq()), 'permission-denied', 'not-allowed');
+    await expectFnError(c.call('registerSchool', schoolReq()), 'failed-precondition', 'already-has-school');
   });
 
   it('keeps an existing super flag', async () => {

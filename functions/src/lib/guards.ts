@@ -1,10 +1,11 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
 // Copyright (C) 2026 Kanushka Gayan
-import { paths, type ApiErrorCode, type Claims, type School } from '@sathiya/core';
+import { paths, type Claims, type School } from '@sathiya/core';
 import { HttpsError, type CallableRequest, type FunctionsErrorCode } from 'firebase-functions/v2/https';
 import { db } from './admin';
+import type { ApiErrorCodeExt } from './contract';
 
-export function fail(code: FunctionsErrorCode, apiCode: ApiErrorCode, message: string, extra: Record<string, unknown> = {}): never {
+export function fail(code: FunctionsErrorCode, apiCode: ApiErrorCodeExt, message: string, extra: Record<string, unknown> = {}): never {
   throw new HttpsError(code, message, { code: apiCode, ...extra });
 }
 
@@ -23,6 +24,10 @@ export function requireAuth(req: CallableRequest): Caller {
   const claims: Claims = { sid: token.sid, role: token.role, tid: token.tid, super: token.super === true };
   return { uid, claims, token };
 }
+
+// Verified email, or a Google sign-in (Google vouches for the address even when email_verified is unset).
+export const isVerified = (token: Caller['token']): boolean =>
+  token.email_verified === true || token.firebase?.sign_in_provider === 'google.com';
 
 export function requireSuper(req: CallableRequest): Caller {
   const caller = requireAuth(req);

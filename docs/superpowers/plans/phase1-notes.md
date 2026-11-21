@@ -51,7 +51,7 @@ Every callable: signed out → `unauthenticated` / `not-allowed`. Bad input → 
 
 | Callable | Who | Writes | Other errors |
 |---|---|---|---|
-| `registerSchool` | signed in, no `sid` claim | `schools/{autoId}` (whitelisted fields only: nameEn, nameSi, district, grades, staffPrefix, colors; `status:'active'`, `termsVersion = acceptedTermsVersion`, `acceptedTerms {version, at, uid}`, `createdAt`), `schoolDirectory/{sid}`, `members/{uid}` `{uid, role:'admin', email, name}`, default `periodTemplates/{autoId}` (8 periods + interval, `isDefault`, `mode:'same'`, name "School default"); claims `{sid, role:'admin'}` | already has `sid` → `permission-denied`/`not-allowed` |
+| `registerSchool` | signed in, verified email, no `sid` claim (see Task 1.4) | `schools/{autoId}` (whitelisted fields only: nameEn, nameSi, district, grades, staffPrefix, colors; `status:'active'`, `termsVersion = acceptedTermsVersion`, `acceptedTerms {version, at, uid}`, `createdAt`), `schoolDirectory/{sid}`, `members/{uid}` `{uid, role:'admin', email, name}`, default `periodTemplates/{autoId}` (8 periods + interval, `isDefault`, `mode:'same'`, name "School default"); claims `{sid, role:'admin'}` | already has a school → `failed-precondition`/`already-has-school` (Task 1.4) |
 | `createTeacher` | admin of sid, school active | Auth user (synthetic email, 8-char password), `teachers/{autoId}` with `uid`, `members/{uid}` `{uid, role:'teacher', teacherId}`; claims `{sid, role:'teacher', tid}`; returns password once | not admin / disabled → `permission-denied`/`not-allowed`; bad staffId format → `invalid-argument`/`invalid`; duplicate staffId → `already-exists`/`invalid` (`details.field: 'staffId'`) |
 | `resetTeacherPassword` | admin of sid, school active | new password + `revokeRefreshTokens` | unknown teacher → `not-found`/`invalid`; teacher without `uid` → `failed-precondition`/`invalid` |
 | `inviteAdmin` | admin of sid, school active | `invites/{lowercased email}` `{email, teacherId?, invitedBy, createdAt}` (overwrites an existing invite) | unknown `teacherId` → `invalid-argument`/`invalid` |
@@ -72,7 +72,7 @@ Every callable: signed out → `unauthenticated` / `not-allowed`. Bad input → 
 - `registerSchool` stores `name` (adminName) on the member doc and `uid` in `acceptedTerms` — additive vs `Member` type.
 - `acceptedTermsVersion` is not checked against `platform/terms/versions/{v}` (no platform seeding yet).
 - `createTeacher` does not check that `subjectIds` exist.
-- Two concurrent `registerSchool` calls by the same user could create two schools (claims check is not transactional).
+- ~~Two concurrent `registerSchool` calls by the same user could create two schools~~ — fixed in Task 1.4 (`users/{uid}.schoolId` checked inside the registration transaction).
 - Local dev ran on Node 26 (functions emulator warns: requested node 20, using host 26).
 
 ## Task 1.2 — Entries, delete guard, publishing
@@ -159,3 +159,38 @@ Every admin write also requires `schools/{sid}.status != 'disabled'` (one `get()
 ### Concerns
 - SVG logos are publicly served from the Storage domain; an SVG can contain script. It runs on the storage origin (not the app origin) and the app should render logos with `<img>` (scripts don't run there), but consider sanitising or PNG-only later.
 - `grades` delete has no usage check (no callable); a deleted grade can orphan classes.
+
+## Task 1.4 — Registration abuse controls
+
+Core contract additions (school `type`/`censusNo`, `reportSchool`, new `ApiErrorCode`s) live on another branch; functions mirror them in `functions/src/lib/contract.ts` (`SCHOOL_TYPES`, `CENSUS_NO_RE`, `ApiErrorCodeExt`, `RegisterSchoolInput`, `REPORT_REASONS`, `ReportSchoolReq/Res`). Drop it once `@sathiya/core` has them (Phase 6 merge). `fail()` accepts `ApiErrorCodeExt`.
+
+### registerSchool — order of checks
+1. signed in (`unauthenticated`/`not-allowed`);
+2. verified: `email_verified === true` or `firebase.sign_in_provider == 'google.com'` (shared `isVerified` in guards, also used by `claimInvites`) → else `permission-denied`/`email-unverified`;
+3. rate limits (own transaction, before any other work, so invalid/failed attempts count): `REGISTER_PER_UID_PER_DAY = 3`, `REGISTER_PER_IP_PER_DAY = 10` → `resource-exhausted`/`rate-limited`;
+4. `sid` claim (token or stored custom claims) → `failed-precondition`/`already-has-school` (picked failed-precondition: the caller is allowed, the account state is wrong);
+5. input validation: `school.type` in `government|private|international` (required); `school.censusNo` optional string, trimmed, `^\d{4,6}$` (`CENSUS_NO_RE`), required when `type == 'government'`; `''`/null = absent → `invalid-argument`/`invalid`;
+6. claims set, then one Firestore transaction: reads `users/{uid}` and `censusIndex/{censusNo}`; `users/{uid}.schoolId` present → `already-has-school`; census doc exists → `already-exists`/`census-taken`; creates school (now with `type`, `censusNo`), directory (`type` added, **no** `censusNo`), member, default template, `censusIndex/{censusNo} = {schoolId}`, merges `users/{uid}.schoolId`. A commit `ALREADY_EXISTS` (lost census race) is also mapped to `census-taken`. On failure the claims are restored only if they still hold this attempt's sid.
+
+`censusIndex` is never freed (no school delete exists); a disabled school keeps its census number.
+
+### Rate limits (`functions/src/lib/rateLimit.ts`)
+- Docs `rateLimits/{scope}_{yyyy-mm-dd UTC}_{id}` `{scope, day, count, expiresAt}`; scopes `register-uid` (id = uid), `register-ip`, `report-ip` (id = sha256 hex of the IP). `consumeRateLimits` checks all counters of a call and increments them together in one transaction; nothing is counted when a limit is already reached.
+- IP = first hop of `X-Forwarded-For`, else `rawRequest.ip`, else `'unknown'` (all unknown callers share one bucket).
+- **Spoofable:** the first `X-Forwarded-For` hop is whatever the client sent (Google's front end appends the real address after it). The per-IP limits therefore only stop naive callers; the per-uid limit, verified email and App Check are the real controls. If it matters, switch `clientIp` to the hop Google appends (verify on a deployed function first). Tests use this to send per-test IPs (`rawCall` in `functions/test/helpers.ts`, plain HTTP to the callable).
+- Cleanup: `expiresAt` = day start + 2 days; `firestore.indexes.json` declares a TTL field override on `rateLimits.expiresAt` (`ttl: true`, deployed with `firebase deploy --only firestore:indexes`). TTL deletes within ~24 h of expiry; the emulator ignores it. Open item: confirm the TTL policy shows as active in the console after the first deploy.
+- Tests: helpers `beforeEach` deletes `rateLimits` (all SDK calls come from one emulator IP).
+
+### reportSchool `{schoolId, reason, details?, email?}` → `{ok:true}`
+Signed-out allowed; `callOpts` (App Check). Per-IP limit `REPORT_PER_IP_PER_DAY = 10` first (counts invalid attempts). `reason` in `fake|duplicate|abuse|other`, `details` trimmed ≤ 1000, `email` optional, lowercased, format-checked → else `invalid-argument`/`invalid`; unknown school → `not-found`/`invalid`. Writes `reports/{autoId}` `{schoolId, reason, details?, email?, uid?, status:'open', createdAt: ms}`.
+
+### Rules
+- `censusIndex/**`, `rateLimits/**`: no client access (no match → denied).
+- `reports/{id}`: super read/list/update (any field); no client create/delete.
+- `schools/{sid}`: `type` and `censusNo` are not in the admin update whitelist → functions-only (change or removal denied).
+- `users/{uid}`: create = only `lang`; update = `affectedKeys().hasOnly(['lang'])` + valid `lang`, so `lang` updates work with `schoolId` present while setting, changing or clearing `schoolId` (incl. a full `set` without it) is denied.
+
+### For later phases
+- Phase 3 register form: send `school.type` (required) and `school.censusNo` (required for government, 4–6 digits; optional otherwise). Before calling `registerSchool`, an email/password admin must verify their email: `sendEmailVerification`, wait for the user to click, `user.reload()` + `getIdToken(true)` (the token must carry `email_verified: true`). Google sign-in needs no extra step. Map errors: `email-unverified` → "verify your email", `census-taken` → "this school is already registered — report it / contact us" (link to reportSchool), `already-has-school`, `rate-limited` → "try again tomorrow".
+- Phase 3/public site: a "report this school" form calls `reportSchool` (works signed out).
+- Phase 5/6 super: list `reports` (rules allow super read), update `status` (e.g. `open` → `closed`) directly with the client SDK; use `setSchoolStatus` to disable a fake school. Nothing frees a census number yet — releasing one (fake school squatting a real census) needs a super callable later (open item).
