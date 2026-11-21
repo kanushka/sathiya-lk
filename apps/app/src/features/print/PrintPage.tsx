@@ -20,16 +20,44 @@ interface Props {
   children: ReactNode;
 }
 
+const ASSET_TIMEOUT_MS = 3000;
+
+function imageReady(img: HTMLImageElement): Promise<void> {
+  if (img.complete && img.naturalWidth > 0) return Promise.resolve();
+  return new Promise((resolve) => {
+    img.addEventListener('load', () => resolve(), { once: true });
+    img.addEventListener('error', () => resolve(), { once: true });
+  });
+}
+
+function assetsReady(root: HTMLElement | null): Promise<void> {
+  const fonts = typeof document.fonts?.ready?.then === 'function' ? document.fonts.ready.then(() => undefined) : Promise.resolve();
+  const images = Array.from(root?.querySelectorAll<HTMLImageElement>('.print-sheet img') ?? []).map(imageReady);
+  const timeout = new Promise<void>((resolve) => setTimeout(resolve, ASSET_TIMEOUT_MS));
+  return Promise.race([Promise.all([fonts, ...images]).then(() => undefined), timeout]);
+}
+
 export function PrintPage({ status, auto, notFoundTitle, notFoundBody, icon, children }: Props) {
   const { t } = useTranslation('print');
   const navigate = useNavigate();
   const printed = useRef(false);
+  const pageRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
-    if (status === 'ready' && auto && !printed.current) {
-      printed.current = true;
+    if (status !== 'ready' || !auto || printed.current) return;
+    printed.current = true;
+    let cancelled = false;
+    let fired = false;
+    void assetsReady(pageRef.current).then(() => {
+      if (cancelled) return;
+      fired = true;
       window.print();
-    }
+    });
+    return () => {
+      cancelled = true;
+      // StrictMode re-runs effects before the print fires; let that run schedule it again.
+      if (!fired) printed.current = false;
+    };
   }, [status, auto]);
 
   if (status === 'loading') return <LoadingState />;
@@ -43,7 +71,7 @@ export function PrintPage({ status, auto, notFoundTitle, notFoundBody, icon, chi
   }
 
   return (
-    <div className="print-page">
+    <div ref={pageRef} className="print-page">
       <div className="print-toolbar">
         <Button variant="primary" onClick={() => window.print()}>
           <Icon name="print" size={16} />

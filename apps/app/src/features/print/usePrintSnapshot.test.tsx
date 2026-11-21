@@ -3,7 +3,7 @@
 
 import type { Entry, Year } from '@sathiya/core';
 import { C, ctx, entries } from '@sathiya/core/fixtures';
-import { render, screen } from '@testing-library/react';
+import { render, screen, waitFor } from '@testing-library/react';
 import { I18nextProvider } from 'react-i18next';
 import { MemoryRouter, Route, Routes } from 'react-router-dom';
 import { afterEach, describe, expect, it, vi } from 'vitest';
@@ -44,7 +44,7 @@ const url = (q: string) => `/admin/print/class/${C.c6b}${q}`;
 afterEach(() => vi.restoreAllMocks());
 
 describe('usePrintSnapshot year handling', () => {
-  it('switches to a known different year and waits for its entries before printing', () => {
+  it('switches to a known different year and waits for its entries before printing', async () => {
     const print = vi.spyOn(window, 'print').mockImplementation(() => undefined);
     const setYearId = vi.fn();
     const h = harness(url('?year=y-2025&auto=1'), { setYearId });
@@ -55,7 +55,7 @@ describe('usePrintSnapshot year handling', () => {
     h.rerender({ yearId: 'y-2025', entries: later });
     expect(screen.getByText(/Timetable 2025/)).toBeInTheDocument();
     expect(screen.getAllByTestId('print-slot').filter((s) => s.dataset.empty === 'false')).toHaveLength(3);
-    expect(print).toHaveBeenCalledTimes(1);
+    await waitFor(() => expect(print).toHaveBeenCalledTimes(1));
   });
 
   it('ignores an unknown year', () => {
