@@ -11,6 +11,7 @@ import { LoadingState } from '../../ui/LoadingState';
 import { Modal } from '../../ui/Modal';
 import { Table, TBody, Td, Th, THead, Tr } from '../../ui/Table';
 import { useToast } from '../../ui/Toast';
+import { errorMessage } from './errors';
 import { firestorePlatformWriter, hexColor, type DefaultSubject, type DefaultSubjectsDoc, type PlatformWriter } from './platform';
 
 export interface DefaultSubjectsPageProps {
@@ -52,7 +53,7 @@ export function DefaultSubjectsPage({ doc: injected, writer = firestorePlatformW
       toast.show(t('subjects.saved'), 'success');
       return true;
     } catch (err) {
-      toast.show(t('subjects.failed', { message: err instanceof Error ? err.message : String(err) }), 'error');
+      toast.show(t('subjects.failed', { message: errorMessage(t, err) }), 'error');
       return false;
     } finally {
       setBusy(false);

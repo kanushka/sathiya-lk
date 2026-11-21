@@ -48,7 +48,7 @@ export class TermsExistsError extends Error {
   }
 }
 
-export const termsCollectionPath = paths.platform.terms('_').slice(0, -1);
+export const termsCollectionPath = paths.platform.terms('_').replace(/\/_$/, '');
 
 export const firestorePlatformWriter: PlatformWriter = {
   saveDefaultSubjects: (d) => setDoc(doc(db, paths.platform.defaultSubjects), d),

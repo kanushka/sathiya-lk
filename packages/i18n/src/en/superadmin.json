@@ -145,7 +145,8 @@
       "privacyRequired": "Enter the privacy policy"
     },
     "published": "Version {{version}} published",
-    "failed": "Could not publish: {{message}}"
+    "failed": "Could not publish: {{message}}",
+    "configError": "Could not load the current version, so none is marked."
   },
   "announcements": {
     "title": "Announcements",
@@ -159,6 +160,11 @@
     "previewEmpty": "Nothing to show yet",
     "saved": "Announcement saved",
     "failed": "Could not save: {{message}}",
-    "dismiss": "Dismiss"
+    "dismiss": "Dismiss",
+    "loadError": "Could not load the announcement."
+  },
+  "errors": {
+    "denied": "You do not have permission to do this.",
+    "generic": "Something went wrong. Try again."
   }
 }

@@ -4,6 +4,7 @@ import type { ReactNode } from 'react';
 import { useTranslation } from 'react-i18next';
 import { NavLink } from 'react-router-dom';
 import { useAuth } from '../../app/AuthProvider';
+import { useMaybeLang } from '../../app/LangProvider';
 import { cx } from '../../ui/cx';
 
 interface NavItem {
@@ -27,8 +28,10 @@ const linkClass = ({ isActive }: { isActive: boolean }) =>
   );
 
 export function SuperLayout({ children }: { children: ReactNode }) {
-  const { t } = useTranslation('superadmin');
-  const { claims } = useAuth();
+  const { t } = useTranslation(['superadmin', 'shell', 'common']);
+  const { claims, signOut } = useAuth();
+  const langCtl = useMaybeLang();
+  const target = langCtl?.lang === 'en' ? 'si' : 'en';
   const isAdmin = claims?.role === 'admin' && !!claims.sid;
   return (
     <div className="flex min-h-screen bg-ground font-sans text-ink">
@@ -55,6 +58,21 @@ export function SuperLayout({ children }: { children: ReactNode }) {
             )}
           </ul>
         </nav>
+        <div className="mt-6 flex flex-col gap-0.5 border-t border-white/10 pt-3">
+          {langCtl && (
+            <button
+              type="button"
+              onClick={() => langCtl.setLang(target)}
+              aria-label={`${t('shell:sidebar.language')}: ${t(`common:languages.${target}`)}`}
+              className={cx(linkClass({ isActive: false }), 'text-left')}
+            >
+              {t(`common:languages.${target}`)}
+            </button>
+          )}
+          <button type="button" onClick={() => void signOut()} className={cx(linkClass({ isActive: false }), 'text-left')}>
+            {t('shell:sidebar.signOut')}
+          </button>
+        </div>
       </aside>
       <main className="min-w-0 flex-1 px-9 py-7">{children}</main>
     </div>

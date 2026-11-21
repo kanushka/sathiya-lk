@@ -7,6 +7,9 @@ import userEvent from '@testing-library/user-event';
 import { useMemo, useState } from 'react';
 import { Route, Routes } from 'react-router-dom';
 import { describe, expect, it, vi } from 'vitest';
+import { AuthContextProvider, type AuthState } from '../../app/AuthProvider';
+import { LangContextProvider } from '../../app/LangProvider';
+import { ApiError } from '../../lib/callable';
 import { renderWithSchool } from '../../test/renderWithSchool';
 import { SchoolDetail } from './SchoolDetail';
 import { SchoolsPage } from './SchoolsPage';
@@ -68,7 +71,16 @@ describe('SchoolsPage', () => {
     renderPage(setStatus);
     const row = screen.getByText('Hill View').closest('tr') as HTMLElement;
     await userEvent.click(within(row).getByRole('button', { name: 'Enable' }));
-    expect(await screen.findByText('Could not change status: nope')).toBeInTheDocument();
+    expect(await screen.findByText('Could not change status: Something went wrong. Try again.')).toBeInTheDocument();
+    expect(screen.queryByText(/nope/)).toBeNull();
+  });
+
+  it('maps a not-allowed error to a permission message', async () => {
+    const setStatus = vi.fn().mockRejectedValue(new ApiError('not-allowed', 'raw server text'));
+    renderPage(setStatus);
+    const row = screen.getByText('Hill View').closest('tr') as HTMLElement;
+    await userEvent.click(within(row).getByRole('button', { name: 'Enable' }));
+    expect(await screen.findByText('Could not change status: You do not have permission to do this.')).toBeInTheDocument();
   });
 
   it('filters by search, status and district', async () => {
@@ -227,6 +239,45 @@ describe('SchoolDetail', () => {
     expect(screen.getByRole('link', { name: 'Open read-only view' })).toHaveAttribute('href', '/s/a');
     expect(await screen.findByText('58')).toBeInTheDocument();
     expect(screen.getByRole('button', { name: 'Disable' })).toBeInTheDocument();
+  });
+});
+
+describe('SchoolDetail errors', () => {
+  it('shows a load error instead of not found', () => {
+    renderWithSchool(<SchoolDetail school={{ loading: false, error: new Error('x') }} setStatus={vi.fn()} />, opts);
+    expect(screen.getByText('Could not load schools.')).toBeInTheDocument();
+    expect(screen.queryByText('School not found')).toBeNull();
+  });
+
+  it('shows an error label when the count fails', async () => {
+    const src: UsageSource = { counts: async () => { throw new Error('x'); } };
+    renderWithSchool(
+      <UsageSourceProvider value={src}>
+        <SchoolDetail school={{ loading: false, data: schools[0] }} setStatus={vi.fn()} />
+      </UsageSourceProvider>,
+      opts,
+    );
+    expect((await screen.findAllByText('Error')).length).toBeGreaterThan(0);
+  });
+});
+
+describe('SuperLayout controls', () => {
+  it('toggles language and signs out', async () => {
+    const setLang = vi.fn();
+    const signOut = vi.fn().mockResolvedValue(undefined);
+    const auth: AuthState = { user: null, claims: { super: true }, loading: false, refreshClaims: async () => undefined, signOut };
+    renderWithSchool(
+      <AuthContextProvider value={auth}>
+        <LangContextProvider value={{ lang: 'en', setLang }}>
+          <SuperLayout><p>body</p></SuperLayout>
+        </LangContextProvider>
+      </AuthContextProvider>,
+      { ctx, claims: { super: true }, route: '/super' },
+    );
+    await userEvent.click(screen.getByRole('button', { name: 'Language: සිංහල' }));
+    expect(setLang).toHaveBeenCalledWith('si');
+    await userEvent.click(screen.getByRole('button', { name: 'Sign out' }));
+    expect(signOut).toHaveBeenCalledTimes(1);
   });
 });
 

@@ -6,8 +6,10 @@ import { useTranslation } from 'react-i18next';
 import { useDoc, type DocState } from '../../lib/firestore';
 import { Button } from '../../ui/Button';
 import { Field, inputClass } from '../../ui/Field';
+import { EmptyState } from '../../ui/EmptyState';
 import { LoadingState } from '../../ui/LoadingState';
 import { useToast } from '../../ui/Toast';
+import { errorMessage } from './errors';
 import { announcementText, BannerView } from './AnnouncementBanner';
 import { firestorePlatformWriter, type PlatformConfig, type PlatformWriter } from './platform';
 
@@ -19,7 +21,9 @@ export interface AnnouncementsPageProps {
 export function AnnouncementsPage({ config: injected, writer = firestorePlatformWriter }: AnnouncementsPageProps) {
   const live = useDoc<PlatformConfig>(injected ? null : paths.platform.config);
   const state = injected ?? live;
+  const { t } = useTranslation('superadmin');
   if (state.loading) return <LoadingState />;
+  if (state.error) return <EmptyState icon="search" title={t('announcements.loadError')} />;
   return <AnnouncementForm initial={state.data?.announcement} writer={writer} />;
 }
 
@@ -43,7 +47,7 @@ function AnnouncementForm({ initial, writer }: { initial: PlatformConfig['announ
       await writer.saveAnnouncement({ textEn: textEn.trim(), textSi: textSi.trim(), active, updatedAt: Date.now() });
       toast.show(t('announcements.saved'), 'success');
     } catch (err) {
-      toast.show(t('announcements.failed', { message: err instanceof Error ? err.message : String(err) }), 'error');
+      toast.show(t('announcements.failed', { message: errorMessage(t, err) }), 'error');
     } finally {
       setBusy(false);
     }

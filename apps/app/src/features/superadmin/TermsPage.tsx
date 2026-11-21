@@ -13,6 +13,7 @@ import { LoadingState } from '../../ui/LoadingState';
 import { Modal } from '../../ui/Modal';
 import { Table, TBody, Td, Th, THead, Tr } from '../../ui/Table';
 import { useToast } from '../../ui/Toast';
+import { errorMessage } from './errors';
 import { formatDate } from './format';
 import { firestorePlatformWriter, termsCollectionPath, TermsExistsError, type PlatformConfig, type PlatformWriter, type TermsVersion } from './platform';
 
@@ -70,7 +71,7 @@ export function TermsPage({ versions: injectedVersions, config: injectedConfig, 
         setErrors({ version: t('terms.errors.duplicate') });
         return;
       }
-      toast.show(t('terms.failed', { message: err instanceof Error ? err.message : String(err) }), 'error');
+      toast.show(t('terms.failed', { message: errorMessage(t, err) }), 'error');
     } finally {
       setBusy(false);
     }
@@ -87,6 +88,7 @@ export function TermsPage({ versions: injectedVersions, config: injectedConfig, 
           {t('terms.new')}
         </Button>
       </div>
+      {config.error && <p className="mb-3 text-sm text-ink-muted">{t('terms.configError')}</p>}
       {versionsState.loading ? (
         <LoadingState />
       ) : versionsState.error ? (

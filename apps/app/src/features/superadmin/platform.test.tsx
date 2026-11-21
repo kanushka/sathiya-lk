@@ -8,7 +8,7 @@ import { renderWithSchool } from '../../test/renderWithSchool';
 import { AnnouncementBanner } from './AnnouncementBanner';
 import { AnnouncementsPage } from './AnnouncementsPage';
 import { DefaultSubjectsPage } from './DefaultSubjectsPage';
-import { TermsExistsError, type PlatformConfig, type PlatformWriter } from './platform';
+import { termsCollectionPath, TermsExistsError, type PlatformConfig, type PlatformWriter } from './platform';
 import { TermsPage } from './TermsPage';
 
 const opts = { ctx, claims: { super: true } };
@@ -84,6 +84,38 @@ describe('AnnouncementsPage', () => {
   });
 });
 
+describe('AnnouncementsPage load state', () => {
+  it('shows a load error and no form when the config fails to load', () => {
+    const writer = fakeWriter();
+    renderWithSchool(<AnnouncementsPage config={{ loading: false, error: new Error('denied') }} writer={writer} />, opts);
+    expect(screen.getByText('Could not load the announcement.')).toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: 'Save' })).toBeNull();
+    expect(screen.queryByLabelText('Message (English)')).toBeNull();
+  });
+
+  it('does not leak the raw error message on save failure', async () => {
+    const writer = fakeWriter();
+    vi.mocked(writer.saveAnnouncement).mockRejectedValue(new Error('PERMISSION_DENIED raw'));
+    renderWithSchool(<AnnouncementsPage config={{ loading: false, data: config() }} writer={writer} />, opts);
+    await userEvent.type(screen.getByLabelText('Message (English)'), 'Hi');
+    await userEvent.click(screen.getByRole('button', { name: 'Save' }));
+    expect(await screen.findByText('Could not save: Something went wrong. Try again.')).toBeInTheDocument();
+  });
+});
+
+describe('TermsPage config error', () => {
+  it('hints when the current version cannot be determined', () => {
+    renderWithSchool(<TermsPage versions={{ data: [], loading: false }} config={{ loading: false, error: new Error('x') }} writer={fakeWriter()} />, opts);
+    expect(screen.getByText('Could not load the current version, so none is marked.')).toBeInTheDocument();
+  });
+});
+
+describe('platform paths', () => {
+  it('termsCollectionPath has no trailing slash', () => {
+    expect(termsCollectionPath.endsWith('/')).toBe(false);
+  });
+});
+
 describe('DefaultSubjectsPage', () => {
   const existing = { id: 'defaultSubjects', subjects: [{ nameEn: 'Mathematics', nameSi: 'ගණිතය', short: 'MAT', color: '#2563EB' }], updatedAt: 1 };
 
@@ -116,7 +148,7 @@ describe('DefaultSubjectsPage', () => {
     expect(writer.saveDefaultSubjects).not.toHaveBeenCalled();
   });
 
-  it('disables edit and delete until loaded', () => {
+  it('enables edit and delete once loaded', () => {
     renderWithSchool(<DefaultSubjectsPage doc={{ loading: false, data: existing }} writer={fakeWriter()} />, opts);
     expect(screen.getByRole('button', { name: 'Edit Mathematics' })).toBeEnabled();
   });

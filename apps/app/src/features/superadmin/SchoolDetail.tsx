@@ -38,10 +38,11 @@ export function SchoolDetail({ school: injected, setStatus = defaultSetStatus }:
   const counts = useUsageCounts(list);
 
   if (state.loading) return <LoadingState />;
+  if (state.error) return <EmptyState icon="search" title={t('schools.loadError')} />;
   if (!school) return <EmptyState icon="search" title={t('detail.notFound')} />;
   const c = counts[school.id];
   const ready = c?.status === 'ready' ? c.counts : undefined;
-  const pending = !c || c.status === 'loading' ? '…' : t('usage.noData');
+  const pending = !c || c.status === 'loading' ? '…' : c.status === 'error' ? t('usage.countError') : t('usage.noData');
 
   return (
     <div className="max-w-3xl">

@@ -7,6 +7,7 @@ import { useLang } from '../../app/LangProvider';
 import { Button } from '../../ui/Button';
 import { Modal } from '../../ui/Modal';
 import { useToast } from '../../ui/Toast';
+import { errorMessage } from './errors';
 import type { SetStatusFn } from './status';
 
 export function StatusPill({ status }: { status: School['status'] }) {
@@ -40,7 +41,7 @@ export function StatusButton({ school, setStatus }: { school: School; setStatus:
       toast.show(t(disabling ? 'toast.disabled' : 'toast.enabled', { name }), 'success');
       setConfirming(false);
     } catch (err) {
-      toast.show(t('toast.failed', { message: err instanceof Error ? err.message : String(err) }), 'error');
+      toast.show(t('toast.failed', { message: errorMessage(t, err) }), 'error');
       setConfirming(false);
     } finally {
       setBusy(false);
