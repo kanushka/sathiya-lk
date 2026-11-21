@@ -1,0 +1,51 @@
+{
+  "page": {
+    "title": "Period templates",
+    "subtitle": "The bell schedule. Every class uses the school default unless you pick another template in Grade settings.",
+    "empty": "No templates yet",
+    "emptyBody": "Create a template to define the school's periods.",
+    "orphans": "{{n}} timetable entries no longer fit a period. Review them under Needs attention.",
+    "saved": "Template saved",
+    "saveFailed": "Could not save. Try again."
+  },
+  "list": {
+    "summary": "{{periods}} periods · {{classes}} classes",
+    "new": "+ New template"
+  },
+  "new": {
+    "title": "New template",
+    "name": "Name",
+    "hint": "Starts as a copy of the school default.",
+    "create": "Create template",
+    "cancel": "Cancel"
+  },
+  "editor": {
+    "templateName": "Template name",
+    "default": "Default",
+    "usedBy": "Used by {{n}} classes",
+    "same": "Same every day",
+    "perDay": "Different per day",
+    "start": "Start, row {{n}}",
+    "end": "End, row {{n}}",
+    "minutes": "{{n}} min",
+    "remove": "Remove row {{n}}",
+    "addPeriod": "+ Period",
+    "addInterval": "+ Interval",
+    "save": "Save template",
+    "setDefault": "Set as default",
+    "delete": "Delete template"
+  },
+  "errors": {
+    "name": "Enter a template name.",
+    "noPeriod": "Add at least one period.",
+    "order": "Row {{row}}: the start must be before the end.",
+    "overlap": "Row {{row}} overlaps the previous row. Rows must run in time order."
+  },
+  "shrink": {
+    "title": "Remove periods?",
+    "body": "{{count}} timetable entry will be orphaned and listed under Needs attention.",
+    "body_other": "{{count}} timetable entries will be orphaned and listed under Needs attention.",
+    "confirm": "Save anyway",
+    "cancel": "Go back"
+  }
+}
