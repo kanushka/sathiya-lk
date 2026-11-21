@@ -15,9 +15,9 @@ export function currentAndNext(
   const today = cells.filter((c) => c.day === day).sort((a, b) => toMinutes(a.start) - toMinutes(b.start));
   const cell = today.find(covers);
   const row = cell ? undefined : (rows[day] ?? []).find((r) => r.type === 'period' && covers(r));
-  const current = cell ?? (row && { free: true as const, start: row.start, end: row.end });
+  const next = today.find((c) => toMinutes(c.start) >= (cell ? toMinutes(cell.end) : minutes));
+  const free = row && { free: true as const, start: row.start, end: next && toMinutes(next.start) < toMinutes(row.end) ? next.start : row.end };
+  const current = cell ?? free;
   const minutesLeft = current && toMinutes(current.end) - minutes;
-  const after = current ? toMinutes(current.end) : minutes;
-  const next = today.find((c) => toMinutes(c.start) >= after);
   return { day, ...(current && { current, minutesLeft }), ...(next && { next }) };
 }

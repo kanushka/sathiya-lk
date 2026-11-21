@@ -3,7 +3,7 @@ import { withTeacherIds } from './clash';
 import { fillWithClassTeacher } from './fill';
 import { C, ctx, entries6B, T } from './fixtures';
 import { currentAndNext } from './now';
-import { buildSnapshots } from './publish';
+import { buildSnapshots, type SnapshotCell } from './publish';
 
 const sixB = buildSnapshots(ctx, entries6B, { id: 'y', label: '2026', status: 'draft' }).classes.find((c) => c.classId === C.c6b)!;
 const wed = (h: number, m: number) => new Date(2026, 10, 25, h, m);
@@ -76,6 +76,19 @@ describe('currentAndNext', () => {
       const r = currentAndNext(w.cells, w.rows, mon(10, 35));
       expect(r.current).toBeUndefined();
       expect(r.next).toMatchObject({ start: '10:40' });
+    });
+  });
+
+  describe('free default row partly covered by a cell on another template', () => {
+    const w = buildSnapshots(ctx, [], { id: 'y', label: '2026', status: 'draft' }).teachers.find((t) => t.teacherId === T.wickramasinghe)!;
+    const cell = (start: string, end: string, period: number): SnapshotCell => ({ day: 0, period, start, end, title: '1A', sub: 'Sinhala', color: '', isGroup: false });
+    const mon = (h: number, m: number) => new Date(2026, 10, 23, h, m);
+
+    it('does not skip a cell that starts inside the free row', () => {
+      const r = currentAndNext([cell('09:40', '10:20', 4)], w.rows, mon(9, 15));
+      expect(r.current).toEqual({ free: true, start: '09:10', end: '09:40' });
+      expect(r.minutesLeft).toBe(25);
+      expect(r.next).toMatchObject({ start: '09:40', end: '10:20' });
     });
   });
 });
