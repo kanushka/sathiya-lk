@@ -11,6 +11,7 @@ export default {
         brand: 'color-mix(in srgb, var(--brand) calc(<alpha-value> * 100%), transparent)',
         'brand-2': 'color-mix(in srgb, var(--brand-2) calc(<alpha-value> * 100%), transparent)',
         'on-brand': 'color-mix(in srgb, var(--on-brand) calc(<alpha-value> * 100%), transparent)',
+        danger: 'var(--danger)',
         teal: '#0E6B6A',
         navy: '#14213D',
         saffron: '#F2A541',

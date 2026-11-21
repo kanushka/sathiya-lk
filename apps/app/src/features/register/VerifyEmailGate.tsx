@@ -63,7 +63,7 @@ export function VerifyEmailGate({ email, onConfirmed }: VerifyEmailGateProps) {
       {message && (
         <p
           role={message.kind === 'error' ? 'alert' : 'status'}
-          className={`mb-0 mt-4 text-sm font-medium ${message.kind === 'error' ? 'text-[#A3262A]' : 'text-teal'}`}
+          className={`mb-0 mt-4 text-sm font-medium ${message.kind === 'error' ? 'text-danger' : 'text-teal'}`}
         >
           {message.text}
         </p>

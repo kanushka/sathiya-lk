@@ -128,7 +128,7 @@ export function ProfilePage() {
           <LogoUpload value={logo} currentUrl={school.logoUrl ?? null} onChange={setLogo} onPreview={setLogoUrl} />
           <ColorSwatches label={tr('brand.primary')} swatches={PRIMARY_SWATCHES} value={draft.primary} onChange={(hex) => pick('primary', hex)} />
           {isLowContrast(draft.primary) && (
-            <p role="alert" className="m-0 rounded-lg border border-[#E8C3C3] bg-[#FBEFEF] px-3 py-2 text-sm font-semibold text-[#A3262A]">
+            <p role="alert" className="m-0 rounded-lg border border-[#E8C3C3] bg-[#FBEFEF] px-3 py-2 text-sm font-semibold text-danger">
               {t('contrast.low', { ratio: contrastWithWhite(draft.primary).toFixed(1) })}
             </p>
           )}

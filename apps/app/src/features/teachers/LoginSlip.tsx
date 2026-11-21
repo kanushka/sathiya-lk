@@ -84,7 +84,7 @@ export function LoginSlip({ slip, hasStaffId, onReset, resetting, resetError }: 
         </div>
       )}
       {resetError && (
-        <p role="alert" className="text-xs font-medium text-[#A3262A]">
+        <p role="alert" className="text-xs font-medium text-danger">
           {t('slip.resetFailed')}
         </p>
       )}

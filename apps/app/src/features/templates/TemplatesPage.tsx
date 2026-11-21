@@ -42,7 +42,7 @@ export function TemplatesPage() {
       <p className="mb-5 text-sm text-ink-soft">{t('page.subtitle')}</p>
 
       {orphans > 0 && (
-        <p role="status" className="mb-5 rounded-lg border border-[#E8C3C3] bg-[#FBEFEF] px-4 py-3 text-sm font-semibold text-[#A3262A]">
+        <p role="status" className="mb-5 rounded-lg border border-[#E8C3C3] bg-[#FBEFEF] px-4 py-3 text-sm font-semibold text-danger">
           {t('page.orphans', { n: orphans })}
         </p>
       )}
@@ -178,7 +178,7 @@ function TemplateDetail({ template, readOnly, dialog, setDialog }: DetailProps) 
       <TemplateEditor draft={draft} errors={errors} readOnly={readOnly} onChange={setDraft} />
 
       {errors.length > 0 && (
-        <ul role="alert" className="mb-0 mt-4 list-none p-0 text-sm font-semibold text-[#A3262A]">
+        <ul role="alert" className="mb-0 mt-4 list-none p-0 text-sm font-semibold text-danger">
           {errors.map((e, i) => (
             <li key={i}>{(e.day === null ? '' : t(`common:days.short.${e.day}`) + ': ') + t(`errors.${e.code}`, { row: (e.row ?? 0) + 1 })}</li>
           ))}

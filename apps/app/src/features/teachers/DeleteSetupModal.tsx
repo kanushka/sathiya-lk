@@ -48,14 +48,14 @@ export function DeleteSetupModal({ schoolId, kind, id, name, onClose, onDeleted 
       }
     >
       {blocked ? (
-        <p role="alert" className="text-sm font-semibold text-[#A3262A]">
+        <p role="alert" className="text-sm font-semibold text-danger">
           {t(`deleteGuard.inUse.${kind}`, { count: del.usedIn ?? 0 })}
         </p>
       ) : (
         <p className="text-sm text-ink-soft">{t(`deleteGuard.body.${kind}`)}</p>
       )}
       {del.failed && (
-        <p role="alert" className="mt-3 text-sm font-semibold text-[#A3262A]">
+        <p role="alert" className="mt-3 text-sm font-semibold text-danger">
           {t('deleteGuard.failed')}
         </p>
       )}

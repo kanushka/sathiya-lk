@@ -52,7 +52,7 @@ export function SubjectModal({ onClose }: { onClose: () => void }) {
       footer={
         <>
           {saveError && (
-            <p role="alert" className="mr-auto text-sm font-medium text-[#A3262A]">
+            <p role="alert" className="mr-auto text-sm font-medium text-danger">
               {t('modal.saveFailed')}
             </p>
           )}

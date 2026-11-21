@@ -24,7 +24,7 @@ const ToastCtx = createContext<ToastApi | null>(null);
 const kindClass: Record<ToastKind, string> = {
   info: 'border-l-navy',
   success: 'border-l-teal',
-  error: 'border-l-[#A3262A]',
+  error: 'border-l-danger',
 };
 
 export function ToastProvider({ children, duration = 4000 }: { children: ReactNode; duration?: number }) {

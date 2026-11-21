@@ -197,7 +197,7 @@ function BlockEditorBody({ onClose, baseClassId, day, period, mode, entry, entri
         })}
       </div>
       <p className="mt-2 text-xs text-ink-muted">{t('block.classesHint')}</p>
-      {tooFew && <p className="mt-1 text-xs font-semibold text-[#A3262A]">{t('block.needTwo')}</p>}
+      {tooFew && <p className="mt-1 text-xs font-semibold text-danger">{t('block.needTwo')}</p>}
 
       <div className="mt-5 flex flex-col gap-4">
         {optionIds.map((id, i) => {
@@ -209,9 +209,9 @@ function BlockEditorBody({ onClose, baseClassId, day, period, mode, entry, entri
               <span className="inline-flex rounded-full bg-[#FBEAC9] px-2 py-0.5 text-xs font-semibold text-[#7A5A12]">{t('block.noTeacher')}</span>
             ) : (
               <>
-                {p?.hard && <p className="text-xs font-semibold text-[#A3262A]">{reasonText(p.hard)}</p>}
+                {p?.hard && <p className="text-xs font-semibold text-danger">{reasonText(p.hard)}</p>}
                 {p?.limit && <p className="text-xs font-semibold text-[#7A5A12]">{limitWarning(t, p.limit.loadToday, p.limit.teacher.maxPerDay)}</p>}
-                {p?.duplicate && <p className="text-xs font-semibold text-[#A3262A]">{t('block.duplicate')}</p>}
+                {p?.duplicate && <p className="text-xs font-semibold text-danger">{t('block.duplicate')}</p>}
               </>
             );
           return (

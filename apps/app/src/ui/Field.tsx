@@ -14,7 +14,7 @@ export interface FieldProps {
 }
 
 export const inputClass =
-  'h-10 w-full rounded-lg border border-line-strong bg-white px-3 text-sm text-ink placeholder:text-[#7A8194] focus:border-brand focus:outline-none focus:ring-2 focus:ring-brand/30 disabled:bg-slate-50 aria-[invalid=true]:border-[#A3262A]';
+  'h-10 w-full rounded-lg border border-line-strong bg-white px-3 text-sm text-ink placeholder:text-[#7A8194] focus:border-brand focus:outline-none focus:ring-2 focus:ring-brand/30 disabled:bg-slate-50 aria-[invalid=true]:border-danger';
 
 export function Field({ label, hint, error, id, className, children }: FieldProps) {
   const autoId = useId();
@@ -42,7 +42,7 @@ export function Field({ label, hint, error, id, className, children }: FieldProp
         </p>
       )}
       {error && (
-        <p id={errorId} role="alert" className="text-xs font-medium text-[#A3262A]">
+        <p id={errorId} role="alert" className="text-xs font-medium text-danger">
           {error}
         </p>
       )}

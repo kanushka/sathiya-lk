@@ -17,7 +17,7 @@ export function StatusPill({ status }: { status: School['status'] }) {
       className={
         status === 'active'
           ? 'rounded-full bg-[#E4F2E7] px-2.5 py-0.5 text-xs font-bold text-[#1F6B34]'
-          : 'rounded-full bg-[#F6E3E3] px-2.5 py-0.5 text-xs font-bold text-[#A3262A]'
+          : 'rounded-full bg-[#F6E3E3] px-2.5 py-0.5 text-xs font-bold text-danger'
       }
     >
       {t(`status.${status}`)}

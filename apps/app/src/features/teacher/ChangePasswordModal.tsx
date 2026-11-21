@@ -74,7 +74,7 @@ function PasswordForm({ onClose, changePassword }: { onClose: () => void; change
         <input type="password" autoComplete="new-password" className={inputClass} value={confirm} onChange={(e) => setConfirm(e.target.value)} required />
       </Field>
       {errors.form && (
-        <p role="alert" className="text-sm font-medium text-[#A3262A]">
+        <p role="alert" className="text-sm font-medium text-danger">
           {errors.form}
         </p>
       )}

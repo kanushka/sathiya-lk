@@ -24,5 +24,6 @@ jobs:
       - run: pnpm typecheck
       - run: pnpm test
       - run: pnpm --filter app build
+      - run: pnpm --filter web test
       - if: hashFiles('firestore.rules') != ''
         run: pnpm test:emulators

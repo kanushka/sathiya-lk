@@ -75,7 +75,7 @@ export function ColorSwatches({ label, swatches, value, onChange, hint }: ColorS
           className={cx(inputClass, 'h-9 w-32 font-mono')}
         />
         {customInvalid && (
-          <span role="alert" className="text-xs font-medium text-[#A3262A]">
+          <span role="alert" className="text-xs font-medium text-danger">
             {t('brand.customError')}
           </span>
         )}

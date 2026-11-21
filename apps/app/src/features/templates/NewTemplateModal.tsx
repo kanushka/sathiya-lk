@@ -40,7 +40,7 @@ export function NewTemplateModal({ onCreate, onClose }: NewTemplateModalProps) {
       footer={
         <>
           {failed && (
-            <p role="alert" className="mr-auto text-sm font-medium text-[#A3262A]">
+            <p role="alert" className="mr-auto text-sm font-medium text-danger">
               {t('page.saveFailed')}
             </p>
           )}

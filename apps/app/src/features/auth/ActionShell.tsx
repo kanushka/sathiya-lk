@@ -26,7 +26,7 @@ export function ActionShell({ title, children }: { title: string; children: Reac
 
 export function ActionError({ message }: { message: string }) {
   return (
-    <p role="alert" className="m-0 text-sm font-medium text-[#A3262A]">
+    <p role="alert" className="m-0 text-sm font-medium text-danger">
       {message}
     </p>
   );

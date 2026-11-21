@@ -70,7 +70,7 @@ export function PlanEditor({ plan, capacity, subjects, readOnly, onChange }: Pla
       <div className="mb-1.5 flex flex-wrap items-end justify-between gap-3">
         <h2 className="m-0 text-[17px] font-bold">{t('plan.title')}</h2>
         <p className="m-0 text-sm">
-          <b data-testid="plan-total" className={`text-lg ${total > capacity ? 'text-[#A3262A]' : 'text-[#1F6B34]'}`}>
+          <b data-testid="plan-total" className={`text-lg ${total > capacity ? 'text-danger' : 'text-[#1F6B34]'}`}>
             {total} / {capacity}
           </b>{' '}
           {t('plan.periodsInWeek')}

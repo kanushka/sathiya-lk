@@ -106,7 +106,7 @@ export function ReportSchoolModal({ open, onClose, initialSchoolId }: ReportScho
           <input type="email" autoComplete="email" className={inputClass} value={email} onChange={(e) => setEmail(e.target.value)} />
         </Field>
         {error && (
-          <p role="alert" className="m-0 text-sm font-medium text-[#A3262A]">
+          <p role="alert" className="m-0 text-sm font-medium text-danger">
             {error}
           </p>
         )}

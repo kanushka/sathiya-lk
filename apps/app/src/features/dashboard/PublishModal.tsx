@@ -46,7 +46,7 @@ export function PublishModal({ yearLabel, clashes, onPublish, onClose }: Publish
       }
     >
       <p className="m-0 text-sm text-ink-soft">{t('publish.body')}</p>
-      {clashes > 0 && <p className="mb-0 mt-3 text-sm font-semibold text-[#A3262A]">{t('publish.clashes', { n: clashes })}</p>}
+      {clashes > 0 && <p className="mb-0 mt-3 text-sm font-semibold text-danger">{t('publish.clashes', { n: clashes })}</p>}
     </Modal>
   );
 }

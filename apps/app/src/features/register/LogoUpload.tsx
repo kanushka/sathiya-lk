@@ -82,7 +82,7 @@ export function LogoUpload({ value, currentUrl, onChange, onPreview }: LogoUploa
         </div>
       </div>
       {error && (
-        <p role="alert" className="m-0 text-xs font-medium text-[#A3262A]">
+        <p role="alert" className="m-0 text-xs font-medium text-danger">
           {error}
         </p>
       )}

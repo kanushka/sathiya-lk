@@ -3,7 +3,28 @@
     {
       "target": "web",
       "public": "apps/web/dist",
-      "ignore": ["firebase.json", "**/.*", "**/node_modules/**"]
+      "ignore": ["firebase.json", "**/.*", "**/node_modules/**"],
+      "headers": [
+        {
+          "source": "**",
+          "headers": [
+            { "key": "X-Frame-Options", "value": "DENY" },
+            { "key": "Content-Security-Policy", "value": "frame-ancestors 'none'" },
+            { "key": "X-Content-Type-Options", "value": "nosniff" },
+            { "key": "Referrer-Policy", "value": "strict-origin-when-cross-origin" },
+            { "key": "Strict-Transport-Security", "value": "max-age=31536000; includeSubDomains" },
+            { "key": "Permissions-Policy", "value": "camera=(), microphone=(), geolocation=()" }
+          ]
+        },
+        {
+          "source": "/_astro/**",
+          "headers": [{ "key": "Cache-Control", "value": "public, max-age=31536000, immutable" }]
+        },
+        {
+          "source": "**/*.html",
+          "headers": [{ "key": "Cache-Control", "value": "no-cache" }]
+        }
+      ]
     },
     {
       "target": "app",
@@ -17,13 +38,23 @@
             { "key": "X-Frame-Options", "value": "DENY" },
             { "key": "Content-Security-Policy", "value": "frame-ancestors 'none'" },
             { "key": "X-Content-Type-Options", "value": "nosniff" },
-            { "key": "Referrer-Policy", "value": "strict-origin-when-cross-origin" }
+            { "key": "Referrer-Policy", "value": "strict-origin-when-cross-origin" },
+            { "key": "Strict-Transport-Security", "value": "max-age=31536000; includeSubDomains" },
+            { "key": "Permissions-Policy", "value": "camera=(), microphone=(), geolocation=()" }
           ]
+        },
+        {
+          "source": "/assets/**",
+          "headers": [{ "key": "Cache-Control", "value": "public, max-age=31536000, immutable" }]
+        },
+        {
+          "source": "**/*.html",
+          "headers": [{ "key": "Cache-Control", "value": "no-cache" }]
         }
       ]
     }
   ],
-  "functions": [{ "source": "functions", "codebase": "default" }],
+  "functions": [{ "source": "functions", "codebase": "default", "predeploy": ["pnpm --filter functions build"] }],
   "firestore": { "rules": "firestore.rules", "indexes": "firestore.indexes.json" },
   "storage": { "rules": "storage.rules" },
   "emulators": {

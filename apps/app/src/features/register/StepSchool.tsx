@@ -30,7 +30,7 @@ export function StepSchool({ value, onChange, onNext, censusTaken, onReport }: S
       i18nKey="school.censusTaken"
       components={{
         report: (
-          <button type="button" onClick={onReport} className="cursor-pointer border-0 bg-transparent p-0 font-semibold text-[#A3262A] underline" />
+          <button type="button" onClick={onReport} className="cursor-pointer border-0 bg-transparent p-0 font-semibold text-danger underline" />
         ),
       }}
     />

@@ -89,7 +89,7 @@ export function StepAccount({ value, onChange, signedIn, signedInEmail, busy, er
         </span>
       </label>
       {error && error.field === null && (
-        <p role="alert" className="mb-0 mt-4 text-sm font-medium text-[#A3262A]">
+        <p role="alert" className="mb-0 mt-4 text-sm font-medium text-danger">
           {error.message}
         </p>
       )}

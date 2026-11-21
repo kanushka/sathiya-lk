@@ -114,7 +114,7 @@ export function GroupModal({ initial, subjects, newKey, onSave, onClose }: Group
             </Select>
           )}
           {submitted && optionsError && (
-            <p role="alert" className="mt-1 text-xs font-medium text-[#A3262A]">
+            <p role="alert" className="mt-1 text-xs font-medium text-danger">
               {optionsError}
             </p>
           )}

@@ -145,7 +145,7 @@ export function TeacherModal({ teacher, onClose }: TeacherModalProps) {
         ) : (
           <>
             {saveError && (
-              <p role="alert" className="mr-auto text-sm font-medium text-[#A3262A]">
+              <p role="alert" className="mr-auto text-sm font-medium text-danger">
                 {t('modal.saveFailed')}
               </p>
             )}
@@ -205,7 +205,7 @@ export function TeacherModal({ teacher, onClose }: TeacherModalProps) {
                     </button>
                   ))}
                 </div>
-                {show('subjects') && <p role="alert" className="mt-1 text-xs font-medium text-[#A3262A]">{show('subjects')}</p>}
+                {show('subjects') && <p role="alert" className="mt-1 text-xs font-medium text-danger">{show('subjects')}</p>}
               </div>
             )}
             <div role="group" aria-labelledby="teacher-grades">
@@ -225,7 +225,7 @@ export function TeacherModal({ teacher, onClose }: TeacherModalProps) {
                   </button>
                 ))}
               </div>
-              {show('grades') && <p role="alert" className="mt-1 text-xs font-medium text-[#A3262A]">{show('grades')}</p>}
+              {show('grades') && <p role="alert" className="mt-1 text-xs font-medium text-danger">{show('grades')}</p>}
             </div>
             <div className="grid grid-cols-3 gap-3">
               <Field label={t('modal.maxPerDay')} error={show('maxPerDay')}>

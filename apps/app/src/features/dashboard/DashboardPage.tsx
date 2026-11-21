@@ -49,7 +49,7 @@ export function DashboardPage() {
   const statCards = [
     { label: t('stats.complete'), value: `${stats.classesComplete} / ${stats.classCount}`, sub: t('stats.completeSub'), tone: 'text-ink' },
     { label: t('stats.empty'), value: String(stats.emptySlots), sub: t('stats.emptySub'), tone: 'text-ink' },
-    { label: t('stats.clashes'), value: String(stats.clashes), sub: t('stats.clashesSub'), tone: stats.clashes === 0 ? 'text-[#1F6B34]' : 'text-[#A3262A]' },
+    { label: t('stats.clashes'), value: String(stats.clashes), sub: t('stats.clashesSub'), tone: stats.clashes === 0 ? 'text-[#1F6B34]' : 'text-danger' },
     { label: t('stats.over'), value: String(stats.overLimit), sub: t('stats.overSub'), tone: stats.overLimit === 0 ? 'text-[#1F6B34]' : 'text-[#B4441C]' },
   ];
 
