@@ -6,6 +6,7 @@
   "scripts": {
     "dev": "astro dev",
     "build": "astro build",
+    "build:staging": "PUBLIC_SITE_URL=https://staging.sathiya.kanushka.com PUBLIC_APP_URL=https://app.staging.sathiya.kanushka.com astro build",
     "preview": "astro preview",
     "test": "astro build && vitest run",
     "typecheck": "astro check"

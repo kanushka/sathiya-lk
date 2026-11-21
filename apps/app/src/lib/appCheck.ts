@@ -7,10 +7,12 @@ export interface AppCheckEnv {
   VITE_USE_EMULATORS?: string;
   VITE_APPCHECK_SITE_KEY?: string;
   VITE_APPCHECK_DEBUG_TOKEN?: string;
+  VITE_APPCHECK_ALLOW_DEBUG?: string;
 }
 
 export function appCheckMode(env: AppCheckEnv): AppCheckMode {
   if (!env.VITE_APPCHECK_SITE_KEY) return 'off';
   if (env.VITE_USE_EMULATORS === 'true') return env.VITE_APPCHECK_DEBUG_TOKEN ? 'debug' : 'off';
+  if (env.VITE_APPCHECK_ALLOW_DEBUG === 'true' && env.VITE_APPCHECK_DEBUG_TOKEN) return 'debug';
   return 'recaptcha';
 }

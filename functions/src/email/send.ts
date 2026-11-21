@@ -15,10 +15,10 @@ export interface MailJob {
 
 // Document shape of the Trigger Email from Firestore extension. Throws on failure.
 export async function writeMail(job: MailJob): Promise<void> {
-  const { from, replyTo } = mailConfig();
+  const { from, replyTo, subjectPrefix } = mailConfig();
   const to = [...new Set(job.to.map((t) => t.trim().toLowerCase()).filter(Boolean))];
   if (!to.length) return;
-  await db.collection(MAIL).add({ to, from: from || undefined, replyTo: job.replyTo || replyTo || undefined, message: job.message });
+  await db.collection(MAIL).add({ to, from: from || undefined, replyTo: job.replyTo || replyTo || undefined, message: subjectPrefix ? { ...job.message, subject: `${subjectPrefix} ${job.message.subject}` } : job.message });
 }
 
 // For mail that is a side effect of a callable: never throws; a failure is logged and the callable's own work stands.

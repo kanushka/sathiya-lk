@@ -1,10 +1,16 @@
 {
-  "projects": { "default": "sathiya-lk" },
+  "projects": { "default": "sathiya-lk", "staging": "sathiya-lk-staging" },
   "targets": {
     "sathiya-lk": {
       "hosting": {
         "web": ["sathiya-lk-web"],
         "app": ["sathiya-lk-app"]
+      }
+    },
+    "sathiya-lk-staging": {
+      "hosting": {
+        "web": ["sathiya-lk-staging-web"],
+        "app": ["sathiya-lk-staging-app"]
       }
     }
   }

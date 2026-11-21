@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
 // Copyright (C) 2026 Kanushka Gayan
 
-import { appConfig } from '@sathiya/firebase-config';
+import { appConfigFor } from '@sathiya/firebase-config';
 import { initializeApp } from 'firebase/app';
 import { ReCaptchaEnterpriseProvider, initializeAppCheck } from 'firebase/app-check';
 import { connectAuthEmulator, getAuth } from 'firebase/auth';
@@ -12,7 +12,7 @@ import { appCheckMode } from './appCheck';
 
 const host = '127.0.0.1';
 
-export const app = initializeApp(appConfig);
+export const app = initializeApp(appConfigFor(import.meta.env.VITE_FIREBASE_ENV));
 
 const mode = appCheckMode(import.meta.env);
 if (mode === 'debug') {

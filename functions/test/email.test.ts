@@ -7,7 +7,7 @@ import { afterEach, describe, expect, it, vi } from 'vitest';
 import { db } from '../src/lib/admin';
 import { hashIp, INVITE_PER_SCHOOL_PER_DAY, INVITE_PER_UID_PER_DAY, RESET_PER_EMAIL_PER_DAY, VERIFY_PER_IP_PER_DAY, VERIFY_PER_UID_PER_DAY } from '../src/lib/rateLimit';
 import { setSchoolStatus } from '../src/setSchoolStatus';
-import { sendMail } from '../src/email/send';
+import { sendMail, writeMail } from '../src/email/send';
 import { adminAuth, adminDb, adminWithSchool, client, expectFnError, makeSuper, rawCall, rawErr, schoolReq, signUp, teacherInput, uniq, unverifiedSignUp, type Client } from './helpers';
 
 const APP_URL = 'https://app.sathiya.kanushka.com';
@@ -131,6 +131,19 @@ describe('app emails', () => {
     expect(err).toHaveBeenCalled();
     vi.restoreAllMocks();
     expect((await adminDb.doc(paths.school(sid)).get()).get('status')).toBe('disabled');
+  });
+
+  it('prefixes every subject with MAIL_SUBJECT_PREFIX when set and leaves it alone when empty', async () => {
+    const to = `prefix-${uniq()}@example.com`;
+    const message = { subject: 'Hello', html: '<p>x</p>', text: 'x' };
+    await writeMail({ to: [to], message });
+    vi.stubEnv('MAIL_SUBJECT_PREFIX', '[staging]');
+    await writeMail({ to: [to], message });
+    vi.stubEnv('MAIL_SUBJECT_PREFIX', '');
+    await writeMail({ to: [to], message });
+    vi.unstubAllEnvs();
+    const subjects = (await mailsTo(to)).map((m) => m.message.subject).sort();
+    expect(subjects).toEqual(['Hello', 'Hello', '[staging] Hello']);
   });
 
   it('sendMail swallows builder and write errors', async () => {
