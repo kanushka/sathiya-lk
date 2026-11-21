@@ -1,0 +1,33 @@
+name: Deploy staging
+on:
+  workflow_dispatch:
+
+concurrency:
+  group: deploy-staging
+  cancel-in-progress: false
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 9
+      - uses: actions/setup-node@v4
+        with:
+          node-version-file: .nvmrc
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+      - run: pnpm --filter functions build
+      - run: pnpm build:staging
+      - name: Deploy to staging
+        env:
+          FIREBASE_SERVICE_ACCOUNT_STAGING: ${{ secrets.FIREBASE_SERVICE_ACCOUNT_STAGING }}
+        run: |
+          key="$RUNNER_TEMP/staging-sa.json"
+          printf '%s' "$FIREBASE_SERVICE_ACCOUNT_STAGING" > "$key"
+          chmod 600 "$key"
+          export GOOGLE_APPLICATION_CREDENTIALS="$key"
+          pnpm exec firebase deploy -P staging --only hosting,functions,firestore,storage --non-interactive
+          rm -f "$key"
