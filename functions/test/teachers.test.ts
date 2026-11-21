@@ -29,9 +29,9 @@ describe('createTeacher', () => {
     const stored = (await adminDb.doc(`${paths.teachers(sid)}/${teacherId}`).get()).data()!;
     expect(stored).toMatchObject({ title: 'Ven.', name: 'K. Perera' });
     expect((await adminAuth.getUser(stored.uid as string)).displayName).toBe('Ven. K. Perera');
-    const { teacherId: untitled } = await admin.call('createTeacher', { schoolId: sid, teacher: { ...teacherInput('SCC026'), title: '' } });
+    const { teacherId: untitled } = await admin.call('createTeacher', { schoolId: sid, teacher: { ...teacherInput('SCC026'), title: '' as never } });
     expect((await adminDb.doc(`${paths.teachers(sid)}/${untitled}`).get()).data()).not.toHaveProperty('title');
-    await expectFnError(admin.call('createTeacher', { schoolId: sid, teacher: { ...teacherInput('SCC027'), title: 'King' } }), 'invalid-argument', 'invalid');
+    await expectFnError(admin.call('createTeacher', { schoolId: sid, teacher: { ...teacherInput('SCC027'), title: 'King' as never } }), 'invalid-argument', 'invalid');
   });
 
   it('refuses a caller who is not admin of the school', async () => {
