@@ -2,11 +2,13 @@
 // Copyright (C) 2026 Kanushka Gayan
 import { Trans, useTranslation } from 'react-i18next';
 import { Button } from '../../ui/Button';
+import { webUrl } from '../../lib/urls';
 import { Field, inputClass } from '../../ui/Field';
 import type { AccountDraft } from './model';
 
-export const TERMS_URL = 'https://sathiya.lk/terms';
-export const PRIVACY_URL = 'https://sathiya.lk/privacy';
+export function legalUrl(page: 'terms' | 'privacy', lang: string): string {
+  return webUrl(`${lang === 'si' ? '/si' : ''}/${page}/`);
+}
 
 export function accountOk(a: AccountDraft, signedIn: boolean): boolean {
   if (!a.terms || a.adminName.trim() === '') return false;
@@ -25,7 +27,7 @@ export interface StepAccountProps {
 }
 
 export function StepAccount({ value, onChange, signedIn, signedInEmail, busy, error, onBack, onSubmit }: StepAccountProps) {
-  const { t } = useTranslation('register');
+  const { t, i18n } = useTranslation('register');
   const set = <K extends keyof AccountDraft>(k: K, v: AccountDraft[K]) => onChange({ ...value, [k]: v });
 
   return (
@@ -80,8 +82,8 @@ export function StepAccount({ value, onChange, signedIn, signedInEmail, busy, er
             t={t}
             i18nKey="account.terms"
             components={{
-              terms: <a href={TERMS_URL} target="_blank" rel="noreferrer" />,
-              privacy: <a href={PRIVACY_URL} target="_blank" rel="noreferrer" />,
+              terms: <a href={legalUrl('terms', i18n.language)} target="_blank" rel="noreferrer" />,
+              privacy: <a href={legalUrl('privacy', i18n.language)} target="_blank" rel="noreferrer" />,
             }}
           />
         </span>

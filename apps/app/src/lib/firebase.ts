@@ -3,14 +3,28 @@
 
 import { appConfig } from '@sathiya/firebase-config';
 import { initializeApp } from 'firebase/app';
+import { ReCaptchaEnterpriseProvider, initializeAppCheck } from 'firebase/app-check';
 import { connectAuthEmulator, getAuth } from 'firebase/auth';
 import { connectFirestoreEmulator, getFirestore } from 'firebase/firestore';
 import { connectFunctionsEmulator, getFunctions } from 'firebase/functions';
 import { connectStorageEmulator, getStorage } from 'firebase/storage';
+import { appCheckMode } from './appCheck';
 
 const host = '127.0.0.1';
 
 export const app = initializeApp(appConfig);
+
+const mode = appCheckMode(import.meta.env);
+if (mode === 'debug') {
+  (self as unknown as { FIREBASE_APPCHECK_DEBUG_TOKEN?: string }).FIREBASE_APPCHECK_DEBUG_TOKEN = import.meta.env.VITE_APPCHECK_DEBUG_TOKEN;
+}
+if (mode !== 'off') {
+  initializeAppCheck(app, {
+    provider: new ReCaptchaEnterpriseProvider(import.meta.env.VITE_APPCHECK_SITE_KEY!),
+    isTokenAutoRefreshEnabled: true,
+  });
+}
+
 export const auth = getAuth(app);
 export const db = getFirestore(app);
 export const functions = getFunctions(app, import.meta.env.VITE_FUNCTIONS_REGION || undefined);
