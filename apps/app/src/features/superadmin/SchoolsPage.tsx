@@ -11,11 +11,12 @@ import { LoadingState } from '../../ui/LoadingState';
 import { Select } from '../../ui/Select';
 import { Table, TBody, Td, Th, THead, Tr } from '../../ui/Table';
 import { StatusButton, StatusPill } from './StatusControl';
+import type { SchoolRecord } from './school';
 import { useUsageCounts, type CountState } from './source';
 import { defaultSetStatus, type SetStatusFn } from './status';
 
 export interface SchoolsPageProps {
-  schools?: CollectionState<School>;
+  schools?: CollectionState<SchoolRecord>;
   setStatus?: SetStatusFn;
 }
 
@@ -44,7 +45,7 @@ const linkBtn =
 export function SchoolsPage({ schools: injected, setStatus = defaultSetStatus }: SchoolsPageProps) {
   const { t } = useTranslation('superadmin');
   const { lang } = useLang();
-  const live = useCollection<School>(injected ? null : 'schools');
+  const live = useCollection<SchoolRecord>(injected ? null : 'schools');
   const state = injected ?? live;
   const [search, setSearch] = useState('');
   const [status, setStatusFilter] = useState<'all' | School['status']>('all');
@@ -58,7 +59,7 @@ export function SchoolsPage({ schools: injected, setStatus = defaultSetStatus }:
       .filter((s) => district === 'all' || s.district === district)
       .filter(
         (s) =>
-          !q || [s.nameEn, s.nameSi ?? '', s.staffPrefix].some((v) => v.toLowerCase().includes(q)),
+          !q || [s.nameEn, s.nameSi ?? '', s.staffPrefix, s.city ?? ''].some((v) => v.toLowerCase().includes(q)),
       )
       .sort((a, b) => a.nameEn.localeCompare(b.nameEn));
   }, [state.data, search, status, district]);
@@ -113,7 +114,10 @@ export function SchoolsPage({ schools: injected, setStatus = defaultSetStatus }:
                 <Td>
                   <div className="flex items-center gap-2.5">
                     <SchoolSwatch school={s} lang={lang} />
-                    <strong>{pickName(s, lang)}</strong>
+                    <div className="min-w-0">
+                      <strong className="block">{pickName(s, lang)}</strong>
+                      {s.city && <span className="block text-xs text-ink-muted">{s.city}</span>}
+                    </div>
                   </div>
                 </Td>
                 <Td>{s.district}</Td>

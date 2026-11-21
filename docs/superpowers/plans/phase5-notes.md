@@ -35,6 +35,8 @@ i18n: `packages/i18n/src/{en,si}/{teacher,superadmin}.json`. Sinhala strings are
 ```
 Types live in `features/superadmin/platform.ts`; consider moving them to `packages/core` in Phase 6.
 
+School contact fields: `features/superadmin/school.ts` has a local `SchoolRecord = School & { city?; address?; phone? }` until core's `School` gains `city` (required), `address?`, `phone?` in Phase 6 — then replace it with `School`. The schools list shows the city under the name and search matches it; the detail page shows city, and address/phone when present.
+
 ## Needs from other phases
 
 ### Phase 1 (rules)
@@ -63,4 +65,4 @@ Types live in `features/superadmin/platform.ts`; consider moving them to `packag
 - License: all Phase 5 `.ts/.tsx` files carry the AGPL-3.0-or-later SPDX header.
 
 ## Verification at HEAD
-`pnpm typecheck` clean; `pnpm test` 255 (core 111, i18n 5, app 139 — 63 new in Phase 5); `pnpm --filter app build` passes.
+`pnpm typecheck` clean; `pnpm test` 258 (core 111, i18n 5, app 142 — 66 new in Phase 5); `pnpm --filter app build` passes.

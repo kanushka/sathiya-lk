@@ -2,7 +2,7 @@
 // Copyright (C) 2026 Kanushka Gayan
 import type { School } from '@sathiya/core';
 import { ctx } from '@sathiya/core/fixtures';
-import { screen, waitFor, within } from '@testing-library/react';
+import { fireEvent, screen, waitFor, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { useMemo, useState } from 'react';
 import { Route, Routes } from 'react-router-dom';
@@ -11,6 +11,7 @@ import { AuthContextProvider, type AuthState } from '../../app/AuthProvider';
 import { LangContextProvider } from '../../app/LangProvider';
 import { ApiError } from '../../lib/callable';
 import { renderWithSchool } from '../../test/renderWithSchool';
+import type { SchoolRecord } from './school';
 import { SchoolDetail } from './SchoolDetail';
 import { SchoolsPage } from './SchoolsPage';
 import { SuperAdminLink } from './SuperAdminLink';
@@ -308,5 +309,48 @@ describe('SuperLayout and SuperAdminLink', () => {
     unmount();
     renderWithSchool(<SuperAdminLink />, { ctx, claims: { sid: 's', role: 'admin' } });
     expect(screen.queryByRole('link')).toBeNull();
+  });
+});
+
+describe('school contact fields', () => {
+  const withContact: SchoolRecord[] = [
+    { ...schools[0]!, city: 'Kandy Town', address: '12 Temple Rd', phone: '081 222 3344' },
+    { ...schools[1]!, city: 'Galle Fort' },
+    { ...schools[2]!, city: 'Peradeniya' },
+  ];
+
+  it('shows the city under the school name and matches it in search', () => {
+    renderWithSchool(
+      <UsageSourceProvider value={source}>
+        <SchoolsPage schools={{ data: withContact, loading: false }} setStatus={vi.fn()} />
+      </UsageSourceProvider>,
+      opts,
+    );
+    expect(screen.getByText('Galle Fort')).toBeInTheDocument();
+    fireEvent.change(screen.getByRole('textbox', { name: 'Search schools' }), { target: { value: 'perad' } });
+    expect(rowNames()).toEqual([expect.stringContaining('Hill View')]);
+  });
+
+  it('shows address and phone on the detail page when present', () => {
+    renderWithSchool(
+      <UsageSourceProvider value={source}>
+        <SchoolDetail school={{ loading: false, data: withContact[0] }} setStatus={vi.fn()} />
+      </UsageSourceProvider>,
+      opts,
+    );
+    expect(screen.getByText('Kandy Town')).toBeInTheDocument();
+    expect(screen.getByText('12 Temple Rd')).toBeInTheDocument();
+    expect(screen.getByText('081 222 3344')).toBeInTheDocument();
+  });
+
+  it('omits address and phone rows when absent', () => {
+    renderWithSchool(
+      <UsageSourceProvider value={source}>
+        <SchoolDetail school={{ loading: false, data: withContact[1] }} setStatus={vi.fn()} />
+      </UsageSourceProvider>,
+      opts,
+    );
+    expect(screen.queryByText('Address')).toBeNull();
+    expect(screen.queryByText('Phone')).toBeNull();
   });
 });

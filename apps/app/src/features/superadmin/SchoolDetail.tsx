@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
 // Copyright (C) 2026 Kanushka Gayan
-import { paths, pickName, type School } from '@sathiya/core';
+import { paths, pickName } from '@sathiya/core';
 import { useMemo, type ReactNode } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Link, useParams } from 'react-router-dom';
@@ -10,11 +10,12 @@ import { EmptyState } from '../../ui/EmptyState';
 import { LoadingState } from '../../ui/LoadingState';
 import { StatusButton, StatusPill } from './StatusControl';
 import { formatActivity, formatDate } from './format';
+import type { SchoolRecord } from './school';
 import { useUsageCounts } from './source';
 import { defaultSetStatus, type SetStatusFn } from './status';
 
 export interface SchoolDetailProps {
-  school?: DocState<School>;
+  school?: DocState<SchoolRecord>;
   setStatus?: SetStatusFn;
 }
 
@@ -31,7 +32,7 @@ export function SchoolDetail({ school: injected, setStatus = defaultSetStatus }:
   const { t } = useTranslation('superadmin');
   const { lang } = useLang();
   const { sid } = useParams();
-  const live = useDoc<School>(injected || !sid ? null : paths.school(sid));
+  const live = useDoc<SchoolRecord>(injected || !sid ? null : paths.school(sid));
   const state = injected ?? live;
   const school = state.data;
   const list = useMemo(() => (school ? [school] : []), [school]);
@@ -64,7 +65,10 @@ export function SchoolDetail({ school: injected, setStatus = defaultSetStatus }:
       <dl className="m-0 rounded-[14px] border border-line bg-white px-5">
         <Row label={t('detail.name')}>{school.nameEn}</Row>
         <Row label={t('detail.nameSi')}>{school.nameSi || t('usage.noData')}</Row>
+        <Row label={t('detail.city')}>{school.city || t('usage.noData')}</Row>
         <Row label={t('detail.district')}>{school.district}</Row>
+        {school.address && <Row label={t('detail.address')}>{school.address}</Row>}
+        {school.phone && <Row label={t('detail.phone')}>{school.phone}</Row>}
         <Row label={t('detail.status')}>
           <StatusPill status={school.status} />
         </Row>
