@@ -8,5 +8,5 @@
       "@sathiya/core/fixtures": ["../packages/core/src/fixtures.ts"]
     }
   },
-  "include": ["src", "test", "vitest.config.ts"]
+  "include": ["src", "scripts", "test", "vitest.config.ts"]
 }
