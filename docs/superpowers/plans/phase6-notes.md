@@ -98,8 +98,8 @@ Branch `p6-integration-400978`, cut from `75d4b94` (Phase 0 tip). Merged with `-
 |---|---|
 | `pnpm test` | 642 pass (core 132, i18n 5, app 503; 76 files) |
 | `pnpm --filter web test` | 84 pass |
-| `pnpm test:emulators` | functions 209, rules 404 (last run after the contract change; see below) |
-| `pnpm e2e` | 12/12, three runs in a row (before the design-check and final-review fixes; see below) |
+| `pnpm test:emulators` | functions 213, rules 404 |
+| `pnpm e2e` | 12/12, two runs in a row on the final code |
 | `pnpm typecheck`, `pnpm --filter app build`, `pnpm check:license` (371 files), `pnpm install --frozen-lockfile`, actionlint | pass |
 
 ## Open findings
