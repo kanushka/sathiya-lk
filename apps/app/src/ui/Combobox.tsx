@@ -107,10 +107,14 @@ export function Combobox<T>({
       setPos({ ...placed, listMax: Math.max(0, Math.min(LIST_MAX, placed.maxHeight - chrome)) });
     }
     reposition();
-    window.addEventListener('scroll', reposition, true);
+    function onScroll(e: Event) {
+      if (e.target instanceof Node && popRef.current?.contains(e.target)) return;
+      reposition();
+    }
+    window.addEventListener('scroll', onScroll, true);
     window.addEventListener('resize', reposition);
     return () => {
-      window.removeEventListener('scroll', reposition, true);
+      window.removeEventListener('scroll', onScroll, true);
       window.removeEventListener('resize', reposition);
     };
   }, [open, flat.length, query]);
@@ -185,6 +189,9 @@ export function Combobox<T>({
         <div
           ref={popRef}
           data-combobox-popover=""
+          onMouseDown={(e) => {
+            if (e.target !== searchRef.current) e.preventDefault();
+          }}
           style={{
             position: 'fixed',
             top: pos?.top ?? 0,

@@ -129,6 +129,47 @@ describe('Combobox', () => {
     expect(screen.getByRole('dialog')).toBeInTheDocument();
   });
 
+  it('keeps focus and the parent modal open when pressing popover padding or a group header', async () => {
+    const user = userEvent.setup();
+    const onClose = vi.fn();
+    renderWithI18n(
+      <Modal open title="Choose a subject" onClose={onClose}>
+        <Combobox
+          items={items}
+          getKey={(s) => s.id}
+          getLabel={(s) => s.name}
+          groupBy={(s) => s.group}
+          onChange={vi.fn()}
+          placeholder="Click to search a subject"
+          searchPlaceholder="Search subject…"
+        />
+      </Modal>,
+    );
+    await user.click(screen.getByRole('button', { name: /click to search/i }));
+    const input = screen.getByRole('combobox');
+    expect(input).toHaveFocus();
+    const popover = input.closest('[data-combobox-popover]') as HTMLElement;
+    await user.pointer({ keys: '[MouseLeft>]', target: popover });
+    await user.pointer({ keys: '[/MouseLeft]', target: popover });
+    await user.click(screen.getByText('Still needed'));
+    expect(input).toHaveFocus();
+    await user.keyboard('{Escape}');
+    expect(onClose).not.toHaveBeenCalled();
+  });
+
+  it('keeps the popover position when the list itself scrolls', async () => {
+    const { user } = setup();
+    await user.click(screen.getByRole('button', { name: /click to search/i }));
+    const popover = screen.getByRole('listbox').closest('[data-combobox-popover]') as HTMLElement;
+    const spy = vi.spyOn(screen.getByRole('button', { name: /click to search/i }), 'getBoundingClientRect');
+    spy.mockClear();
+    screen.getByRole('listbox').dispatchEvent(new Event('scroll'));
+    expect(spy).not.toHaveBeenCalled();
+    document.dispatchEvent(new Event('scroll'));
+    expect(spy).toHaveBeenCalled();
+    expect(popover).toBeInTheDocument();
+  });
+
   it('clears aria-activedescendant when nothing matches, then restores it', async () => {
     const { user } = setup();
     await user.click(screen.getByRole('button', { name: /click to search/i }));
