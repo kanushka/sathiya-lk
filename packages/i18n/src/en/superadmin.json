@@ -32,7 +32,10 @@
     "disable": "Disable",
     "enable": "Enable"
   },
-  "status": { "active": "Active", "disabled": "Disabled" },
+  "status": {
+    "active": "Active",
+    "disabled": "Disabled"
+  },
   "confirmDisable": {
     "title": "Disable {{name}}?",
     "body": "Everyone at this school, admins and teachers, will be blocked from signing in until you enable it again.",
@@ -54,7 +57,6 @@
     "terms": "Terms version accepted",
     "activeYear": "Active year",
     "noActiveYear": "None",
-    "usage": "Usage",
     "openReadOnly": "Open read-only view"
   },
   "usage": {

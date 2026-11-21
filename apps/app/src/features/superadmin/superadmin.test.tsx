@@ -84,6 +84,32 @@ describe('SchoolsPage', () => {
     expect(rowNames()).toHaveLength(2);
   });
 
+  it('does not refetch counts for loaded schools when filtering', async () => {
+    const counts = vi.fn(source.counts);
+    renderWithSchool(
+      <UsageSourceProvider value={{ counts }}>
+        <SchoolsPage schools={loaded} setStatus={vi.fn()} />
+      </UsageSourceProvider>,
+      opts,
+    );
+    const row = screen.getByText('Siripura Central College').closest('tr') as HTMLElement;
+    await within(row).findByText('58');
+    expect(counts).toHaveBeenCalledTimes(3);
+    await userEvent.type(screen.getByLabelText('Search schools'), 'si');
+    await userEvent.selectOptions(screen.getByLabelText('Status'), 'active');
+    expect(counts).toHaveBeenCalledTimes(3);
+    expect(within(row).getByText('58')).toBeInTheDocument();
+  });
+
+  it('cancel in the disable confirm does not call the callable', async () => {
+    const setStatus = renderPage();
+    const row = screen.getByText('Siripura Central College').closest('tr') as HTMLElement;
+    await userEvent.click(within(row).getByRole('button', { name: 'Disable' }));
+    await userEvent.click(within(screen.getByRole('dialog')).getByRole('button', { name: 'Cancel' }));
+    expect(setStatus).not.toHaveBeenCalled();
+    expect(screen.queryByRole('dialog')).toBeNull();
+  });
+
   it('loads counts and links to open and details', async () => {
     renderPage();
     const row = screen.getByText('Siripura Central College').closest('tr') as HTMLElement;

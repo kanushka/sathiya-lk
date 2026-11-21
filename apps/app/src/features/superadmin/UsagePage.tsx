@@ -17,11 +17,13 @@ export function UsagePage({ schools: injected }: { schools?: CollectionState<Sch
   const counts = useUsageCounts(state.data);
   const dash = t('usage.noData');
 
+  const complete = schools.every((s) => counts[s.id] && counts[s.id]?.status !== 'loading');
   const sum = (pick: (c: { teachers: number; classes: number; entries: number | null }) => number | null) =>
     schools.reduce((n, s) => {
       const c = counts[s.id];
       return n + (c?.status === 'ready' ? (pick(c.counts) ?? 0) : 0);
     }, 0);
+  const total = (pick: Parameters<typeof sum>[0]) => (complete ? sum(pick) : t('usage.loading'));
 
   return (
     <div>
@@ -46,7 +48,7 @@ export function UsagePage({ schools: injected }: { schools?: CollectionState<Sch
             {schools.map((s) => {
               const c = counts[s.id];
               const ready = c?.status === 'ready' ? c.counts : undefined;
-              const fallback = !c || c.status === 'loading' ? '…' : dash;
+              const fallback = !c || c.status === 'loading' ? t('usage.loading') : t('usage.countError');
               return (
                 <Tr key={s.id}>
                   <Td>
@@ -61,9 +63,9 @@ export function UsagePage({ schools: injected }: { schools?: CollectionState<Sch
             })}
             <Tr className="font-bold">
               <Td>{t('usage.totals')}</Td>
-              <Td>{sum((c) => c.teachers)}</Td>
-              <Td>{sum((c) => c.classes)}</Td>
-              <Td>{sum((c) => c.entries)}</Td>
+              <Td>{total((c) => c.teachers)}</Td>
+              <Td>{total((c) => c.classes)}</Td>
+              <Td>{total((c) => c.entries)}</Td>
               <Td />
             </Tr>
           </TBody>

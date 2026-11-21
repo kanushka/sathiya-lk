@@ -65,7 +65,7 @@ export function SchoolDetail({ school: injected, setStatus = defaultSetStatus }:
         <Row label={t('detail.status')}>
           <StatusPill status={school.status} />
         </Row>
-        <Row label={t('detail.created')}>{formatDate(school.createdAt, lang)}</Row>
+        <Row label={t('detail.created')}>{school.createdAt ? formatDate(school.createdAt, lang) : t('usage.noData')}</Row>
         <Row label={t('detail.terms')}>{school.termsVersion || t('usage.noData')}</Row>
         <Row label={t('detail.activeYear')}>{school.activeYearId ?? t('detail.noActiveYear')}</Row>
         <Row label={t('usage.columns.teachers')}>{ready ? ready.teachers : pending}</Row>

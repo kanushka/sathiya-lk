@@ -53,21 +53,35 @@ export function useUsageCounts(schools: School[]): Record<string, CountState> {
   const source = useContext(UsageCtx);
   const [state, setState] = useState<Record<string, CountState>>({});
   const requested = useRef(new Set<string>());
+  const mounted = useRef(true);
+  const sourceRef = useRef(source);
 
   useEffect(() => {
-    let alive = true;
+    mounted.current = true;
+    return () => {
+      mounted.current = false;
+    };
+  }, []);
+
+  useEffect(() => {
+    if (sourceRef.current !== source) {
+      sourceRef.current = source;
+      requested.current = new Set();
+      setState({});
+    }
     for (const school of schools) {
       if (requested.current.has(school.id)) continue;
       requested.current.add(school.id);
+      const issuedBy = source;
       source.counts(school).then(
-        (counts) => alive && setState((s) => ({ ...s, [school.id]: { status: 'ready', counts } })),
-        () => alive && setState((s) => ({ ...s, [school.id]: { status: 'error' } })),
+        (counts) => {
+          if (mounted.current && sourceRef.current === issuedBy) setState((s) => ({ ...s, [school.id]: { status: 'ready', counts } }));
+        },
+        () => {
+          if (mounted.current && sourceRef.current === issuedBy) setState((s) => ({ ...s, [school.id]: { status: 'error' } }));
+        },
       );
     }
-    return () => {
-      alive = false;
-      requested.current.clear();
-    };
   }, [schools, source]);
 
   return state;
