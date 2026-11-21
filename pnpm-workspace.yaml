@@ -1,0 +1,8 @@
+packages:
+  - apps/*
+  - packages/*
+  - functions
+allowBuilds:
+  esbuild: true
+  protobufjs: true
+  re2: true

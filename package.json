@@ -1,0 +1,22 @@
+{
+  "name": "sathiya",
+  "private": true,
+  "version": "0.0.0",
+  "type": "module",
+  "engines": { "node": ">=20" },
+  "scripts": {
+    "build": "pnpm -r --if-present build",
+    "test": "vitest run --passWithNoTests",
+    "test:emulators": "firebase emulators:exec --only auth,firestore,storage --project sathiya-lk \"pnpm --filter functions --if-present test && pnpm --filter rules --if-present test\"",
+    "lint": "pnpm -r --if-present lint",
+    "typecheck": "pnpm -r --if-present typecheck",
+    "dev:app": "pnpm --filter app dev",
+    "dev:web": "pnpm --filter web dev",
+    "emulators": "firebase emulators:start"
+  },
+  "devDependencies": {
+    "firebase-tools": "^13.29.0",
+    "typescript": "^5.6.0",
+    "vitest": "^2.1.0"
+  }
+}
