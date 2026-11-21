@@ -23,7 +23,7 @@ import { Button } from '../../ui/Button';
 import { cx } from '../../ui/cx';
 import { Modal } from '../../ui/Modal';
 import { Select } from '../../ui/Select';
-import { limitWarning, teacherReason } from './labels';
+import { limitWarning, teacherReason, teachesAtAll } from './labels';
 
 export interface BlockEditorProps {
   open: boolean;
@@ -202,6 +202,7 @@ function BlockEditorBody({ onClose, baseClassId, day, period, mode, entry, entri
       <div className="mt-5 flex flex-col gap-4">
         {optionIds.map((id, i) => {
           const s = statuses[id];
+          const unavailable = (s?.unavailable ?? []).filter((o) => teachesAtAll(o, id) || o.teacher.id === teachers[id]);
           const p = problems[i];
           const selectId = `block-teacher-${id}`;
           const note =
@@ -230,9 +231,9 @@ function BlockEditorBody({ onClose, baseClassId, day, period, mode, entry, entri
                     ))}
                   </optgroup>
                 )}
-                {s && s.unavailable.length > 0 && (
+                {unavailable.length > 0 && (
                   <optgroup label={t('block.unavailable')}>
-                    {s.unavailable.map((o) => (
+                    {unavailable.map((o) => (
                       <option key={o.teacher.id} value={o.teacher.id} disabled={o.reason !== 'limit'}>
                         {optionLabel(o)}
                       </option>

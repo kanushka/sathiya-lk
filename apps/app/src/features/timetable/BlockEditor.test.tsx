@@ -59,6 +59,18 @@ describe('BlockEditor', () => {
     expect(opt).toHaveTextContent('Busy · 6A Sinhala');
   });
 
+  it("lists only teachers of the option's subject; a subject teacher outside the grade is shown as not teaching it", () => {
+    const seniorMonk = { ...ctx.teachers.find((x) => x.id === T.ananda)!, id: 't-senior', staffId: 'SCC090', name: 'Ven. Senior Thero', grades: [12, 13] };
+    setup({}, { ctx: { ...ctx, teachers: [...ctx.teachers, seniorMonk] } });
+    const buddhism = within(screen.getByLabelText(/Buddhism/));
+    expect(buddhism.queryByRole('option', { name: /M\. Silva/ })).not.toBeInTheDocument();
+    expect(buddhism.queryByRole('option', { name: /Bandara/ })).not.toBeInTheDocument();
+    expect(buddhism.getByRole('option', { name: /Ananda/ })).toBeEnabled();
+    const senior = buddhism.getByRole('option', { name: /Senior Thero/ });
+    expect(senior).toBeDisabled();
+    expect(senior).toHaveTextContent("Doesn't teach Grade 6");
+  });
+
   it('saves a group draft for two classes with a teacher per option', async () => {
     const { api, onClose } = setup();
     await userEvent.click(screen.getByRole('button', { name: '6A' }));
@@ -143,7 +155,8 @@ describe('BlockEditor', () => {
   });
 
   it('blocks save when one teacher is chosen for two options', async () => {
-    setup();
+    const teachers = ctx.teachers.map((x) => (x.id === T.ananda ? { ...x, subjectIds: [...x.subjectIds, S.islam] } : x));
+    setup({}, { ctx: { ...ctx, teachers } });
     pick(/Buddhism/, T.ananda);
     pick(/Islam/, T.ananda);
     expect(screen.getAllByText('Already chosen for another option').length).toBeGreaterThan(0);
