@@ -1,4 +1,7 @@
-import type { EntryDraft, School, Teacher } from './types';
+// SPDX-License-Identifier: AGPL-3.0-or-later
+// Copyright (C) 2026 Kanushka Gayan
+
+import type { EntryDraft, Lang, ReportReason, School, Teacher } from './types';
 
 export const callables = {
   registerSchool: 'registerSchool',
@@ -11,6 +14,8 @@ export const callables = {
   publishYear: 'publishYear',
   setSchoolStatus: 'setSchoolStatus',
   deleteSetupItem: 'deleteSetupItem',
+  reportSchool: 'reportSchool',
+  sendAuthEmail: 'sendAuthEmail',
 } as const;
 
 export interface RegisterSchoolReq { school: Omit<School, 'id' | 'status' | 'createdAt' | 'activeYearId'>; adminName: string; acceptedTermsVersion: string }
@@ -33,6 +38,10 @@ export interface SetSchoolStatusReq { schoolId: string; status: 'active' | 'disa
 export interface SetSchoolStatusRes { ok: true }
 export interface DeleteSetupItemReq { schoolId: string; kind: 'teacher' | 'subject' | 'class' | 'template'; id: string }
 export interface DeleteSetupItemRes { deleted: boolean; usedIn: number }
+export interface ReportSchoolReq { schoolId: string; reason: ReportReason; details?: string; email?: string }
+export interface ReportSchoolRes { ok: true }
+export interface SendAuthEmailReq { kind: 'verify' | 'reset'; email?: string; lang: Lang }
+export interface SendAuthEmailRes { ok: true }
 interface CallableMap {
   registerSchool: { req: RegisterSchoolReq; res: RegisterSchoolRes };
   createTeacher: { req: CreateTeacherReq; res: CreateTeacherRes };
@@ -44,7 +53,9 @@ interface CallableMap {
   publishYear: { req: PublishYearReq; res: PublishYearRes };
   setSchoolStatus: { req: SetSchoolStatusReq; res: SetSchoolStatusRes };
   deleteSetupItem: { req: DeleteSetupItemReq; res: DeleteSetupItemRes };
+  reportSchool: { req: ReportSchoolReq; res: ReportSchoolRes };
+  sendAuthEmail: { req: SendAuthEmailReq; res: SendAuthEmailRes };
 }
 export type CallableName = keyof typeof callables;
 export type CallableTypes = { [K in CallableName]: CallableMap[K] };
-export type ApiErrorCode = 'clash' | 'in-use' | 'not-allowed' | 'invalid';
+export type ApiErrorCode = 'clash' | 'in-use' | 'not-allowed' | 'invalid' | 'census-taken' | 'email-unverified' | 'already-has-school' | 'rate-limited';

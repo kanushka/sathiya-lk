@@ -1,3 +1,6 @@
+// SPDX-License-Identifier: AGPL-3.0-or-later
+// Copyright (C) 2026 Kanushka Gayan
+
 import { useTranslation } from 'react-i18next';
 import { Link, Navigate, Outlet, createBrowserRouter, useParams, type RouteObject } from 'react-router-dom';
 import { AdminLayout } from '../ui/AdminLayout';
@@ -90,7 +93,8 @@ export function buildRoutes(featureRoutes: RouteObject[]): RouteObject[] {
   const schoolView: RouteObject[] = [];
   const pub: RouteObject[] = [];
 
-  for (const route of featureRoutes) {
+  for (const raw of featureRoutes) {
+    const route = raw.path !== undefined && !raw.path.startsWith('/') ? { ...raw, path: `/${raw.path}` } : raw;
     if (under(route.path, '/admin/print')) print.push(route);
     else if (under(route.path, '/admin')) admin.push(route);
     else if (under(route.path, '/me')) me.push(route);

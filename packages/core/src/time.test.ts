@@ -1,3 +1,6 @@
+// SPDX-License-Identifier: AGPL-3.0-or-later
+// Copyright (C) 2026 Kanushka Gayan
+
 import { describe, expect, it } from 'vitest';
 import { bestOverlapPeriod, overlaps, periodsFor, rowsFor, toMinutes, windowOf } from './time';
 import type { PeriodTemplate, TemplateRow } from './types';

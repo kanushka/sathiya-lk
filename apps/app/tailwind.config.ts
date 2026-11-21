@@ -1,3 +1,6 @@
+// SPDX-License-Identifier: AGPL-3.0-or-later
+// Copyright (C) 2026 Kanushka Gayan
+
 import type { Config } from 'tailwindcss';
 
 export default {
@@ -5,9 +8,9 @@ export default {
   theme: {
     extend: {
       colors: {
-        brand: 'var(--brand)',
-        'brand-2': 'var(--brand-2)',
-        'on-brand': 'var(--on-brand)',
+        brand: 'color-mix(in srgb, var(--brand) calc(<alpha-value> * 100%), transparent)',
+        'brand-2': 'color-mix(in srgb, var(--brand-2) calc(<alpha-value> * 100%), transparent)',
+        'on-brand': 'color-mix(in srgb, var(--on-brand) calc(<alpha-value> * 100%), transparent)',
         teal: '#0E6B6A',
         navy: '#14213D',
         saffron: '#F2A541',
