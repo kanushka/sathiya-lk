@@ -14,7 +14,8 @@
   "schools": {
     "title": "Schools",
     "searchLabel": "Search schools",
-    "searchPlaceholder": "Search by name, city or staff prefix",
+    "searchPlaceholder": "Search by name, city, census number or staff prefix",
+    "censusShort": "No. {{no}}",
     "statusLabel": "Status",
     "districtLabel": "District",
     "allStatuses": "All statuses",
@@ -55,6 +56,8 @@
     "name": "Name (English)",
     "nameSi": "Name (Sinhala)",
     "city": "City",
+    "type": "School type",
+    "censusNo": "Census number",
     "district": "District",
     "address": "Address",
     "phone": "Phone",

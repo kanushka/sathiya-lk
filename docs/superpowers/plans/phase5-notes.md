@@ -37,6 +37,8 @@ Types live in `features/superadmin/platform.ts`; consider moving them to `packag
 
 School contact fields: `features/superadmin/school.ts` has a local `SchoolRecord = School & { city?; address?; phone? }` until core's `School` gains `city` (required), `address?`, `phone?` in Phase 6 — then replace it with `School`. The schools list shows the city under the name and search matches it; the detail page shows city, and address/phone when present.
 
+Same `SchoolRecord` also carries local optional `type?` (free string, shown raw) and `censusNo?` (searchable) until Phase 6 adds them to core. Reports use a local `SchoolReport` (`features/superadmin/reports.ts`, collection `reports`) — see below.
+
 ## Needs from other phases
 
 ### Phase 1 (rules)

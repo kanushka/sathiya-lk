@@ -354,3 +354,44 @@ describe('school contact fields', () => {
     expect(screen.queryByText('Phone')).toBeNull();
   });
 });
+
+describe('school type and census number', () => {
+  const typed: SchoolRecord[] = [
+    { ...schools[0]!, type: '1AB', censusNo: '10234' },
+    { ...schools[1]!, type: 'Type 2', censusNo: '20987' },
+    schools[2]!,
+  ];
+
+  it('shows type and census number in the list and searches census number', () => {
+    renderWithSchool(
+      <UsageSourceProvider value={source}>
+        <SchoolsPage schools={{ data: typed, loading: false }} setStatus={vi.fn()} />
+      </UsageSourceProvider>,
+      opts,
+    );
+    expect(screen.getByText(/1AB/)).toBeInTheDocument();
+    expect(screen.getByText(/10234/)).toBeInTheDocument();
+    fireEvent.change(screen.getByRole('textbox', { name: 'Search schools' }), { target: { value: '2098' } });
+    expect(rowNames()).toEqual([expect.stringContaining('Lakeside Girls')]);
+  });
+
+  it('shows type and census number on the detail page, dashes when missing', () => {
+    const { unmount } = renderWithSchool(
+      <UsageSourceProvider value={source}>
+        <SchoolDetail school={{ loading: false, data: typed[0] }} setStatus={vi.fn()} />
+      </UsageSourceProvider>,
+      opts,
+    );
+    expect(screen.getByText('1AB')).toBeInTheDocument();
+    expect(screen.getByText('10234')).toBeInTheDocument();
+    unmount();
+    renderWithSchool(
+      <UsageSourceProvider value={source}>
+        <SchoolDetail school={{ loading: false, data: typed[2] }} setStatus={vi.fn()} />
+      </UsageSourceProvider>,
+      opts,
+    );
+    const row = screen.getByText('Census number').closest('div') as HTMLElement;
+    expect(within(row).getByText('—')).toBeInTheDocument();
+  });
+});

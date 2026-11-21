@@ -59,7 +59,7 @@ export function SchoolsPage({ schools: injected, setStatus = defaultSetStatus }:
       .filter((s) => district === 'all' || s.district === district)
       .filter(
         (s) =>
-          !q || [s.nameEn, s.nameSi ?? '', s.staffPrefix, s.city ?? ''].some((v) => v.toLowerCase().includes(q)),
+          !q || [s.nameEn, s.nameSi ?? '', s.staffPrefix, s.city ?? '', s.censusNo ?? ''].some((v) => v.toLowerCase().includes(q)),
       )
       .sort((a, b) => a.nameEn.localeCompare(b.nameEn));
   }, [state.data, search, status, district]);
@@ -117,6 +117,11 @@ export function SchoolsPage({ schools: injected, setStatus = defaultSetStatus }:
                     <div className="min-w-0">
                       <strong className="block">{pickName(s, lang)}</strong>
                       {s.city && <span className="block text-xs text-ink-muted">{s.city}</span>}
+                      {(s.type || s.censusNo) && (
+                        <span className="block text-xs text-ink-muted">
+                          {[s.type, s.censusNo && t('schools.censusShort', { no: s.censusNo })].filter(Boolean).join(' · ')}
+                        </span>
+                      )}
                     </div>
                   </div>
                 </Td>

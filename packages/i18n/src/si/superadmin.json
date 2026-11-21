@@ -14,7 +14,8 @@
   "schools": {
     "title": "පාසල්",
     "searchLabel": "පාසල් සොයන්න",
-    "searchPlaceholder": "නම, නගරය හෝ කාර්ය මණ්ඩල උපසර්ගය අනුව සොයන්න",
+    "searchPlaceholder": "නම, නගරය, ගණන්පත් අංකය හෝ කාර්ය මණ්ඩල උපසර්ගය අනුව සොයන්න",
+    "censusShort": "අංක {{no}}",
     "statusLabel": "තත්ත්වය",
     "districtLabel": "දිස්ත්‍රික්කය",
     "allStatuses": "සියලු තත්ත්ව",
@@ -55,6 +56,8 @@
     "name": "නම (ඉංග්‍රීසි)",
     "nameSi": "නම (සිංහල)",
     "city": "නගරය",
+    "type": "පාසල් වර්ගය",
+    "censusNo": "ගණන්පත් අංකය",
     "district": "දිස්ත්‍රික්කය",
     "address": "ලිපිනය",
     "phone": "දුරකථනය",
