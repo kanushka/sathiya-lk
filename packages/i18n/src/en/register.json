@@ -1,5 +1,10 @@
 {
-  "steps": { "label": "Progress", "school": "School", "brand": "Logo & colours", "account": "Your account" },
+  "steps": {
+    "label": "Progress",
+    "school": "School",
+    "brand": "Logo & colours",
+    "account": "Your account"
+  },
   "back": "Back",
   "school": {
     "title": "1 · School details",
@@ -18,7 +23,18 @@
     "prefixHint": "Staff IDs will look like {{example1}}, {{example2}}…",
     "prefixError": "2 to 5 capital letters",
     "gradesError": "Lowest grade can't be above highest grade",
-    "next": "Next: logo & colours"
+    "next": "Next: logo & colours",
+    "type": "School type",
+    "types": {
+      "government": "Government",
+      "private": "Private",
+      "international": "International"
+    },
+    "census": "Census number",
+    "censusHint": "From the Ministry of Education school census. Each school can register once.",
+    "censusError": "Census number must be 4 to 6 digits",
+    "noCensus": "No census number (private / international schools only)",
+    "censusTaken": "This school is already registered on Sathiya. Ask its admin to add you as an admin from School settings → Members. If you think the registration is fake, <report>report it</report>."
   },
   "brand": {
     "title": "2 · Logo & school colours",
@@ -65,6 +81,18 @@
     "invalidEmail": "Enter a valid email address",
     "required": "Required",
     "generic": "Could not register the school. Please try again.",
-    "logoUpload": "School created, but the logo could not be uploaded. Add it later in school profile."
+    "logoUpload": "School created, but the logo could not be uploaded. Add it later in school profile.",
+    "alreadyHasSchool": "This account has already registered a school.",
+    "rateLimited": "Too many attempts. Please try again later."
+  },
+  "verify": {
+    "title": "Check your email",
+    "body": "We sent a link to {{email}}. Open it to confirm your email, then come back here to register your school.",
+    "confirmed": "I've confirmed it",
+    "resend": "Send again",
+    "sent": "Verification email sent.",
+    "sendFailed": "Could not send the email. Please try again shortly.",
+    "notYet": "Not verified yet. Open the link in the email, then try again.",
+    "note": "Signed in with Google? You skip this step. One school per account."
   }
 }

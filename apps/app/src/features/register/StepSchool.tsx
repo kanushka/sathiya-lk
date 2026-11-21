@@ -4,7 +4,10 @@ import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Button } from '../../ui/Button';
 import { Field, inputClass } from '../../ui/Field';
-import { gradesOk, prefixOk, schoolOk, type SchoolDraft } from './model';
+import { Trans } from 'react-i18next';
+import { censusError, gradesOk, prefixOk, schoolOk, type SchoolDraft, type SchoolType } from './model';
+
+const types: SchoolType[] = ['government', 'private', 'international'];
 
 const grades = Array.from({ length: 13 }, (_, i) => i + 1);
 
@@ -12,13 +15,29 @@ export interface StepSchoolProps {
   value: SchoolDraft;
   onChange(next: SchoolDraft): void;
   onNext(): void;
+  censusTaken?: boolean;
+  onReport?(): void;
 }
 
-export function StepSchool({ value, onChange, onNext }: StepSchoolProps) {
+export function StepSchool({ value, onChange, onNext, censusTaken, onReport }: StepSchoolProps) {
   const { t } = useTranslation('register');
   const set = <K extends keyof SchoolDraft>(k: K, v: SchoolDraft[K]) => onChange({ ...value, [k]: v });
   const [cityTouched, setCityTouched] = useState(false);
   const prefixInvalid = value.staffPrefix !== '' && !prefixOk(value.staffPrefix);
+  const censusMsg = censusTaken ? (
+    <Trans
+      t={t}
+      i18nKey="school.censusTaken"
+      components={{
+        report: (
+          <button type="button" onClick={onReport} className="cursor-pointer border-0 bg-transparent p-0 font-semibold text-[#A3262A] underline" />
+        ),
+      }}
+    />
+  ) : censusError(value) ? (
+    t('school.censusError')
+  ) : undefined;
+  const privateLike = value.type !== 'government';
   const example = prefixOk(value.staffPrefix) ? value.staffPrefix : 'SCC';
 
   return (
@@ -26,6 +45,44 @@ export function StepSchool({ value, onChange, onNext }: StepSchoolProps) {
       <h2 className="mb-1 mt-0 text-lg font-bold">{t('school.title')}</h2>
       <p className="mb-5 mt-0 text-sm text-ink-muted">{t('school.subtitle')}</p>
       <div className="flex flex-col gap-3.5">
+        <div className="flex gap-3">
+          <Field label={t('school.type')} className="flex-1">
+            <select
+              className={inputClass}
+              value={value.type}
+              onChange={(e) => {
+                const type = e.target.value as SchoolType;
+                onChange({ ...value, type, ...(type === 'government' ? { noCensus: false } : {}) });
+              }}
+            >
+              {types.map((k) => (
+                <option key={k} value={k}>
+                  {t(`school.types.${k}`)}
+                </option>
+              ))}
+            </select>
+          </Field>
+          <Field label={t('school.census')} hint={t('school.censusHint')} error={censusMsg} className="flex-1">
+            <input
+              className={`${inputClass} tracking-[.08em]`}
+              inputMode="numeric"
+              maxLength={6}
+              disabled={value.noCensus}
+              value={value.censusNo}
+              onChange={(e) => onChange({ ...value, censusNo: e.target.value.replace(/\s/g, '') })}
+            />
+          </Field>
+        </div>
+        <label className="-mt-1 flex items-center gap-2 text-[13px] text-ink-muted">
+          <input
+            type="checkbox"
+            className="h-4 w-4"
+            disabled={!privateLike}
+            checked={value.noCensus}
+            onChange={(e) => onChange({ ...value, noCensus: e.target.checked, censusNo: e.target.checked ? '' : value.censusNo })}
+          />
+          {t('school.noCensus')}
+        </label>
         <Field label={t('school.nameEn')}>
           <input className={inputClass} value={value.nameEn} onChange={(e) => set('nameEn', e.target.value)} />
         </Field>

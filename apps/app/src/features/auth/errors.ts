@@ -41,3 +41,8 @@ export function authErrorMessage(
       return t('errors.generic');
   }
 }
+
+export function detailCode(err: unknown): string | null {
+  const code = (err as { details?: { code?: unknown } } | null)?.details?.code;
+  return typeof code === 'string' ? code : null;
+}

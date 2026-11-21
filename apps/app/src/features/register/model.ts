@@ -2,13 +2,17 @@
 // Copyright (C) 2026 Kanushka Gayan
 import type { RegisterSchoolReq, School } from '@sathiya/core';
 
-export type SchoolContact = { city: string; address?: string; phone?: string };
+export type SchoolType = 'government' | 'private' | 'international';
+export type SchoolContact = { city: string; address?: string; phone?: string; type: SchoolType; censusNo?: string };
 export type SchoolWithContact = Omit<School, 'city'> & Partial<SchoolContact>;
 export type RegisterSchoolWithContactReq = Omit<RegisterSchoolReq, 'school'> & {
   school: RegisterSchoolReq['school'] & SchoolContact;
 };
 
 export interface SchoolDraft {
+  type: SchoolType;
+  censusNo: string;
+  noCensus: boolean;
   nameEn: string;
   nameSi: string;
   district: string;
@@ -33,13 +37,17 @@ export interface AccountDraft {
   terms: boolean;
 }
 
-export const emptySchool: SchoolDraft = { nameEn: '', nameSi: '', district: '', city: '', address: '', phone: '', gradeFrom: 1, gradeTo: 13, staffPrefix: '' };
+export const emptySchool: SchoolDraft = { type: 'government', censusNo: '', noCensus: false, nameEn: '', nameSi: '', district: '', city: '', address: '', phone: '', gradeFrom: 1, gradeTo: 13, staffPrefix: '' };
 export const defaultBrand: BrandDraft = { logo: null, primary: '#0E6B6A', second: '#D9A441' };
 export const emptyAccount: AccountDraft = { adminName: '', email: '', password: '', terms: false };
 
 export const prefixOk = (p: string) => /^[A-Z]{2,5}$/.test(p);
 export const gradesOk = (s: SchoolDraft) => s.gradeFrom <= s.gradeTo;
+export const censusValid = (c: string) => /^\d{4,6}$/.test(c);
+export const censusError = (s: SchoolDraft): 'format' | null => (s.censusNo !== '' && !censusValid(s.censusNo) ? 'format' : null);
+const censusOk = (s: SchoolDraft) => (s.type !== 'government' && s.noCensus ? s.censusNo === '' : censusValid(s.censusNo));
 export const schoolOk = (s: SchoolDraft) =>
+  censusOk(s) &&
   s.nameEn.trim() !== '' && s.district.trim() !== '' && s.city.trim() !== '' && prefixOk(s.staffPrefix) && gradesOk(s);
 
 export function gradeList(s: SchoolDraft): number[] {

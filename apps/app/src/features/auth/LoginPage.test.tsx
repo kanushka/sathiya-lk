@@ -49,6 +49,20 @@ describe('school search labels', () => {
   });
 });
 
+describe('report a school', () => {
+  it('opens the report popup from the login page', async () => {
+    const user = userEvent.setup();
+    renderAuth(<LoginPage />);
+    await user.click(screen.getByRole('button', { name: 'Report a school' }));
+    expect(screen.getByRole('dialog', { name: 'Report a school' })).toBeInTheDocument();
+  });
+
+  it('hints at an 8-character teacher password', () => {
+    renderAuth(<LoginPage />);
+    expect(screen.getByText('The 8-character password on your login slip.')).toBeInTheDocument();
+  });
+});
+
 describe('teacher login', () => {
   it('signs in with a synthetic email built from school and uppercased staff ID', async () => {
     const user = userEvent.setup();

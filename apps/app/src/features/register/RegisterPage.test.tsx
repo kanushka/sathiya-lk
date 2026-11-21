@@ -1,13 +1,16 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
 // Copyright (C) 2026 Kanushka Gayan
-import { fireEvent, screen, waitFor } from '@testing-library/react';
+import { fireEvent, screen, waitFor, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { ApiError } from '../../lib/callable';
+import * as authApi from '../auth/api';
 import { renderAuth } from '../auth/testHarness';
 import { RegisterPage } from './RegisterPage';
 import * as api from './api';
 
 vi.mock('./api');
+vi.mock('../auth/api');
 
 beforeEach(() => {
   vi.resetAllMocks();
@@ -15,6 +18,10 @@ beforeEach(() => {
   vi.mocked(api.createAccount).mockResolvedValue(undefined);
   vi.mocked(api.registerSchool).mockResolvedValue('siripura');
   vi.mocked(api.uploadLogo).mockResolvedValue('https://x/logo.png');
+  vi.mocked(api.confirmVerified).mockResolvedValue(true);
+  vi.mocked(api.resendVerification).mockResolvedValue(undefined);
+  vi.mocked(authApi.getDirectorySchool).mockResolvedValue(null);
+  vi.mocked(authApi.searchSchools).mockResolvedValue([]);
 });
 
 async function fillSchool(user: ReturnType<typeof userEvent.setup>) {
@@ -22,6 +29,7 @@ async function fillSchool(user: ReturnType<typeof userEvent.setup>) {
   await user.type(screen.getByLabelText('City'), 'Kandy');
   await user.type(screen.getByLabelText('District'), 'Kandy');
   await user.type(screen.getByLabelText('Staff ID prefix'), 'scc');
+  await user.type(screen.getByLabelText('Census number'), '03214');
   await user.click(screen.getByRole('button', { name: 'Next: logo & colours' }));
 }
 
@@ -39,6 +47,8 @@ describe('register', () => {
     expect(next).toBeDisabled();
     await user.type(screen.getByLabelText('Staff ID prefix'), 'cc');
     expect(screen.getByLabelText('Staff ID prefix')).toHaveValue('SCC');
+    expect(next).toBeDisabled();
+    await user.type(screen.getByLabelText('Census number'), '03214');
     expect(next).toBeEnabled();
   });
 
@@ -149,11 +159,14 @@ describe('register', () => {
     await user.type(screen.getByLabelText('Password'), 'secret12');
     await user.click(screen.getByRole('checkbox'));
     await user.click(screen.getByRole('button', { name: 'Create school' }));
+    await confirmGate(user);
 
     await waitFor(() => expect(screen.getByTestId('where')).toHaveTextContent('/admin'));
     expect(api.createAccount).toHaveBeenCalledWith('nimal@siripura.lk', 'secret12', 'Nimal');
     expect(api.registerSchool).toHaveBeenCalledWith({
       school: {
+        type: 'government',
+        censusNo: '03214',
         nameEn: 'Siripura Central College',
         city: 'Kandy',
         district: 'Kandy',
@@ -182,6 +195,7 @@ describe('register', () => {
     await user.type(screen.getByLabelText('Password'), 'secret12');
     await user.click(screen.getByRole('checkbox'));
     await user.click(screen.getByRole('button', { name: 'Create school' }));
+    await confirmGate(user);
     await waitFor(() => expect(screen.getByTestId('where')).toHaveTextContent('/admin'));
     expect(screen.getByText(/logo could not be uploaded/)).toBeInTheDocument();
   });
@@ -217,12 +231,18 @@ describe('register', () => {
     expect(api.registerSchool).not.toHaveBeenCalled();
   });
 
+  async function confirmGate(user: ReturnType<typeof userEvent.setup>) {
+    await user.click(await screen.findByRole('button', { name: "I've confirmed it" }));
+    await user.click(await screen.findByRole('button', { name: 'Create school' }));
+  }
+
   async function submitStep3(user: ReturnType<typeof userEvent.setup>) {
     await user.type(screen.getByLabelText('Your name'), 'Nimal');
     await user.type(screen.getByLabelText('Email'), 'nimal@siripura.lk');
     await user.type(screen.getByLabelText('Password'), 'secret12');
     await user.click(screen.getByRole('checkbox'));
     await user.click(screen.getByRole('button', { name: 'Create school' }));
+    await confirmGate(user);
   }
 
   it('refreshes claims before uploading the logo', async () => {
@@ -281,5 +301,165 @@ describe('register', () => {
     await user.click(screen.getByRole('button', { name: 'Create school' }));
     await waitFor(() => expect(api.registerSchool).toHaveBeenCalled());
     expect(await screen.findByRole('button', { name: 'Next: logo & colours' })).toBeInTheDocument();
+  });
+
+  describe('census', () => {
+    it('shows a census message for a bad format', async () => {
+      const user = userEvent.setup();
+      renderAuth(<RegisterPage />, { route: '/register', at: '/register' });
+      await user.type(screen.getByLabelText('Census number'), '12a');
+      expect(screen.getByText('Census number must be 4 to 6 digits')).toBeInTheDocument();
+    });
+
+    it('enables "No census number" only for private and international schools and clears the field', async () => {
+      const user = userEvent.setup();
+      renderAuth(<RegisterPage />, { route: '/register', at: '/register' });
+      const box = screen.getByRole('checkbox', { name: /No census number/ });
+      expect(box).toBeDisabled();
+      await user.type(screen.getByLabelText('Census number'), '1234');
+      await user.selectOptions(screen.getByLabelText('School type'), 'private');
+      expect(box).toBeEnabled();
+      await user.click(box);
+      expect(screen.getByLabelText('Census number')).toBeDisabled();
+      expect(screen.getByLabelText('Census number')).toHaveValue('');
+      await user.selectOptions(screen.getByLabelText('School type'), 'government');
+      expect(box).toBeDisabled();
+      expect(box).not.toBeChecked();
+      expect(screen.getByLabelText('Census number')).toBeEnabled();
+    });
+
+    it('sends type and census, and omits census when none', async () => {
+      const user = userEvent.setup();
+      renderAuth(<RegisterPage />, { route: '/register', at: '/register', signedIn: true, claimsAfterRefresh: { sid: 's', role: 'admin' } });
+      await user.type(screen.getByLabelText('School name (English)'), 'Lake School');
+      await user.type(screen.getByLabelText('City'), 'Kandy');
+      await user.type(screen.getByLabelText('District'), 'Kandy');
+      await user.type(screen.getByLabelText('Staff ID prefix'), 'lsc');
+      await user.selectOptions(screen.getByLabelText('School type'), 'private');
+      await user.click(screen.getByRole('checkbox', { name: /No census number/ }));
+      await user.click(screen.getByRole('button', { name: 'Next: logo & colours' }));
+      await user.click(screen.getByRole('button', { name: 'Next: your account' }));
+      await user.type(screen.getByLabelText('Your name'), 'Nimal');
+      await user.click(screen.getByRole('checkbox'));
+      await user.click(screen.getByRole('button', { name: 'Create school' }));
+      await waitFor(() => expect(api.registerSchool).toHaveBeenCalled());
+      const school = vi.mocked(api.registerSchool).mock.calls[0]![0].school;
+      expect(school.type).toBe('private');
+      expect(school).not.toHaveProperty('censusNo');
+    });
+
+    it('includes censusNo for a government school', async () => {
+      const user = userEvent.setup();
+      renderAuth(<RegisterPage />, { route: '/register', at: '/register', signedIn: true, claimsAfterRefresh: { sid: 's', role: 'admin' } });
+      await toStep3(user);
+      await user.type(screen.getByLabelText('Your name'), 'Nimal');
+      await user.click(screen.getByRole('checkbox'));
+      await user.click(screen.getByRole('button', { name: 'Create school' }));
+      await waitFor(() => expect(api.registerSchool).toHaveBeenCalled());
+      expect(vi.mocked(api.registerSchool).mock.calls[0]![0].school).toMatchObject({ type: 'government', censusNo: '03214' });
+    });
+  });
+
+  describe('registerSchool failures', () => {
+    async function submitSignedIn(user: ReturnType<typeof userEvent.setup>) {
+      await toStep3(user);
+      await user.type(screen.getByLabelText('Your name'), 'Nimal');
+      await user.click(screen.getByRole('checkbox'));
+      await user.click(screen.getByRole('button', { name: 'Create school' }));
+    }
+    const opts = { route: '/register', at: '/register' as const, signedIn: true };
+
+    it('census-taken returns to step 1 with an alert and a report link preselecting the school', async () => {
+      const user = userEvent.setup();
+      vi.mocked(api.registerSchool).mockRejectedValue(new ApiError('invalid', 'x', { code: 'census-taken', schoolId: 'siripura' }));
+      vi.mocked(authApi.getDirectorySchool).mockResolvedValue({ id: 'siripura', nameEn: 'Siripura Central College', district: 'Kandy', status: 'active' });
+      renderAuth(<RegisterPage />, opts);
+      await submitSignedIn(user);
+      const alert = await screen.findByText(/already registered on Sathiya/);
+      expect(alert).toBeInTheDocument();
+      expect(screen.getByLabelText('Census number')).toHaveAttribute('aria-invalid', 'true');
+      await user.click(screen.getByRole('button', { name: 'report it' }));
+      const dlg = screen.getByRole('dialog', { name: 'Report a school' });
+      expect(await within(dlg).findByDisplayValue(/Siripura Central College/)).toBeInTheDocument();
+    });
+
+    it('census-taken without a school id opens an empty report popup', async () => {
+      const user = userEvent.setup();
+      vi.mocked(api.registerSchool).mockRejectedValue(new ApiError('invalid', 'x', { code: 'census-taken' }));
+      renderAuth(<RegisterPage />, opts);
+      await submitSignedIn(user);
+      await screen.findByText(/already registered on Sathiya/);
+      await user.click(screen.getByRole('button', { name: 'report it' }));
+      expect(authApi.getDirectorySchool).not.toHaveBeenCalled();
+      expect(within(screen.getByRole('dialog', { name: 'Report a school' })).getByLabelText('School')).toHaveValue('');
+    });
+
+    it.each([
+      ['already-has-school', /already registered a school/],
+      ['rate-limited', /Too many attempts/],
+    ])('shows a clear message for %s', async (code, text) => {
+      const user = userEvent.setup();
+      vi.mocked(api.registerSchool).mockRejectedValue(new ApiError('invalid', 'raw backend text', { code }));
+      renderAuth(<RegisterPage />, opts);
+      await submitSignedIn(user);
+      expect(await screen.findByRole('alert')).toHaveTextContent(text);
+    });
+
+    it('email-unverified sends the user back to the verify gate', async () => {
+      const user = userEvent.setup();
+      vi.mocked(api.registerSchool).mockRejectedValue(new ApiError('invalid', 'x', { code: 'email-unverified' }));
+      renderAuth(<RegisterPage />, opts);
+      await submitSignedIn(user);
+      expect(await screen.findByRole('heading', { name: 'Check your email' })).toBeInTheDocument();
+    });
+  });
+
+  describe('verify email gate', () => {
+    it('gates an unverified password user before the wizard', async () => {
+      const user = userEvent.setup();
+      renderAuth(<RegisterPage />, { route: '/register', at: '/register', signedIn: true, passwordUser: true, emailVerified: false });
+      expect(screen.getByRole('heading', { name: 'Check your email' })).toBeInTheDocument();
+      expect(screen.getByText(/a@b\.lk/)).toBeInTheDocument();
+      expect(screen.queryByLabelText('School name (English)')).not.toBeInTheDocument();
+      await user.click(screen.getByRole('button', { name: "I've confirmed it" }));
+      expect(await screen.findByLabelText('School name (English)')).toBeInTheDocument();
+      expect(api.confirmVerified).toHaveBeenCalled();
+    });
+
+    it('says not verified yet and stays on the gate', async () => {
+      const user = userEvent.setup();
+      vi.mocked(api.confirmVerified).mockResolvedValue(false);
+      renderAuth(<RegisterPage />, { route: '/register', at: '/register', signedIn: true, passwordUser: true, emailVerified: false });
+      await user.click(screen.getByRole('button', { name: "I've confirmed it" }));
+      expect(await screen.findByText(/Not verified yet/)).toBeInTheDocument();
+      expect(screen.queryByLabelText('School name (English)')).not.toBeInTheDocument();
+    });
+
+    it('sends the email again and confirms', async () => {
+      const user = userEvent.setup();
+      renderAuth(<RegisterPage />, { route: '/register', at: '/register', signedIn: true, passwordUser: true, emailVerified: false });
+      await user.click(screen.getByRole('button', { name: 'Send again' }));
+      expect(api.resendVerification).toHaveBeenCalled();
+      expect(await screen.findByText('Verification email sent.')).toBeInTheDocument();
+    });
+
+    it('skips the gate for Google and verified users', () => {
+      renderAuth(<RegisterPage />, { route: '/register', at: '/register', signedIn: true });
+      expect(screen.getByLabelText('School name (English)')).toBeInTheDocument();
+    });
+
+    it('never calls registerSchool right after creating a new account', async () => {
+      const user = userEvent.setup();
+      renderAuth(<RegisterPage />, { route: '/register', at: '/register' });
+      await toStep3(user);
+      await user.type(screen.getByLabelText('Your name'), 'Nimal');
+      await user.type(screen.getByLabelText('Email'), 'nimal@siripura.lk');
+      await user.type(screen.getByLabelText('Password'), 'secret12');
+      await user.click(screen.getByRole('checkbox'));
+      await user.click(screen.getByRole('button', { name: 'Create school' }));
+      expect(await screen.findByRole('heading', { name: 'Check your email' })).toBeInTheDocument();
+      expect(api.createAccount).toHaveBeenCalledTimes(1);
+      expect(api.registerSchool).not.toHaveBeenCalled();
+    });
   });
 });

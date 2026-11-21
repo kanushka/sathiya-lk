@@ -16,6 +16,8 @@ export interface AuthHarnessOptions {
   route?: string;
   at?: '/login' | '/register';
   signedIn?: boolean;
+  passwordUser?: boolean;
+  emailVerified?: boolean;
   claims?: Claims;
   claimsAfterRefresh?: Claims;
   refreshClaims?: () => Promise<void>;
@@ -30,7 +32,14 @@ function Harness({ options, children }: { options: AuthHarnessOptions; children:
   const [claims, setClaims] = useState<Claims>(options.claims ?? {});
   const auth = useMemo<AuthState>(
     () => ({
-      user: options.signedIn ? ({ uid: 'u1', email: 'a@b.lk' } as User) : null,
+      user: options.signedIn
+        ? ({
+            uid: 'u1',
+            email: 'a@b.lk',
+            emailVerified: options.emailVerified ?? false,
+            providerData: options.passwordUser ? [{ providerId: 'password' }] : [{ providerId: 'google.com' }],
+          } as unknown as User)
+        : null,
       claims,
       loading: false,
       refreshClaims: async () => {

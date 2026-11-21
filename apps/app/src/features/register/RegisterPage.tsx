@@ -8,9 +8,12 @@ import { ApiError } from '../../lib/callable';
 import { cx } from '../../ui/cx';
 import { useToast } from '../../ui/Toast';
 import { BrandMark, LanguageToggle } from '../auth/AuthChrome';
+import { ReportSchoolModal } from '../auth/ReportSchoolModal';
 import { StepAccount } from './StepAccount';
 import { StepBrand } from './StepBrand';
 import { StepSchool } from './StepSchool';
+import { VerifyEmailGate } from './VerifyEmailGate';
+import { isUnverifiedPasswordUser, registerFailure } from './errors';
 import * as api from './api';
 import { defaultBrand, emptyAccount, emptySchool, gradeList, type AccountDraft, type BrandDraft, type SchoolDraft } from './model';
 
@@ -30,6 +33,16 @@ export function RegisterPage() {
   const [busy, setBusy] = useState(false);
   const accountCreated = useRef(false);
   const [error, setError] = useState<{ field: 'email' | 'password' | null; message: string } | null>(null);
+  const [gate, setGate] = useState(false);
+  const [confirmed, setConfirmed] = useState(false);
+  const [censusTaken, setCensusTaken] = useState<{ schoolId?: string } | null>(null);
+  const [reporting, setReporting] = useState(false);
+  const needsGate = gate || (!confirmed && isUnverifiedPasswordUser(user));
+
+  function editSchool(next: SchoolDraft) {
+    if (next.censusNo !== school.censusNo || next.type !== school.type) setCensusTaken(null);
+    setSchool(next);
+  }
 
   async function submit() {
     setBusy(true);
@@ -38,6 +51,10 @@ export function RegisterPage() {
       if (!user && !accountCreated.current) {
         await api.createAccount(account.email.trim(), account.password, account.adminName.trim());
         accountCreated.current = true;
+        setConfirmed(false);
+        setGate(true);
+        setBusy(false);
+        return;
       }
     } catch (err) {
       const code = (err as { code?: string }).code;
@@ -59,6 +76,8 @@ export function RegisterPage() {
       const termsVersion = await api.currentTermsVersion();
       schoolId = await api.registerSchool({
         school: {
+          type: school.type,
+          ...(school.type !== 'government' && school.noCensus ? {} : { censusNo: school.censusNo }),
           nameEn: school.nameEn.trim(),
           ...(school.nameSi.trim() ? { nameSi: school.nameSi.trim() } : {}),
           district: school.district.trim(),
@@ -74,7 +93,18 @@ export function RegisterPage() {
         acceptedTermsVersion: termsVersion,
       });
     } catch (err) {
-      setError({ field: null, message: err instanceof ApiError && err.message ? err.message : t('errors.generic') });
+      const failure = registerFailure(err);
+      if (failure?.code === 'census-taken') {
+        setCensusTaken(failure.schoolId ? { schoolId: failure.schoolId } : {});
+        setStep(1);
+      } else if (failure?.code === 'email-unverified') {
+        setConfirmed(false);
+        setGate(true);
+      } else if (failure) {
+        setError({ field: null, message: t(`errors.${failure.code === 'rate-limited' ? 'rateLimited' : 'alreadyHasSchool'}`) });
+      } else {
+        setError({ field: null, message: err instanceof ApiError && err.message ? err.message : t('errors.generic') });
+      }
       setBusy(false);
       return;
     }
@@ -126,8 +156,25 @@ export function RegisterPage() {
             })}
           </ol>
         </div>
-        {step === 1 && <StepSchool value={school} onChange={setSchool} onNext={() => setStep(2)} />}
-        {step === 2 && (
+        {needsGate && (
+          <VerifyEmailGate
+            email={user?.email ?? account.email}
+            onConfirmed={() => {
+              setGate(false);
+              setConfirmed(true);
+            }}
+          />
+        )}
+        {!needsGate && step === 1 && (
+          <StepSchool
+            value={school}
+            onChange={editSchool}
+            onNext={() => setStep(2)}
+            censusTaken={!!censusTaken}
+            onReport={() => setReporting(true)}
+          />
+        )}
+        {!needsGate && step === 2 && (
           <StepBrand
             schoolName={school.nameEn}
             value={brand}
@@ -136,7 +183,7 @@ export function RegisterPage() {
             onNext={() => setStep(3)}
           />
         )}
-        {step === 3 && (
+        {!needsGate && step === 3 && (
           <StepAccount
             value={account}
             onChange={setAccount}
@@ -148,6 +195,7 @@ export function RegisterPage() {
             onSubmit={() => void submit()}
           />
         )}
+        <ReportSchoolModal open={reporting} onClose={() => setReporting(false)} initialSchoolId={censusTaken?.schoolId} />
         <div className="mt-8 text-center">
           <LanguageToggle />
         </div>

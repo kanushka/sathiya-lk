@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
 // Copyright (C) 2026 Kanushka Gayan
 import { paths } from '@sathiya/core';
-import { createUserWithEmailAndPassword, updateProfile } from 'firebase/auth';
+import { createUserWithEmailAndPassword, sendEmailVerification, updateProfile } from 'firebase/auth';
 import { doc, getDoc, updateDoc } from 'firebase/firestore';
 import { getDownloadURL, ref, uploadBytes } from 'firebase/storage';
 import { call } from '../../lib/callable';
@@ -13,6 +13,22 @@ export const FALLBACK_TERMS_VERSION = '1';
 export async function createAccount(email: string, password: string, displayName: string): Promise<void> {
   const cred = await createUserWithEmailAndPassword(auth, email, password);
   await updateProfile(cred.user, { displayName }).catch(() => undefined);
+  await sendEmailVerification(cred.user).catch(() => undefined);
+}
+
+export async function resendVerification(): Promise<void> {
+  const user = auth.currentUser;
+  if (!user) throw new Error('not signed in');
+  await sendEmailVerification(user);
+}
+
+export async function confirmVerified(): Promise<boolean> {
+  const user = auth.currentUser;
+  if (!user) return false;
+  await user.reload();
+  if (!user.emailVerified) return false;
+  await user.getIdToken(true);
+  return true;
 }
 
 export async function currentTermsVersion(): Promise<string> {

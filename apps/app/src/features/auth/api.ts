@@ -8,8 +8,9 @@ import {
   signInWithPopup,
 } from 'firebase/auth';
 import { collection, doc, getDoc, getDocs, limit, orderBy, query, where } from 'firebase/firestore';
-import { auth, db } from '../../lib/firebase';
-import { call } from '../../lib/callable';
+import { auth, db, functions } from '../../lib/firebase';
+import { httpsCallable } from 'firebase/functions';
+import { call, toApiError } from '../../lib/callable';
 import { mergeDirectoryResults, type DirectorySchool } from './directory';
 
 export type { DirectorySchool };
@@ -66,4 +67,20 @@ export async function sendReset(email: string): Promise<void> {
 
 export async function claimInvites(): Promise<void> {
   await call('claimInvites', {});
+}
+
+export type ReportReason = 'fake' | 'duplicate' | 'abuse' | 'other';
+export interface ReportSchoolReq {
+  schoolId: string;
+  reason: ReportReason;
+  details?: string;
+  email?: string;
+}
+
+export async function reportSchool(req: ReportSchoolReq): Promise<void> {
+  try {
+    await httpsCallable<ReportSchoolReq, { ok: true }>(functions, 'reportSchool')(req);
+  } catch (err) {
+    throw toApiError(err);
+  }
 }
