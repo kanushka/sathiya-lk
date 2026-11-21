@@ -8,6 +8,7 @@ import { NavLink } from 'react-router-dom';
 import { useAuth } from '../app/AuthProvider';
 import { useMaybeLang } from '../app/LangProvider';
 import { useSchool, useYear } from '../app/SchoolProvider';
+import { SuperAdminLink } from '../features/superadmin/SuperAdminLink';
 import { cx } from './cx';
 import { Icon, type IconName } from './Icon';
 
@@ -253,6 +254,10 @@ export function Sidebar({ basePath = '/admin', readOnly = false }: SidebarProps)
             {!collapsed && t('nav.myTimetable')}
           </NavLink>
         )}
+        <SuperAdminLink
+          compact={collapsed}
+          className={cx(linkBase, collapsed ? 'h-11 w-11 justify-center' : 'gap-2.5 px-3 py-[9px]')}
+        />
         {langCtl && (
           <button
             type="button"

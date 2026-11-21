@@ -86,4 +86,17 @@ describe('Sidebar', () => {
     expect(screen.getByRole('link', { name: 'Teachers' })).toHaveAttribute('href', '/s/s1/teachers');
     expect(screen.getByRole('link', { name: 'Dashboard' })).toHaveAttribute('href', '/s/s1');
   });
+
+  it('links to the super area only for super users', () => {
+    renderSidebar();
+    expect(screen.queryByRole('link', { name: 'Super admin' })).not.toBeInTheDocument();
+    renderSidebar('/admin/teachers', { claims: { sid: 's1', role: 'admin', super: true } });
+    expect(screen.getByRole('link', { name: 'Super admin' })).toHaveAttribute('href', '/super');
+  });
+
+  it('keeps the super link in the collapsed rail', () => {
+    localStorage.setItem('sathiya.sidebar', 'collapsed');
+    renderSidebar('/admin/teachers', { claims: { sid: 's1', role: 'admin', super: true } });
+    expect(screen.getByRole('link', { name: 'Super admin' })).toHaveAttribute('title', 'Super admin');
+  });
 });

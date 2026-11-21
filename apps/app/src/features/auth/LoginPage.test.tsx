@@ -57,6 +57,16 @@ describe('report a school', () => {
     expect(screen.getByRole('dialog', { name: 'Report a school' })).toBeInTheDocument();
   });
 
+  it('opens the report popup on load for /login?report=1', () => {
+    renderAuth(<LoginPage />, { route: '/login?report=1' });
+    expect(screen.getByRole('dialog', { name: 'Report a school' })).toBeInTheDocument();
+  });
+
+  it('does not open the report popup without the flag', () => {
+    renderAuth(<LoginPage />);
+    expect(screen.queryByRole('dialog')).not.toBeInTheDocument();
+  });
+
   it('hints at an 8-character teacher password', () => {
     renderAuth(<LoginPage />);
     expect(screen.getByText('The 8-character password on your login slip.')).toBeInTheDocument();

@@ -6,6 +6,7 @@ import { MemoryRouter, Route, Routes } from 'react-router-dom';
 import { describe, expect, it, vi } from 'vitest';
 
 vi.mock('../lib/firebase', () => ({ app: {}, auth: {}, db: {}, functions: {}, storage: {} }));
+vi.mock('../features/superadmin/AnnouncementBanner', () => ({ AnnouncementBanner: () => <div data-testid="banner" /> }));
 vi.mock('./Sidebar', () => ({ Sidebar: () => <nav /> }));
 vi.mock('../app/SchoolProvider', () => ({
   useHasSchool: () => true,
@@ -39,5 +40,17 @@ describe('useReadOnly', () => {
   it('is false in the normal admin layout', () => {
     renderLayout();
     expect(screen.getByText('editable')).toBeInTheDocument();
+  });
+});
+
+describe('announcement banner', () => {
+  it('shows above the admin content', () => {
+    renderLayout();
+    expect(screen.getByTestId('banner')).toBeInTheDocument();
+  });
+
+  it('is skipped in the read-only super view', () => {
+    renderLayout(true);
+    expect(screen.queryByTestId('banner')).not.toBeInTheDocument();
   });
 });

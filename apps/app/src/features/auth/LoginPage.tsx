@@ -11,7 +11,7 @@ import { TeacherLoginForm } from './TeacherLoginForm';
 export function LoginPage() {
   const { t } = useTranslation('auth');
   const [params] = useSearchParams();
-  const [reporting, setReporting] = useState(false);
+  const [reporting, setReporting] = useState(() => params.get('report') === '1');
   const teacherFirst = params.get('as') === 'teacher';
 
   return (
