@@ -2,7 +2,7 @@
 // Copyright (C) 2026 Kanushka Gayan
 import { paths, syntheticEmail } from '@sathiya/core';
 import { describe, expect, it } from 'vitest';
-import { adminDb, adminWithSchool, expectFnError, makeSuper, signIn, signUp, teacherInput } from './helpers';
+import { adminAuth, adminDb, adminWithSchool, expectFnError, makeSuper, signIn, signUp, teacherInput } from './helpers';
 
 describe('createTeacher', () => {
   it('creates an auth account the teacher can sign in with', async () => {
@@ -26,7 +26,9 @@ describe('createTeacher', () => {
   it('stores a known title and rejects an unknown one', async () => {
     const { admin, sid } = await adminWithSchool();
     const { teacherId } = await admin.call('createTeacher', { schoolId: sid, teacher: { ...teacherInput('SCC025'), name: 'K. Perera', title: 'Ven.' } });
-    expect((await adminDb.doc(`${paths.teachers(sid)}/${teacherId}`).get()).data()).toMatchObject({ title: 'Ven.', name: 'K. Perera' });
+    const stored = (await adminDb.doc(`${paths.teachers(sid)}/${teacherId}`).get()).data()!;
+    expect(stored).toMatchObject({ title: 'Ven.', name: 'K. Perera' });
+    expect((await adminAuth.getUser(stored.uid as string)).displayName).toBe('Ven. K. Perera');
     const { teacherId: untitled } = await admin.call('createTeacher', { schoolId: sid, teacher: { ...teacherInput('SCC026'), title: '' } });
     expect((await adminDb.doc(`${paths.teachers(sid)}/${untitled}`).get()).data()).not.toHaveProperty('title');
     await expectFnError(admin.call('createTeacher', { schoolId: sid, teacher: { ...teacherInput('SCC027'), title: 'King' } }), 'invalid-argument', 'invalid');

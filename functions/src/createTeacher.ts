@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
 // Copyright (C) 2026 Kanushka Gayan
-import { isValidStaffId, paths, syntheticEmail, TEACHER_TITLES, type CreateTeacherRes, type Teacher, type TeacherTitle } from '@sathiya/core';
+import { isValidStaffId, paths, syntheticEmail, TEACHER_TITLES, teacherDisplayName, type CreateTeacherRes, type Teacher, type TeacherTitle } from '@sathiya/core';
 import { onCall } from 'firebase-functions/v2/https';
 import { auth, db } from './lib/admin';
 import { callOpts } from './lib/callOptions';
@@ -40,7 +40,7 @@ export const createTeacher = onCall(callOpts, async (req): Promise<CreateTeacher
   const password = newPassword();
   // The synthetic email is unique in Auth, so a concurrent create of the same staff ID fails here.
   const user = await auth
-    .createUser({ email: syntheticEmail(staffId, sid), password, displayName: teacher.name })
+    .createUser({ email: syntheticEmail(staffId, sid), password, displayName: teacherDisplayName(teacher) })
     .catch((e: { code?: string }) => (e.code === 'auth/email-already-exists' ? duplicate(staffId) : Promise.reject(e)));
 
   const ref = teachers.doc();
