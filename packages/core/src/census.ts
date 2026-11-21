@@ -3,7 +3,6 @@
 
 import type { SchoolType } from './types';
 
-// MOE census number length is still to be confirmed by the owner.
 export const CENSUS_NO_LENGTH = { min: 4, max: 6 } as const;
 
 export function normalizeCensusNo(s: string): string | null {

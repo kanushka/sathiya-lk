@@ -3,7 +3,7 @@
 
 import { describe, expect, expectTypeOf, it } from 'vitest';
 import { paths } from './paths';
-import { callables, type CallableTypes } from './api';
+import { callables, type CallableTypes, type SendAuthEmailReq } from './api';
 
 describe('paths', () => {
   it('builds firestore paths', () => {
@@ -21,6 +21,12 @@ describe('paths', () => {
   });
   it('callables map to literal names', () => {
     expect(callables.saveEntry).toBe('saveEntry');
+  });
+  it('sendAuthEmail callable and types', () => {
+    expect(callables.sendAuthEmail).toBe('sendAuthEmail');
+    expectTypeOf<SendAuthEmailReq>().toEqualTypeOf<{ kind: 'verify' | 'reset'; email?: string; lang: 'en' | 'si' }>();
+    expectTypeOf<CallableTypes['sendAuthEmail']['req']>().toEqualTypeOf<SendAuthEmailReq>();
+    expectTypeOf<CallableTypes['sendAuthEmail']['res']>().toEqualTypeOf<{ ok: true }>();
   });
   it('CallableTypes covers every callable', () => {
     expectTypeOf<keyof CallableTypes>().toEqualTypeOf<keyof typeof callables>();
