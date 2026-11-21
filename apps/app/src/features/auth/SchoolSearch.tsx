@@ -1,3 +1,5 @@
+// SPDX-License-Identifier: AGPL-3.0-or-later
+// Copyright (C) 2026 Kanushka Gayan
 import { pickName } from '@sathiya/core';
 import { useEffect, useId, useRef, useState, forwardRef } from 'react';
 import { useTranslation } from 'react-i18next';

@@ -1,3 +1,5 @@
+// SPDX-License-Identifier: AGPL-3.0-or-later
+// Copyright (C) 2026 Kanushka Gayan
 import { paths, type CreateTeacherRes, type Teacher } from '@sathiya/core';
 import { deleteField, doc, updateDoc } from 'firebase/firestore';
 import { call } from '../../lib/callable';

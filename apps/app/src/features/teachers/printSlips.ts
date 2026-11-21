@@ -1,3 +1,5 @@
+// SPDX-License-Identifier: AGPL-3.0-or-later
+// Copyright (C) 2026 Kanushka Gayan
 import { qrSvgDataUri } from './qr';
 import type { SlipData, SlipLabels } from './slip';
 
