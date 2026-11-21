@@ -1,3 +1,6 @@
+// SPDX-License-Identifier: AGPL-3.0-or-later
+// Copyright (C) 2026 Kanushka Gayan
+
 import { renderWithSchool } from '../../test/renderWithSchool';
 import { ApiError } from '../../lib/callable';
 import { C, ctx, entries6B, S, T } from '@sathiya/core/fixtures';

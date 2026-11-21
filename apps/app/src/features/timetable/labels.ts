@@ -1,3 +1,6 @@
+// SPDX-License-Identifier: AGPL-3.0-or-later
+// Copyright (C) 2026 Kanushka Gayan
+
 import { pickName, type Entry, type Lang, type PlanItem, type SchoolContext, type Subject, type TeacherOption } from '@sathiya/core';
 import type { TFunction } from 'i18next';
 import type { CellView } from './Cell';
