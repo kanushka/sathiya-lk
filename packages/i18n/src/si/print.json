@@ -1,0 +1,32 @@
+{
+  "toolbar": {
+    "print": "මුද්‍රණය",
+    "close": "වසන්න"
+  },
+  "sheet": {
+    "classTitle": "{{grade}} ශ්‍රේණිය · {{name}}",
+    "teacherTitle": "{{name}} · {{staffId}}",
+    "subtitle": "කාලසටහන {{year}}",
+    "classTeacher": "පන්ති ගුරු {{name}}",
+    "interval": "විවේකය · {{start}} – {{end}}",
+    "group": "කණ්ඩායම",
+    "groupWith": "කණ්ඩායම · {{classes}} සමඟ",
+    "joined": "⧉ {{classes}}",
+    "joinedWithTeacher": "⧉ {{classes}} · {{teacher}}",
+    "groupNote": "{{groups}} කණ්ඩායම් ලෙස පැවැත්වේ — සිසුන් තමන් තෝරාගත් විෂයයට යයි.",
+    "printed": "මුද්‍රණය කළ දිනය {{date}}",
+    "madeWith": "සත්‍යා (Sathiya) මගින් සකසන ලදී",
+    "cellTime": "{{subject}} · {{time}}",
+    "slotLabel": "{{day}}, {{n}} වන කාලචේදය"
+  },
+  "states": {
+    "notPublishedTitle": "තවම ප්‍රකාශයට පත් කර නැත",
+    "notPublishedBody": "තෝරාගත් වර්ෂය සඳහා මෙම කාලසටහන ප්‍රකාශයට පත් කර නැත.",
+    "classNotFoundTitle": "පන්තිය හමු නොවීය",
+    "classNotFoundBody": "තෝරාගත් වර්ෂයේ මෙම පන්තිය නොමැත.",
+    "teacherNotFoundTitle": "ගුරුවරයා හමු නොවීය",
+    "teacherNotFoundBody": "තෝරාගත් වර්ෂයේ මෙම ගුරුවරයා නොමැත.",
+    "errorTitle": "කාලසටහන පූරණය කළ නොහැකි විය",
+    "errorBody": "කරුණාකර ඔබගේ සම්බන්ධතාව පරීක්ෂා කර නැවත උත්සාහ කරන්න."
+  }
+}
