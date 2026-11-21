@@ -5,7 +5,7 @@ import { logger } from 'firebase-functions/v2';
 import { onCall } from 'firebase-functions/v2/https';
 import { auth } from './lib/admin';
 import { callOpts } from './lib/callOptions';
-import { AUTH_EMAIL_KINDS, type AuthEmailKind, type SendAuthEmailRes } from './lib/contract';
+import { AUTH_EMAIL_KINDS, type AuthEmailKind, type SendAuthEmailRes } from '@sathiya/core';
 import { email, invalid, obj, requireAuth } from './lib/guards';
 import {
   clientIp,

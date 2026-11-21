@@ -3,10 +3,10 @@
 
 import { describe, expect, expectTypeOf, it } from 'vitest';
 import { callables, type ApiErrorCode, type CallableTypes, type RegisterSchoolReq, type ReportSchoolReq } from './api';
-import { CENSUS_NO_LENGTH, censusRequired, normalizeCensusNo } from './census';
+import { CENSUS_NO_LENGTH, CENSUS_NO_RE, censusRequired, normalizeCensusNo } from './census';
 import { school } from './fixtures';
 import { paths } from './paths';
-import type { School, SchoolReport } from './types';
+import { AUTH_EMAIL_KINDS, REPORT_REASONS, SCHOOL_TYPES, type School, type SchoolReport } from './types';
 
 describe('normalizeCensusNo', () => {
   it('strips spaces and leading/trailing junk', () => {
@@ -73,5 +73,21 @@ describe('reports and census paths', () => {
 
   it('new error codes', () => {
     expectTypeOf<'census-taken' | 'email-unverified' | 'already-has-school' | 'rate-limited'>().toMatchTypeOf<ApiErrorCode>();
+  });
+});
+
+describe('contract constants', () => {
+  it('CENSUS_NO_RE accepts exactly 4-6 digits', () => {
+    expect(CENSUS_NO_RE.test('1234')).toBe(true);
+    expect(CENSUS_NO_RE.test('123456')).toBe(true);
+    expect(CENSUS_NO_RE.test('123')).toBe(false);
+    expect(CENSUS_NO_RE.test('1234567')).toBe(false);
+    expect(CENSUS_NO_RE.test('12a45')).toBe(false);
+  });
+
+  it('exposes runtime lists matching the union types', () => {
+    expect(SCHOOL_TYPES).toEqual(['government', 'private', 'international']);
+    expect(REPORT_REASONS).toEqual(['fake', 'duplicate', 'abuse', 'other']);
+    expect(AUTH_EMAIL_KINDS).toEqual(['verify', 'reset']);
   });
 });

@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
 // Copyright (C) 2026 Kanushka Gayan
-import { paths, type PeriodTemplate, type RegisterSchoolRes } from '@sathiya/core';
+import { CENSUS_NO_RE, paths, SCHOOL_TYPES, type PeriodTemplate, type RegisterSchoolRes, type SchoolType } from '@sathiya/core';
 import { defaultTemplate } from '@sathiya/core/fixtures';
 import { logger } from 'firebase-functions/v2';
 import { onCall } from 'firebase-functions/v2/https';
@@ -10,13 +10,11 @@ import { sendMail } from './email/send';
 import { schoolRegistered } from './email/templates';
 import { callOpts } from './lib/callOptions';
 import { setSchoolClaims } from './lib/claims';
-import { CENSUS_NO_RE, SCHOOL_TYPES, type SchoolType } from './lib/contract';
 import { directoryFields } from './lib/directory';
 import { fail, intList, invalid, isVerified, obj, optStr, requireAuth, str } from './lib/guards';
 import { clientIp, consumeRateLimits, hashIp, REGISTER_PER_IP_PER_DAY, REGISTER_PER_UID_PER_DAY } from './lib/rateLimit';
 import { runTx } from './lib/tx';
 
-export type { RegisterSchoolInput } from './lib/contract';
 
 const HEX = /^#[0-9A-Fa-f]{6}$/;
 export const CENSUS_INDEX = 'censusIndex';

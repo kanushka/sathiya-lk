@@ -2,7 +2,7 @@
 // Copyright (C) 2026 Kanushka Gayan
 import { httpsCallable } from 'firebase/functions';
 import { describe, expect, it } from 'vitest';
-import type { ReportSchoolReq, ReportSchoolRes } from '../src/lib/contract';
+import type { ReportSchoolReq, ReportSchoolRes } from '@sathiya/core';
 import { REPORT_PER_IP_PER_DAY } from '../src/lib/rateLimit';
 import { adminDb, adminWithSchool, client, expectFnError, rawCall, rawErr, signUp, type Client } from './helpers';
 

@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
 // Copyright (C) 2026 Kanushka Gayan
 
-import type { EntryDraft, Lang, ReportReason, School, Teacher } from './types';
+import type { AuthEmailKind, EntryDraft, Lang, ReportReason, School, Teacher } from './types';
 
 export const callables = {
   registerSchool: 'registerSchool',
@@ -40,7 +40,7 @@ export interface DeleteSetupItemReq { schoolId: string; kind: 'teacher' | 'subje
 export interface DeleteSetupItemRes { deleted: boolean; usedIn: number }
 export interface ReportSchoolReq { schoolId: string; reason: ReportReason; details?: string; email?: string }
 export interface ReportSchoolRes { ok: true }
-export interface SendAuthEmailReq { kind: 'verify' | 'reset'; email?: string; lang: Lang }
+export interface SendAuthEmailReq { kind: AuthEmailKind; email?: string; lang: Lang }
 export interface SendAuthEmailRes { ok: true }
 interface CallableMap {
   registerSchool: { req: RegisterSchoolReq; res: RegisterSchoolRes };

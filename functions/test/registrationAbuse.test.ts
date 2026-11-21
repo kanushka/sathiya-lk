@@ -2,7 +2,7 @@
 // Copyright (C) 2026 Kanushka Gayan
 import { paths } from '@sathiya/core';
 import { describe, expect, it } from 'vitest';
-import type { RegisterSchoolInput } from '../src/lib/contract';
+import type { RegisterSchoolReq as RegisterSchoolInput } from '@sathiya/core';
 import { REGISTER_PER_IP_PER_DAY, REGISTER_PER_UID_PER_DAY } from '../src/lib/rateLimit';
 import {
   adminAuth,

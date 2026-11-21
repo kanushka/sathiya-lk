@@ -7,7 +7,7 @@ import { mailConfig } from './email/params';
 import { sendMail } from './email/send';
 import { reportReceived } from './email/templates';
 import { callOpts } from './lib/callOptions';
-import { REPORT_REASONS, type ReportReason, type ReportSchoolRes } from './lib/contract';
+import { REPORT_REASONS, type ReportReason, type ReportSchoolRes } from '@sathiya/core';
 import { docId, email, fail, invalid, obj, optStr } from './lib/guards';
 import { clientIp, consumeRateLimits, hashIp, REPORT_PER_IP_PER_DAY } from './lib/rateLimit';
 

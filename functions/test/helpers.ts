@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
 // Copyright (C) 2026 Kanushka Gayan
 import { randomUUID } from 'node:crypto';
-import type { CallableName, CallableTypes, Claims } from '@sathiya/core';
+import type { CallableName, CallableTypes, Claims, RegisterSchoolReq as RegisterSchoolInput } from '@sathiya/core';
 import { initializeApp as initAdmin, getApps as getAdminApps } from 'firebase-admin/app';
 import { getAuth as getAdminAuth } from 'firebase-admin/auth';
 import { getFirestore } from 'firebase-admin/firestore';
@@ -17,7 +17,6 @@ import {
 } from 'firebase/auth';
 import { connectFunctionsEmulator, getFunctions, httpsCallable, type Functions } from 'firebase/functions';
 import { afterAll, beforeEach, expect } from 'vitest';
-import type { RegisterSchoolInput } from '../src/lib/contract';
 
 export const PROJECT_ID = 'sathiya-lk';
 const HOST = '127.0.0.1';

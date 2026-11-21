@@ -4,7 +4,7 @@ import { callables, paths, type PeriodTemplate } from '@sathiya/core';
 import { defaultTemplate } from '@sathiya/core/fixtures';
 import { httpsCallable } from 'firebase/functions';
 import { describe, expect, it } from 'vitest';
-import type { RegisterSchoolInput } from '../src/lib/contract';
+import type { RegisterSchoolReq as RegisterSchoolInput } from '@sathiya/core';
 import { adminDb, client, expectFnError, makeSuper, schoolReq, signUp } from './helpers';
 
 describe('unauthenticated', () => {
@@ -100,7 +100,7 @@ describe('registerSchool', () => {
   it('requires a city', async () => {
     const c = await signUp();
     const { city: _, ...noCity } = schoolReq().school;
-    await expectFnError(c.call('registerSchool', { ...schoolReq(), school: noCity }), 'invalid-argument', 'invalid');
+    await expectFnError(c.call('registerSchool', { ...schoolReq(), school: noCity as unknown as RegisterSchoolInput['school'] }), 'invalid-argument', 'invalid');
     await expectFnError(c.call('registerSchool', schoolReq({ city: '   ' })), 'invalid-argument', 'invalid');
     await expectFnError(c.call('registerSchool', schoolReq({ city: 'x'.repeat(81) })), 'invalid-argument', 'invalid');
   });
