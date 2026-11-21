@@ -3,7 +3,7 @@
 
 import { describe, expect, it } from 'vitest';
 import { C, ctx, entries, entry, S, T } from './fixtures';
-import { classOptionsForTeacherSlot, matchClassPeriod, teacherDayLoad, teacherOptionsForSlot, teachesSubject } from './availability';
+import { classOptionsForTeacherSlot, matchClassPeriod, preferredTeacherFor, teacherDayLoad, teacherOptionsForSlot, teachesSubject } from './availability';
 import type { DayIndex, Entry, Teacher } from './types';
 
 const teacher = (id: string): Teacher => ctx.teachers.find((t) => t.id === id)!;
@@ -161,5 +161,80 @@ describe('classOptionsForTeacherSlot', () => {
     expect(opts(T.perera, 2, 3, S.maths)).toContainEqual([C.c6b, 3, false]);
     const editing = classOptionsForTeacherSlot({ ctx, entries, teacherId: T.perera, day: 2, defaultPeriod: 3, subjectId: S.maths, editingEntryId: 'e-6b-2-3' });
     expect(editing.find((o) => o.cls.id === C.c6b)).toMatchObject({ period: 3, free: true });
+  });
+});
+
+describe('classOptionsForTeacherSlot busy detail', () => {
+  const busyOf = (teacherId: string, day: DayIndex, defaultPeriod: number, subjectId: string, classId: string, e: Entry[] = entries) =>
+    classOptionsForTeacherSlot({ ctx, entries: e, teacherId, day, defaultPeriod, subjectId }).find((o) => o.cls.id === classId)?.busy;
+
+  it('free classes carry no busy detail', () => {
+    expect(busyOf(T.perera, 2, 5, S.maths, C.c6a)).toBeUndefined();
+  });
+
+  it('class taken by another lesson: class kind with its subject and teacher', () => {
+    const other = entry('x', 2, 5, [C.c6c], [[S.science, T.gunasekara]]);
+    expect(busyOf(T.perera, 2, 5, S.maths, C.c6c, [...entries, other])).toEqual({
+      kind: 'class',
+      entryId: 'x',
+      classIds: [C.c6c],
+      subjectId: S.science,
+      teacherId: T.gunasekara,
+    });
+  });
+
+  it('class taken by a group block: class kind with the group key and no single teacher', () => {
+    expect(busyOf(T.perera, 2, 5, S.maths, C.c6b)).toEqual({
+      kind: 'class',
+      entryId: 'e-aesthetic-6b-2-5',
+      classIds: [C.c6b],
+      subjectId: S.music,
+      teacherId: null,
+      groupKey: 'aesthetic',
+    });
+  });
+
+  it('teacher teaching elsewhere: teacher kind with the class and subject they teach', () => {
+    expect(busyOf(T.perera, 2, 4, S.maths, C.c6c)).toEqual({
+      kind: 'teacher',
+      entryId: 'e-6a-2-4',
+      classIds: [C.c6a],
+      subjectId: S.maths,
+      teacherId: T.perera,
+    });
+  });
+
+  it("class taken by the teacher's own lesson reads as the teacher teaching it", () => {
+    expect(busyOf(T.perera, 2, 4, S.maths, C.c6a)).toMatchObject({ kind: 'teacher', entryId: 'e-6a-2-4', classIds: [C.c6a] });
+  });
+});
+
+describe('preferredTeacherFor', () => {
+  const sin = (id: string, day: DayIndex, period: number, teacherId: string | null, classIds: string[] = [C.c6a]) => entry(id, day, period, classIds, [[S.sinhala, teacherId]]);
+
+  it('returns null when nobody teaches the subject to the class', () => {
+    expect(preferredTeacherFor({ entries, classId: C.c6a, subjectId: S.sinhala })).toBeNull();
+    expect(preferredTeacherFor({ entries: [sin('a', 0, 1, null)], classId: C.c6a, subjectId: S.sinhala })).toBeNull();
+  });
+
+  it('picks the teacher with the most periods of that subject in that class', () => {
+    const e = [sin('a', 0, 1, T.rSilva), sin('b', 1, 1, T.ranasinghe), sin('c', 2, 1, T.ranasinghe), sin('d', 3, 1, T.rSilva, [C.c6b]), sin('e', 4, 1, T.rSilva, [C.c6b])];
+    expect(preferredTeacherFor({ entries: e, classId: C.c6a, subjectId: S.sinhala })).toBe(T.ranasinghe);
+  });
+
+  it('counts combined lessons and group options for the class', () => {
+    const e = [sin('a', 0, 1, T.rSilva), sin('b', 1, 1, T.ranasinghe, [C.c6a, C.c6b]), entry('g', 2, 1, [C.c6a], [[S.sinhala, T.ranasinghe], [S.tamil, T.rajan]], 'lang')];
+    expect(preferredTeacherFor({ entries: e, classId: C.c6a, subjectId: S.sinhala })).toBe(T.ranasinghe);
+  });
+
+  it('excludes the entry being edited', () => {
+    const e = [sin('a', 0, 1, T.rSilva), sin('b', 1, 1, T.ranasinghe), sin('c', 2, 1, T.ranasinghe)];
+    expect(preferredTeacherFor({ entries: e, classId: C.c6a, subjectId: S.sinhala })).toBe(T.ranasinghe);
+    expect(preferredTeacherFor({ entries: e, classId: C.c6a, subjectId: S.sinhala, excludeEntryId: 'b' })).toBe(T.rSilva);
+  });
+
+  it('breaks ties by the earliest lesson in the week', () => {
+    const e = [sin('a', 3, 1, T.rSilva), sin('b', 1, 2, T.ranasinghe)];
+    expect(preferredTeacherFor({ entries: e, classId: C.c6a, subjectId: S.sinhala })).toBe(T.ranasinghe);
   });
 });
