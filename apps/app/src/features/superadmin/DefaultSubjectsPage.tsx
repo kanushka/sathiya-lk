@@ -40,7 +40,10 @@ export function DefaultSubjectsPage({ doc: injected, writer = firestorePlatformW
   const [deleting, setDeleting] = useState<number | null>(null);
   const [busy, setBusy] = useState(false);
 
+  const ready = !state.loading && !state.error;
+
   async function persist(subjects: DefaultSubject[]): Promise<boolean> {
+    if (!ready) return false;
     setBusy(true);
     try {
       await writer.saveDefaultSubjects({ subjects, updatedAt: Date.now() });
@@ -70,6 +73,7 @@ export function DefaultSubjectsPage({ doc: injected, writer = firestorePlatformW
   }
 
   const open = (index: number | null) => {
+    if (!ready) return;
     setErrors({});
     setEditing({ index, draft: index === null ? blank : (list[index] ?? blank) });
   };
@@ -83,7 +87,7 @@ export function DefaultSubjectsPage({ doc: injected, writer = firestorePlatformW
           <h1 className="mb-1 text-[26px] font-bold">{t('subjects.title')}</h1>
           <p className="text-sm text-ink-muted">{t('subjects.intro')}</p>
         </div>
-        <Button variant="primary" onClick={() => open(null)}>
+        <Button variant="primary" disabled={!ready} onClick={() => open(null)}>
           {t('subjects.add')}
         </Button>
       </div>
@@ -120,10 +124,10 @@ export function DefaultSubjectsPage({ doc: injected, writer = firestorePlatformW
                 </Td>
                 <Td>
                   <span className="flex gap-2">
-                    <Button size="sm" aria-label={t('subjects.edit', { name: s.nameEn })} onClick={() => open(i)}>
+                    <Button size="sm" aria-label={t('subjects.edit', { name: s.nameEn })} disabled={!ready} onClick={() => open(i)}>
                       {t('buttons.edit', { ns: 'common' })}
                     </Button>
-                    <Button size="sm" variant="danger" aria-label={t('subjects.delete', { name: s.nameEn })} onClick={() => setDeleting(i)}>
+                    <Button size="sm" variant="danger" aria-label={t('subjects.delete', { name: s.nameEn })} disabled={!ready} onClick={() => setDeleting(i)}>
                       {t('buttons.delete', { ns: 'common' })}
                     </Button>
                   </span>

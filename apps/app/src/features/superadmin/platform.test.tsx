@@ -6,7 +6,7 @@ import { renderWithSchool } from '../../test/renderWithSchool';
 import { AnnouncementBanner } from './AnnouncementBanner';
 import { AnnouncementsPage } from './AnnouncementsPage';
 import { DefaultSubjectsPage } from './DefaultSubjectsPage';
-import type { PlatformConfig, PlatformWriter } from './platform';
+import { TermsExistsError, type PlatformConfig, type PlatformWriter } from './platform';
 import { TermsPage } from './TermsPage';
 
 const opts = { ctx, claims: { super: true } };
@@ -104,6 +104,21 @@ describe('DefaultSubjectsPage', () => {
     vi.restoreAllMocks();
   });
 
+  it.each([
+    ['loading', { loading: true }],
+    ['errored', { loading: false, error: new Error('denied') }],
+  ])('blocks add, edit and delete while the list is %s', (_n, doc) => {
+    const writer = fakeWriter();
+    renderWithSchool(<DefaultSubjectsPage doc={doc} writer={writer} />, opts);
+    expect(screen.getByRole('button', { name: 'Add subject' })).toBeDisabled();
+    expect(writer.saveDefaultSubjects).not.toHaveBeenCalled();
+  });
+
+  it('disables edit and delete until loaded', () => {
+    renderWithSchool(<DefaultSubjectsPage doc={{ loading: false, data: existing }} writer={fakeWriter()} />, opts);
+    expect(screen.getByRole('button', { name: 'Edit Mathematics' })).toBeEnabled();
+  });
+
   it('validates required fields, short length and hex colour', async () => {
     const writer = fakeWriter();
     renderWithSchool(<DefaultSubjectsPage doc={{ loading: false, data: existing }} writer={writer} />, opts);
@@ -182,5 +197,27 @@ describe('TermsPage', () => {
     await userEvent.click(dlg.getByRole('button', { name: 'Publish' }));
     expect(await dlg.findByText('That version already exists')).toBeInTheDocument();
     expect(writer.publishTerms).not.toHaveBeenCalled();
+  });
+
+  it('surfaces the writer exists-error as the duplicate error', async () => {
+    const writer = fakeWriter();
+    vi.mocked(writer.publishTerms).mockRejectedValue(new TermsExistsError('2027-01'));
+    renderWithSchool(<TermsPage {...props(writer)} />, opts);
+    await userEvent.click(screen.getByRole('button', { name: 'New version' }));
+    const dlg = within(screen.getByRole('dialog'));
+    await userEvent.type(dlg.getByLabelText('Version id'), '2027-01');
+    await userEvent.type(dlg.getByLabelText('Terms (Markdown)'), 'T');
+    await userEvent.type(dlg.getByLabelText('Privacy policy (Markdown)'), 'P');
+    await userEvent.click(dlg.getByRole('button', { name: 'Publish' }));
+    expect(await dlg.findByText('That version already exists')).toBeInTheDocument();
+  });
+
+  it.each([
+    ['loading', { data: [], loading: true }],
+    ['errored', { data: [], loading: false, error: new Error('denied') }],
+  ])('disables Publish while versions are %s', async (_n, versions) => {
+    renderWithSchool(<TermsPage versions={versions} config={{ loading: false, data: config() }} writer={fakeWriter()} />, opts);
+    await userEvent.click(screen.getByRole('button', { name: 'New version' }));
+    expect(within(screen.getByRole('dialog')).getByRole('button', { name: 'Publish' })).toBeDisabled();
   });
 });

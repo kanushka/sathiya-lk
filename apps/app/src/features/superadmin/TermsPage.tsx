@@ -12,7 +12,7 @@ import { Modal } from '../../ui/Modal';
 import { Table, TBody, Td, Th, THead, Tr } from '../../ui/Table';
 import { useToast } from '../../ui/Toast';
 import { formatDate } from './format';
-import { firestorePlatformWriter, type PlatformConfig, type PlatformWriter, type TermsVersion } from './platform';
+import { firestorePlatformWriter, termsCollectionPath, TermsExistsError, type PlatformConfig, type PlatformWriter, type TermsVersion } from './platform';
 
 export interface TermsPageProps {
   versions?: CollectionState<TermsVersion>;
@@ -26,7 +26,7 @@ export function TermsPage({ versions: injectedVersions, config: injectedConfig, 
   const { t } = useTranslation('superadmin');
   const { lang } = useLang();
   const toast = useToast();
-  const liveVersions = useCollection<TermsVersion>(injectedVersions ? null : 'platform/terms/versions', orderBy('publishedAt', 'desc'));
+  const liveVersions = useCollection<TermsVersion>(injectedVersions ? null : termsCollectionPath, orderBy('publishedAt', 'desc'));
   const liveConfig = useDoc<PlatformConfig>(injectedConfig ? null : paths.platform.config);
   const versionsState = injectedVersions ?? liveVersions;
   const config = injectedConfig ?? liveConfig;
@@ -64,6 +64,10 @@ export function TermsPage({ versions: injectedVersions, config: injectedConfig, 
       toast.show(t('terms.published', { version: id }), 'success');
       setOpen(false);
     } catch (err) {
+      if (err instanceof TermsExistsError) {
+        setErrors({ version: t('terms.errors.duplicate') });
+        return;
+      }
       toast.show(t('terms.failed', { message: err instanceof Error ? err.message : String(err) }), 'error');
     } finally {
       setBusy(false);
@@ -122,7 +126,7 @@ export function TermsPage({ versions: injectedVersions, config: injectedConfig, 
         footer={
           <>
             <Button onClick={() => setOpen(false)}>{t('buttons.cancel', { ns: 'common' })}</Button>
-            <Button variant="primary" disabled={busy} onClick={() => void publish()}>
+            <Button variant="primary" disabled={busy || versionsState.loading || !!versionsState.error} onClick={() => void publish()}>
               {t('terms.publish')}
             </Button>
           </>

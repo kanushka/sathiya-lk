@@ -1,5 +1,5 @@
 import { paths } from '@sathiya/core';
-import { doc, setDoc, writeBatch } from 'firebase/firestore';
+import { doc, runTransaction, setDoc } from 'firebase/firestore';
 import { db } from '../../lib/firebase';
 
 export interface Announcement {
@@ -39,14 +39,26 @@ export interface PlatformWriter {
   publishTerms(v: TermsVersion): Promise<void>;
 }
 
+export class TermsExistsError extends Error {
+  constructor(public readonly version: string) {
+    super(`Terms version ${version} already exists`);
+    this.name = 'TermsExistsError';
+  }
+}
+
+export const termsCollectionPath = paths.platform.terms('_').slice(0, -1);
+
 export const firestorePlatformWriter: PlatformWriter = {
   saveDefaultSubjects: (d) => setDoc(doc(db, paths.platform.defaultSubjects), d),
-  saveAnnouncement: (announcement) => setDoc(doc(db, paths.platform.config), { announcement }, { merge: true }),
+  saveAnnouncement: ({ textSi, ...rest }) =>
+    setDoc(doc(db, paths.platform.config), { announcement: { ...rest, ...(textSi !== undefined && { textSi }) } }, { merge: true }),
   async publishTerms(v) {
-    const batch = writeBatch(db);
-    batch.set(doc(db, paths.platform.terms(v.version)), v);
-    batch.set(doc(db, paths.platform.config), { currentTermsVersion: v.version }, { merge: true });
-    await batch.commit();
+    const versionRef = doc(db, paths.platform.terms(v.version));
+    await runTransaction(db, async (tx) => {
+      if ((await tx.get(versionRef)).exists()) throw new TermsExistsError(v.version);
+      tx.set(versionRef, v);
+      tx.set(doc(db, paths.platform.config), { currentTermsVersion: v.version }, { merge: true });
+    });
   },
 };
 
