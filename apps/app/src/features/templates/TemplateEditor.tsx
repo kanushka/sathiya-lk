@@ -103,7 +103,7 @@ export function TemplateEditor({ draft, errors, readOnly, onChange }: TemplateEd
                 disabled={readOnly}
                 onChange={(e) => patchRow(i, { end: e.target.value })}
               />
-              <span className="flex-1 text-[13px] text-ink-soft">{t('editor.minutes', { n: Math.max(toMinutes(r.end) - toMinutes(r.start), 0) })}</span>
+              <span className="flex-1 text-[13px] text-ink-soft">{/^\d\d:\d\d$/.test(r.start) && /^\d\d:\d\d$/.test(r.end) ? t('editor.minutes', { n: Math.max(toMinutes(r.end) - toMinutes(r.start), 0) }) : ''}</span>
               {!readOnly && (
                 <button type="button" aria-label={t('editor.remove', { n })} className="border-0 bg-transparent text-base text-ink-muted" onClick={() => setRows(rows.filter((_, j) => j !== i))}>
                   ×

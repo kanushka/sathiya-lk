@@ -28,7 +28,7 @@ export function InlineInput({ label, value, readOnly, required, maxLength, class
   return (
     <input
       aria-label={label}
-      className={cx(inputClass, 'h-9 border-transparent bg-transparent hover:border-line-strong', className)}
+      className={cx(inputClass, 'h-9 border-transparent bg-transparent', !readOnly && 'hover:border-line-strong', className)}
       value={draft ?? value}
       readOnly={readOnly}
       maxLength={maxLength}

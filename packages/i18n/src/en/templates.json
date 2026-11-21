@@ -37,6 +37,7 @@
   },
   "errors": {
     "name": "Enter a template name.",
+    "empty": "Row {{row}}: enter a valid time.",
     "noPeriod": "Add at least one period.",
     "order": "Row {{row}}: the start must be before the end.",
     "overlap": "Row {{row}} overlaps the previous row. Rows must run in time order."

@@ -15,13 +15,20 @@ export function NewTemplateModal({ onCreate, onClose }: NewTemplateModalProps) {
   const { t } = useTranslation('templates');
   const [name, setName] = useState('');
   const [saving, setSaving] = useState(false);
+  const [failed, setFailed] = useState(false);
 
   async function submit(e: FormEvent) {
     e.preventDefault();
     if (saving || name.trim() === '') return;
     setSaving(true);
-    await onCreate(name.trim());
-    onClose();
+    setFailed(false);
+    try {
+      await onCreate(name.trim());
+      onClose();
+    } catch {
+      setFailed(true);
+      setSaving(false);
+    }
   }
 
   return (
@@ -32,6 +39,11 @@ export function NewTemplateModal({ onCreate, onClose }: NewTemplateModalProps) {
       onClose={onClose}
       footer={
         <>
+          {failed && (
+            <p role="alert" className="mr-auto text-sm font-medium text-[#A3262A]">
+              {t('page.saveFailed')}
+            </p>
+          )}
           <Button onClick={onClose}>{t('new.cancel')}</Button>
           <Button variant="primary" type="submit" form="template-form" disabled={saving || name.trim() === ''}>
             {t('new.create')}

@@ -88,6 +88,27 @@ describe('templates page', () => {
     expect(api.createTemplate).toHaveBeenCalledWith(ctx.school.id, 'Exam week', expect.any(Array));
   });
 
+  it('keeps the modal usable and shows an error when create fails', async () => {
+    const user = setup();
+    vi.mocked(api.createTemplate).mockRejectedValue(new Error('boom'));
+    await user.click(screen.getByRole('button', { name: '+ New template' }));
+    const dialog = screen.getByRole('dialog');
+    await user.type(within(dialog).getByLabelText('Name'), 'Exam week');
+    await user.click(within(dialog).getByRole('button', { name: 'Create template' }));
+    expect(await within(dialog).findByRole('alert')).toBeInTheDocument();
+    expect(within(dialog).getByRole('button', { name: 'Create template' })).toBeEnabled();
+  });
+
+  it('rejects a blank time and never shows NaN minutes', async () => {
+    const user = setup();
+    const start = screen.getByLabelText('Start, row 1');
+    fireEvent.change(start, { target: { value: '' } });
+    expect(screen.queryByText(/NaN/)).not.toBeInTheDocument();
+    await user.click(screen.getByRole('button', { name: 'Save template' }));
+    expect(api.saveTemplate).not.toHaveBeenCalled();
+    expect(screen.getByText(/Row 1: enter a valid time/)).toBeInTheDocument();
+  });
+
   it('read-only hides every write control', () => {
     flags.readOnly = true;
     setup();

@@ -1,18 +1,19 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
 // Copyright (C) 2026 Kanushka Gayan
-import { onColor } from '@sathiya/core';
+import { onColor, pickName, type Lang } from '@sathiya/core';
 import { useTranslation } from 'react-i18next';
 
 export interface BrandPreviewProps {
   name: string;
+  nameSi?: string;
   primary: string;
   second: string;
   logoUrl?: string | null;
   year?: string;
 }
 
-export function BrandPreview({ name, primary, second, logoUrl, year }: BrandPreviewProps) {
-  const { t } = useTranslation('register');
+export function BrandPreview({ name, nameSi, primary, second, logoUrl, year }: BrandPreviewProps) {
+  const { t, i18n } = useTranslation('register');
   const on = onColor(primary);
   return (
     <div className="flex flex-col gap-2">
@@ -25,7 +26,7 @@ export function BrandPreview({ name, primary, second, logoUrl, year }: BrandPrev
             <span aria-hidden="true" className="h-9 w-9 rounded-lg" style={{ background: second }} />
           )}
           <div>
-            <strong className="block text-sm">{name}</strong>
+            <strong className="block text-sm">{pickName({ nameEn: name, nameSi }, i18n.language as Lang)}</strong>
             <span className="text-xs opacity-80">{t('brand.previewTimetable', { year: year ?? new Date().getFullYear() })}</span>
           </div>
         </div>

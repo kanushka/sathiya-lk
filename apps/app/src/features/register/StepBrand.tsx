@@ -10,13 +10,14 @@ import type { BrandDraft } from './model';
 
 export interface StepBrandProps {
   schoolName: string;
+  schoolNameSi?: string;
   value: BrandDraft;
   onChange(next: BrandDraft): void;
   onBack(): void;
   onNext(): void;
 }
 
-export function StepBrand({ schoolName, value, onChange, onBack, onNext }: StepBrandProps) {
+export function StepBrand({ schoolName, schoolNameSi, value, onChange, onBack, onNext }: StepBrandProps) {
   const { t } = useTranslation('register');
   const [logoUrl, setLogoUrl] = useState<string | null>(null);
 
@@ -43,7 +44,7 @@ export function StepBrand({ schoolName, value, onChange, onBack, onNext }: StepB
           />
         </div>
         <div className="flex-[1_1_260px]">
-          <BrandPreview name={schoolName} primary={value.primary} second={value.second} logoUrl={logoUrl} />
+          <BrandPreview name={schoolName} nameSi={schoolNameSi} primary={value.primary} second={value.second} logoUrl={logoUrl} />
         </div>
       </div>
       <div className="mt-7 flex justify-between border-t border-line-soft pt-5">

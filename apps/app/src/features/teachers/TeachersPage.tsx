@@ -29,7 +29,7 @@ export function TeachersPage() {
   const { school, teachers, subjects, classes } = useSchool();
   const readOnly = useReadOnly();
   const toast = useToast();
-  const passwords = useSessionPasswords();
+  const { passwords } = useSessionPasswords();
   const printLabels = usePrintLabels();
   const [search, setSearch] = useState('');
   const [dialog, setDialog] = useState<Dialog>(null);

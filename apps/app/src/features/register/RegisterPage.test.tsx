@@ -405,6 +405,16 @@ describe('register', () => {
       expect(await screen.findByRole('alert')).toHaveTextContent(text);
     });
 
+    it('shows the generic message rather than raw backend text for unmapped errors', async () => {
+      const user = userEvent.setup();
+      vi.mocked(api.registerSchool).mockRejectedValue(new ApiError('invalid', 'raw backend text', { code: 'something-else' }));
+      renderAuth(<RegisterPage />, opts);
+      await submitSignedIn(user);
+      const alert = await screen.findByRole('alert');
+      expect(alert).not.toHaveTextContent('raw backend text');
+      expect(alert).toHaveTextContent(/went wrong|try again/i);
+    });
+
     it('email-unverified sends the user back to the verify gate', async () => {
       const user = userEvent.setup();
       vi.mocked(api.registerSchool).mockRejectedValue(new ApiError('invalid', 'x', { code: 'email-unverified' }));

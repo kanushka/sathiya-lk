@@ -18,6 +18,36 @@ export interface PlanEditorProps {
   onChange: (plan: PlanItem[]) => void;
 }
 
+function PerWeekInput({ label, value, disabled, onCommit }: { label: string; value: number; disabled: boolean; onCommit: (n: number) => void }) {
+  const [draft, setDraft] = useState<string | null>(null);
+
+  function commit() {
+    if (draft === null) return;
+    const text = draft.trim();
+    setDraft(null);
+    if (!/^\d+$/.test(text)) return;
+    const n = Number(text);
+    if (n !== value) onCommit(n);
+  }
+
+  return (
+    <input
+      type="number"
+      min={0}
+      aria-label={label}
+      value={draft ?? value}
+      disabled={disabled}
+      className="h-9 w-14 rounded-lg border border-line-strong text-center text-[15px] font-bold disabled:bg-slate-50"
+      onChange={(e) => setDraft(e.target.value)}
+      onBlur={commit}
+      onKeyDown={(e) => {
+        if (e.key === 'Enter') e.currentTarget.blur();
+        if (e.key === 'Escape') setDraft(null);
+      }}
+    />
+  );
+}
+
 const linkBtn = 'border-0 bg-transparent text-sm font-semibold text-brand hover:underline';
 
 export function PlanEditor({ plan, capacity, subjects, readOnly, onChange }: PlanEditorProps) {
@@ -103,14 +133,11 @@ export function PlanEditor({ plan, capacity, subjects, readOnly, onChange }: Pla
                   </>
                 )}
               </div>
-              <input
-                type="number"
-                min={0}
-                aria-label={t('plan.perWeekFor', { name })}
+              <PerWeekInput
+                label={t('plan.perWeekFor', { name })}
                 value={p.perWeek}
                 disabled={readOnly}
-                className="h-9 w-14 rounded-lg border border-line-strong text-center text-[15px] font-bold disabled:bg-slate-50"
-                onChange={(e) => replace(i, { ...p, perWeek: Math.max(0, Math.floor(Number(e.target.value) || 0)) })}
+                onCommit={(perWeek) => replace(i, { ...p, perWeek })}
               />
               <span className="w-16 text-[13px] text-ink-soft">{t('plan.perWeek')}</span>
               {!readOnly && (

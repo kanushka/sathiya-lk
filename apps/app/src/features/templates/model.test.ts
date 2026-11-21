@@ -12,6 +12,11 @@ describe('validateTemplate', () => {
     expect(validateTemplate({ name: 'A', mode: 'same', rows: [p('08:00', '08:40'), p('08:40', '09:20')] })).toEqual([]);
   });
 
+  it('rejects a blank or malformed time as empty', () => {
+    expect(validateTemplate({ name: 'A', mode: 'same', rows: [p('', '08:40')] })).toEqual([{ code: 'empty', day: null, row: 0 }]);
+    expect(validateTemplate({ name: 'A', mode: 'same', rows: [p('08:00', '8:4')] })).toEqual([{ code: 'empty', day: null, row: 0 }]);
+  });
+
   it('rejects overlapping rows', () => {
     const errs = validateTemplate({ name: 'A', mode: 'same', rows: [p('08:00', '08:40'), p('08:30', '09:10')] });
     expect(errs).toEqual([{ code: 'overlap', day: null, row: 1 }]);

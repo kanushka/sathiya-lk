@@ -15,8 +15,12 @@ vi.mock('./api');
 vi.mock('./printSlips', async (orig) => ({ ...(await orig<typeof import('./printSlips')>()), printSlips: vi.fn() }));
 vi.mock('../../lib/callable', async (orig) => ({ ...(await orig<typeof import('../../lib/callable')>()), call: vi.fn() }));
 
+const flags = vi.hoisted(() => ({ readOnly: false }));
+vi.mock('../../ui/AdminLayout', async (orig) => ({ ...(await orig<typeof import('../../ui/AdminLayout')>()), useReadOnly: () => flags.readOnly }));
+
 beforeEach(() => {
   vi.resetAllMocks();
+  flags.readOnly = false;
   clearSessionPasswords();
   vi.mocked(printSlips).mockResolvedValue(true);
 });
@@ -108,7 +112,7 @@ describe('teachers page', () => {
   it('prints slips with session passwords and reset-needed for the rest', async () => {
     const user = userEvent.setup();
     const perera = ctx.teachers.find((t) => t.staffId === 'SCC024')!;
-    setSessionPassword(perera.id, 'abcd2345');
+    setSessionPassword('test-user:siripura', perera.id, 'abcd2345');
     render();
     await user.click(screen.getByRole('button', { name: 'Print all login slips' }));
     await waitFor(() => expect(printSlips).toHaveBeenCalled());
@@ -137,5 +141,24 @@ describe('teachers page', () => {
     await user.click(within(row).getByRole('button', { name: 'Delete' }));
     await user.click(within(screen.getByRole('dialog')).getByRole('button', { name: 'Delete' }));
     expect(await screen.findByText(/Used in 3 slots/)).toBeInTheDocument();
+  });
+
+  it('saves an edit to a teacher whose staff ID uses an old prefix', async () => {
+    const user = userEvent.setup();
+    vi.mocked(api.updateTeacher).mockResolvedValue(undefined);
+    renderWithSchool(<TeachersPage />, { ctx: { ...ctx, school: { ...ctx.school, staffPrefix: 'XYZ' } }, entries });
+    const row = screen.getByText('Mrs. N. Perera').closest('tr')!;
+    await user.click(within(row).getByRole('button', { name: 'Edit' }));
+    const dialog = screen.getByRole('dialog');
+    await user.click(within(dialog).getByRole('button', { name: 'Save teacher' }));
+    await waitFor(() => expect(api.updateTeacher).toHaveBeenCalled());
+  });
+
+  it('read-only hides every write control', () => {
+    flags.readOnly = true;
+    render();
+    for (const name of ['+ Add teacher', 'Edit', 'Delete']) {
+      expect(screen.queryByRole('button', { name })).not.toBeInTheDocument();
+    }
   });
 });

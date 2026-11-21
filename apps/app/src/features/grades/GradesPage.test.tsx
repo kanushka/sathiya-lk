@@ -80,6 +80,25 @@ describe('grades page', () => {
     expect(api.addClass).toHaveBeenCalledWith('siripura', { gradeId: G.g6, name: '6D', templateId: 'tpl-default' });
   });
 
+  it('typing a per-week count writes once, on blur, and reverts when cleared', async () => {
+    const user = await openGrade6();
+    const maths = screen.getByLabelText('Periods per week for Mathematics');
+    await user.clear(maths);
+    await user.type(maths, '12');
+    expect(api.saveGradePlan).not.toHaveBeenCalled();
+    await user.tab();
+    expect(api.saveGradePlan).toHaveBeenCalledTimes(1);
+    const plan = vi.mocked(api.saveGradePlan).mock.calls[0]![2];
+    expect(plan.find((p) => p.kind === 'subject' && p.subjectId === S.maths)).toMatchObject({ perWeek: 12 });
+
+    vi.mocked(api.saveGradePlan).mockClear();
+    const english = screen.getByLabelText('Periods per week for English');
+    await user.clear(english);
+    await user.tab();
+    expect(api.saveGradePlan).not.toHaveBeenCalled();
+    expect(english).toHaveValue(Number((grade6.plan.find((p) => p.kind === 'subject' && p.subjectId === S.english) as { perWeek: number }).perWeek));
+  });
+
   it('read-only hides every write control', async () => {
     flags.readOnly = true;
     const user = await openGrade6();

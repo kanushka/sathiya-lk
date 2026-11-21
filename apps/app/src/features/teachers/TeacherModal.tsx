@@ -12,7 +12,7 @@ import { useToast } from '../../ui/Toast';
 import { useSchool } from '../../app/SchoolProvider';
 import * as api from './api';
 import { LoginSlip } from './LoginSlip';
-import { setSessionPassword, useSessionPasswords } from './sessionPasswords';
+import { useSessionPasswords } from './sessionPasswords';
 import { teacherLoginUrl } from './slip';
 
 export interface TeacherModalProps {
@@ -39,7 +39,7 @@ export function TeacherModal({ teacher, onClose }: TeacherModalProps) {
   const { school, teachers, subjects } = useSchool();
   const readOnly = useReadOnly();
   const toast = useToast();
-  const passwords = useSessionPasswords();
+  const { passwords, set: setSessionPassword } = useSessionPasswords();
   const [form, setForm] = useState<Form>(() => ({
     staffId: teacher?.staffId ?? formatStaffId(school.staffPrefix, nextStaffNumber(teachers.map((x) => x.staffId), school.staffPrefix)),
     name: teacher?.name ?? '',
@@ -64,11 +64,13 @@ export function TeacherModal({ teacher, onClose }: TeacherModalProps) {
   const maxPerDay = Number(form.maxPerDay);
   const errors = {
     name: form.name.trim() ? null : t('modal.errors.name'),
-    staffId: !isValidStaffId(school.staffPrefix, form.staffId)
-      ? t('modal.errors.staffId', { example: formatStaffId(school.staffPrefix, 24) })
-      : teachers.some((x) => x.id !== teacher?.id && x.staffId === form.staffId)
-        ? t('modal.errors.staffIdTaken')
-        : null,
+    staffId: teacher
+      ? null
+      : !isValidStaffId(school.staffPrefix, form.staffId)
+        ? t('modal.errors.staffId', { example: formatStaffId(school.staffPrefix, 24) })
+        : teachers.some((x) => x.staffId === form.staffId)
+          ? t('modal.errors.staffIdTaken')
+          : null,
     subjects: form.isPrimary || form.subjectIds.length > 0 ? null : t('modal.errors.subjects'),
     grades: form.grades.length > 0 ? null : t('modal.errors.grades'),
     maxPerDay: Number.isInteger(maxPerDay) && maxPerDay >= 1 && maxPerDay <= 10 ? null : t('modal.errors.maxPerDay'),

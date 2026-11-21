@@ -12,7 +12,13 @@ import { SubjectsPage } from './SubjectsPage';
 vi.mock('./api');
 vi.mock('../../lib/callable', async (orig) => ({ ...(await orig<typeof import('../../lib/callable')>()), call: vi.fn() }));
 
-beforeEach(() => vi.resetAllMocks());
+const flags = vi.hoisted(() => ({ readOnly: false }));
+vi.mock('../../ui/AdminLayout', async (orig) => ({ ...(await orig<typeof import('../../ui/AdminLayout')>()), useReadOnly: () => flags.readOnly }));
+
+beforeEach(() => {
+  vi.resetAllMocks();
+  flags.readOnly = false;
+});
 
 const render = () => renderWithSchool(<SubjectsPage />, { ctx, entries });
 
@@ -78,5 +84,15 @@ describe('subjects page', () => {
     await user.tab();
     expect(api.updateSubject).not.toHaveBeenCalled();
     expect(en).toHaveValue('Mathematics');
+  });
+
+  it('read-only hides write controls and makes inline inputs readOnly', () => {
+    flags.readOnly = true;
+    render();
+    for (const name of ['+ Add subject', 'Load standard Sri Lankan list', 'Delete']) {
+      expect(screen.queryByRole('button', { name })).not.toBeInTheDocument();
+    }
+    expect(screen.getByLabelText('English name of Mathematics')).toHaveAttribute('readonly');
+    expect(screen.getByLabelText('Short name of Mathematics')).toHaveAttribute('readonly');
   });
 });

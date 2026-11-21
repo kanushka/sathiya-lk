@@ -4,7 +4,6 @@ import { useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../../app/AuthProvider';
-import { ApiError } from '../../lib/callable';
 import { cx } from '../../ui/cx';
 import { useToast } from '../../ui/Toast';
 import { BrandMark, LanguageToggle } from '../auth/AuthChrome';
@@ -103,7 +102,7 @@ export function RegisterPage() {
       } else if (failure) {
         setError({ field: null, message: t(`errors.${failure.code === 'rate-limited' ? 'rateLimited' : 'alreadyHasSchool'}`) });
       } else {
-        setError({ field: null, message: err instanceof ApiError && err.message ? err.message : t('errors.generic') });
+        setError({ field: null, message: t('errors.generic') });
       }
       setBusy(false);
       return;
@@ -177,6 +176,7 @@ export function RegisterPage() {
         {!needsGate && step === 2 && (
           <StepBrand
             schoolName={school.nameEn}
+            schoolNameSi={school.nameSi}
             value={brand}
             onChange={setBrand}
             onBack={() => setStep(1)}
