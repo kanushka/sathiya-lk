@@ -23,7 +23,7 @@ import { Button } from '../../ui/Button';
 import { cx } from '../../ui/cx';
 import { Modal } from '../../ui/Modal';
 import { Select } from '../../ui/Select';
-import { teacherReason } from './labels';
+import { limitWarning, teacherReason } from './labels';
 
 export interface BlockEditorProps {
   open: boolean;
@@ -208,7 +208,7 @@ function BlockEditorBody({ onClose, baseClassId, day, period, mode, entry, entri
             ) : (
               <>
                 {p?.hard && <p className="text-xs font-semibold text-[#A3262A]">{reasonText(p.hard)}</p>}
-                {p?.limit && <p className="text-xs font-semibold text-[#7A5A12]">{t('block.limitWarn', { load: p.limit.loadToday, max: p.limit.teacher.maxPerDay })}</p>}
+                {p?.limit && <p className="text-xs font-semibold text-[#7A5A12]">{limitWarning(t, p.limit.loadToday, p.limit.teacher.maxPerDay)}</p>}
                 {p?.duplicate && <p className="text-xs font-semibold text-[#A3262A]">{t('block.duplicate')}</p>}
               </>
             );

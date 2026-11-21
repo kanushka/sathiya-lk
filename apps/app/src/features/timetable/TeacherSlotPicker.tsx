@@ -6,6 +6,7 @@ import {
   effectivePlan,
   periodsFor,
   pickName,
+  teacherDayLoad,
   type ClassOption,
   type DayIndex,
   type Entry,
@@ -23,7 +24,7 @@ import { useReadOnly } from '../../ui/AdminLayout';
 import { Button } from '../../ui/Button';
 import { Combobox } from '../../ui/Combobox';
 import { Modal } from '../../ui/Modal';
-import { classNames } from './labels';
+import { classNames, limitWarning } from './labels';
 import type { GroupItem } from './SlotPicker';
 
 export interface TeacherSlotPickerProps {
@@ -89,6 +90,8 @@ function TeacherSlotPickerBody({ onClose, teacherId, day, period, entries, editi
 
   const subject = ctx.subjects.find((s) => s.id === subjectId);
   const subjectName = (s: Subject) => pickName(s, lang);
+  const load = teacherDayLoad(teacher.id, day, editing ? entries.filter((e) => e.id !== editing.id) : entries);
+  const atLimit = load >= teacher.maxPerDay;
   const free = options.filter((o) => o.free);
   const taken = options.filter((o) => !o.free);
 
@@ -206,6 +209,7 @@ function TeacherSlotPickerBody({ onClose, teacherId, day, period, entries, editi
             <p className="mx-0.5 mt-3 text-[13px] text-ink-muted">{t('teacherPicker.noClasses', { subject: subjectName(subject) })}</p>
           ) : (
             <>
+              {atLimit && <p className="mx-0.5 mt-3 text-xs font-semibold text-[#7A5A12]">{limitWarning(t, load, teacher.maxPerDay)}</p>}
               <p className={`${sectionLabel} text-[#1F6B34]`}>{t('teacherPicker.free', { count: free.length })}</p>
               <ul className="m-0 flex list-none flex-col gap-1.5 p-0">{free.map(row)}</ul>
               {taken.length > 0 && (

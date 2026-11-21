@@ -21,7 +21,7 @@ import { useReadOnly } from '../../ui/AdminLayout';
 import { Button } from '../../ui/Button';
 import { Combobox } from '../../ui/Combobox';
 import { Modal } from '../../ui/Modal';
-import { planItemColor, planItemName, teacherReason, teachesAtAll } from './labels';
+import { limitWarning, planItemColor, planItemName, teacherReason, teachesAtAll } from './labels';
 
 export type GroupItem = Extract<PlanItem, { kind: 'group' }>;
 
@@ -238,12 +238,30 @@ function SlotPickerBody({ onClose, classId, day, period, entries, editing, onSav
           </ul>
           <p className={`${sectionLabel} text-[#8A91A3]`}>{t('picker.unavailable', { count: unavailable.length })}</p>
           <ul className="m-0 flex list-none flex-col gap-1 p-0">
-            {unavailable.map((o) => (
-              <li key={o.teacher.id} className="flex items-center gap-2.5 rounded-[10px] bg-[#F6F7F9] px-3 py-2 text-ink-muted">
-                <span className="flex-1 text-[13px] font-semibold">{o.teacher.name}</span>
-                <span className="text-xs">{teacherReason(t, o, ctx, lang, grade.number)}</span>
-              </li>
-            ))}
+            {unavailable.map((o) =>
+              o.reason === 'limit' ? (
+                <li key={o.teacher.id}>
+                  <button
+                    type="button"
+                    disabled={busy}
+                    onClick={() => assign(o.teacher.id)}
+                    className="flex w-full items-center gap-2.5 rounded-[10px] border border-[#F0DDB0] bg-[#FFF9EC] px-3 py-2 text-left hover:bg-[#FBF0D6] focus-visible:outline focus-visible:outline-2 focus-visible:outline-brand disabled:opacity-60"
+                  >
+                    <span className="flex-1 text-[13px] font-semibold text-ink">{o.teacher.name}</span>
+                    <span className="text-xs font-semibold text-[#7A5A12]">{limitWarning(t, o.loadToday, o.teacher.maxPerDay)}</span>
+                    {o.teacher.id === currentTeacher && (
+                      <span className="rounded-full bg-brand/10 px-2 py-0.5 text-xs font-semibold text-brand">{t('picker.current')}</span>
+                    )}
+                    <span className="text-xs font-bold text-brand">{t('picker.assign')}</span>
+                  </button>
+                </li>
+              ) : (
+                <li key={o.teacher.id} className="flex items-center gap-2.5 rounded-[10px] bg-[#F6F7F9] px-3 py-2 text-ink-muted">
+                  <span className="flex-1 text-[13px] font-semibold">{o.teacher.name}</span>
+                  <span className="text-xs">{teacherReason(t, o, ctx, lang, grade.number)}</span>
+                </li>
+              ),
+            )}
           </ul>
         </>
       )}

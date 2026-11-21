@@ -36,6 +36,10 @@ export function teacherReason(t: TFunction, o: TeacherOption, ctx: SchoolContext
   return t('block.notQualified', { grade });
 }
 
+export function limitWarning(t: TFunction, load: number, max: number): string {
+  return t('block.limitWarn', { load, max });
+}
+
 export function teachesAtAll(o: TeacherOption, subjectId: string): boolean {
   return o.reason !== 'not-qualified' || o.teacher.subjectIds.includes(subjectId);
 }

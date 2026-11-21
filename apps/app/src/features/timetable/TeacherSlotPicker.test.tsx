@@ -2,7 +2,7 @@
 // Copyright (C) 2026 Kanushka Gayan
 
 import type { DayIndex, Entry } from '@sathiya/core';
-import { C, ctx, entries6B, S, T } from '@sathiya/core/fixtures';
+import { C, ctx, entries6B, entry, S, T } from '@sathiya/core/fixtures';
 import { screen, waitFor, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
@@ -66,6 +66,21 @@ describe('TeacherSlotPicker', () => {
     await userEvent.click(screen.getByRole('button', { name: /^6A/ }));
     expect(h.onGroup).toHaveBeenCalledWith({ classId: C.c6a, period: 5, subjectId: S.buddhism, item: expect.objectContaining({ key: 'religion' }) });
     expect(h.onSave).not.toHaveBeenCalled();
+  });
+
+  it('warns when the teacher is at the daily limit but still allows assigning', async () => {
+    const full = [1, 2, 3, 6, 7].map((p) => entry(`f${p}`, 2, p, [C.c12a], [[S.buddhism, T.ananda]]));
+    const h = setup({}, [...entries6B, ...full]);
+    await chooseSubject('Buddhism');
+    expect(screen.getByRole('dialog')).toHaveTextContent('⚠ Limit reached · 6/6 today');
+    await userEvent.click(screen.getByRole('button', { name: /^12A/ }));
+    expect(h.onSave).toHaveBeenCalledWith({ day: 2, period: 5, classIds: [C.c12a], lessons: [{ subjectId: S.buddhism, teacherId: T.ananda }] });
+  });
+
+  it('no limit warning below the daily limit', async () => {
+    setup();
+    await chooseSubject('Buddhism');
+    expect(screen.queryByText(/Limit reached/)).not.toBeInTheDocument();
   });
 
   it('primary teacher: lists plan subjects of their grades', async () => {

@@ -74,12 +74,20 @@ describe('SlotPicker', () => {
     expect(item).toHaveTextContent('Busy · 6A Science');
   });
 
-  it('shows limit and grade reasons, hiding teachers who never teach the subject', async () => {
+  it('warns about a limit-reached teacher but still lets them be assigned', async () => {
     const full = [1, 2, 3, 5, 6, 7, 8].map((p) => entry(`f${p}`, 2, p, [C.c12a], [[S.maths, T.bandara]]));
-    setup({}, [...entries6B, ...full]);
+    const h = setup({}, [...entries6B, ...full]);
     await chooseSubject('Mathematics');
-    expect(screen.getByText('Mr. P. Bandara').closest('li')).toHaveTextContent('Limit reached · 7/7 today');
-    expect(screen.queryByRole('button', { name: /Bandara/ })).not.toBeInTheDocument();
+    const bandara = screen.getByRole('button', { name: /Mr. P. Bandara/ });
+    expect(bandara).toHaveTextContent('⚠ Limit reached · 7/7 today');
+    await userEvent.click(bandara);
+    expect(h.onSave).toHaveBeenCalledWith({ day: 2, period: 4, classIds: [C.c6b], lessons: [{ subjectId: S.maths, teacherId: T.bandara }] });
+  });
+
+  it('shows grade reasons, hiding teachers who never teach the subject', async () => {
+    setup();
+    await chooseSubject('Mathematics');
+    expect(screen.queryByRole('button', { name: /Jayawardena/ })).not.toBeInTheDocument();
     expect(screen.getByText('Mr. T. Jayawardena').closest('li')).toHaveTextContent("Doesn't teach Grade 6");
     expect(screen.queryByText('Mr. K. Herath')).not.toBeInTheDocument();
   });
