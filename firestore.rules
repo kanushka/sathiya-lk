@@ -83,12 +83,22 @@ service cloud.firestore {
       }
     }
 
+    // schoolId is written by registerSchool only.
     match /users/{uid} {
       allow read: if signedIn() && request.auth.uid == uid;
-      allow create, update: if signedIn() && request.auth.uid == uid
+      allow create: if signedIn() && request.auth.uid == uid
         && request.resource.data.keys().hasOnly(['lang'])
         && request.resource.data.get('lang', null) in ['en', 'si'];
+      allow update: if signedIn() && request.auth.uid == uid
+        && changed().hasOnly(['lang'])
+        && request.resource.data.get('lang', null) in ['en', 'si'];
     }
+
+    match /reports/{id} {
+      allow read, update: if isSuper();
+    }
+
+    // censusIndex, rateLimits: functions only, no client access.
 
     match /platform/{path=**} {
       allow read: if signedIn();

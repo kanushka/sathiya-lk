@@ -14,6 +14,8 @@ const school = (sid: string, status = 'active') => ({
   grades: [6],
   staffPrefix: 'SCC',
   colors: { primary: '#7A1F3D', second: '#D9A441' },
+  type: 'government',
+  censusNo: '12345',
   status,
   termsVersion: '1',
   acceptedTerms: { version: '1', at: 1, uid: 'u-admin' },
@@ -51,7 +53,10 @@ const seed: Record<string, Record<string, unknown>> = {
   [paths.publishedTeacher('s1', 'y1', 't1')]: { cells: [] },
   [paths.publishedTeacher('s1', 'y1', 't2')]: { cells: [] },
   [paths.publishedClass('s2', 'y1', 'c9')]: { cells: [] },
-  [paths.user('u-admin')]: { lang: 'en' },
+  [paths.user('u-admin')]: { lang: 'en', schoolId: 's1' },
+  'censusIndex/12345': { schoolId: 's1' },
+  'rateLimits/register-uid_2026-11-21_u-admin': { scope: 'register-uid', day: '2026-11-21', count: 1 },
+  'reports/r1': { schoolId: 's1', reason: 'fake', status: 'open', createdAt: 1 },
   [paths.user('u-teacher')]: { lang: 'si' },
   [paths.platform.config]: { maintenance: false },
   [paths.platform.terms('1')]: { body: 'terms' },
@@ -132,6 +137,8 @@ describe('schools/{sid} doc', () => {
       ['termsVersion', '9'],
       ['acceptedTerms', { version: '9', at: 2, uid: 'u-admin' }],
       ['createdAt', 2],
+      ['type', 'private'],
+      ['censusNo', '54321'],
       ['somethingElse', 1],
     ])('denies admin changing %s', async (k, v) => {
       await assertFails(update('admin', s1, { [k]: v }));
@@ -154,6 +161,13 @@ describe('schools/{sid} doc', () => {
       await assertSucceeds(update('admin', s1, { city: 'x'.repeat(80), address: 'a'.repeat(200), phone: '1'.repeat(30) }));
       await env.withSecurityRulesDisabled((ctx) => ctx.firestore().doc(s1).update({ address: 'a', phone: '1' }));
       await assertSucceeds(set('admin', s1, { ...school('s1') }));
+    });
+
+    it('denies admin removing type or censusNo', async () => {
+      const { type: _t, ...noType } = school('s1');
+      const { censusNo: _c, ...noCensus } = school('s1');
+      await assertFails(set('admin', s1, noType));
+      await assertFails(set('admin', s1, noCensus));
     });
 
     it('denies admin removing city', async () => {
@@ -376,6 +390,36 @@ describe('unknown paths', () => {
   deny([['admin', `${paths.school('s1')}/secrets/x`], ['super', 'other/x']], (r, p) => set(r, p, { a: 1 }));
 });
 
+describe('censusIndex (functions only)', () => {
+  const c = 'censusIndex/12345';
+  const n = 'censusIndex/99999';
+  deny([['admin', c], ['super', c], ['noClaims', c], ['anon', c]], read);
+  deny([['admin', 'censusIndex'], ['super', 'censusIndex']], list);
+  deny([['noClaims', n], ['admin', n], ['super', n], ['anon', n]], (r, p) => set(r, p, { schoolId: 'x' }));
+  deny([['admin', c], ['super', c]], del);
+});
+
+describe('rateLimits (functions only)', () => {
+  const k = 'rateLimits/register-uid_2026-11-21_u-admin';
+  deny([['admin', k], ['super', k], ['noClaims', k], ['anon', k]], read);
+  deny([['super', 'rateLimits'], ['anon', 'rateLimits']], list);
+  deny([['admin', k], ['super', k], ['anon', k]], (r, p) => set(r, p, { count: 0 }));
+  deny([['admin', k], ['super', k]], del);
+});
+
+describe('reports', () => {
+  const r1 = 'reports/r1';
+  allow([['super', r1]], read);
+  allow([['super', 'reports']], list);
+  deny([['admin', r1], ['teacher', r1], ['noClaims', r1], ['anon', r1]], read);
+  deny([['admin', 'reports'], ['anon', 'reports']], list);
+  allow([['super', r1]], (r, p) => update(r, p, { status: 'closed' }));
+  deny([['admin', r1], ['noClaims', r1], ['anon', r1]], (r, p) => update(r, p, { status: 'closed' }));
+  const fresh = { schoolId: 's1', reason: 'fake', status: 'open', createdAt: 1 };
+  deny([['anon', 'reports/new'], ['noClaims', 'reports/new'], ['admin', 'reports/new'], ['super', 'reports/new']], (r, p) => set(r, p, fresh));
+  deny([['super', r1], ['admin', r1]], del);
+});
+
 describe('users/{uid}', () => {
   const ua = paths.user('u-admin');
   const un = paths.user('u-new');
@@ -386,13 +430,21 @@ describe('users/{uid}', () => {
   describe('write', () => {
     allow([['noClaims', un]], (r, p) => set(r, p, { lang: 'si' }));
     allow([['admin', ua]], (r, p) => update(r, p, { lang: 'si' }));
-    allow([['admin', ua]], (r, p) => set(r, p, { lang: 'en' }));
+    allow([['admin', ua]], (r, p) => set(r, p, { lang: 'si', schoolId: 's1' }));
     it('denies other keys or values', async () => {
       await assertFails(set('noClaims', un, { lang: 'fr' }));
       await assertFails(set('noClaims', un, { lang: 'en', role: 'admin' }));
       await assertFails(set('noClaims', un, { role: 'admin' }));
       await assertFails(update('admin', ua, { super: true }));
       await assertFails(set('noClaims', un, { lang: 1 }));
+    });
+    it('keeps schoolId functions-only', async () => {
+      await assertSucceeds(update('admin', ua, { lang: 'si' }));
+      await assertFails(update('admin', ua, { schoolId: 's2' }));
+      await assertFails(update('admin', ua, { lang: 'en', schoolId: 's2' }));
+      await assertFails(set('admin', ua, { lang: 'en' }));
+      await assertFails(set('noClaims', un, { lang: 'en', schoolId: 's1' }));
+      await assertFails(set('noClaims', un, { schoolId: 's1' }));
     });
     deny([['teacher', ua], ['super', ua], ['anon', un]], (r, p) => set(r, p, { lang: 'en' }));
     deny([['admin', ua]], del);
