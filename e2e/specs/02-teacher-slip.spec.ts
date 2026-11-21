@@ -16,7 +16,8 @@ test('admin adds a teacher, sees the 8-character password and prints the login s
 
   const modal = page.getByRole('dialog', { name: 'Add teacher' });
   await expect(modal.getByLabel('Staff ID')).toHaveValue('SCC059');
-  await modal.getByLabel('Name').fill('Mrs. E. Tester');
+  await modal.getByLabel('Title').selectOption('Mrs');
+  await modal.getByLabel('Name').fill('E. Tester');
   await modal.getByRole('button', { name: 'Mathematics' }).click();
   await modal.getByRole('group', { name: 'Grades' }).getByRole('button', { name: '6', exact: true }).click();
   await modal.getByRole('button', { name: 'Save teacher' }).click();
