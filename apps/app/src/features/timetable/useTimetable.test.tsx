@@ -1,9 +1,16 @@
+import { renderWithSchool } from '../../test/renderWithSchool';
 import { ApiError } from '../../lib/callable';
 import { C, ctx, entries6B, S, T } from '@sathiya/core/fixtures';
 import type { EntryDraft } from '@sathiya/core';
 import { act, screen, waitFor } from '@testing-library/react';
 import { describe, expect, it, vi } from 'vitest';
-import { renderWithSchool } from '../../test/renderWithSchool';
+import { render } from '@testing-library/react';
+import { I18nextProvider } from 'react-i18next';
+import { useState, type ReactNode } from 'react';
+import { SchoolContextProvider } from '../../app/SchoolProvider';
+import { testI18n } from '../../test/render';
+import { ToastProvider } from '../../ui/Toast';
+import type { Entry } from '@sathiya/core';
 import { TimetableApiContext, useTimetable, type TimetableApi, type UseTimetable } from './useTimetable';
 
 let latest: UseTimetable;
@@ -99,5 +106,74 @@ describe('useTimetable', () => {
       expect(await p).toBe(false);
     });
     expect(screen.getByTestId('n')).toHaveTextContent(String(entries6B.length));
+  });
+
+  describe('snapshot ordering', () => {
+    let setServer!: (e: Entry[]) => void;
+    function Live({ api, children }: { api: TimetableApi; children: ReactNode }) {
+      const [server, set] = useState<Entry[]>(entries6B);
+      setServer = set;
+      return (
+        <I18nextProvider i18n={testI18n}>
+          <ToastProvider>
+            <SchoolContextProvider
+              school={{ ...ctx, loading: false }}
+              year={{ years: [], yearId: 'y-2026', setYearId: () => undefined, entries: server, loading: false }}
+            >
+              <TimetableApiContext.Provider value={api}>{children}</TimetableApiContext.Provider>
+            </SchoolContextProvider>
+          </ToastProvider>
+        </I18nextProvider>
+      );
+    }
+    const serverCopy: Entry = { id: 'srv-1', day: 0, period: 8, classIds: [C.c6b], lessons: draft.lessons, teacherIds: [T.perera] };
+
+    it('no duplicate when snapshot arrives before the callable resolves', async () => {
+      const d = deferred<{ entryId: string }>();
+      const api: TimetableApi = { saveEntry: vi.fn(() => d.promise), deleteEntry: vi.fn() };
+      render(<Live api={api}><Probe /></Live>);
+      let p!: Promise<boolean>;
+      act(() => {
+        p = latest.save(draft);
+      });
+      act(() => setServer([...entries6B, serverCopy]));
+      await act(async () => {
+        d.resolve({ entryId: 'srv-1' });
+        await p;
+      });
+      expect(latest.entries.filter((e) => e.id === 'srv-1' || e.id.startsWith('tmp-'))).toHaveLength(1);
+      expect(latest.entries.some((e) => e.id.startsWith('tmp-'))).toBe(false);
+    });
+
+    it('no duplicate when callable resolves before the snapshot', async () => {
+      const api: TimetableApi = { saveEntry: vi.fn().mockResolvedValue({ entryId: 'srv-1' }), deleteEntry: vi.fn() };
+      render(<Live api={api}><Probe /></Live>);
+      await act(async () => {
+        await latest.save(draft);
+      });
+      expect(latest.entries).toHaveLength(entries6B.length + 1);
+      act(() => setServer([...entries6B, serverCopy]));
+      expect(latest.entries).toHaveLength(entries6B.length + 1);
+      expect(latest.entries.some((e) => e.id.startsWith('tmp-'))).toBe(false);
+    });
+
+    it('removing an unsettled temp entry does not call deleteEntry', async () => {
+      const d = deferred<{ entryId: string }>();
+      const api: TimetableApi = { saveEntry: vi.fn(() => d.promise), deleteEntry: vi.fn() };
+      render(<Live api={api}><Probe /></Live>);
+      act(() => {
+        void latest.save(draft);
+      });
+      const tmp = latest.entries.find((e) => e.id.startsWith('tmp-'))!;
+      await act(async () => {
+        await latest.remove(tmp.id);
+      });
+      expect(api.deleteEntry).not.toHaveBeenCalled();
+      expect(latest.entries).toHaveLength(entries6B.length);
+      await act(async () => {
+        d.resolve({ entryId: 'srv-1' });
+      });
+      expect(latest.entries).toHaveLength(entries6B.length);
+    });
   });
 });

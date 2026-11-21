@@ -25,9 +25,11 @@ export interface UseTimetable {
   pending: boolean;
 }
 
+interface AddedRec { entry: Entry; settled: boolean; serverId?: string }
+interface RemovedRec { settled: boolean }
 interface Overlay {
-  added: Map<string, { entry: Entry; settled: boolean }>;
-  removed: Map<string, { settled: boolean }>;
+  added: Map<string, AddedRec>;
+  removed: Map<string, RemovedRec>;
 }
 
 const emptyOverlay = (): Overlay => ({ added: new Map(), removed: new Map() });
@@ -46,6 +48,10 @@ export function useTimetable(): UseTimetable {
   const [overlay, setOverlay] = useState<Overlay>(emptyOverlay);
   const [inflight, setInflight] = useState(0);
   const tempId = useRef(0);
+  const overlayRef = useRef(overlay);
+  overlayRef.current = overlay;
+  const serverRef = useRef(serverEntries);
+  serverRef.current = serverEntries;
 
   useEffect(() => {
     setOverlay((o) => {
@@ -83,14 +89,23 @@ export function useTimetable(): UseTimetable {
     async (draft: EntryDraft): Promise<boolean> => {
       const id = draft.id ?? `tmp-${++tempId.current}`;
       const optimistic: Entry = { ...withTeacherIds(draft), id };
-      setOverlay((o) => ({ ...o, added: new Map(o.added).set(id, { entry: optimistic, settled: false }) }));
+      const rec: AddedRec = { entry: optimistic, settled: false };
+      setOverlay((o) => ({ ...o, added: new Map(o.added).set(id, rec) }));
       setInflight((n) => n + 1);
       try {
-        await api.saveEntry({ schoolId: ctx.school.id, yearId, entry: draft });
-        setOverlay((o) => ({ ...o, added: new Map(o.added).set(id, { entry: optimistic, settled: true }) }));
+        const res = await api.saveEntry({ schoolId: ctx.school.id, yearId, entry: draft });
+        const alreadyOnServer = !draft.id && serverRef.current.some((e) => e.id === res.entryId);
+        setOverlay((o) => {
+          if (o.added.get(id) !== rec) return o;
+          const added = new Map(o.added);
+          if (alreadyOnServer) added.delete(id);
+          else added.set(id, { ...rec, settled: true, serverId: res.entryId });
+          return { ...o, added };
+        });
         return true;
       } catch (err) {
         setOverlay((o) => {
+          if (o.added.get(id) !== rec) return o;
           const added = new Map(o.added);
           added.delete(id);
           return { ...o, added };
@@ -106,20 +121,32 @@ export function useTimetable(): UseTimetable {
 
   const remove = useCallback(
     async (id: string): Promise<boolean> => {
+      const pendingAdd = overlayRef.current.added.get(id);
+      if (pendingAdd && !pendingAdd.settled && id.startsWith('tmp-')) {
+        setOverlay((o) => {
+          const added = new Map(o.added);
+          added.delete(id);
+          return { ...o, added };
+        });
+        return true;
+      }
+      const targetId = pendingAdd?.serverId ?? id;
+      const rec: RemovedRec = { settled: false };
       setOverlay((o) => {
         const added = new Map(o.added);
         added.delete(id);
-        return { added, removed: new Map(o.removed).set(id, { settled: false }) };
+        return { added, removed: new Map(o.removed).set(targetId, rec) };
       });
       setInflight((n) => n + 1);
       try {
-        await api.deleteEntry({ schoolId: ctx.school.id, yearId, entryId: id });
-        setOverlay((o) => ({ ...o, removed: new Map(o.removed).set(id, { settled: true }) }));
+        await api.deleteEntry({ schoolId: ctx.school.id, yearId, entryId: targetId });
+        setOverlay((o) => (o.removed.get(targetId) === rec ? { ...o, removed: new Map(o.removed).set(targetId, { settled: true }) } : o));
         return true;
       } catch (err) {
         setOverlay((o) => {
+          if (o.removed.get(targetId) !== rec) return o;
           const removed = new Map(o.removed);
-          removed.delete(id);
+          removed.delete(targetId);
           return { ...o, removed };
         });
         reportError(err);
