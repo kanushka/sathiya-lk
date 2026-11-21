@@ -19,3 +19,11 @@
 - Reusable delete guard for 3.3/3.4/3.5: `useDeleteSetupItem()` and `<DeleteSetupModal schoolId kind id name onClose onDeleted? />` from `features/teachers`. Strings live in `teachers` namespace under `deleteGuard.*` (`body.<kind>`, `inUse.<kind>`; template copy says "classes").
 - Edits of an existing teacher are a direct Firestore `updateDoc` (`teachers/api.ts`); cleared phone/email use `deleteField()`. Staff ID is not editable after creation (the login email derives from it). Rules must allow admin updates of `teachers/{id}`.
 - Session passwords are a module-level store (`sessionPasswords.ts`); lost on reload, so "Print all login slips" prints every teacher but shows "Reset needed" for those without a password this session.
+
+## Task 3.3 — Subjects
+
+- Assumed shape of `platform/defaultSubjects`: a doc with a `subjects` array of `{nameEn, nameSi?, short, color}` (no ids). Phase 1/seed must match; missing doc or field loads zero.
+- Load standard matches existing subjects by trimmed, case-insensitive `nameEn`; added in one `writeBatch`. Needs rules allowing admin create/update of `subjects/{id}` and read of `platform/defaultSubjects`.
+- Reuses `register/ColorSwatches` (swatches prop) with a pastel palette; its custom-hex label comes from the `register` namespace.
+- Add modal: empty short defaults to first 10 chars of the English name. Inline edit commits on blur/Enter; an emptied English name or short reverts; cleared Sinhala name removes the field (`deleteField`).
+- "Used in" counts entries in the selected year via core `usageCount`.
