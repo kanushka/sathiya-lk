@@ -19,6 +19,7 @@ beforeEach(() => {
 
 async function fillSchool(user: ReturnType<typeof userEvent.setup>) {
   await user.type(screen.getByLabelText('School name (English)'), 'Siripura Central College');
+  await user.type(screen.getByLabelText('City'), 'Kandy');
   await user.type(screen.getByLabelText('District'), 'Kandy');
   await user.type(screen.getByLabelText('Staff ID prefix'), 'scc');
   await user.click(screen.getByRole('button', { name: 'Next: logo & colours' }));
@@ -32,11 +33,55 @@ describe('register', () => {
     expect(next).toBeDisabled();
     await user.type(screen.getByLabelText('School name (English)'), 'Siripura');
     await user.type(screen.getByLabelText('District'), 'Kandy');
+    expect(next).toBeDisabled();
+    await user.type(screen.getByLabelText('City'), 'Kandy');
     await user.type(screen.getByLabelText('Staff ID prefix'), 'S');
     expect(next).toBeDisabled();
     await user.type(screen.getByLabelText('Staff ID prefix'), 'cc');
     expect(screen.getByLabelText('Staff ID prefix')).toHaveValue('SCC');
     expect(next).toBeEnabled();
+  });
+
+  it('requires a city and shows a message once it is cleared', async () => {
+    const user = userEvent.setup();
+    renderAuth(<RegisterPage />, { route: '/register', at: '/register' });
+    const city = screen.getByLabelText('City');
+    expect(screen.getByLabelText('Phone (optional)')).toHaveAttribute('type', 'tel');
+    await user.type(city, 'K');
+    await user.clear(city);
+    expect(screen.getByText('City is required')).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'Next: logo & colours' })).toBeDisabled();
+  });
+
+  it('sends address and phone when filled', async () => {
+    const user = userEvent.setup();
+    renderAuth(<RegisterPage />, {
+      route: '/register',
+      at: '/register',
+      claimsAfterRefresh: { sid: 'siripura', role: 'admin' },
+    });
+    await user.type(screen.getByLabelText('Address (optional)'), '  12 Temple Rd  ');
+    await user.type(screen.getByLabelText('Phone (optional)'), '081 222 3344');
+    await toStep3(user);
+    await submitStep3(user);
+    await waitFor(() => expect(api.registerSchool).toHaveBeenCalled());
+    const req = vi.mocked(api.registerSchool).mock.calls[0]![0];
+    expect(req.school).toMatchObject({ city: 'Kandy', address: '12 Temple Rd', phone: '081 222 3344' });
+  });
+
+  it('omits empty address and phone from the payload', async () => {
+    const user = userEvent.setup();
+    renderAuth(<RegisterPage />, {
+      route: '/register',
+      at: '/register',
+      claimsAfterRefresh: { sid: 'siripura', role: 'admin' },
+    });
+    await toStep3(user);
+    await submitStep3(user);
+    await waitFor(() => expect(api.registerSchool).toHaveBeenCalled());
+    const school = vi.mocked(api.registerSchool).mock.calls[0]![0].school;
+    expect(school).not.toHaveProperty('address');
+    expect(school).not.toHaveProperty('phone');
   });
 
   it('offers 6 + 6 swatches, custom hex, and a preview with readable text colour', async () => {
@@ -110,6 +155,7 @@ describe('register', () => {
     expect(api.registerSchool).toHaveBeenCalledWith({
       school: {
         nameEn: 'Siripura Central College',
+        city: 'Kandy',
         district: 'Kandy',
         grades: [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13],
         staffPrefix: 'SCC',

@@ -37,3 +37,10 @@
 - Dashboard attention/stat links assume Phase 4 query params `/admin/timetable/class?c=<classId>` and `/admin/timetable/teacher?t=<teacherId>`; links keep the `/s/:sid` base in the super-admin mirror.
 - Dashboard "clashes" counts unique conflicting entry pairs via `findConflicts`; "empty slots" = per-class week capacity minus entries placed in that class.
 - New year: created as draft, then selected via `setYearId(newId)` (shell keeps it until the snapshot arrives).
+
+## Task 3.7 — School city/address/phone in register and login search
+
+- `schoolDirectory/{sid}` needs `city` and `cityLower` (lowercase) in addition to `nameLower`; login search runs two prefix queries (`nameLower`, `cityLower`), merges name matches first, dedupes by id, caps at 10. Both need single-field indexes (automatic). Directory sync (Phase 1 trigger) must write them.
+- `registerSchool` req carries `school.city` (required) and `address?`/`phone?` (only when non-empty) via local `RegisterSchoolWithContactReq` in `features/register/model.ts`, until core `School`/`RegisterSchoolReq` gain these in Phase 6. The callable must persist them and write the directory doc.
+- Single local type home: `SchoolWithContact`/`SchoolContact` in `features/register/model.ts`; profile imports it.
+- Login result label is now "Name, City" (was district); omitted when the directory doc has no city.

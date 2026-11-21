@@ -9,7 +9,7 @@ import { renderAuth } from './testHarness';
 
 vi.mock('./api');
 
-const siripura = { id: 'siripura', nameEn: 'Siripura Central College', district: 'Kandy', status: 'active' as const };
+const siripura = { id: 'siripura', nameEn: 'Siripura Central College', district: 'Kandy', city: 'Peradeniya', status: 'active' as const };
 
 function authError(code: string) {
   return Object.assign(new Error(code), { code });
@@ -30,6 +30,24 @@ async function pickSchool(user: ReturnType<typeof userEvent.setup>) {
   await user.type(screen.getByLabelText('School'), 'siri');
   await user.click(await screen.findByRole('option', { name: /Siripura Central College/ }));
 }
+
+describe('school search labels', () => {
+  it('shows "Name, City" on each result', async () => {
+    const user = userEvent.setup();
+    renderAuth(<LoginPage />);
+    await user.type(screen.getByLabelText('School'), 'siri');
+    expect((await screen.findByRole('option')).textContent).toBe('Siripura Central College, Peradeniya');
+  });
+
+  it('omits the city when the directory doc has none', async () => {
+    const user = userEvent.setup();
+    const { city: _city, ...noCity } = siripura;
+    vi.mocked(api.searchSchools).mockResolvedValue([noCity]);
+    renderAuth(<LoginPage />);
+    await user.type(screen.getByLabelText('School'), 'siri');
+    expect(await screen.findByRole('option', { name: 'Siripura Central College' })).toBeInTheDocument();
+  });
+});
 
 describe('teacher login', () => {
   it('signs in with a synthetic email built from school and uppercased staff ID', async () => {
@@ -63,13 +81,13 @@ describe('teacher login', () => {
     expect(JSON.parse(localStorage.getItem('sathiya.school') ?? '{}')).toMatchObject({ id: 'siripura' });
     first.unmount();
     renderAuth(<LoginPage />);
-    expect(screen.getByLabelText('School')).toHaveValue('Siripura Central College, Kandy');
+    expect(screen.getByLabelText('School')).toHaveValue('Siripura Central College, Peradeniya');
   });
 
   it('preselects the school from ?school=', async () => {
     vi.mocked(api.getDirectorySchool).mockResolvedValue(siripura);
     renderAuth(<LoginPage />, { route: '/login?school=siripura' });
-    await waitFor(() => expect(screen.getByLabelText('School')).toHaveValue('Siripura Central College, Kandy'));
+    await waitFor(() => expect(screen.getByLabelText('School')).toHaveValue('Siripura Central College, Peradeniya'));
     expect(api.getDirectorySchool).toHaveBeenCalledWith('siripura');
   });
 

@@ -13,11 +13,9 @@ import { uploadLogo } from '../register/api';
 import { BrandPreview } from '../register/BrandPreview';
 import { ColorSwatches, PRIMARY_SWATCHES, SECOND_SWATCHES } from '../register/ColorSwatches';
 import { LogoUpload } from '../register/LogoUpload';
-import { prefixOk } from '../register/model';
+import { prefixOk, type SchoolWithContact } from '../register/model';
 import * as api from './api';
 import { contrastWithWhite, isLowContrast } from './contrast';
-
-export type SchoolWithContact = School & { city?: string; address?: string; phone?: string };
 
 const blankToUndefined = (v: string) => (v.trim() === '' ? undefined : v.trim());
 

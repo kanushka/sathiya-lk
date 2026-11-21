@@ -10,14 +10,9 @@ import {
 import { collection, doc, getDoc, getDocs, limit, orderBy, query, where } from 'firebase/firestore';
 import { auth, db } from '../../lib/firebase';
 import { call } from '../../lib/callable';
+import { mergeDirectoryResults, type DirectorySchool } from './directory';
 
-export interface DirectorySchool {
-  id: string;
-  nameEn: string;
-  nameSi?: string;
-  district: string;
-  status: 'active' | 'disabled';
-}
+export type { DirectorySchool };
 
 function toDirectorySchool(id: string, data: Record<string, unknown>): DirectorySchool {
   return {
@@ -25,23 +20,29 @@ function toDirectorySchool(id: string, data: Record<string, unknown>): Directory
     nameEn: String(data.nameEn ?? ''),
     ...(typeof data.nameSi === 'string' && data.nameSi ? { nameSi: data.nameSi } : {}),
     district: String(data.district ?? ''),
+    ...(typeof data.city === 'string' && data.city ? { city: data.city } : {}),
     status: data.status === 'disabled' ? 'disabled' : 'active',
   };
+}
+
+async function prefixQuery(field: 'nameLower' | 'cityLower', q: string): Promise<DirectorySchool[]> {
+  const snap = await getDocs(
+    query(
+      collection(db, 'schoolDirectory'),
+      where(field, '>=', q),
+      where(field, '<=', `${q}\uf8ff`),
+      orderBy(field),
+      limit(10),
+    ),
+  );
+  return snap.docs.map((d) => toDirectorySchool(d.id, d.data())).filter((s) => s.status === 'active');
 }
 
 export async function searchSchools(prefix: string): Promise<DirectorySchool[]> {
   const q = prefix.trim().toLowerCase();
   if (!q) return [];
-  const snap = await getDocs(
-    query(
-      collection(db, 'schoolDirectory'),
-      where('nameLower', '>=', q),
-      where('nameLower', '<=', `${q}\uf8ff`),
-      orderBy('nameLower'),
-      limit(10),
-    ),
-  );
-  return snap.docs.map((d) => toDirectorySchool(d.id, d.data())).filter((s) => s.status === 'active');
+  const [byName, byCity] = await Promise.all([prefixQuery('nameLower', q), prefixQuery('cityLower', q)]);
+  return mergeDirectoryResults(byName, byCity);
 }
 
 export async function getDirectorySchool(id: string): Promise<DirectorySchool | null> {

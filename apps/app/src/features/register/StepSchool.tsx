@@ -1,5 +1,6 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
 // Copyright (C) 2026 Kanushka Gayan
+import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Button } from '../../ui/Button';
 import { Field, inputClass } from '../../ui/Field';
@@ -16,6 +17,7 @@ export interface StepSchoolProps {
 export function StepSchool({ value, onChange, onNext }: StepSchoolProps) {
   const { t } = useTranslation('register');
   const set = <K extends keyof SchoolDraft>(k: K, v: SchoolDraft[K]) => onChange({ ...value, [k]: v });
+  const [cityTouched, setCityTouched] = useState(false);
   const prefixInvalid = value.staffPrefix !== '' && !prefixOk(value.staffPrefix);
   const example = prefixOk(value.staffPrefix) ? value.staffPrefix : 'SCC';
 
@@ -35,10 +37,37 @@ export function StepSchool({ value, onChange, onNext }: StepSchoolProps) {
             onChange={(e) => set('nameSi', e.target.value)}
           />
         </Field>
-        <Field label={t('school.district')}>
-          <input className={inputClass} value={value.district} onChange={(e) => set('district', e.target.value)} />
+        <div className="flex gap-3">
+          <Field
+            label={t('school.city')}
+            className="flex-1"
+            error={cityTouched && value.city.trim() === '' ? t('school.cityError') : undefined}
+          >
+            <input
+              className={inputClass}
+              value={value.city}
+              onChange={(e) => {
+                setCityTouched(true);
+                set('city', e.target.value);
+              }}
+            />
+          </Field>
+          <Field label={t('school.district')} className="flex-1">
+            <input className={inputClass} value={value.district} onChange={(e) => set('district', e.target.value)} />
+          </Field>
+        </div>
+        <Field label={t('school.address')}>
+          <input className={inputClass} value={value.address} onChange={(e) => set('address', e.target.value)} />
         </Field>
         <div className="flex gap-3">
+          <Field label={t('school.phone')} className="flex-1">
+            <input
+              type="tel"
+              className={inputClass}
+              value={value.phone}
+              onChange={(e) => set('phone', e.target.value)}
+            />
+          </Field>
           <Field label={t('school.gradeFrom')} className="flex-1">
             <select
               className={inputClass}

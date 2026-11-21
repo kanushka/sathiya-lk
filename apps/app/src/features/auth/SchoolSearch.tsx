@@ -31,7 +31,7 @@ export const SchoolSearch = forwardRef<HTMLInputElement, SchoolSearchProps>(func
   const [active, setActive] = useState(0);
   const seq = useRef(0);
 
-  const label = (s: DirectorySchool) => `${pickName(s, lang)}${s.district ? `, ${s.district}` : ''}`;
+  const label = (s: DirectorySchool) => `${pickName(s, lang)}${s.city ? `, ${s.city}` : ''}`;
   const shown = typed ? text : value ? label(value) : text;
 
   useEffect(() => {
@@ -128,7 +128,7 @@ export const SchoolSearch = forwardRef<HTMLInputElement, SchoolSearchProps>(func
               )}
             >
               <span className="font-semibold">{pickName(s, lang)}</span>
-              {s.district && <span className="text-ink-muted">, {s.district}</span>}
+              {s.city && <span className="text-ink-muted">, {s.city}</span>}
             </div>
           ))}
         </div>
