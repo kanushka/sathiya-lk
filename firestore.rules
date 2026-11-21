@@ -105,7 +105,7 @@ service cloud.firestore {
       allow read: if isSuper();
       allow update: if isSuper()
         && changed().hasOnly(['status', 'note'])
-        && request.resource.data.status in ['open', 'resolved', 'dismissed']
+        && request.resource.data.status in ['open', 'closed']
         && optText('note', 1000);
     }
 

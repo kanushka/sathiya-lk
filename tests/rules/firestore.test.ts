@@ -451,17 +451,19 @@ describe('reports', () => {
   allow([['super', 'reports']], list);
   deny([['admin', r1], ['teacher', r1], ['noClaims', r1], ['anon', r1]], read);
   deny([['admin', 'reports'], ['anon', 'reports']], list);
-  it.each(['resolved', 'dismissed', 'open'])('allows super to set status %s with a note', async (status) => {
+  it.each(['closed', 'open'])('allows super to set status %s with a note', async (status) => {
     await assertSucceeds(update('super', r1, { status, note: 'checked' }));
   });
   it('denies super invalid status, long note or other fields', async () => {
-    await assertFails(update('super', r1, { status: 'closed' }));
+    await assertFails(update('super', r1, { status: 'resolved' }));
+    await assertFails(update('super', r1, { status: 'dismissed' }));
+    await assertFails(update('super', r1, { status: 'bogus' }));
     await assertFails(update('super', r1, { note: 'x'.repeat(1001) }));
     await assertFails(update('super', r1, { note: 5 }));
     await assertFails(update('super', r1, { reason: 'other' }));
     await assertFails(update('super', r1, { schoolId: 's2' }));
   });
-  deny([['admin', r1], ['noClaims', r1], ['anon', r1]], (r, p) => update(r, p, { status: 'resolved' }));
+  deny([['admin', r1], ['noClaims', r1], ['anon', r1]], (r, p) => update(r, p, { status: 'closed' }));
   const fresh = { schoolId: 's1', reason: 'fake', status: 'open', createdAt: 1 };
   deny([['anon', 'reports/new'], ['noClaims', 'reports/new'], ['admin', 'reports/new'], ['super', 'reports/new']], (r, p) => set(r, p, fresh));
   deny([['super', r1], ['admin', r1]], del);

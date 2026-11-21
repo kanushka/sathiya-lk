@@ -111,7 +111,7 @@ Files: `firestore.rules`, `storage.rules`; tests in `tests/rules`. Roles: admin 
 | `years/{yid}/publishedTeachers/{tid}` | admin, super; teacher only own `tid` | none |
 | `years/{yid}/slotLocks` | nobody | none |
 | `users/{uid}` | owner | create: only `lang` (`en`/`si`); update: only `lang` may change (works with `schoolId` present; `schoolId` can't be set, changed or cleared — it is functions-only); no delete |
-| `reports/{id}` | super | super update of `status` (`open`/`resolved`/`dismissed`) and optional `note` (string ≤ 1000) only; no client create/delete |
+| `reports/{id}` | super | super update of `status` (`open`/`closed`) and optional `note` (string ≤ 1000) only; no client create/delete |
 | `censusIndex`, `rateLimits` | nobody | none |
 | `platform/**` | any signed-in user | super |
 | anything else | nobody | none |
@@ -164,7 +164,7 @@ App emails go through the **Trigger Email from Firestore** extension (collection
 
 ### Phase 5/6 (super)
 - Super reads everything under `schools/**` but every client write is denied; status changes go through `setSchoolStatus` (disable a fake school).
-- Reports: list `reports`, update `status` (`open` → `resolved`/`dismissed`) and `note` with the client SDK. No census release yet (open item, §4).
+- Reports: list `reports`, update `status` (`open` → `closed`) and `note` with the client SDK. No census release yet (open item, §4).
 
 ### Phase 6
 - Add the functions predeploy build (§1), App Check client init (§6), merge the core types and delete `functions/src/lib/contract.ts` (§2).
