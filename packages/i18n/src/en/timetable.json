@@ -1,7 +1,6 @@
 {
   "grid": {
     "label": "Timetable grid",
-    "add": "Add lesson",
     "interval": "Interval · {{time}}",
     "cell": "{{day}}, period {{n}}, {{time}}: {{title}}",
     "cellEmpty": "{{day}}, period {{n}}, {{time}}: empty",

@@ -2,9 +2,8 @@ import { renderWithSchool } from '../../test/renderWithSchool';
 import { ApiError } from '../../lib/callable';
 import { C, ctx, entries6B, S, T } from '@sathiya/core/fixtures';
 import type { EntryDraft } from '@sathiya/core';
-import { act, screen, waitFor } from '@testing-library/react';
+import { act, render, screen, waitFor } from '@testing-library/react';
 import { describe, expect, it, vi } from 'vitest';
-import { render } from '@testing-library/react';
 import { I18nextProvider } from 'react-i18next';
 import { useState, type ReactNode } from 'react';
 import { SchoolContextProvider } from '../../app/SchoolProvider';
@@ -157,7 +156,7 @@ describe('useTimetable', () => {
       expect(latest.entries.some((e) => e.id.startsWith('tmp-'))).toBe(false);
     });
 
-    it('removing an unsettled temp entry does not call deleteEntry', async () => {
+    it('removing an unsettled temp entry cancels the save once it resolves', async () => {
       const d = deferred<{ entryId: string }>();
       const api: TimetableApi = { saveEntry: vi.fn(() => d.promise), deleteEntry: vi.fn() };
       render(<Live api={api}><Probe /></Live>);
@@ -170,10 +169,36 @@ describe('useTimetable', () => {
       });
       expect(api.deleteEntry).not.toHaveBeenCalled();
       expect(latest.entries).toHaveLength(entries6B.length);
+      const del = deferred<{ ok: true }>();
+      (api.deleteEntry as ReturnType<typeof vi.fn>).mockReturnValue(del.promise);
       await act(async () => {
         d.resolve({ entryId: 'srv-1' });
       });
+      expect(api.deleteEntry).toHaveBeenCalledWith({ schoolId: ctx.school.id, yearId: 'y-2026', entryId: 'srv-1' });
+      act(() => setServer([...entries6B, serverCopy]));
+      expect(latest.entries.some((e) => e.id === 'srv-1')).toBe(false);
+      await act(async () => {
+        del.resolve({ ok: true });
+      });
+      act(() => setServer(entries6B));
       expect(latest.entries).toHaveLength(entries6B.length);
+    });
+
+    it('no error toast when a save fails for an already removed temp entry', async () => {
+      const d = deferred<{ entryId: string }>();
+      const api: TimetableApi = { saveEntry: vi.fn(() => d.promise), deleteEntry: vi.fn() };
+      render(<Live api={api}><Probe /></Live>);
+      let p!: Promise<boolean>;
+      act(() => {
+        p = latest.save(draft);
+      });
+      await act(async () => {
+        await latest.remove(latest.entries.find((e) => e.id.startsWith('tmp-'))!.id);
+        d.reject(new ApiError('invalid', 'bad'));
+        await p;
+      });
+      expect(screen.queryByText(/Could not save/)).toBeNull();
+      expect(api.deleteEntry).not.toHaveBeenCalled();
     });
   });
 });

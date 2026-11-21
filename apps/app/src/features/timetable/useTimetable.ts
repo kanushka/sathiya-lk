@@ -48,6 +48,7 @@ export function useTimetable(): UseTimetable {
   const [overlay, setOverlay] = useState<Overlay>(emptyOverlay);
   const [inflight, setInflight] = useState(0);
   const tempId = useRef(0);
+  const cancelled = useRef(new Set<string>());
   const overlayRef = useRef(overlay);
   overlayRef.current = overlay;
   const serverRef = useRef(serverEntries);
@@ -94,6 +95,23 @@ export function useTimetable(): UseTimetable {
       setInflight((n) => n + 1);
       try {
         const res = await api.saveEntry({ schoolId: ctx.school.id, yearId, entry: draft });
+        if (cancelled.current.delete(id)) {
+          const del: RemovedRec = { settled: false };
+          setOverlay((o) => ({ ...o, removed: new Map(o.removed).set(res.entryId, del) }));
+          try {
+            await api.deleteEntry({ schoolId: ctx.school.id, yearId, entryId: res.entryId });
+            setOverlay((o) => (o.removed.get(res.entryId) === del ? { ...o, removed: new Map(o.removed).set(res.entryId, { settled: true }) } : o));
+          } catch (err) {
+            setOverlay((o) => {
+              if (o.removed.get(res.entryId) !== del) return o;
+              const removed = new Map(o.removed);
+              removed.delete(res.entryId);
+              return { ...o, removed };
+            });
+            reportError(err);
+          }
+          return true;
+        }
         const alreadyOnServer = !draft.id && serverRef.current.some((e) => e.id === res.entryId);
         setOverlay((o) => {
           if (o.added.get(id) !== rec) return o;
@@ -110,7 +128,7 @@ export function useTimetable(): UseTimetable {
           added.delete(id);
           return { ...o, added };
         });
-        reportError(err);
+        if (!cancelled.current.delete(id)) reportError(err);
         return false;
       } finally {
         setInflight((n) => n - 1);
@@ -123,6 +141,7 @@ export function useTimetable(): UseTimetable {
     async (id: string): Promise<boolean> => {
       const pendingAdd = overlayRef.current.added.get(id);
       if (pendingAdd && !pendingAdd.settled && id.startsWith('tmp-')) {
+        cancelled.current.add(id);
         setOverlay((o) => {
           const added = new Map(o.added);
           added.delete(id);
