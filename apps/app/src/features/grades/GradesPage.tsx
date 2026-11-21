@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
 // Copyright (C) 2026 Kanushka Gayan
-import { weekCapacity, type PlanItem, type SchoolClass } from '@sathiya/core';
+import type { PeriodTemplate, PlanItem, SchoolClass } from '@sathiya/core';
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useSchool } from '../../app/SchoolProvider';
@@ -13,7 +13,7 @@ import * as api from './api';
 import { AddGradeModal } from './AddGradeModal';
 import { ClassCard } from './ClassCard';
 import { ClassPlanModal } from './ClassPlanModal';
-import { nextClassName } from './planModel';
+import { nextClassName, planCapacity } from './planModel';
 import { PlanEditor } from './PlanEditor';
 
 type Dialog = { kind: 'addGrade' } | { kind: 'plan'; cls: SchoolClass } | { kind: 'delete'; cls: SchoolClass } | null;
@@ -31,6 +31,8 @@ export function GradesPage() {
   const grade = grades.find((g) => g.id === selectedId) ?? grades[0];
   const gradeClasses = grade ? school.classes.filter((c) => c.gradeId === grade.id).sort((a, b) => a.name.localeCompare(b.name)) : [];
   const defaultTemplate = school.templates.find((x) => x.isDefault) ?? school.templates[0];
+  const classTemplates = gradeClasses.flatMap((c) => school.templates.filter((x) => x.id === c.templateId));
+  const capacityTemplates: PeriodTemplate[] = classTemplates.length > 0 ? classTemplates : defaultTemplate ? [defaultTemplate] : [];
   const created = new Set(grades.map((g) => g.number));
   const pool = school.school.grades.length > 0 ? school.school.grades : Array.from({ length: 13 }, (_, i) => i + 1);
   const choices = pool.filter((n) => !created.has(n)).sort((a, b) => a - b);
@@ -119,7 +121,7 @@ export function GradesPage() {
             <section className="rounded-[14px] border border-line-soft bg-white p-5">
               <PlanEditor
                 plan={grade.plan}
-                capacity={defaultTemplate ? weekCapacity(defaultTemplate) : 0}
+                capacity={planCapacity(capacityTemplates)}
                 subjects={school.subjects}
                 readOnly={readOnly}
                 onChange={(p) => void savePlan(p)}

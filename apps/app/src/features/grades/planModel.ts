@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
 // Copyright (C) 2026 Kanushka Gayan
-import type { PlanItem } from '@sathiya/core';
+import { weekCapacity, type PeriodTemplate, type PlanItem } from '@sathiya/core';
 
 export function newGroupKey(plan: PlanItem[]): string {
   const used = new Set(plan.flatMap((p) => (p.kind === 'group' ? [p.key] : [])));
@@ -21,4 +21,23 @@ export function nextClassName(gradeNumber: number, existing: string[]): string {
     if (m) max = Math.max(max, m[1]!.charCodeAt(0) - 65);
   }
   return `${gradeNumber}${String.fromCharCode(65 + max + 1)}`;
+}
+
+export interface PlanCapacity {
+  min: number;
+  max: number;
+}
+
+export function planCapacity(templates: PeriodTemplate[]): PlanCapacity {
+  if (templates.length === 0) return { min: 0, max: 0 };
+  const sizes = templates.map(weekCapacity);
+  return { min: Math.min(...sizes), max: Math.max(...sizes) };
+}
+
+export type PlanFit = 'under' | 'exact' | 'mixed' | 'over';
+
+export function planFit(total: number, { min, max }: PlanCapacity): PlanFit {
+  if (total > max) return 'over';
+  if (total < min) return 'under';
+  return min === max ? 'exact' : 'mixed';
 }

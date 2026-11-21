@@ -6,13 +6,13 @@ import { useTranslation } from 'react-i18next';
 import { Button } from '../../ui/Button';
 import { Select } from '../../ui/Select';
 import { GroupModal } from './GroupModal';
-import { newGroupKey, planTotal } from './planModel';
+import { newGroupKey, planFit, planTotal, type PlanCapacity, type PlanFit } from './planModel';
 
 type Group = Extract<PlanItem, { kind: 'group' }>;
 
 export interface PlanEditorProps {
   plan: PlanItem[];
-  capacity: number;
+  capacity: PlanCapacity;
   subjects: Subject[];
   readOnly: boolean;
   onChange: (plan: PlanItem[]) => void;
@@ -48,6 +48,13 @@ function PerWeekInput({ label, value, disabled, onCommit }: { label: string; val
   );
 }
 
+const fitColor: Record<PlanFit, string> = {
+  exact: 'text-[#1F6B34]',
+  under: 'text-[#7A5410]',
+  mixed: 'text-[#7A5410]',
+  over: 'text-danger',
+};
+
 const linkBtn = 'border-0 bg-transparent text-sm font-semibold text-brand hover:underline';
 
 export function PlanEditor({ plan, capacity, subjects, readOnly, onChange }: PlanEditorProps) {
@@ -57,6 +64,7 @@ export function PlanEditor({ plan, capacity, subjects, readOnly, onChange }: Pla
   const byId = new Map(subjects.map((s) => [s.id, s]));
   const subjectName = (id: string) => (byId.get(id) ? pickName(byId.get(id)!, lang) : id);
   const total = planTotal(plan);
+  const fit = planFit(total, capacity);
   const usedSubjects = new Set(plan.flatMap((p) => (p.kind === 'subject' ? [p.subjectId] : [])));
   const unused = subjects.filter((s) => !usedSubjects.has(s.id)).sort((a, b) => a.nameEn.localeCompare(b.nameEn));
 
@@ -70,8 +78,8 @@ export function PlanEditor({ plan, capacity, subjects, readOnly, onChange }: Pla
       <div className="mb-1.5 flex flex-wrap items-end justify-between gap-3">
         <h2 className="m-0 text-[17px] font-bold">{t('plan.title')}</h2>
         <p className="m-0 text-sm">
-          <b data-testid="plan-total" className={`text-lg ${total > capacity ? 'text-danger' : 'text-[#1F6B34]'}`}>
-            {total} / {capacity}
+          <b data-testid="plan-total" data-fit={fit} className={`text-lg ${fitColor[fit]}`}>
+            {total} / {capacity.min === capacity.max ? capacity.max : `${capacity.min}–${capacity.max}`}
           </b>{' '}
           {t('plan.periodsInWeek')}
         </p>

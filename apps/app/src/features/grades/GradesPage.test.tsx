@@ -29,9 +29,36 @@ async function openGrade6() {
 }
 
 describe('grades page', () => {
-  it('total shows 40/40 for canvas plan', async () => {
+  it('grade 1 plan is measured against its classes\' Primary template', async () => {
+    const user = userEvent.setup();
+    renderWithSchool(<GradesPage />, { ctx, entries });
+    await user.click(screen.getByRole('button', { name: /^Grade 1\b/ }));
+    const total = screen.getByTestId('plan-total');
+    expect(total).toHaveTextContent('30 / 30');
+    expect(total).toHaveAttribute('data-fit', 'exact');
+  });
+
+  it('under-filled plan is not shown as complete', async () => {
+    const user = userEvent.setup();
+    const g1 = ctx.grades.find((g) => g.id === G.g1)!;
+    const short = { ...ctx, grades: ctx.grades.map((g) => (g.id === G.g1 ? { ...g, plan: g1.plan.slice(1) } : g)) };
+    renderWithSchool(<GradesPage />, { ctx: short, entries });
+    await user.click(screen.getByRole('button', { name: /^Grade 1\b/ }));
+    expect(screen.getByTestId('plan-total')).toHaveAttribute('data-fit', 'under');
+  });
+
+  it('grade 6 shows the range of its classes\' templates', async () => {
     await openGrade6();
-    expect(screen.getByTestId('plan-total')).toHaveTextContent('40 / 40');
+    const total = screen.getByTestId('plan-total');
+    expect(total).toHaveTextContent('40 / 39–40');
+    expect(total).toHaveAttribute('data-fit', 'mixed');
+  });
+
+  it('a grade without classes uses the default template', async () => {
+    const user = userEvent.setup();
+    renderWithSchool(<GradesPage />, { ctx: { ...ctx, classes: ctx.classes.filter((c) => c.gradeId !== G.g1) }, entries });
+    await user.click(screen.getByRole('button', { name: /^Grade 1\b/ }));
+    expect(screen.getByTestId('plan-total')).toHaveTextContent('30 / 40');
   });
 
   it('group option remove and add', async () => {

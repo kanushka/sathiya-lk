@@ -1,7 +1,6 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
 // Copyright (C) 2026 Kanushka Gayan
 import type { Grade, PeriodTemplate, PlanItem, SchoolClass, Subject } from '@sathiya/core';
-import { weekCapacity } from '@sathiya/core';
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Button } from '../../ui/Button';
@@ -9,6 +8,7 @@ import { Modal } from '../../ui/Modal';
 import { useToast } from '../../ui/Toast';
 import * as api from './api';
 import { PlanEditor } from './PlanEditor';
+import { planCapacity } from './planModel';
 
 export interface ClassPlanModalProps {
   schoolId: string;
@@ -58,7 +58,7 @@ export function ClassPlanModal({ schoolId, cls, grade, template, subjects, onClo
         </>
       }
     >
-      <PlanEditor plan={plan} capacity={weekCapacity(template)} subjects={subjects} readOnly={false} onChange={setPlan} />
+      <PlanEditor plan={plan} capacity={planCapacity([template])} subjects={subjects} readOnly={false} onChange={setPlan} />
     </Modal>
   );
 }
