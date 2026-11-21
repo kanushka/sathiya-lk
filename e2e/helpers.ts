@@ -2,7 +2,7 @@
 // Copyright (C) 2026 Kanushka Gayan
 import { expect, type Page } from '@playwright/test';
 import { school } from '@sathiya/core/fixtures';
-import { HOST, PORTS, PROJECT_ID } from '../scripts/seed';
+import { admin, HOST, PORTS, PROJECT_ID, TERMS_VERSION } from '../scripts/seed';
 
 export const SHOTS = new URL('./__screenshots__/', import.meta.url).pathname;
 
@@ -64,4 +64,27 @@ export async function callAs<T>(token: string, name: string, data: unknown): Pro
   const body = (await res.json()) as { result?: T; error?: unknown };
   if (!res.ok || body.error) throw new Error(`${name} failed: ${JSON.stringify(body)}`);
   return body.result as T;
+}
+
+export async function freshSchoolAdmin(tag: string, over: Record<string, unknown> = {}): Promise<{ email: string; password: string; sid: string }> {
+  const { auth } = admin();
+  const email = `${tag}-${Date.now()}@example.com`;
+  const password = 'fresh-pass-1';
+  await auth.createUser({ email, password, emailVerified: true });
+  const { schoolId } = await callAs<{ schoolId: string }>(await idToken(email, password), 'registerSchool', {
+    school: {
+      nameEn: `${tag} School`,
+      district: 'Colombo',
+      city: 'Colombo',
+      grades: [6, 7, 8, 9, 10, 11],
+      staffPrefix: 'TST',
+      colors: { primary: '#0E6B6A', second: '#D9A441' },
+      termsVersion: TERMS_VERSION,
+      type: 'private',
+      ...over,
+    },
+    adminName: `${tag} admin`,
+    acceptedTermsVersion: TERMS_VERSION,
+  });
+  return { email, password, sid: schoolId };
 }

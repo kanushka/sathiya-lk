@@ -3,9 +3,11 @@
 import { expect, test } from '@playwright/test';
 import { T } from '@sathiya/core/fixtures';
 import { ADMIN, SUPER, teacherLogin } from '../../scripts/seed';
-import { loginAdmin, loginTeacher } from '../helpers';
+import { loginAdmin, loginTeacher, shot } from '../helpers';
 
 test('seeded admin, teacher and super can sign in', async ({ page, browser }) => {
+  await page.goto('/login');
+  await shot(page, 'login');
   await loginAdmin(page, ADMIN.email, ADMIN.password);
   await expect(page.getByText('Siripura Central College').first()).toBeVisible();
   const t = await browser.newPage();

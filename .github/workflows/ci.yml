@@ -27,3 +27,15 @@ jobs:
       - run: pnpm --filter web test
       - if: hashFiles('firestore.rules') != ''
         run: pnpm test:emulators
+      - if: hashFiles('firestore.rules') != ''
+        run: pnpm --filter e2e exec playwright install --with-deps chromium
+      - if: hashFiles('firestore.rules') != ''
+        run: pnpm e2e
+      - if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: e2e-report
+          path: |
+            e2e/playwright-report
+            e2e/test-results
+          if-no-files-found: ignore
