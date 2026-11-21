@@ -17,13 +17,13 @@ import {
 import { useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useLang } from '../../app/LangProvider';
+import { useSchool } from '../../app/SchoolProvider';
 import { useReadOnly } from '../../ui/AdminLayout';
 import { Button } from '../../ui/Button';
 import { cx } from '../../ui/cx';
 import { Modal } from '../../ui/Modal';
 import { Select } from '../../ui/Select';
 import { teacherReason } from './labels';
-import { useTimetable } from './useTimetable';
 
 export interface BlockEditorProps {
   open: boolean;
@@ -33,6 +33,10 @@ export interface BlockEditorProps {
   period: number;
   mode: { kind: 'group'; item: Extract<PlanItem, { kind: 'group' }> } | { kind: 'combined'; subjectId: string };
   entry?: Entry;
+  entries: Entry[];
+  onSave(d: EntryDraft): Promise<boolean>;
+  onRemove(id: string): Promise<boolean>;
+  preset?: { subjectId: string; teacherId: string };
 }
 
 export function BlockEditor(props: BlockEditorProps) {
@@ -40,12 +44,12 @@ export function BlockEditor(props: BlockEditorProps) {
   return <BlockEditorBody {...props} />;
 }
 
-function BlockEditorBody({ onClose, baseClassId, day, period, mode, entry }: BlockEditorProps) {
+function BlockEditorBody({ onClose, baseClassId, day, period, mode, entry, entries, onSave: save, onRemove: remove, preset }: BlockEditorProps) {
   const { t } = useTranslation('timetable');
   const { t: tc } = useTranslation('common');
   const { lang } = useLang();
   const readOnly = useReadOnly();
-  const { ctx, entries, save, remove } = useTimetable();
+  const ctx = useSchool();
   const [busy, setBusy] = useState(false);
 
   const findClass = (id: string) => ctx.classes.find((c) => c.id === id);
@@ -57,7 +61,9 @@ function BlockEditorBody({ onClose, baseClassId, day, period, mode, entry }: Blo
   const optionIds = mode.kind === 'group' ? mode.item.optionSubjectIds : [mode.subjectId];
   const [classIds, setClassIds] = useState<string[]>(() => [baseClassId, ...(entry?.classIds ?? []).filter((c) => c !== baseClassId)]);
   const [teachers, setTeachers] = useState<Record<string, string | null>>(() =>
-    Object.fromEntries(optionIds.map((id) => [id, entry?.lessons.find((l) => l.subjectId === id)?.teacherId ?? null])),
+    Object.fromEntries(
+      optionIds.map((id) => [id, entry?.lessons.find((l) => l.subjectId === id)?.teacherId ?? (preset?.subjectId === id ? preset.teacherId : null)]),
+    ),
   );
 
   const subjectName = (id: string) => {

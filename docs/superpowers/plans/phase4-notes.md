@@ -18,13 +18,13 @@
 - Progress list uses full bilingual subject names (`pickName`), grid cells use `Subject.short` in en / `pickName` in si. Total = filled slots of the class inside its template / `weekCapacity`.
 - Group cell sub: "⧉ 6A+6B" (all classes, sorted) when joined, else "Group · N teachers"; combined single-lesson cells: "⧉ 6A+6B · teacher".
 - Fill: drafts snapshotted when the confirm modal opens; saved one by one, stops on first failed save; button hidden when no class teacher, disabled when 0 drafts.
-- Delete key on a group/combined cell removes the whole entry (all classes) with no confirm.
+- Delete key on a multi-class (group/combined) cell opens the BlockEditor (with Remove block) instead of deleting; single-class cells (incl. single-class groups) are removed directly. (Changed in 4.3.)
 - Super-admin mirror: `useAdminBase()` (paths.ts) returns `/s/:sid` or `/admin`; used for class nav and print URL.
 - Refactored BlockEditor's reason text into shared `teacherReason` (labels.ts); no behaviour change.
-- Known gap: `BlockEditor` calls its own `useTimetable()`, so its optimistic overlay is dropped when it closes; a saved block shows only once the Firestore snapshot lands. Follow-up: share one timetable state via context inside features/timetable.
+- ~~Known gap: `BlockEditor` calls its own `useTimetable()`~~ — fixed in 4.3: BlockEditor receives `entries`/`onSave`/`onRemove` from the page's `useTimetable`.
 
 ### 4.4 Block editor
-- `BlockEditor` props: `{ open, onClose, baseClassId, day, period, mode: {kind:'group', item} | {kind:'combined', subjectId}, entry? }`; closes itself on successful save/remove.
+- `BlockEditor` props: `{ open, onClose, baseClassId, day, period, mode: {kind:'group', item} | {kind:'combined', subjectId}, entry?, entries, onSave, onRemove, preset? }`; closes itself on successful save/remove. Since 4.3 it no longer calls `useTimetable()` itself: the page passes its `entries`/`save`/`remove` so the optimistic overlay survives the modal closing. `preset {subjectId, teacherId}` preselects a teacher for one option (teacher view).
 - Combined mode requires 2+ classes to enable Save; group mode allows base class alone.
 - Chips are filtered by `effectivePlan` (group key / subject item); classes already on an edited entry stay visible so they can be unchecked.
 - `findClass`/`gradeOf`/`templateOf` are not exported from `@sathiya/core` index, so resolved from `ctx` inline.

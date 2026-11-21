@@ -8,14 +8,21 @@ import userEvent from '@testing-library/user-event';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { renderWithSchool } from '../../test/renderWithSchool';
 import { BlockEditor, type BlockEditorProps } from './BlockEditor';
-import { TimetableApiContext, type TimetableApi } from './useTimetable';
+import { TimetableApiContext, useTimetable, type TimetableApi } from './useTimetable';
 
 const ro = vi.hoisted(() => ({ value: false }));
 vi.mock('../../ui/AdminLayout', () => ({ useReadOnly: () => ro.value }));
 
 const religion = ctx.grades.find((g) => g.number === 6)!.plan.find((p) => p.kind === 'group' && p.key === 'religion') as Extract<PlanItem, { kind: 'group' }>;
 
-function setup(props: Partial<BlockEditorProps> = {}, opts: { ctx?: SchoolContext; entries?: Entry[] } = {}) {
+type Props = Omit<BlockEditorProps, 'entries' | 'onSave' | 'onRemove'>;
+
+function Harness(props: Props) {
+  const { entries, save, remove } = useTimetable();
+  return <BlockEditor {...props} entries={entries} onSave={save} onRemove={remove} />;
+}
+
+function setup(props: Partial<Props> = {}, opts: { ctx?: SchoolContext; entries?: Entry[] } = {}) {
   const api: TimetableApi = {
     saveEntry: vi.fn().mockResolvedValue({ entryId: 'new' }),
     deleteEntry: vi.fn().mockResolvedValue({ ok: true }),
@@ -23,7 +30,7 @@ function setup(props: Partial<BlockEditorProps> = {}, opts: { ctx?: SchoolContex
   const onClose = vi.fn();
   renderWithSchool(
     <TimetableApiContext.Provider value={api}>
-      <BlockEditor open onClose={onClose} baseClassId={C.c6b} day={2} period={4} mode={{ kind: 'group', item: religion }} {...props} />
+      <Harness open onClose={onClose} baseClassId={C.c6b} day={2} period={4} mode={{ kind: 'group', item: religion }} {...props} />
     </TimetableApiContext.Provider>,
     { ctx: opts.ctx ?? ctx, entries: opts.entries ?? entries6B },
   );
@@ -151,6 +158,12 @@ describe('BlockEditor', () => {
     expect(screen.getByRole('button', { name: 'Save' })).toBeEnabled();
     await userEvent.click(screen.getByRole('button', { name: 'Save' }));
     await waitFor(() => expect(api.saveEntry).toHaveBeenCalled());
+  });
+
+  it('preselects a preset teacher for its option', () => {
+    setup({ preset: { subjectId: S.buddhism, teacherId: T.ananda } });
+    expect(screen.getByLabelText(/Buddhism/)).toHaveValue(T.ananda);
+    expect(screen.getByLabelText(/Catholicism/)).toHaveValue('');
   });
 
   it('renders nothing actionable when the slot is not in the class template', () => {

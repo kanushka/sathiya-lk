@@ -25,7 +25,8 @@ import { Icon } from '../../ui/Icon';
 import { LoadingState } from '../../ui/LoadingState';
 import { Modal } from '../../ui/Modal';
 import { Select } from '../../ui/Select';
-import { BlockEditor, type BlockEditorProps } from './BlockEditor';
+import { BlockEditor } from './BlockEditor';
+import { blockKey, blockStateFor, isBlock, type BlockState } from './blockState';
 import { classCellView } from './labels';
 import { useAdminBase } from './paths';
 import { SlotPicker } from './SlotPicker';
@@ -69,13 +70,6 @@ export function ClassViewPage() {
   return <ClassView key={cls.id} cls={cls} classes={classes} />;
 }
 
-type BlockState = Pick<BlockEditorProps, 'day' | 'period' | 'mode' | 'entry'>;
-
-function blockKey(b: BlockState): string {
-  const m = b.mode.kind === 'group' ? b.mode.item.key : b.mode.subjectId;
-  return `${b.day}-${b.period}-${b.mode.kind}-${m}-${b.entry?.id ?? ''}`;
-}
-
 function ClassView({ cls, classes }: { cls: SchoolClass; classes: SchoolClass[] }) {
   const { t } = useTranslation('timetable');
   const { lang } = useLang();
@@ -107,32 +101,19 @@ function ClassView({ cls, classes }: { cls: SchoolClass; classes: SchoolClass[] 
   const go = (c: SchoolClass | undefined) => c && navigate(`${base}/timetable/class/${c.id}`);
   const gradeNumber = (c: SchoolClass) => ctx.grades.find((g) => g.id === c.gradeId)?.number ?? '';
 
-  function openBlockFor(e: Entry) {
-    if (e.groupKey !== undefined) {
-      const item = plan.find((p): p is Extract<typeof p, { kind: 'group' }> => p.kind === 'group' && p.key === e.groupKey) ?? {
-        kind: 'group' as const,
-        key: e.groupKey,
-        nameEn: e.groupKey,
-        optionSubjectIds: e.lessons.map((l) => l.subjectId),
-        perWeek: 0,
-      };
-      setBlock({ day: e.day, period: e.period, mode: { kind: 'group', item }, entry: e });
-    } else {
-      setBlock({ day: e.day, period: e.period, mode: { kind: 'combined', subjectId: e.lessons[0]?.subjectId ?? '' }, entry: e });
-    }
-  }
-
   function onActivate(day: DayIndex, period: number) {
     if (readOnly || windowOf(template, day, period) === null) return;
     const e = entryAt(day, period);
-    if (e && (e.groupKey !== undefined || e.classIds.length > 1)) openBlockFor(e);
+    if (e && isBlock(e)) setBlock(blockStateFor(e, ctx, cls.id));
     else setPicker({ day, period, ...(e ? { editing: e } : {}) });
   }
 
   function onClear(day: DayIndex, period: number) {
     if (readOnly) return;
     const e = entryAt(day, period);
-    if (e) void remove(e.id);
+    if (!e) return;
+    if (e.classIds.length > 1) setBlock(blockStateFor(e, ctx, cls.id));
+    else void remove(e.id);
   }
 
   function print() {
@@ -231,16 +212,16 @@ function ClassView({ cls, classes }: { cls: SchoolClass; classes: SchoolClass[] 
           onClear={remove}
           onGroup={(item) => {
             setPicker(null);
-            setBlock({ day: picker.day, period: picker.period, mode: { kind: 'group', item }, ...(picker.editing ? { entry: picker.editing } : {}) });
+            setBlock({ baseClassId: cls.id, day: picker.day, period: picker.period, mode: { kind: 'group', item }, ...(picker.editing ? { entry: picker.editing } : {}) });
           }}
           onCombine={(subjectId) => {
             setPicker(null);
-            setBlock({ day: picker.day, period: picker.period, mode: { kind: 'combined', subjectId }, ...(picker.editing ? { entry: picker.editing } : {}) });
+            setBlock({ baseClassId: cls.id, day: picker.day, period: picker.period, mode: { kind: 'combined', subjectId }, ...(picker.editing ? { entry: picker.editing } : {}) });
           }}
         />
       )}
 
-      {block && <BlockEditor key={blockKey(block)} open onClose={() => setBlock(null)} baseClassId={cls.id} {...block} />}
+      {block && <BlockEditor key={blockKey(block)} open onClose={() => setBlock(null)} entries={entries} onSave={save} onRemove={remove} {...block} />}
 
       {fill && classTeacher && (
         <Modal

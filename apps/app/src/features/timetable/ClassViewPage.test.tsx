@@ -112,6 +112,27 @@ describe('ClassViewPage', () => {
     await waitFor(() => expect(api.deleteEntry).toHaveBeenCalledWith(expect.objectContaining({ entryId: 'e-6b-0-1' })));
   });
 
+  it('opens the block editor instead of deleting a multi-class cell on Delete', async () => {
+    const api = setup();
+    await userEvent.click(slot('Wednesday', 2));
+    fireEvent.keyDown(slot('Wednesday', 2), { key: 'Delete' });
+    expect(screen.getByRole('dialog', { name: 'Religion' })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'Remove block' })).toBeInTheDocument();
+    expect(api.deleteEntry).not.toHaveBeenCalled();
+  });
+
+  it('keeps a saved block visible after the block editor closes', async () => {
+    const api = setup();
+    await activate('Wednesday', 4);
+    await userEvent.click(screen.getByRole('button', { name: 'Subject' }));
+    await userEvent.click(screen.getByRole('option', { name: /^Religion/ }));
+    const dialog = await screen.findByRole('dialog', { name: 'Religion' });
+    await userEvent.click(within(dialog).getByRole('button', { name: 'Save' }));
+    await waitFor(() => expect(screen.queryByRole('dialog')).not.toBeInTheDocument());
+    expect(api.saveEntry).toHaveBeenCalled();
+    expect(slot('Wednesday', 4)).toHaveTextContent('Religion');
+  });
+
   it('fills empty periods with the class teacher after confirming, one at a time', async () => {
     const api = makeApi();
     const resolvers: Array<() => void> = [];
