@@ -3,6 +3,8 @@
 
 import { classProgress, effectivePlan, weekCapacity, windowOf, type Entry, type SchoolClass } from '@sathiya/core';
 import { useTranslation } from 'react-i18next';
+import { cx } from '../../ui/cx';
+import { Icon } from '../../ui/Icon';
 import { useLang } from '../../app/LangProvider';
 import { useSchool } from '../../app/SchoolProvider';
 import { planItemColor, planItemName } from './labels';
@@ -10,9 +12,12 @@ import { planItemColor, planItemName } from './labels';
 export interface SubjectProgressProps {
   cls: SchoolClass;
   entries: Entry[];
+  onPin?(subjectId: string): void;
+  onStop?(): void;
+  activeSubjectId?: string;
 }
 
-export function SubjectProgress({ cls, entries }: SubjectProgressProps) {
+export function SubjectProgress({ cls, entries, onPin, onStop, activeSubjectId }: SubjectProgressProps) {
   const { t } = useTranslation('timetable');
   const { lang } = useLang();
   const ctx = useSchool();
@@ -35,17 +40,43 @@ export function SubjectProgress({ cls, entries }: SubjectProgressProps) {
       <ul className="m-0 list-none p-0">
         {rows.map((r) => {
           const done = r.placed >= r.needed;
+          const over = r.placed > r.needed;
           const pct = r.needed > 0 ? Math.min(100, Math.round((r.placed / r.needed) * 100)) : 100;
+          const subjectId = r.item.kind === 'subject' ? r.item.subjectId : null;
+          const active = subjectId !== null && subjectId === activeSubjectId;
+          const name = planItemName(r.item, ctx, lang);
           return (
-            <li key={r.key} className="flex items-center gap-2.5 py-[5px]">
+            <li
+              key={r.key}
+              data-active={active || undefined}
+              className={cx('-mx-2 flex items-center gap-2.5 rounded-[10px] px-2 py-[5px]', active && 'bg-brand/10 shadow-[inset_0_0_0_1.5px_var(--brand)]')}
+            >
               <span className="h-2.5 w-2.5 shrink-0 rounded-[3px]" style={{ background: planItemColor(r.item, ctx) }} />
-              <span className="flex-1 text-[13px]">{planItemName(r.item, ctx, lang)}</span>
+              <span className="flex-1 text-[13px]">{name}</span>
               <span className="h-1.5 w-[70px] overflow-hidden rounded-full bg-[#EEF0F3]" aria-hidden="true">
-                <span data-bar className="block h-1.5" style={{ width: `${pct}%`, background: done ? '#2E8B4A' : '#D9A441' }} />
+                <span data-bar className="block h-1.5" style={{ width: `${pct}%`, background: over ? '#B3261E' : done ? '#2E8B4A' : '#D9A441' }} />
               </span>
-              <b className="w-9 text-right text-[13px]" style={{ color: done ? '#1F6B34' : '#7A5410' }}>
+              <b data-over={over || undefined} className="w-9 text-right text-[13px]" style={{ color: over ? '#B3261E' : done ? '#1F6B34' : '#7A5410' }}>
                 {t('progress.count', { placed: r.placed, needed: r.needed })}
               </b>
+              {onPin && (
+                <span className="flex w-9 shrink-0 justify-end">
+                  {subjectId !== null && (
+                    <button
+                      type="button"
+                      aria-label={active ? t('pin.listStop', { subject: name }) : t('pin.listPin', { subject: name })}
+                      title={active ? t('pin.listStop', { subject: name }) : t('pin.listPin', { subject: name })}
+                      onClick={() => (active ? onStop?.() : onPin(subjectId))}
+                      className={cx(
+                        'flex h-8 w-9 items-center justify-center rounded-lg focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-1 focus-visible:outline-brand',
+                        active ? 'border-0 bg-danger text-white hover:brightness-110' : 'border border-line-strong bg-white text-brand hover:bg-brand/5',
+                      )}
+                    >
+                      <Icon name={active ? 'stop' : 'pin'} size={active ? 14 : 16} strokeWidth={2} />
+                    </button>
+                  )}
+                </span>
+              )}
             </li>
           );
         })}
