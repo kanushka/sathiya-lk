@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
 // Copyright (C) 2026 Kanushka Gayan
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Button } from '../../ui/Button';
 import { printSlips, type PrintLabels } from './printSlips';
@@ -26,12 +26,18 @@ export interface LoginSlipProps {
   onReset?: () => void;
   resetting?: boolean;
   resetError?: boolean;
+  focusPrint?: boolean;
 }
 
-export function LoginSlip({ slip, hasStaffId, onReset, resetting, resetError }: LoginSlipProps) {
+export function LoginSlip({ slip, hasStaffId, onReset, resetting, resetError, focusPrint }: LoginSlipProps) {
   const { t } = useTranslation('teachers');
   const labels = usePrintLabels();
   const [qr, setQr] = useState('');
+  const printRef = useRef<HTMLButtonElement>(null);
+
+  useEffect(() => {
+    if (focusPrint) printRef.current?.focus();
+  }, [focusPrint]);
 
   useEffect(() => {
     let live = true;
@@ -65,7 +71,7 @@ export function LoginSlip({ slip, hasStaffId, onReset, resetting, resetError }: 
       </div>
       {hasStaffId && (
         <div className="flex flex-wrap gap-2">
-          <Button size="sm" onClick={() => void printSlips([slip], labels)}>
+          <Button ref={printRef} size="sm" onClick={() => void printSlips([slip], labels)}>
             {t('slip.print')}
           </Button>
           <a

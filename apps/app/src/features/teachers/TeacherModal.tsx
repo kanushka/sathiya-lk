@@ -278,6 +278,7 @@ export function TeacherModal({ teacher, onClose }: TeacherModalProps) {
             url: teacherLoginUrl(window.location.origin, school.id),
           }}
           hasStaffId={!!teacherId}
+          focusPrint={!!savedId}
           onReset={teacherId && !readOnly ? reset : undefined}
           resetting={resetting}
           resetError={resetError}

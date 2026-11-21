@@ -98,6 +98,20 @@ describe('teachers page', () => {
     expect(within(dialog).getByRole('button', { name: 'Done' })).toBeInTheDocument();
   });
 
+  it('moves focus to the slip Print button after creating a teacher', async () => {
+    const user = userEvent.setup();
+    vi.mocked(api.createTeacher).mockResolvedValue({ teacherId: 'tNew', password: 'k7m4x9pq' });
+    render();
+    const dialog = await openAdd(user);
+    await user.type(within(dialog).getByLabelText('Name'), 'New Teacher');
+    await user.click(within(dialog).getByRole('button', { name: 'Mathematics' }));
+    await user.click(within(dialog).getByRole('button', { name: '6' }));
+    await user.click(within(dialog).getByRole('button', { name: 'Save teacher' }));
+
+    expect(await within(dialog).findByText('k7m4x9pq')).toBeInTheDocument();
+    await waitFor(() => expect(within(dialog).getByRole('button', { name: 'Print slip' })).toHaveFocus());
+  });
+
   it('shows a new password after reset', async () => {
     const user = userEvent.setup();
     vi.mocked(api.resetTeacherPassword).mockResolvedValue('n3w8pass');
