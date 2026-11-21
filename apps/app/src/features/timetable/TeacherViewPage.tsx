@@ -186,7 +186,7 @@ function TeacherView({ teacher, teachers, template }: { teacher: Teacher; teache
         role="meter"
         aria-label={t('teacherView.load', { day: tc(`days.long.${d}`) })}
         aria-valuemin={0}
-        aria-valuemax={max}
+        aria-valuemax={Math.max(max, load)}
         aria-valuenow={load}
         aria-valuetext={value}
         data-over={String(over)}

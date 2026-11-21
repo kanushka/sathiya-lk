@@ -63,6 +63,11 @@ describe('TeacherViewPage', () => {
     expect(slot('Monday', 1)).toHaveTextContent('+');
   });
 
+  it('uses the singular for one period this week', () => {
+    setup(T.perera, { entries: [entry('one', 0, 1, [C.c6b], [[S.maths, T.perera]])] });
+    expect(screen.getByText(/this week/)).toHaveTextContent(/· 1 period this week$/);
+  });
+
   it('moves between teachers with prev/next and search by staff ID', async () => {
     setup();
     expect(screen.getByRole('button', { name: 'Next teacher' })).toBeDisabled();
@@ -79,11 +84,14 @@ describe('TeacherViewPage', () => {
     setup(T.ananda, { entries: [...entries, ...extra] });
     const mon = screen.getByRole('meter', { name: 'Monday load' });
     expect(mon).toHaveAttribute('aria-valuetext', '7/6');
+    expect(mon).toHaveAttribute('aria-valuenow', '7');
+    expect(mon).toHaveAttribute('aria-valuemax', '7');
     expect(mon).toHaveAttribute('data-over', 'true');
     expect(mon).toHaveTextContent('7/6');
     const wed = screen.getByRole('meter', { name: 'Wednesday load' });
     expect(wed).toHaveAttribute('aria-valuetext', '1/6');
     expect(wed).toHaveAttribute('data-over', 'false');
+    expect(wed).toHaveAttribute('aria-valuemax', '6');
   });
 
   it('stacks two Primary lessons that fall in one default row', () => {

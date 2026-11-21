@@ -37,7 +37,8 @@
   },
   "cell": {
     "joined": "⧉ {{classes}}",
-    "groupTeachers": "Group · {{count}} teachers",
+    "groupTeachers_one": "Group · {{count}} teacher",
+    "groupTeachers_other": "Group · {{count}} teachers",
     "combined": "⧉ {{classes}} · {{teacher}}",
     "noTeacher": "No teacher"
   },
@@ -85,9 +86,11 @@
   },
   "fill": {
     "title": "Fill empty periods",
-    "body": "{{count}} empty periods will be filled with {{teacher}}, choosing subjects that still need periods. Periods where {{teacher}} is busy or at the daily limit stay empty.",
+    "body_one": "{{count}} empty period will be filled with {{teacher}}, choosing a subject that still needs periods. If {{teacher}} is busy or at the daily limit, it stays empty.",
+    "body_other": "{{count}} empty periods will be filled with {{teacher}}, choosing subjects that still need periods. Periods where {{teacher}} is busy or at the daily limit stay empty.",
     "none": "Nothing to fill: no empty period can take {{teacher}} for a subject that still needs periods.",
-    "confirm": "Fill {{count}} periods",
+    "confirm_one": "Fill {{count}} period",
+    "confirm_other": "Fill {{count}} periods",
     "running": "Filling {{done}}/{{count}}…",
     "cancel": "Cancel"
   },
@@ -101,7 +104,8 @@
     "grade": "Grade {{grades}}",
     "grades": "Grades {{grades}}",
     "max": "max {{max}} / day",
-    "week": "{{count}} periods this week",
+    "week_one": "{{count}} period this week",
+    "week_other": "{{count}} periods this week",
     "print": "Print",
     "load": "{{day}} load",
     "loadValue": "{{load}}/{{max}}",
