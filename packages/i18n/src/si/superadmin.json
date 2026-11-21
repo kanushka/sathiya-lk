@@ -12,6 +12,11 @@
     "announcements": "නිවේදන"
   },
   "adminLink": "ප්‍රධාන පරිපාලක",
+  "schoolTypes": {
+    "government": "රජයේ",
+    "private": "පෞද්ගලික",
+    "international": "ජාත්‍යන්තර"
+  },
   "schools": {
     "title": "පාසල්",
     "searchLabel": "පාසල් සොයන්න",

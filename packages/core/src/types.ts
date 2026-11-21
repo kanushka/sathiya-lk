@@ -14,6 +14,11 @@ export const AUTH_EMAIL_KINDS = ['verify', 'reset'] as const;
 export type AuthEmailKind = (typeof AUTH_EMAIL_KINDS)[number];
 export interface SchoolReport { id: string; schoolId: string; reason: ReportReason; details?: string; email?: string; createdAt: number; status: 'open' | 'closed' }
 export interface SchoolDirectoryEntry extends Bilingual { district: string; city: string; status: 'active' | 'disabled' }
+export interface Announcement { textEn: string; textSi?: string; active: boolean; updatedAt: number }
+export interface PlatformConfig { currentTermsVersion: string; announcement?: Announcement }
+export interface DefaultSubject { nameEn: string; nameSi: string; short: string; color: string }
+export interface DefaultSubjectsDoc { subjects: DefaultSubject[]; updatedAt: number }
+export interface TermsVersion { version: string; termsMd: string; privacyMd: string; publishedAt: number }
 export interface Teacher { id: string; staffId: string; name: string; isPrimary: boolean; subjectIds: string[]; grades: number[]; maxPerDay: number; phone?: string; email?: string; uid?: string; lastLoginAt?: number }
 export interface Subject extends Bilingual { id: string; short: string; color: string }
 export interface TemplateRow { type: 'period' | 'interval'; start: Hhmm; end: Hhmm }

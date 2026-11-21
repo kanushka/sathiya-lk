@@ -12,6 +12,11 @@
     "announcements": "Announcements"
   },
   "adminLink": "Super admin",
+  "schoolTypes": {
+    "government": "Government",
+    "private": "Private",
+    "international": "International"
+  },
   "schools": {
     "title": "Schools",
     "searchLabel": "Search schools",
