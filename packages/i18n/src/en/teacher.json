@@ -1,0 +1,38 @@
+{
+  "greeting": {
+    "morning": "Good morning",
+    "afternoon": "Good afternoon",
+    "evening": "Good evening"
+  },
+  "now": "NOW",
+  "next": "Next",
+  "minLeft": "{{n}} min left",
+  "noClassNow": "No class right now",
+  "noClassesToday": "No classes today",
+  "noClassesTodayBody": "Showing Monday's timetable.",
+  "freePeriod": "Free period",
+  "interval": "INTERVAL",
+  "views": { "label": "View", "today": "Today", "week": "Week" },
+  "days": "Day",
+  "weekGrid": "Weekly timetable",
+  "notPublished": {
+    "title": "Not published yet",
+    "body": "Your timetable will appear here once your school publishes it."
+  },
+  "loadError": "Could not load your timetable. Please try again.",
+  "language": "Language",
+  "signOut": "Sign out",
+  "changePassword": "Change password",
+  "cp": {
+    "title": "Change password",
+    "current": "Current password",
+    "new": "New password",
+    "confirm": "Confirm new password",
+    "submit": "Change password",
+    "tooShort": "Use at least 6 characters",
+    "mismatch": "Passwords do not match",
+    "wrongCurrent": "Current password is incorrect",
+    "failed": "Could not change password. Please try again.",
+    "done": "Password changed"
+  }
+}
