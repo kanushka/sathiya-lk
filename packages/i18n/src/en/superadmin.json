@@ -1,0 +1,76 @@
+{
+  "brand": "Sathiya",
+  "role": "Super admin",
+  "nav": {
+    "label": "Super admin menu",
+    "schools": "Schools",
+    "usage": "Usage",
+    "schoolAdmin": "School admin"
+  },
+  "adminLink": "Super admin",
+  "schools": {
+    "title": "Schools",
+    "searchLabel": "Search schools",
+    "searchPlaceholder": "Search by name or staff prefix",
+    "statusLabel": "Status",
+    "districtLabel": "District",
+    "allStatuses": "All statuses",
+    "allDistricts": "All districts",
+    "columns": {
+      "school": "School",
+      "district": "District",
+      "teachers": "Teachers",
+      "classes": "Classes",
+      "status": "Status",
+      "actions": "Actions"
+    },
+    "empty": "No schools found",
+    "emptyBody": "Try a different search or filter.",
+    "loadError": "Could not load schools.",
+    "open": "Open",
+    "details": "Details",
+    "disable": "Disable",
+    "enable": "Enable"
+  },
+  "status": { "active": "Active", "disabled": "Disabled" },
+  "confirmDisable": {
+    "title": "Disable {{name}}?",
+    "body": "Everyone at this school, admins and teachers, will be blocked from signing in until you enable it again.",
+    "confirm": "Disable school"
+  },
+  "toast": {
+    "disabled": "{{name}} disabled",
+    "enabled": "{{name}} enabled",
+    "failed": "Could not change status: {{message}}"
+  },
+  "detail": {
+    "back": "All schools",
+    "notFound": "School not found",
+    "name": "Name (English)",
+    "nameSi": "Name (Sinhala)",
+    "district": "District",
+    "status": "Status",
+    "created": "Created",
+    "terms": "Terms version accepted",
+    "activeYear": "Active year",
+    "noActiveYear": "None",
+    "usage": "Usage",
+    "openReadOnly": "Open read-only view"
+  },
+  "usage": {
+    "title": "Usage",
+    "intro": "Record counts per school. The entries count covers the active year only.",
+    "columns": {
+      "school": "School",
+      "teachers": "Teachers",
+      "classes": "Classes",
+      "entries": "Entries",
+      "lastActivity": "Last activity"
+    },
+    "totals": "Total",
+    "never": "Never",
+    "noData": "—",
+    "loading": "Loading…",
+    "countError": "Error"
+  }
+}
