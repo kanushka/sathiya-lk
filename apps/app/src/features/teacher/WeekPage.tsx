@@ -22,7 +22,7 @@ function WeekBody({ snap, todayWeekday }: { snap: TeacherSnapshot; todayWeekday:
 
   return (
     <section aria-label={t('teacher:weekGrid')} className="overflow-x-auto rounded-2xl border border-line bg-white shadow-[0_14px_30px_-18px_rgba(20,33,61,.45)]">
-      <div className="grid min-w-[480px] gap-px bg-line-soft" style={{ gridTemplateColumns: '44px repeat(5, minmax(0, 1fr))' }}>
+      <div className="grid min-w-[300px] gap-px bg-line-soft" style={{ gridTemplateColumns: '44px repeat(5, minmax(0, 1fr))' }}>
         <div className="bg-white" />
         {weekdays.map((d) => (
           <div

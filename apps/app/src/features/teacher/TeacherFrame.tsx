@@ -34,7 +34,7 @@ function greetingKey(hour: number): 'morning' | 'afternoon' | 'evening' {
 }
 
 export function TeacherFrame({ view, now: nowFn, snapshot, changePassword, children }: FrameProps) {
-  const { t } = useTranslation(['teacher', 'common']);
+  const { t } = useTranslation(['teacher', 'common', 'shell']);
   const { lang, setLang } = useLang();
   const { claims, signOut } = useAuth();
   const { school } = useSchool();
@@ -48,6 +48,7 @@ export function TeacherFrame({ view, now: nowFn, snapshot, changePassword, child
   const state = snapshot ?? live;
   const snap = state.data;
 
+  const target = lang === 'en' ? 'si' : 'en';
   const schoolName = pickName(school, lang);
   const dateLine = new Intl.DateTimeFormat(lang === 'si' ? 'si-LK' : 'en-GB', { weekday: 'long', day: 'numeric', month: 'long' }).format(now);
   const fullName = snap?.name;
@@ -64,7 +65,7 @@ export function TeacherFrame({ view, now: nowFn, snapshot, changePassword, child
       aria-current={active ? 'page' : undefined}
       className={cx(
         'flex h-9 flex-1 items-center justify-center rounded-lg text-sm font-bold',
-        active ? 'bg-white text-ink' : 'text-on-brand/90',
+        active ? 'bg-white text-ink' : 'opacity-90',
       )}
     >
       {label}
@@ -92,11 +93,11 @@ export function TeacherFrame({ view, now: nowFn, snapshot, changePassword, child
           </div>
           <button
             type="button"
-            onClick={() => setLang(lang === 'en' ? 'si' : 'en')}
-            aria-label={t('teacher:language')}
-            className="h-8 rounded-lg border border-on-brand/40 bg-transparent px-2.5 text-[13px] font-semibold"
+            onClick={() => setLang(target)}
+            aria-label={`${t('shell:sidebar.language')}: ${t(`common:languages.${target}`)}`}
+            className="h-8 rounded-lg border border-[color-mix(in_srgb,var(--on-brand)_40%,transparent)] bg-transparent px-2.5 text-[13px] font-semibold"
           >
-            {lang === 'en' ? 'සිං' : 'EN'}
+            {t(`shell:sidebar.langShort.${target}`)}
           </button>
         </div>
         <p className="mt-4 text-[22px] font-extrabold leading-tight">
@@ -118,6 +119,14 @@ export function TeacherFrame({ view, now: nowFn, snapshot, changePassword, child
         <Button variant="ghost" size="sm" onClick={() => setPwOpen(true)}>
           {t('teacher:changePassword')}
         </Button>
+        {claims.role === 'admin' && (
+          <Link
+            to="/admin"
+            className="inline-flex h-8 items-center rounded-lg px-3 text-[13px] font-semibold text-ink-soft hover:bg-slate-100"
+          >
+            {t('teacher:adminLink')}
+          </Link>
+        )}
         <Button variant="ghost" size="sm" onClick={() => void signOut()}>
           {t('teacher:signOut')}
         </Button>

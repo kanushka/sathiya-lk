@@ -5,6 +5,7 @@ import { C, S, T, ctx as baseCtx, entries, entry } from '@sathiya/core/fixtures'
 import { act, screen, waitFor, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { afterEach, describe, expect, it, vi } from 'vitest';
+import { LangContextProvider } from '../../app/LangProvider';
 import { renderWithSchool } from '../../test/renderWithSchool';
 import { colomboNow } from './colomboNow';
 import { ChangePasswordModal } from './ChangePasswordModal';
@@ -98,6 +99,39 @@ describe('TodayPage', () => {
     const si = ctx.subjects.find((s) => s.id === S.maths)?.nameSi;
     expect(si).toBeTruthy();
     expect(within(screen.getByTestId('now-card')).getAllByText(new RegExp(si as string)).length).toBeGreaterThan(0);
+  });
+});
+
+describe('TeacherFrame chrome', () => {
+  const snap = () => ({ loading: false, data: snapshotFor(T.perera) });
+
+  it('links back to /admin for an admin who teaches', () => {
+    renderWithSchool(<TodayPage now={wed0920} snapshot={snap()} />, { ctx, claims: { ...claims(T.perera), role: 'admin' } });
+    expect(screen.getByRole('link', { name: 'School admin' })).toHaveAttribute('href', '/admin');
+  });
+
+  it('hides the admin link for a plain teacher', () => {
+    renderWithSchool(<TodayPage now={wed0920} snapshot={snap()} />, { ctx, claims: claims(T.perera) });
+    expect(screen.queryByRole('link', { name: 'School admin' })).toBeNull();
+  });
+
+  it('toggles language with a translated, descriptive label', async () => {
+    const setLang = vi.fn();
+    renderWithSchool(
+      <LangContextProvider value={{ lang: 'en', setLang }}>
+        <TodayPage now={wed0920} snapshot={snap()} />
+      </LangContextProvider>,
+      { ctx, claims: claims(T.perera) },
+    );
+    const btn = screen.getByRole('button', { name: 'Language: සිංහල' });
+    expect(btn).toHaveTextContent('සිං');
+    await userEvent.click(btn);
+    expect(setLang).toHaveBeenCalledWith('si');
+  });
+
+  it('uses only generated utility classes in the header', () => {
+    const { container } = renderWithSchool(<TodayPage now={wed0920} snapshot={snap()} />, { ctx, claims: claims(T.perera) });
+    expect(container.innerHTML).not.toMatch(/on-brand\//);
   });
 });
 

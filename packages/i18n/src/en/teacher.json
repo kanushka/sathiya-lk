@@ -12,7 +12,11 @@
   "noClassesTodayBody": "Showing Monday's timetable.",
   "freePeriod": "Free period",
   "interval": "INTERVAL",
-  "views": { "label": "View", "today": "Today", "week": "Week" },
+  "views": {
+    "label": "View",
+    "today": "Today",
+    "week": "Week"
+  },
   "days": "Day",
   "weekGrid": "Weekly timetable",
   "notPublished": {
@@ -34,5 +38,6 @@
     "wrongCurrent": "Current password is incorrect",
     "failed": "Could not change password. Please try again.",
     "done": "Password changed"
-  }
+  },
+  "adminLink": "School admin"
 }
