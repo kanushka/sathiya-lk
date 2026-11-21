@@ -5,9 +5,10 @@ import { existsSync, readFileSync, readdirSync, statSync } from 'node:fs';
 import { join, relative } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { describe, expect, it } from 'vitest';
+import { APP_URL, CONTACT_EMAIL, SITE_URL } from '../src/site';
 
 const dist = fileURLToPath(new URL('../dist/', import.meta.url));
-const APP = 'https://app.sathiya.lk';
+const APP = APP_URL;
 
 const pages = ['index', 'terms', 'privacy', 'contact'];
 const enPaths = pages.map((p) => (p === 'index' ? 'index.html' : `${p}/index.html`));
@@ -42,9 +43,9 @@ describe('built site', () => {
   it.each(allPaths)('%s has canonical and hreflang alternates', (p) => {
     const html = read(p);
     const path = '/' + p.replace(/index\.html$/, '');
-    expect(html).toContain(`<link rel="canonical" href="https://sathiya.lk${path}"`);
-    expect(html).toMatch(/<link rel="alternate" hreflang="en" href="https:\/\/sathiya\.lk\//);
-    expect(html).toMatch(/<link rel="alternate" hreflang="si" href="https:\/\/sathiya\.lk\/si\//);
+    expect(html).toContain(`<link rel="canonical" href="${SITE_URL}${path}"`);
+    expect(html).toContain(`<link rel="alternate" hreflang="en" href="${SITE_URL}/`);
+    expect(html).toContain(`<link rel="alternate" hreflang="si" href="${SITE_URL}/si/`);
   });
 
   it.each(allPaths)('%s has no bare # links and every in-page anchor resolves', (p) => {
@@ -97,16 +98,29 @@ describe('built site', () => {
   });
 
   it.each(['terms/index.html', 'si/terms/index.html', 'privacy/index.html', 'si/privacy/index.html'])(
-    '%s carries the version and contact placeholder',
+    '%s carries the version and contact email',
     (p) => {
       const html = read(p);
       expect(html).toContain('2026-11-21');
-      expect(html).toContain('[CONTACT EMAIL]');
+      expect(html).toContain(CONTACT_EMAIL);
+      expect(html).not.toContain('[CONTACT EMAIL]');
     },
   );
 
-  it.each(['contact/index.html', 'si/contact/index.html'])('%s shows the contact placeholder', (p) => {
-    expect(read(p)).toContain('[CONTACT EMAIL]');
+  it.each(['contact/index.html', 'si/contact/index.html'])('%s links the contact email', (p) => {
+    expect(attrs(read(p), 'a', 'href')).toContain(`mailto:${CONTACT_EMAIL}`);
+  });
+
+  it.each(allPaths)('%s uses the configured site URL for og:url and og:image', (p) => {
+    const html = read(p);
+    expect(html).toMatch(new RegExp(`<meta property="og:url" content="${SITE_URL.replace(/\./g, '\\.')}/`));
+    expect(html).toContain(`<meta property="og:image" content="${SITE_URL}/og.png"`);
+  });
+
+  it('no page mentions the old domain', () => {
+    for (const f of walk(dist).filter((f) => f.endsWith('.html'))) {
+      expect(readFileSync(f, 'utf8'), relative(dist, f)).not.toMatch(/(?<![\w.])sathiya\.lk\b/);
+    }
   });
 
   it.each(allPaths)('%s does not load gtag eagerly but offers consent', (p) => {

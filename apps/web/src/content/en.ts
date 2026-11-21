@@ -1,6 +1,8 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
 // Copyright (C) 2026 Kanushka Gayan
 
+import { CONTACT_EMAIL, SITE_HOST } from '../site';
+
 export const en = {
   brand: 'Sathiya',
   skip: 'Skip to content',
@@ -24,7 +26,7 @@ export const en = {
     },
     '404': {
       title: 'Page not found — Sathiya',
-      description: 'This page does not exist on sathiya.lk.',
+      description: `This page does not exist on ${SITE_HOST}.`,
     },
   },
   notFound: {
@@ -200,7 +202,7 @@ export const en = {
       },
       {
         title: 'Contact',
-        body: ['Questions about these terms: [CONTACT EMAIL]'],
+        body: [`Questions about these terms: ${CONTACT_EMAIL}`],
       },
     ],
   },
@@ -245,17 +247,17 @@ export const en = {
       {
         title: 'Website analytics and fonts',
         body: [
-          'This website (sathiya.lk) uses Google Analytics only after you click "Allow analytics". You can change your choice at any time with "Analytics settings" at the bottom of every page.',
+          `This website (${SITE_HOST}) uses Google Analytics only after you click "Allow analytics". You can change your choice at any time with "Analytics settings" at the bottom of every page.`,
           "The website's fonts are loaded from Google Fonts, so your browser contacts Google's servers on every visit, whatever your analytics choice.",
         ],
       },
       {
         title: 'Deleting data',
-        body: ["An administrator can ask us to delete the school's data by writing to [CONTACT EMAIL]."],
+        body: [`An administrator can ask us to delete the school's data by writing to ${CONTACT_EMAIL}.`],
       },
       {
         title: 'Contact',
-        body: ['Questions about privacy: [CONTACT EMAIL]'],
+        body: [`Questions about privacy: ${CONTACT_EMAIL}`],
       },
     ],
   },
@@ -264,7 +266,7 @@ export const en = {
     body: [
       'Sathiya is run as a free contribution to Sri Lankan schools. For questions, feedback or data requests, email us at:',
     ],
-    email: '[CONTACT EMAIL]',
+    email: CONTACT_EMAIL,
     teacherNote:
       "Are you a teacher? Please ask your school's Sathiya administrator first — they can reset your password and update your timetable.",
   },

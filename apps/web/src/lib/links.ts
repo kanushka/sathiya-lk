@@ -7,9 +7,9 @@ import { si } from '../content/si';
 export type Lang = 'en' | 'si';
 export type Page = 'index' | 'terms' | 'privacy' | 'contact' | '404';
 
-export const DEFAULT_APP_URL = 'https://app.sathiya.lk';
+import { APP_URL } from '../site';
 
-export function appLinks(base: string = import.meta.env.PUBLIC_APP_URL || DEFAULT_APP_URL) {
+export function appLinks(base: string = import.meta.env.PUBLIC_APP_URL || APP_URL) {
   const root = base.replace(/\/+$/, '');
   return {
     register: `${root}/register`,

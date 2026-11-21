@@ -11,6 +11,6 @@ const t = content(Astro.props.lang);
 <article class="wrap prose">
   <h1>{t.contact.title}</h1>
   {t.contact.body.map((p) => <p>{p}</p>)}
-  <p class="contact-email" lang="en">{t.contact.email}</p>
+  <p class="contact-email" lang="en"><a href={`mailto:${t.contact.email}`}>{t.contact.email}</a></p>
   <p class="note">{t.contact.teacherNote}</p>
 </article>

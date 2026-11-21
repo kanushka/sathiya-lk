@@ -2,9 +2,10 @@
 // Copyright (C) 2026 Kanushka Gayan
 
 import { defineConfig } from 'astro/config';
+import { SITE_URL } from './src/site.ts';
 
 export default defineConfig({
-  site: 'https://sathiya.lk',
+  site: SITE_URL,
   trailingSlash: 'always',
   build: { format: 'directory' },
 });

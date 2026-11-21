@@ -6,6 +6,7 @@ import Header from '../components/Header.astro';
 import Footer from '../components/Footer.astro';
 import Consent from '../components/Consent.astro';
 import { content, pagePath, type Lang, type Page } from '../lib/links';
+import { SITE_URL } from '../site';
 
 interface Props {
   lang: Lang;
@@ -14,7 +15,7 @@ interface Props {
 const { lang, page } = Astro.props;
 const t = content(lang);
 const { title, description } = t.meta[page];
-const site = Astro.site ?? new URL('https://sathiya.lk');
+const site = new URL(SITE_URL);
 const url = (l: Lang) => new URL(pagePath(l, page), site).href;
 const ogImage = new URL('/og.png', site).href;
 const notFound = page === '404';
