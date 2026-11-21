@@ -1,0 +1,39 @@
+{
+  "page": {
+    "title": "Members",
+    "subtitle": "Admins can edit the timetable. Teachers with access can view their own.",
+    "invite": "Invite admin",
+    "linkTitle": "App link",
+    "linkBody": "Share this link so teachers and admins can sign in.",
+    "copy": "Copy link",
+    "copied": "Link copied",
+    "copyFailed": "Could not copy. Select the link and copy it."
+  },
+  "list": {
+    "name": "Name",
+    "role": "Role",
+    "staffId": "Staff ID",
+    "email": "Email",
+    "admin": "Admin",
+    "teacher": "Teacher",
+    "empty": "No members yet",
+    "unknown": "Unknown member"
+  },
+  "invites": {
+    "title": "Pending invites",
+    "none": "No pending invites.",
+    "linked": "Linked to {{name}}"
+  },
+  "invite": {
+    "title": "Invite an admin",
+    "email": "Email",
+    "emailHint": "They get admin access when they sign in with this email.",
+    "emailError": "Enter a valid email address",
+    "teacher": "Link to a teacher (optional)",
+    "teacherNone": "Not a teacher",
+    "send": "Send invite",
+    "cancel": "Cancel",
+    "sent": "Invite sent to {{email}}",
+    "failed": "Could not send the invite. Try again."
+  }
+}
