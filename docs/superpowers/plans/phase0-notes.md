@@ -46,6 +46,14 @@ The plan/spec paths `years/{y}/published/classes/{cid}` and `platform/terms/{v}`
 - Added: `paths.user(uid)` → `users/{uid}`, `paths.publishedClasses(sid, yid)`, `paths.publishedTeachers(sid, yid)`.
 Phase 1 rules (1.3) and publishYear (1.2) and Phase 5 (5.1) must use these, not the plan text.
 
+### School location (added after review)
+- `School`: added `city: string` (required), `address?: string`, `phone?: string`. `RegisterSchoolReq.school` picks them up through its `Omit<School, …>`, so `city` is required there too.
+- Added `SchoolDirectoryEntry { nameEn; nameSi?; district; city; status }`: the shape of `schoolDirectory/{sid}` (public, no address/phone).
+- Added `directoryEntry(school)`: builds that entry. `registerSchool`, `setSchoolStatus` and any profile edit of name/district/city must write it.
+- Added `directoryLabel(entry, lang)`: gives `"name, city"` (name in `lang`, English fallback; name alone when city is blank). The teacher login school search uses it.
+- Fixture school: city `Kandy`.
+- Firestore rejects `undefined`: strip `address`/`phone` when empty.
+
 ### API (`api.ts`)
 Added `InviteAdminRes`, `ClaimInvitesReq`, `ClaimInvitesRes { schoolIds }`, `DeleteEntryRes`, `PublishYearRes { classes; teachers }`, `SetSchoolStatusRes`, `CallableName`, `CallableTypes` (req/res per callable). App `call('saveEntry', req)` infers types from `CallableTypes`; `call<Req, Res>(name, req)` still works.
 Error contract: functions throw `HttpsError(code, message, { code: ApiErrorCode, ... })`. The app maps `details.code` first; otherwise permission-denied/unauthenticated → `not-allowed`, everything else → `invalid`. Clash: `failed-precondition` with `details: { code: 'clash', conflicts }`.
