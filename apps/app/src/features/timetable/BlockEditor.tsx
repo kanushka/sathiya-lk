@@ -19,6 +19,7 @@ import { Button } from '../../ui/Button';
 import { cx } from '../../ui/cx';
 import { Modal } from '../../ui/Modal';
 import { Select } from '../../ui/Select';
+import { teacherReason } from './labels';
 import { useTimetable } from './useTimetable';
 
 export interface BlockEditorProps {
@@ -85,13 +86,7 @@ function BlockEditorBody({ onClose, baseClassId, day, period, mode, entry }: Blo
 
   if (!base || !slotExists) return null;
 
-  const classNames = (ids: string[]) => ids.map((id) => ctx.classes.find((c) => c.id === id)?.name ?? id).join('+');
-  const reasonText = (o: TeacherOption) => {
-    const max = o.teacher.maxPerDay;
-    if (o.reason === 'busy') return t('block.busy', { classes: classNames(o.busyWith?.classIds ?? []), subject: o.busyWith?.subjectId ? subjectName(o.busyWith.subjectId) : '' }).trim();
-    if (o.reason === 'limit') return t('block.limit', { load: o.loadToday, max });
-    return t('block.notQualified', { grade: gradeOf(base)?.number ?? '' });
-  };
+  const reasonText = (o: TeacherOption) => teacherReason(t, o, ctx, lang, gradeOf(base)?.number ?? '');
   const optionLabel = (o: TeacherOption) =>
     o.reason
       ? `${o.teacher.name} · ${o.teacher.staffId} · ${reasonText(o)}`

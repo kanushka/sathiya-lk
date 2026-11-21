@@ -34,5 +34,61 @@
     "save": "Save",
     "remove": "Remove block",
     "needTwo": "Pick at least one more class to combine."
+  },
+  "cell": {
+    "joined": "⧉ {{classes}}",
+    "groupTeachers": "Group · {{count}} teachers",
+    "combined": "⧉ {{classes}} · {{teacher}}",
+    "noTeacher": "No teacher"
+  },
+  "classView": {
+    "classLabel": "Class",
+    "classOption": "Grade {{grade}} · {{name}}",
+    "prev": "Previous class",
+    "next": "Next class",
+    "classTeacher": "Class teacher:",
+    "noClassTeacher": "No class teacher",
+    "fill": "Fill empty with class teacher",
+    "print": "Print",
+    "noClassesTitle": "No classes yet",
+    "noClassesBody": "Add grades and classes in Setup before building the timetable.",
+    "notFoundTitle": "Class not found",
+    "notFoundBody": "This class may have been deleted. Pick another class."
+  },
+  "picker": {
+    "slot": "{{day}} · Period {{n}} · {{time}}",
+    "titleSubject": "Choose a subject",
+    "titleTeacher": "Choose a teacher",
+    "subject": "Subject",
+    "subjectPlaceholder": "Click to search a subject",
+    "subjectSearch": "Search subject…",
+    "stillNeeded": "Still needed for {{class}}",
+    "complete": "Already complete",
+    "needs": "needs {{count}}",
+    "done": "{{placed}}/{{needed}}",
+    "teacher": "Teacher",
+    "teacherSearch": "Search name or staff ID…",
+    "noTeacherMatch": "No {{subject}} teacher matches “{{q}}”.",
+    "available": "Available ({{count}})",
+    "unavailable": "Not available ({{count}})",
+    "freeNote": "{{staffId}} · Free · {{load}}/{{max}} periods on {{day}}",
+    "assign": "Assign",
+    "current": "Current",
+    "combine": "Combine with other classes",
+    "groupHint": "Group subject? Pick {{groups}} to set teachers per option and join other classes.",
+    "clear": "Clear slot"
+  },
+  "progress": {
+    "title": "{{class}} subjects",
+    "count": "{{placed}}/{{needed}}",
+    "placedOf": "/ {{total}} placed"
+  },
+  "fill": {
+    "title": "Fill empty periods",
+    "body": "{{count}} empty periods will be filled with {{teacher}}, choosing subjects that still need periods. Periods where {{teacher}} is busy or at the daily limit stay empty.",
+    "none": "Nothing to fill: no empty period can take {{teacher}} for a subject that still needs periods.",
+    "confirm": "Fill {{count}} periods",
+    "running": "Filling {{done}}/{{count}}…",
+    "cancel": "Cancel"
   }
 }
