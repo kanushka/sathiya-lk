@@ -7,7 +7,7 @@
   "scripts": {
     "build": "pnpm -r --if-present build",
     "test": "vitest run --passWithNoTests",
-    "test:emulators": "firebase emulators:exec --only auth,firestore,storage,functions --project sathiya-lk \"pnpm --filter functions --if-present test && pnpm --filter rules --if-present test\"",
+    "test:emulators": "pnpm --filter functions build && firebase emulators:exec --only auth,firestore,storage,functions --project sathiya-lk \"pnpm --filter functions --if-present test && pnpm --filter rules --if-present test\"",
     "lint": "pnpm -r --if-present lint",
     "typecheck": "pnpm -r --if-present typecheck",
     "dev:app": "pnpm --filter app dev",
