@@ -26,6 +26,20 @@ describe('saveEntry', () => {
     const { entryId } = await save(admin, sid, draft(0, 2, [C.c6a], [[S.maths, T.bandara]]));
     const stored = (await adminDb.doc(`${paths.entries(sid, YEAR)}/${entryId}`).get()).data();
     expect(stored).toMatchObject({ day: 0, period: 2, classIds: [C.c6a], lessons: [{ subjectId: S.maths, teacherId: T.bandara }], teacherIds: [T.bandara] });
+    const locks = (await adminDb.collection(`${paths.years(sid)}/${YEAR}/slotLocks`).get()).docs.map((d) => d.id).sort();
+    expect(locks).toEqual([`0_c_${C.c6a}`, `0_t_${T.bandara}`]);
+  });
+
+  it('rejects the same teacher on two lessons of one entry', async () => {
+    const { admin, sid } = await seededSchool();
+    await expectFnError(
+      save(admin, sid, draft(0, 2, [C.c6a], [[S.maths, T.bandara], [S.science, T.bandara]])),
+      'invalid-argument',
+      'invalid',
+    );
+    await expect(save(admin, sid, draft(0, 2, [C.c6a], [[S.maths, null], [S.science, null]]))).resolves.toEqual({
+      entryId: expect.any(String),
+    });
   });
 
   it('rejects a teacher clash with the conflict list', async () => {

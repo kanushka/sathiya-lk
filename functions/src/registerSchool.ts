@@ -9,6 +9,7 @@ import { setSchoolClaims } from './lib/claims';
 import { CENSUS_NO_RE, SCHOOL_TYPES, type SchoolType } from './lib/contract';
 import { fail, intList, invalid, isVerified, obj, optStr, requireAuth, str } from './lib/guards';
 import { clientIp, consumeRateLimits, hashIp, REGISTER_PER_IP_PER_DAY, REGISTER_PER_UID_PER_DAY } from './lib/rateLimit';
+import { runTx } from './lib/tx';
 
 export type { RegisterSchoolInput } from './lib/contract';
 
@@ -16,6 +17,17 @@ const HEX = /^#[0-9A-Fa-f]{6}$/;
 export const CENSUS_INDEX = 'censusIndex';
 
 const alreadyHasSchool = (): never => fail('failed-precondition', 'already-has-school', 'Already a member of a school');
+
+// After a failed attempt: undo this attempt's claims; then, if another attempt by the same user won (users/{uid}.schoolId)
+// and the user is that school's admin member, give the user its claims. Restoring before reading means a winner that
+// committed before the read is never left without claims (the winner also re-asserts after its commit).
+async function reconcileClaims(uid: string, sid: string, prevClaims: Record<string, unknown> | null): Promise<void> {
+  if ((await auth.getUser(uid)).customClaims?.sid === sid) await auth.setCustomUserClaims(uid, prevClaims);
+  const winner = (await db.doc(paths.user(uid)).get()).get('schoolId') as string | undefined;
+  if (!winner || winner === sid) return;
+  const member = await db.doc(`${paths.members(winner)}/${uid}`).get();
+  if (member.get('role') === 'admin') await setSchoolClaims(uid, { sid: winner, role: 'admin' });
+}
 
 export const registerSchool = onCall(callOpts, async (req): Promise<RegisterSchoolRes> => {
   const { uid, claims, token } = requireAuth(req);
@@ -62,7 +74,7 @@ export const registerSchool = onCall(callOpts, async (req): Promise<RegisterScho
   // Claims first, rolled back if the transaction fails, so neither an orphan school nor a dangling sid claim is left.
   await setSchoolClaims(uid, { sid, role: 'admin' });
   try {
-    await db.runTransaction(async (tx) => {
+    await runTx(async (tx) => {
       const [user, census] = await tx.getAll(userRef, ...(censusRef ? [censusRef] : []));
       if (user!.get('schoolId')) alreadyHasSchool();
       if (census?.exists) fail('already-exists', 'census-taken', 'This census number is already registered');
@@ -90,12 +102,12 @@ export const registerSchool = onCall(callOpts, async (req): Promise<RegisterScho
       tx.set(userRef, { schoolId: sid }, { merge: true });
     });
   } catch (e) {
-    // Only undo our own claims: a concurrent successful registration by the same user may have replaced them.
-    const current = (await auth.getUser(uid)).customClaims;
-    if (current?.sid === sid) await auth.setCustomUserClaims(uid, prevClaims).catch(() => undefined);
+    await reconcileClaims(uid, sid, prevClaims).catch(() => undefined);
     // A lost race on the census reservation surfaces as ALREADY_EXISTS from commit (school/member/template ids are fresh).
     if ((e as { code?: unknown }).code === 6 && censusRef) fail('already-exists', 'census-taken', 'This census number is already registered');
     throw e;
   }
+  // Re-assert after commit: a concurrent losing attempt by the same user may have restored the old claims meanwhile.
+  await setSchoolClaims(uid, { sid, role: 'admin' });
   return { schoolId: sid };
 });

@@ -5,24 +5,27 @@ import { FieldValue, type DocumentReference } from 'firebase-admin/firestore';
 import { onCall } from 'firebase-functions/v2/https';
 import { db } from './lib/admin';
 import { callOpts } from './lib/callOptions';
-import { fail, int, invalid, obj, optStr, requireSchoolAdmin, str, strList } from './lib/guards';
+import { docId, docIdList, fail, int, invalid, obj, optDocId, optStr, requireSchoolAdmin } from './lib/guards';
 import { loadContext } from './lib/loadContext';
 import { slotLock } from './lib/slotLocks';
+import { runTx } from './lib/tx';
 
 // Firestore caps array-contains-any at 30 values.
 const chunks = <T>(xs: T[], n = 30): T[][] => Array.from({ length: Math.ceil(xs.length / n) }, (_, i) => xs.slice(i * n, i * n + n));
 
 function parseDraft(v: unknown): EntryDraft {
   const e = obj(v, 'entry');
-  const classIds = strList(e.classIds, 'classIds');
+  const classIds = docIdList(e.classIds, 'classIds');
   if (!classIds.length) invalid('entry needs at least one class');
   if (!Array.isArray(e.lessons) || !e.lessons.length || e.lessons.length > 30) invalid('entry needs 1–30 lessons');
   const lessons: Lesson[] = (e.lessons as unknown[]).map((l) => {
     const x = obj(l, 'lesson');
-    return { subjectId: str(x.subjectId, 'subjectId'), teacherId: x.teacherId === null ? null : str(x.teacherId, 'teacherId') };
+    return { subjectId: docId(x.subjectId, 'subjectId'), teacherId: x.teacherId === null ? null : docId(x.teacherId, 'teacherId') };
   });
+  const teachers = lessons.flatMap((l) => (l.teacherId === null ? [] : [l.teacherId]));
+  if (new Set(teachers).size !== teachers.length) invalid('A teacher can take only one lesson of an entry');
   const draft: EntryDraft = { day: int(e.day, 'day', 0, 4) as DayIndex, period: int(e.period, 'period', 1, 30), classIds, lessons };
-  const id = optStr(e.id, 'id');
+  const id = optDocId(e.id, 'id');
   const groupKey = optStr(e.groupKey, 'groupKey');
   if (id !== undefined) draft.id = id;
   if (groupKey !== undefined) draft.groupKey = groupKey;
@@ -37,7 +40,7 @@ const lockKeys = (e: Pick<Entry, 'day' | 'classIds' | 'teacherIds'>): string[] =
 export const saveEntry = onCall(callOpts, async (req): Promise<SaveEntryRes> => {
   const data = obj(req.data, 'request');
   const { sid } = await requireSchoolAdmin(req, data.schoolId);
-  const yid = str(data.yearId, 'yearId');
+  const yid = docId(data.yearId, 'yearId');
   const draft = withTeacherIds(parseDraft(data.entry));
 
   const ctx = await loadContext(sid);
@@ -56,7 +59,7 @@ export const saveEntry = onCall(callOpts, async (req): Promise<SaveEntryRes> => 
   const entries = db.collection(paths.entries(sid, yid));
   const ref = draft.id !== undefined ? entries.doc(draft.id) : entries.doc();
 
-  await db.runTransaction(async (tx) => {
+  await runTx(async (tx) => {
     if (!(await tx.get(yearRef)).exists) invalid('Unknown year');
     const keys = new Set(lockKeys(draft));
     if (draft.id !== undefined) {

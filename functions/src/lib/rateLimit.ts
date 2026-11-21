@@ -5,6 +5,7 @@ import { Timestamp } from 'firebase-admin/firestore';
 import type { CallableRequest } from 'firebase-functions/v2/https';
 import { db } from './admin';
 import { fail } from './guards';
+import { runTx } from './tx';
 
 export const REGISTER_PER_UID_PER_DAY = 3;
 export const REGISTER_PER_IP_PER_DAY = 10;
@@ -19,12 +20,12 @@ export interface Limit {
   max: number;
 }
 
-// First X-Forwarded-For hop, else the socket IP. The first hop is client-supplied (spoofable); see phase1-notes Task 1.4.
+// Rightmost X-Forwarded-For hop: the one Google's front end appends; hops before it are client-supplied. Else the socket IP.
 export function clientIp(req: CallableRequest): string {
   const raw = req.rawRequest;
   const xff = raw?.headers?.['x-forwarded-for'];
-  const first = (Array.isArray(xff) ? xff[0] : xff)?.split(',')[0]?.trim();
-  return first || raw?.ip || 'unknown';
+  const hops = (Array.isArray(xff) ? xff.join(',') : (xff ?? '')).split(',').map((h) => h.trim()).filter(Boolean);
+  return hops[hops.length - 1] || raw?.ip || 'unknown';
 }
 
 export const hashIp = (ip: string): string => createHash('sha256').update(ip).digest('hex');
@@ -34,7 +35,7 @@ export async function consumeRateLimits(limits: Limit[], now = Date.now()): Prom
   const day = new Date(now).toISOString().slice(0, 10);
   const refs = limits.map((l) => db.collection(RATE_LIMITS).doc(`${l.scope}_${day}_${l.id}`));
   const expiresAt = Timestamp.fromMillis(Date.parse(day) + 2 * DAY_MS);
-  await db.runTransaction(async (tx) => {
+  await runTx(async (tx) => {
     const snaps = await tx.getAll(...refs);
     const counts = snaps.map((s) => (s.get('count') as number | undefined) ?? 0);
     counts.forEach((n, i) => {

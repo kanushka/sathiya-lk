@@ -153,9 +153,14 @@ export interface RawResult {
 }
 
 // Callable over plain HTTP so a test can set X-Forwarded-For (the client SDK can't set headers).
-export async function rawCall(name: string, data: unknown, opts: { ip?: string; client?: Client } = {}): Promise<RawResult> {
+// `ip` is sent as the last (front-end appended) X-Forwarded-For hop; `spoof` as a client-supplied hop before it.
+export async function rawCall(
+  name: string,
+  data: unknown,
+  opts: { ip?: string; spoof?: string; client?: Client } = {},
+): Promise<RawResult> {
   const headers: Record<string, string> = { 'Content-Type': 'application/json' };
-  if (opts.ip) headers['X-Forwarded-For'] = `${opts.ip}, 10.0.0.1`;
+  if (opts.ip) headers['X-Forwarded-For'] = opts.spoof ? `${opts.spoof}, ${opts.ip}` : opts.ip;
   const user = opts.client?.auth.currentUser;
   if (user) headers.Authorization = `Bearer ${await user.getIdToken()}`;
   const res = await fetch(`http://${HOST}:5001/${PROJECT_ID}/us-central1/${name}`, { method: 'POST', headers, body: JSON.stringify({ data }) });

@@ -4,12 +4,12 @@ import { paths, type SetSchoolStatusRes } from '@sathiya/core';
 import { onCall } from 'firebase-functions/v2/https';
 import { db } from './lib/admin';
 import { callOpts } from './lib/callOptions';
-import { fail, invalid, obj, requireSuper, str } from './lib/guards';
+import { docId, fail, invalid, obj, requireSuper } from './lib/guards';
 
 export const setSchoolStatus = onCall(callOpts, async (req): Promise<SetSchoolStatusRes> => {
   requireSuper(req);
   const data = obj(req.data, 'request');
-  const sid = str(data.schoolId, 'schoolId');
+  const sid = docId(data.schoolId, 'schoolId');
   const status = data.status;
   if (status !== 'active' && status !== 'disabled') invalid('status must be active or disabled');
   const schoolRef = db.doc(paths.school(sid));

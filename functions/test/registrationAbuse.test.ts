@@ -122,6 +122,20 @@ describe('registerSchool one school per user', () => {
     expect((await c.claims()).sid).toBeUndefined();
   });
 
+  it('leaves the winner of a same-user double submit with its school claims', async () => {
+    for (let round = 0; round < 3; round++) {
+      const c = await signUp();
+      const results = await Promise.allSettled([c.call('registerSchool', schoolReq()), c.call('registerSchool', schoolReq())]);
+      const ok = results.filter((x): x is PromiseFulfilledResult<{ schoolId: string }> => x.status === 'fulfilled');
+      expect(ok).toHaveLength(1);
+      const failed = results.find((x): x is PromiseRejectedResult => x.status === 'rejected')!;
+      expect(failed.reason.details?.code).toBe('already-has-school');
+      const sid = ok[0]!.value.schoolId;
+      expect((await adminDb.doc(paths.user(c.uid)).get()).data()!.schoolId).toBe(sid);
+      expect(await c.claims()).toEqual({ sid, role: 'admin', tid: undefined });
+    }
+  });
+
   it('refuses a user with a sid claim but no users doc', async () => {
     const c = await signUp();
     await adminAuth.setCustomUserClaims(c.uid, { sid: 'other', role: 'teacher', tid: 't1' });
@@ -151,7 +165,7 @@ describe('registerSchool rate limits', () => {
     expect(rawErr(r)).toEqual({ status: 'RESOURCE_EXHAUSTED', code: 'rate-limited' });
   });
 
-  it(`refuses attempt ${REGISTER_PER_IP_PER_DAY + 1} from the same IP (X-Forwarded-For first hop)`, async () => {
+  it(`refuses attempt ${REGISTER_PER_IP_PER_DAY + 1} from the same IP (rightmost X-Forwarded-For hop)`, async () => {
     expect(REGISTER_PER_IP_PER_DAY).toBe(10);
     const ip = '203.0.113.7';
     const users = await Promise.all(Array.from({ length: REGISTER_PER_IP_PER_DAY + 1 }, () => signUp()));
@@ -167,6 +181,19 @@ describe('registerSchool rate limits', () => {
     const other = await rawCall('registerSchool', schoolReq(), { client: last, ip: '203.0.113.8' });
     expect(other.error).toBeUndefined();
     expect(other.result).toMatchObject({ schoolId: expect.any(String) });
+  });
+
+  it('ignores a spoofed client-supplied X-Forwarded-For hop', async () => {
+    const ip = '203.0.113.20';
+    const users = await Promise.all(Array.from({ length: REGISTER_PER_IP_PER_DAY + 1 }, () => signUp()));
+    for (const [i, u] of users.slice(0, REGISTER_PER_IP_PER_DAY).entries()) {
+      const r = await rawCall('registerSchool', badSchool({ nameEn: ' ' }), { client: u, ip, spoof: `10.9.8.${i}` });
+      expect(rawErr(r)).toEqual({ status: 'INVALID_ARGUMENT', code: 'invalid' });
+    }
+    const r = await rawCall('registerSchool', schoolReq(), { client: users[REGISTER_PER_IP_PER_DAY]!, ip, spoof: '10.9.8.200' });
+    expect(rawErr(r)).toEqual({ status: 'RESOURCE_EXHAUSTED', code: 'rate-limited' });
+    const ipKeys = (await adminDb.collection('rateLimits').get()).docs.filter((d) => d.id.startsWith('register-ip_'));
+    expect(ipKeys).toHaveLength(1);
   });
 
   it('stores counters under hashed IP keys with an expiry', async () => {

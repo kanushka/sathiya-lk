@@ -4,12 +4,12 @@ import { paths, type DeleteEntryRes } from '@sathiya/core';
 import { onCall } from 'firebase-functions/v2/https';
 import { db } from './lib/admin';
 import { callOpts } from './lib/callOptions';
-import { fail, obj, requireSchoolAdmin, str } from './lib/guards';
+import { docId, fail, obj, requireSchoolAdmin } from './lib/guards';
 
 export const deleteEntry = onCall(callOpts, async (req): Promise<DeleteEntryRes> => {
   const data = obj(req.data, 'request');
   const { sid } = await requireSchoolAdmin(req, data.schoolId);
-  const ref = db.doc(`${paths.entries(sid, str(data.yearId, 'yearId'))}/${str(data.entryId, 'entryId')}`);
+  const ref = db.doc(`${paths.entries(sid, docId(data.yearId, 'yearId'))}/${docId(data.entryId, 'entryId')}`);
   await db.runTransaction(async (tx) => {
     if (!(await tx.get(ref)).exists) fail('not-found', 'invalid', 'Entry not found');
     tx.delete(ref);

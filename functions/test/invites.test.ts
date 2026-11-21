@@ -73,6 +73,16 @@ describe('claimInvites', () => {
     expect(member).toMatchObject({ role: 'admin', teacherId });
   });
 
+  it('lets the founding admin link to a teacher record via a self-invite and keeps the member name', async () => {
+    const { admin, sid } = await adminWithSchool();
+    const { teacherId } = await admin.call('createTeacher', { schoolId: sid, teacher: teacherInput('SCC042') });
+    await admin.call('inviteAdmin', { schoolId: sid, email: admin.auth.currentUser!.email!, teacherId });
+    await expect(admin.call('claimInvites', {})).resolves.toEqual({ schoolIds: [sid] });
+    expect(await admin.claims()).toEqual({ sid, role: 'admin', tid: teacherId });
+    const member = (await adminDb.doc(`${paths.members(sid)}/${admin.uid}`).get()).data();
+    expect(member).toMatchObject({ role: 'admin', teacherId, name: 'Principal' });
+  });
+
   it('accepts a Google sign-in even without a verified email flag', async () => {
     const { admin, sid } = await adminWithSchool();
     const email = `google-${uniq()}@example.com`;

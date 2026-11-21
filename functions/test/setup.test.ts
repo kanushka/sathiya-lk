@@ -16,12 +16,16 @@ describe('deleteSetupItem', () => {
     expect((await adminDb.doc(`${paths.subjects(sid)}/${S.pali}`).get()).exists).toBe(true);
   });
 
-  it('counts entries in every year of the school', async () => {
+  it('counts entries only in the latest year (highest label)', async () => {
     const { admin, sid } = await seededSchool();
-    await adminDb.doc(`${paths.years(sid)}/y2026`).set({ label: '2026', status: 'published' });
-    await putEntries(sid, [entry('old', 0, 1, [C.c6a], [[S.maths, T.fonseka]])], 'y2026');
+    await adminDb.doc(`${paths.years(sid)}/zz-old`).set({ label: '2026', status: 'published' });
+    await putEntries(sid, [entry('old', 0, 1, [C.c6a], [[S.maths, T.fonseka]])], 'zz-old');
     await putEntries(sid, [entry('new', 0, 1, [C.c6a], [[S.pts, T.fonseka]])]);
-    expect(await admin.call('deleteSetupItem', { schoolId: sid, kind: 'teacher', id: T.fonseka })).toEqual({ deleted: false, usedIn: 2 });
+    expect(await admin.call('deleteSetupItem', { schoolId: sid, kind: 'teacher', id: T.fonseka })).toEqual({ deleted: false, usedIn: 1 });
+
+    // A teacher used only in an older year can be deleted.
+    await putEntries(sid, [entry('old2', 1, 1, [C.c6a], [[S.maths, T.jayawardena]])], 'zz-old');
+    expect(await admin.call('deleteSetupItem', { schoolId: sid, kind: 'teacher', id: T.jayawardena })).toEqual({ deleted: true, usedIn: 0 });
   });
 
   it('refuses a subject that is only in a grade plan, a group option or a class plan override', async () => {

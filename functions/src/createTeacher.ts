@@ -5,7 +5,7 @@ import { onCall } from 'firebase-functions/v2/https';
 import { auth, db } from './lib/admin';
 import { callOpts } from './lib/callOptions';
 import { setSchoolClaims } from './lib/claims';
-import { bool, email, fail, int, intList, invalid, obj, optStr, requireSchoolAdmin, str, strList } from './lib/guards';
+import { bool, docIdList, email, fail, int, intList, invalid, obj, optStr, requireSchoolAdmin, str } from './lib/guards';
 import { newPassword } from './lib/password';
 
 const duplicate = (staffId: string): never => fail('already-exists', 'invalid', `Staff ID ${staffId} is already used`, { field: 'staffId' });
@@ -20,7 +20,7 @@ export const createTeacher = onCall(callOpts, async (req): Promise<CreateTeacher
     staffId,
     name: str(t.name, 'name'),
     isPrimary: bool(t.isPrimary, 'isPrimary'),
-    subjectIds: strList(t.subjectIds, 'subjectIds'),
+    subjectIds: docIdList(t.subjectIds, 'subjectIds'),
     grades: intList(t.grades, 'grades', 1, 13),
     maxPerDay: int(t.maxPerDay, 'maxPerDay', 1, 20),
     phone: optStr(t.phone, 'phone', 30),

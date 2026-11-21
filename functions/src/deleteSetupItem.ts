@@ -5,7 +5,7 @@ import { FieldValue } from 'firebase-admin/firestore';
 import { onCall } from 'firebase-functions/v2/https';
 import { auth, db } from './lib/admin';
 import { callOpts } from './lib/callOptions';
-import { fail, invalid, obj, requireSchoolAdmin, str } from './lib/guards';
+import { docId, fail, invalid, obj, requireSchoolAdmin } from './lib/guards';
 import { loadContext, loadEntries } from './lib/loadContext';
 
 type Kind = 'teacher' | 'subject' | 'class' | 'template';
@@ -28,9 +28,13 @@ function setupRefs(kind: Kind, id: string, ctx: SchoolContext): number {
   }
 }
 
-async function allEntries(sid: string): Promise<Entry[]> {
+// Entry usage counts only the latest year (highest label: the draft being edited); older years keep their snapshots.
+async function latestYearEntries(sid: string): Promise<Entry[]> {
   const years = await db.collection(paths.years(sid)).get();
-  return (await Promise.all(years.docs.map((y) => loadEntries(sid, y.id)))).flat();
+  const latest = years.docs
+    .map((y) => ({ id: y.id, label: String(y.get('label') ?? '') }))
+    .sort((a, b) => b.label.localeCompare(a.label, 'en', { numeric: true }))[0];
+  return latest ? loadEntries(sid, latest.id) : [];
 }
 
 export const deleteSetupItem = onCall(callOpts, async (req): Promise<DeleteSetupItemRes> => {
@@ -38,12 +42,12 @@ export const deleteSetupItem = onCall(callOpts, async (req): Promise<DeleteSetup
   const { sid } = await requireSchoolAdmin(req, data.schoolId);
   const kind = data.kind as Kind;
   if (typeof kind !== 'string' || !Object.hasOwn(KINDS, kind)) invalid('kind must be teacher, subject, class or template');
-  const id = str(data.id, 'id');
+  const id = docId(data.id, 'id');
   const ref = db.doc(`${KINDS[kind](sid)}/${id}`);
   const snap = await ref.get();
   if (!snap.exists) fail('not-found', 'invalid', `Unknown ${kind}`);
 
-  const [ctx, entries] = await Promise.all([loadContext(sid), kind === 'template' ? Promise.resolve([]) : allEntries(sid)]);
+  const [ctx, entries] = await Promise.all([loadContext(sid), kind === 'template' ? Promise.resolve([]) : latestYearEntries(sid)]);
   const usedIn = usageCount(kind, id, ctx, entries) + setupRefs(kind, id, ctx);
   if (usedIn > 0) return { deleted: false, usedIn };
 

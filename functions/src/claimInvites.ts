@@ -40,7 +40,7 @@ export const claimInvites = onCall(callOpts, async (req): Promise<ClaimInvitesRe
     sid = inviteSid;
     await db.runTransaction(async (tx) => {
       const invite = await tx.get(doc.ref);
-      tx.set(memberRef, { uid, role: 'admin', email, teacherId: tid });
+      tx.set(memberRef, { uid, role: 'admin', email, teacherId: tid }, { merge: true });
       if (invite.exists) tx.delete(doc.ref);
     });
     claimed.push(inviteSid);
