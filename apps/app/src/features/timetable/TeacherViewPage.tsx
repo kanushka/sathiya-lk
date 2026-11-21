@@ -6,6 +6,7 @@ import {
   entryWindow,
   periodsFor,
   pickName,
+  teacherDisplayName,
   rowsFor,
   teacherDayLoad,
   windowOf,
@@ -42,7 +43,7 @@ import { useTimetable } from './useTimetable';
 const DAYS: DayIndex[] = [0, 1, 2, 3, 4];
 
 export function sortedTeachers(ctx: SchoolContext): Teacher[] {
-  return [...ctx.teachers].sort((a, b) => a.name.localeCompare(b.name));
+  return [...ctx.teachers].sort((a, b) => teacherDisplayName(a).localeCompare(teacherDisplayName(b)));
 }
 
 function NoTeachers() {
@@ -215,7 +216,7 @@ function TeacherView({ teacher, teachers, template }: { teacher: Teacher; teache
     .filter(Boolean)
     .join(' · ');
 
-  const teacherLabel = (x: Teacher) => t('teacherView.teacherOption', { name: x.name, staffId: x.staffId });
+  const teacherLabel = (x: Teacher) => t('teacherView.teacherOption', { name: teacherDisplayName(x, lang), staffId: x.staffId });
   const navBtn = 'flex h-10 w-10 items-center justify-center rounded-lg border border-line-strong bg-white text-ink-soft hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-40';
   const describe = (e: Entry) => {
     const time = entryTime(e, ctx);

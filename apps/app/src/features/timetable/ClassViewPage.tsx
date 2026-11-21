@@ -5,6 +5,7 @@ import {
   effectivePlan,
   fillWithClassTeacher,
   rowsFor,
+  teacherDisplayName,
   windowOf,
   type DayIndex,
   type Entry,
@@ -158,7 +159,7 @@ function ClassView({ cls, classes }: { cls: SchoolClass; classes: SchoolClass[] 
           <span className="ml-1.5 text-sm text-ink-muted">
             {classTeacher ? (
               <>
-                {t('classView.classTeacher')} <b className="text-ink">{classTeacher.name}</b>
+                {t('classView.classTeacher')} <b className="text-ink">{teacherDisplayName(classTeacher, lang)}</b>
               </>
             ) : (
               t('classView.noClassTeacher')
@@ -242,8 +243,8 @@ function ClassView({ cls, classes }: { cls: SchoolClass; classes: SchoolClass[] 
         >
           <p className="text-sm text-ink-soft">
             {fill.drafts.length > 0
-              ? t('fill.body', { count: fill.drafts.length, teacher: classTeacher.name })
-              : t('fill.none', { teacher: classTeacher.name })}
+              ? t('fill.body', { count: fill.drafts.length, teacher: teacherDisplayName(classTeacher, lang) })
+              : t('fill.none', { teacher: teacherDisplayName(classTeacher, lang) })}
           </p>
         </Modal>
       )}

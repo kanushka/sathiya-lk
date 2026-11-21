@@ -46,7 +46,7 @@ export function TeacherFrame({ view, now: nowFn, snapshot, changePassword, child
   const target = lang === 'en' ? 'si' : 'en';
   const schoolName = pickName(school, lang);
   const dateLine = new Intl.DateTimeFormat(lang === 'si' ? 'si-LK' : 'en-GB', { weekday: 'long', day: 'numeric', month: 'long' }).format(now);
-  const fullName = snap?.name;
+  const fullName = snap && (lang === 'si' && snap.nameSi ? snap.nameSi : snap.name);
 
   let body: ReactNode;
   if (state.loading) body = <LoadingState />;
@@ -82,7 +82,7 @@ export function TeacherFrame({ view, now: nowFn, snapshot, changePassword, child
             <strong className="block truncate text-sm">{schoolName}</strong>
             {snap && (
               <span className="block truncate text-xs opacity-80">
-                {snap.name} · {snap.staffId}
+                {fullName} · {snap.staffId}
               </span>
             )}
           </div>

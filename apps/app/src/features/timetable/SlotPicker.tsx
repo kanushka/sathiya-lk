@@ -6,6 +6,7 @@ import {
   effectivePlan,
   periodsFor,
   pickName,
+  teacherDisplayName,
   teacherOptionsForSlot,
   type DayIndex,
   type Entry,
@@ -105,7 +106,7 @@ function SlotPickerBody({ onClose, classId, day, period, entries, editing, onSav
   const groups = items.filter((i) => i.item.kind === 'group');
 
   const q = query.trim().toLowerCase();
-  const matches = (o: TeacherOption) => !q || o.teacher.name.toLowerCase().includes(q) || o.teacher.staffId.toLowerCase().includes(q);
+  const matches = (o: TeacherOption) => !q || teacherDisplayName(o.teacher, lang).toLowerCase().includes(q) || o.teacher.staffId.toLowerCase().includes(q);
   const available = options ? options.available.filter(matches) : [];
   const unavailable = options && subjectId ? options.unavailable.filter((o) => teachesAtAll(o, subjectId) && matches(o)) : [];
   const currentTeacher = editing?.lessons[0]?.teacherId ?? null;
@@ -223,7 +224,7 @@ function SlotPickerBody({ onClose, classId, day, period, entries, editing, onSav
                     {initials(o.teacher.name)}
                   </span>
                   <span className="min-w-0 flex-1">
-                    <strong className="block text-sm">{o.teacher.name}</strong>
+                    <strong className="block text-sm">{teacherDisplayName(o.teacher, lang)}</strong>
                     <span className="text-xs text-ink-muted">
                       {t('picker.freeNote', { staffId: o.teacher.staffId, load: o.loadToday, max: o.teacher.maxPerDay, day: tc(`days.long.${day}`) })}
                     </span>
@@ -247,7 +248,7 @@ function SlotPickerBody({ onClose, classId, day, period, entries, editing, onSav
                     onClick={() => assign(o.teacher.id)}
                     className="flex w-full items-center gap-2.5 rounded-[10px] border border-[#F0DDB0] bg-[#FFF9EC] px-3 py-2 text-left hover:bg-[#FBF0D6] focus-visible:outline focus-visible:outline-2 focus-visible:outline-brand disabled:opacity-60"
                   >
-                    <span className="flex-1 text-[13px] font-semibold text-ink">{o.teacher.name}</span>
+                    <span className="flex-1 text-[13px] font-semibold text-ink">{teacherDisplayName(o.teacher, lang)}</span>
                     <span className="text-xs font-semibold text-[#7A5A12]">{limitWarning(t, o.loadToday, o.teacher.maxPerDay)}</span>
                     {o.teacher.id === currentTeacher && (
                       <span className="rounded-full bg-brand/10 px-2 py-0.5 text-xs font-semibold text-brand">{t('picker.current')}</span>
@@ -257,7 +258,7 @@ function SlotPickerBody({ onClose, classId, day, period, entries, editing, onSav
                 </li>
               ) : (
                 <li key={o.teacher.id} className="flex items-center gap-2.5 rounded-[10px] bg-[#F6F7F9] px-3 py-2 text-ink-muted">
-                  <span className="flex-1 text-[13px] font-semibold">{o.teacher.name}</span>
+                  <span className="flex-1 text-[13px] font-semibold">{teacherDisplayName(o.teacher, lang)}</span>
                   <span className="text-xs">{teacherReason(t, o, ctx, lang, grade.number)}</span>
                 </li>
               ),

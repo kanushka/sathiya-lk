@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
 // Copyright (C) 2026 Kanushka Gayan
 
-import { pickName, type Entry, type Lang, type PlanItem, type SchoolContext, type Subject, type TeacherOption } from '@sathiya/core';
+import { pickName, teacherDisplayName, type Entry, type Lang, type PlanItem, type SchoolContext, type Subject, type TeacherOption } from '@sathiya/core';
 import type { TFunction } from 'i18next';
 import type { CellView } from './Cell';
 
@@ -45,7 +45,10 @@ export function teachesAtAll(o: TeacherOption, subjectId: string): boolean {
 }
 
 export function classCellView(e: Entry, ctx: SchoolContext, lang: Lang, t: TFunction, plan: PlanItem[] = []): CellView {
-  const teacherName = (id: string | null | undefined) => (id ? ctx.teachers.find((x) => x.id === id)?.name : undefined) ?? t('cell.noTeacher');
+  const teacherName = (id: string | null | undefined) => {
+    const teacher = id ? ctx.teachers.find((x) => x.id === id) : undefined;
+    return teacher ? teacherDisplayName(teacher, lang) : t('cell.noTeacher');
+  };
   const joined = e.classIds.length > 1 ? classNames(ctx, e.classIds) : null;
   if (e.groupKey !== undefined) {
     const group = plan

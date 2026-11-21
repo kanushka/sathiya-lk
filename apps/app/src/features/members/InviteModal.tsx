@@ -1,8 +1,9 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
 // Copyright (C) 2026 Kanushka Gayan
-import type { Teacher } from '@sathiya/core';
+import { teacherDisplayName, type Teacher } from '@sathiya/core';
 import { useState, type FormEvent } from 'react';
 import { useTranslation } from 'react-i18next';
+import { useLang } from '../../app/LangProvider';
 import { Button } from '../../ui/Button';
 import { Field, inputClass } from '../../ui/Field';
 import { Modal } from '../../ui/Modal';
@@ -19,6 +20,7 @@ export interface InviteModalProps {
 
 export function InviteModal({ teachers, onInvite, onClose }: InviteModalProps) {
   const { t } = useTranslation('members');
+  const { lang } = useLang();
   const toast = useToast();
   const [email, setEmail] = useState('');
   const [teacherId, setTeacherId] = useState('');
@@ -64,7 +66,7 @@ export function InviteModal({ teachers, onInvite, onClose }: InviteModalProps) {
             <option value="">{t('invite.teacherNone')}</option>
             {teachers.map((x) => (
               <option key={x.id} value={x.id}>
-                {x.name} ({x.staffId})
+                {teacherDisplayName(x, lang)} ({x.staffId})
               </option>
             ))}
           </Select>

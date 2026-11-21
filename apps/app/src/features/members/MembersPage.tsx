@@ -1,8 +1,9 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
 // Copyright (C) 2026 Kanushka Gayan
-import { paths, type Member } from '@sathiya/core';
+import { paths, teacherDisplayName, type Member } from '@sathiya/core';
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
+import { useLang } from '../../app/LangProvider';
 import { useSchool } from '../../app/SchoolProvider';
 import { useCollection } from '../../lib/firestore';
 import { useReadOnly } from '../../ui/AdminLayout';
@@ -15,6 +16,7 @@ import { InviteModal } from './InviteModal';
 
 export function MembersPage() {
   const { t } = useTranslation('members');
+  const { lang } = useLang();
   const { school, teachers } = useSchool();
   const readOnly = useReadOnly();
   const toast = useToast();
@@ -65,7 +67,7 @@ export function MembersPage() {
           <TBody>
             {rows.map(({ m, teacher }) => (
               <Tr key={m.uid}>
-                <Td>{teacher?.name ?? m.email ?? t('list.unknown')}</Td>
+                <Td>{teacher ? teacherDisplayName(teacher, lang) : (m.email ?? t('list.unknown'))}</Td>
                 <Td>{t(m.role === 'admin' ? 'list.admin' : 'list.teacher')}</Td>
                 <Td>{teacher?.staffId ?? ''}</Td>
                 <Td>{teacher ? (m.email ?? teacher.email ?? '') : ''}</Td>
@@ -86,7 +88,7 @@ export function MembersPage() {
               return (
                 <li key={i.id} className="flex flex-wrap items-center gap-3 border-t border-line-soft py-2.5 text-sm first:border-t-0">
                   <strong>{i.email}</strong>
-                  {linked && <span className="text-ink-muted">{t('invites.linked', { name: linked.name })}</span>}
+                  {linked && <span className="text-ink-muted">{t('invites.linked', { name: teacherDisplayName(linked, lang) })}</span>}
                 </li>
               );
             })}
