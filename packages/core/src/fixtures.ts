@@ -101,6 +101,8 @@ export const school: School = {
   nameSi: 'සිරිපුර මධ්‍ය විද්‍යාලය',
   district: 'Kurunegala',
   city: 'Kandy',
+  type: 'government',
+  censusNo: '12345',
   grades: [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13],
   staffPrefix: 'SCC',
   colors: { primary: '#7A1F3D', second: '#D9A441' },

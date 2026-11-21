@@ -18,6 +18,9 @@ export const paths = {
   publishedClass: (sid: string, yid: string, cid: string) => `schools/${sid}/years/${yid}/publishedClasses/${cid}`,
   publishedTeacher: (sid: string, yid: string, tid: string) => `schools/${sid}/years/${yid}/publishedTeachers/${tid}`,
   directory: (sid: string) => `schoolDirectory/${sid}`,
+  censusIndex: (censusNo: string) => `censusIndex/${censusNo}`,
+  reports: () => 'reports',
+  report: (id: string) => `reports/${id}`,
   platform: {
     config: 'platform/config',
     defaultSubjects: 'platform/defaultSubjects',

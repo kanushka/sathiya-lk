@@ -54,6 +54,20 @@ Phase 1 rules (1.3) and publishYear (1.2) and Phase 5 (5.1) must use these, not 
 - Fixture school: city `Kandy`.
 - Firestore rejects `undefined`: strip `address`/`phone` when empty.
 
+### Registration abuse (added after review)
+- `School`: added `type: SchoolType` (`'government' | 'private' | 'international'`, required) and `censusNo?: string`. `RegisterSchoolReq.school` picks both up through its `Omit<School, …>`.
+- `census.ts`:
+  - `CENSUS_NO_LENGTH = { min: 4, max: 6 }`. These are placeholder bounds: the user must confirm the MOE census number length.
+  - `normalizeCensusNo(s)`: removes all whitespace, trims non-letter/digit characters at both ends, then returns the digits (leading zeros kept) or `null` if anything else remains or the length is outside the bounds.
+  - `censusRequired(type)`: true for `government` only.
+- `paths`: `censusIndex(censusNo)` → `censusIndex/{censusNo}`, `reports()` → `reports`, `report(id)` → `reports/{id}`. Key `censusIndex` by the normalised number (one school per census number; `registerSchool` creates it in the same transaction).
+- `api.ts`:
+  - `ReportSchoolReq { schoolId; reason: ReportReason; details?; email? }` and `ReportSchoolRes { ok: true }`.
+  - Callable `reportSchool`, included in `CallableTypes`.
+  - `ApiErrorCode` gains `'census-taken' | 'email-unverified' | 'already-has-school' | 'rate-limited'`. Functions send them in `details.code`. The app's `toApiError` already maps them.
+- Types: `ReportReason = 'fake' | 'duplicate' | 'abuse' | 'other'` and `SchoolReport { id; schoolId; reason; details?; email?; createdAt; status: 'open' | 'closed' }`.
+- Fixture school: `type: 'government'`, `censusNo: '12345'` (invented).
+
 ### API (`api.ts`)
 Added `InviteAdminRes`, `ClaimInvitesReq`, `ClaimInvitesRes { schoolIds }`, `DeleteEntryRes`, `PublishYearRes { classes; teachers }`, `SetSchoolStatusRes`, `CallableName`, `CallableTypes` (req/res per callable). App `call('saveEntry', req)` infers types from `CallableTypes`; `call<Req, Res>(name, req)` still works.
 Error contract: functions throw `HttpsError(code, message, { code: ApiErrorCode, ... })`. The app maps `details.code` first; otherwise permission-denied/unauthenticated → `not-allowed`, everything else → `invalid`. Clash: `failed-precondition` with `details: { code: 'clash', conflicts }`.

@@ -5,7 +5,10 @@ export type Lang = 'en' | 'si';
 export type DayIndex = 0 | 1 | 2 | 3 | 4;
 export type Hhmm = string;
 export interface Bilingual { nameEn: string; nameSi?: string }
-export interface School extends Bilingual { id: string; district: string; city: string; address?: string; phone?: string; grades: number[]; staffPrefix: string; logoUrl?: string; colors: { primary: string; second: string }; status: 'active' | 'disabled'; termsVersion: string; activeYearId?: string; createdAt: number }
+export interface School extends Bilingual { id: string; district: string; city: string; address?: string; phone?: string; type: SchoolType; censusNo?: string; grades: number[]; staffPrefix: string; logoUrl?: string; colors: { primary: string; second: string }; status: 'active' | 'disabled'; termsVersion: string; activeYearId?: string; createdAt: number }
+export type SchoolType = 'government' | 'private' | 'international';
+export type ReportReason = 'fake' | 'duplicate' | 'abuse' | 'other';
+export interface SchoolReport { id: string; schoolId: string; reason: ReportReason; details?: string; email?: string; createdAt: number; status: 'open' | 'closed' }
 export interface SchoolDirectoryEntry extends Bilingual { district: string; city: string; status: 'active' | 'disabled' }
 export interface Teacher { id: string; staffId: string; name: string; isPrimary: boolean; subjectIds: string[]; grades: number[]; maxPerDay: number; phone?: string; email?: string; uid?: string; lastLoginAt?: number }
 export interface Subject extends Bilingual { id: string; short: string; color: string }

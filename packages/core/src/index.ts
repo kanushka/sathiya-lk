@@ -5,6 +5,7 @@ export * from './types';
 export * from './time';
 export * from './names';
 export * from './directory';
+export * from './census';
 export * from './staff';
 export * from './color';
 export * from './paths';
