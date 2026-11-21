@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
 // Copyright (C) 2026 Kanushka Gayan
-import { paths, type PeriodTemplate, type RegisterSchoolRes } from '@sathiya/core';
+import { paths, type PeriodTemplate, type RegisterSchoolReq, type RegisterSchoolRes } from '@sathiya/core';
 import { defaultTemplate } from '@sathiya/core/fixtures';
 import { onCall } from 'firebase-functions/v2/https';
 import { auth, db } from './lib/admin';
@@ -9,6 +9,11 @@ import { setSchoolClaims } from './lib/claims';
 import { intList, invalid, notAllowed, obj, optStr, requireAuth, str } from './lib/guards';
 
 const HEX = /^#[0-9A-Fa-f]{6}$/;
+
+// city/address/phone are not in @sathiya/core yet (added on another branch).
+export type RegisterSchoolInput = Omit<RegisterSchoolReq, 'school'> & {
+  school: RegisterSchoolReq['school'] & { city: string; address?: string; phone?: string };
+};
 
 export const registerSchool = onCall(callOpts, async (req): Promise<RegisterSchoolRes> => {
   const { uid, claims, token } = requireAuth(req);
@@ -30,6 +35,9 @@ export const registerSchool = onCall(callOpts, async (req): Promise<RegisterScho
   const nameEn = str(s.nameEn, 'nameEn');
   const nameSi = optStr(s.nameSi, 'nameSi');
   const district = str(s.district, 'district', 60);
+  const city = str(s.city, 'city', 80);
+  const address = optStr(s.address, 'address', 200);
+  const phone = optStr(s.phone, 'phone', 30);
 
   const now = Date.now();
   const schoolRef = db.doc(paths.school('_')).parent.doc();
@@ -43,6 +51,9 @@ export const registerSchool = onCall(callOpts, async (req): Promise<RegisterScho
     nameEn,
     nameSi,
     district,
+    city,
+    address,
+    phone,
     grades,
     staffPrefix,
     colors: { primary, second },
@@ -51,7 +62,7 @@ export const registerSchool = onCall(callOpts, async (req): Promise<RegisterScho
     acceptedTerms: { version: termsVersion, at: now, uid },
     createdAt: now,
   });
-  batch.create(db.doc(paths.directory(sid)), { nameEn, nameSi, district, status: 'active' });
+  batch.create(db.doc(paths.directory(sid)), { nameEn, nameSi, district, city, status: 'active' });
   batch.create(db.doc(`${paths.members(sid)}/${uid}`), { uid, role: 'admin', email: token.email?.toLowerCase(), name: adminName });
   batch.create(db.collection(paths.templates(sid)).doc(), template);
   try {

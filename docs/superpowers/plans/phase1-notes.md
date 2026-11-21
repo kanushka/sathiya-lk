@@ -109,3 +109,9 @@ Uses `buildSnapshots(ctx, entries, year)` and the phase0 paths `publishedClasses
 
 ### Tests
 `functions/test/seed.ts` replaces a registered school's setup with the Siripura fixtures (same ids, registered default template removed) and adds draft year `y2027`. `entries.test.ts` (saveEntry/deleteEntry), `setup.test.ts` (deleteSetupItem/publishYear).
+
+## School city, address, phone (user requirement)
+
+- `registerSchool` requires `school.city` (trimmed, non-empty, ≤ 80) and accepts optional `school.address` (≤ 200) and `school.phone` (≤ 30), all trimmed; non-strings → `invalid-argument`/`invalid`. Stored on `schools/{sid}`; `city` is also written to `schoolDirectory/{sid}` (address/phone are not).
+- `@sathiya/core` types don't have these fields yet (added on another branch, merged in Phase 6). Functions read them through the local `RegisterSchoolInput` type in `functions/src/registerSchool.ts`; drop it once `RegisterSchoolReq['school']` / `School` / the directory doc type gain `city`, `address?`, `phone?`.
+- Phase 3 register form must send `city` (required) or registration fails.

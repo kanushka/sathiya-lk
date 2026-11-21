@@ -4,6 +4,7 @@ import { callables, paths, type PeriodTemplate } from '@sathiya/core';
 import { defaultTemplate } from '@sathiya/core/fixtures';
 import { httpsCallable } from 'firebase/functions';
 import { describe, expect, it } from 'vitest';
+import type { RegisterSchoolInput } from '../src/registerSchool';
 import { adminDb, client, expectFnError, makeSuper, schoolReq, signUp } from './helpers';
 
 describe('unauthenticated', () => {
@@ -29,6 +30,7 @@ describe('registerSchool', () => {
     expect(school).toMatchObject({
       nameEn: 'Siripura Central College',
       district: 'Kurunegala',
+      city: 'Siripura',
       staffPrefix: 'SCC',
       status: 'active',
       termsVersion: '1',
@@ -38,7 +40,13 @@ describe('registerSchool', () => {
     expect(school.acceptedTerms.at).toBeGreaterThanOrEqual(before);
 
     const dir = (await adminDb.doc(paths.directory(schoolId)).get()).data();
-    expect(dir).toEqual({ nameEn: 'Siripura Central College', nameSi: 'සිරිපුර මධ්‍ය විද්‍යාලය', district: 'Kurunegala', status: 'active' });
+    expect(dir).toEqual({
+      nameEn: 'Siripura Central College',
+      nameSi: 'සිරිපුර මධ්‍ය විද්‍යාලය',
+      district: 'Kurunegala',
+      city: 'Siripura',
+      status: 'active',
+    });
 
     const member = (await adminDb.doc(`${paths.members(schoolId)}/${c.uid}`).get()).data();
     expect(member).toMatchObject({ uid: c.uid, role: 'admin', name: 'Principal' });
@@ -83,5 +91,43 @@ describe('registerSchool', () => {
     await expectFnError(c.call('registerSchool', schoolReq({ staffPrefix: 'scc1' })), 'invalid-argument', 'invalid');
     await expectFnError(c.call('registerSchool', schoolReq({ nameEn: '  ' })), 'invalid-argument', 'invalid');
     await expectFnError(c.call('registerSchool', { ...schoolReq(), acceptedTermsVersion: '' }), 'invalid-argument', 'invalid');
+  });
+
+  it('requires a city', async () => {
+    const c = await signUp();
+    const { city: _, ...noCity } = schoolReq().school;
+    await expectFnError(c.call('registerSchool', { ...schoolReq(), school: noCity }), 'invalid-argument', 'invalid');
+    await expectFnError(c.call('registerSchool', schoolReq({ city: '   ' })), 'invalid-argument', 'invalid');
+    await expectFnError(c.call('registerSchool', schoolReq({ city: 'x'.repeat(81) })), 'invalid-argument', 'invalid');
+  });
+
+  it('stores trimmed city, address and phone', async () => {
+    const c = await signUp();
+    const { schoolId } = await c.call(
+      'registerSchool',
+      schoolReq({ city: '  Siripura ', address: ' 12 Temple Road, Siripura ', phone: ' 037 222 3344 ' }),
+    );
+    const doc = (await adminDb.doc(paths.school(schoolId)).get()).data()!;
+    expect(doc).toMatchObject({ city: 'Siripura', address: '12 Temple Road, Siripura', phone: '037 222 3344' });
+    const dir = (await adminDb.doc(paths.directory(schoolId)).get()).data()!;
+    expect(dir.city).toBe('Siripura');
+    expect(dir.address).toBeUndefined();
+    expect(dir.phone).toBeUndefined();
+  });
+
+  it('accepts a school without address and phone', async () => {
+    const c = await signUp();
+    const { schoolId } = await c.call('registerSchool', schoolReq());
+    const doc = (await adminDb.doc(paths.school(schoolId)).get()).data()!;
+    expect(doc.address).toBeUndefined();
+    expect(doc.phone).toBeUndefined();
+  });
+
+  it('rejects over-length or non-string address and phone', async () => {
+    const c = await signUp();
+    await expectFnError(c.call('registerSchool', schoolReq({ address: 'a'.repeat(201) })), 'invalid-argument', 'invalid');
+    await expectFnError(c.call('registerSchool', schoolReq({ phone: '1'.repeat(31) })), 'invalid-argument', 'invalid');
+    const bad = { ...schoolReq().school, phone: 37 } as unknown as RegisterSchoolInput['school'];
+    await expectFnError(c.call('registerSchool', { ...schoolReq(), school: bad }), 'invalid-argument', 'invalid');
   });
 });

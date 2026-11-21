@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
 // Copyright (C) 2026 Kanushka Gayan
 import { randomUUID } from 'node:crypto';
-import type { CallableName, CallableTypes, Claims, RegisterSchoolReq } from '@sathiya/core';
+import type { CallableName, CallableTypes, Claims } from '@sathiya/core';
 import { initializeApp as initAdmin, getApps as getAdminApps } from 'firebase-admin/app';
 import { getAuth as getAdminAuth } from 'firebase-admin/auth';
 import { getFirestore } from 'firebase-admin/firestore';
@@ -17,6 +17,7 @@ import {
 } from 'firebase/auth';
 import { connectFunctionsEmulator, getFunctions, httpsCallable, type Functions } from 'firebase/functions';
 import { afterAll, expect } from 'vitest';
+import type { RegisterSchoolInput } from '../src/registerSchool';
 
 export const PROJECT_ID = 'sathiya-lk';
 const HOST = '127.0.0.1';
@@ -97,12 +98,13 @@ export async function makeSuper(c: Client): Promise<void> {
   await c.auth.currentUser!.getIdToken(true);
 }
 
-export function schoolReq(over: Partial<RegisterSchoolReq['school']> = {}): RegisterSchoolReq {
+export function schoolReq(over: Partial<RegisterSchoolInput['school']> = {}): RegisterSchoolInput {
   return {
     school: {
       nameEn: 'Siripura Central College',
       nameSi: 'සිරිපුර මධ්‍ය විද්‍යාලය',
       district: 'Kurunegala',
+      city: 'Siripura',
       grades: [6, 7, 8, 9, 10, 11],
       staffPrefix: 'SCC',
       colors: { primary: '#7A1F3D', second: '#D9A441' },
