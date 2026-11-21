@@ -13,6 +13,9 @@ interface NavItem {
 export const superNav: NavItem[] = [
   { to: '/super', labelKey: 'nav.schools', end: true },
   { to: '/super/usage', labelKey: 'nav.usage' },
+  { to: '/super/subjects', labelKey: 'nav.subjects' },
+  { to: '/super/terms', labelKey: 'nav.terms' },
+  { to: '/super/announcements', labelKey: 'nav.announcements' },
 ];
 
 const linkClass = ({ isActive }: { isActive: boolean }) =>

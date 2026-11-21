@@ -5,7 +5,10 @@
     "label": "Super admin menu",
     "schools": "Schools",
     "usage": "Usage",
-    "schoolAdmin": "School admin"
+    "schoolAdmin": "School admin",
+    "subjects": "Default subjects",
+    "terms": "Terms",
+    "announcements": "Announcements"
   },
   "adminLink": "Super admin",
   "schools": {
@@ -74,5 +77,88 @@
     "noData": "—",
     "loading": "Loading…",
     "countError": "Error"
+  },
+  "subjects": {
+    "title": "Default subjects",
+    "intro": "The standard list schools can load into their own subjects.",
+    "add": "Add subject",
+    "addTitle": "Add subject",
+    "editTitle": "Edit subject",
+    "edit": "Edit {{name}}",
+    "delete": "Delete {{name}}",
+    "columns": {
+      "nameEn": "English",
+      "nameSi": "Sinhala",
+      "short": "Short",
+      "color": "Colour"
+    },
+    "fields": {
+      "nameEn": "Name (English)",
+      "nameSi": "Name (Sinhala)",
+      "short": "Short name",
+      "color": "Colour",
+      "colorPicker": "Colour picker"
+    },
+    "errors": {
+      "nameEn": "Enter the English name",
+      "shortRequired": "Enter a short name",
+      "shortLength": "Use 4 characters or fewer",
+      "color": "Use a hex colour like #0E6B6A"
+    },
+    "empty": "No default subjects",
+    "emptyBody": "Add the first subject to build the standard list.",
+    "loadError": "Could not load default subjects.",
+    "saved": "Default subjects saved",
+    "failed": "Could not save: {{message}}",
+    "confirmDelete": {
+      "title": "Delete {{name}}?",
+      "body": "It is removed from the standard list. Schools that already loaded it keep their copy.",
+      "confirm": "Delete subject"
+    }
+  },
+  "terms": {
+    "title": "Terms and privacy",
+    "intro": "Published versions of the terms and privacy policy. Newest first.",
+    "new": "New version",
+    "newTitle": "New terms version",
+    "publish": "Publish",
+    "warning": "Publishing makes this the current version. Every school admin will be asked to accept it again before they can continue.",
+    "columns": {
+      "version": "Version",
+      "published": "Published",
+      "status": "Status"
+    },
+    "current": "Current",
+    "empty": "No versions published yet",
+    "loadError": "Could not load versions.",
+    "fields": {
+      "version": "Version id",
+      "versionHint": "For example 2027-01",
+      "terms": "Terms (Markdown)",
+      "privacy": "Privacy policy (Markdown)"
+    },
+    "errors": {
+      "versionRequired": "Enter a version id",
+      "versionFormat": "Use letters, numbers, dots, dashes",
+      "duplicate": "That version already exists",
+      "termsRequired": "Enter the terms",
+      "privacyRequired": "Enter the privacy policy"
+    },
+    "published": "Version {{version}} published",
+    "failed": "Could not publish: {{message}}"
+  },
+  "announcements": {
+    "title": "Announcements",
+    "intro": "A banner shown to school admins while it is active.",
+    "textEn": "Message (English)",
+    "textSi": "Message (Sinhala)",
+    "textSiHint": "Leave empty to show the English message to everyone.",
+    "textEnRequired": "Enter the English message",
+    "active": "Show banner",
+    "preview": "Preview",
+    "previewEmpty": "Nothing to show yet",
+    "saved": "Announcement saved",
+    "failed": "Could not save: {{message}}",
+    "dismiss": "Dismiss"
   }
 }

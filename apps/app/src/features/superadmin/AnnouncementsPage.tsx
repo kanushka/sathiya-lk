@@ -1,0 +1,83 @@
+import { paths } from '@sathiya/core';
+import { useState } from 'react';
+import { useTranslation } from 'react-i18next';
+import { useDoc, type DocState } from '../../lib/firestore';
+import { Button } from '../../ui/Button';
+import { Field, inputClass } from '../../ui/Field';
+import { LoadingState } from '../../ui/LoadingState';
+import { useToast } from '../../ui/Toast';
+import { announcementText, BannerView } from './AnnouncementBanner';
+import { firestorePlatformWriter, type PlatformConfig, type PlatformWriter } from './platform';
+
+export interface AnnouncementsPageProps {
+  config?: DocState<PlatformConfig>;
+  writer?: PlatformWriter;
+}
+
+export function AnnouncementsPage({ config: injected, writer = firestorePlatformWriter }: AnnouncementsPageProps) {
+  const live = useDoc<PlatformConfig>(injected ? null : paths.platform.config);
+  const state = injected ?? live;
+  if (state.loading) return <LoadingState />;
+  return <AnnouncementForm initial={state.data?.announcement} writer={writer} />;
+}
+
+function AnnouncementForm({ initial, writer }: { initial: PlatformConfig['announcement']; writer: PlatformWriter }) {
+  const { t } = useTranslation('superadmin');
+  const toast = useToast();
+  const [textEn, setTextEn] = useState(initial?.textEn ?? '');
+  const [textSi, setTextSi] = useState(initial?.textSi ?? '');
+  const [active, setActive] = useState(initial?.active ?? false);
+  const [error, setError] = useState(false);
+  const [busy, setBusy] = useState(false);
+
+  async function save() {
+    if (!textEn.trim()) {
+      setError(true);
+      return;
+    }
+    setError(false);
+    setBusy(true);
+    try {
+      await writer.saveAnnouncement({ textEn: textEn.trim(), textSi: textSi.trim(), active, updatedAt: Date.now() });
+      toast.show(t('announcements.saved'), 'success');
+    } catch (err) {
+      toast.show(t('announcements.failed', { message: err instanceof Error ? err.message : String(err) }), 'error');
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  return (
+    <div className="max-w-[720px]">
+      <h1 className="mb-1 text-[26px] font-bold">{t('announcements.title')}</h1>
+      <p className="mb-5 text-sm text-ink-muted">{t('announcements.intro')}</p>
+      <div className="flex flex-col gap-4 rounded-[14px] border border-line bg-white p-5">
+        <Field label={t('announcements.textEn')} error={error ? t('announcements.textEnRequired') : undefined}>
+          <textarea rows={3} className={`${inputClass} h-auto py-2`} value={textEn} onChange={(e) => setTextEn(e.target.value)} />
+        </Field>
+        <Field label={t('announcements.textSi')} hint={t('announcements.textSiHint')}>
+          <textarea rows={3} className={`${inputClass} h-auto py-2`} value={textSi} onChange={(e) => setTextSi(e.target.value)} />
+        </Field>
+        <label className="flex items-center gap-2 text-sm font-semibold text-ink-soft">
+          <input type="checkbox" checked={active} onChange={(e) => setActive(e.target.checked)} />
+          {t('announcements.active')}
+        </label>
+        <div>
+          <p className="mb-1.5 text-[13px] font-semibold text-ink-soft">{t('announcements.preview')}</p>
+          <div data-testid="banner-preview" className="overflow-hidden rounded-lg border border-line">
+            {textEn.trim() ? (
+              <BannerView text={announcementText({ textEn, textSi, active: true, updatedAt: 0 }, 'en')} />
+            ) : (
+              <p className="px-4 py-2.5 text-sm text-ink-muted">{t('announcements.previewEmpty')}</p>
+            )}
+          </div>
+        </div>
+        <div>
+          <Button variant="primary" disabled={busy} onClick={() => void save()}>
+            {t('buttons.save', { ns: 'common' })}
+          </Button>
+        </div>
+      </div>
+    </div>
+  );
+}
