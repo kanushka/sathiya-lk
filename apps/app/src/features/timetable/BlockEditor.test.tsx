@@ -160,6 +160,28 @@ describe('BlockEditor', () => {
     await waitFor(() => expect(api.saveEntry).toHaveBeenCalled());
   });
 
+  it('replaces a moved lesson: ignores it for availability and removes it after saving', async () => {
+    const old = entry('old', 2, 4, [C.c12a], [[S.buddhism, T.ananda]]);
+    const { api, onClose } = setup({ preset: { subjectId: S.buddhism, teacherId: T.ananda }, replacesEntryId: 'old' }, { entries: [...entries6B, old] });
+    expect(within(screen.getByLabelText(/Buddhism/)).getByRole('option', { name: /Ananda/ })).toBeEnabled();
+    expect(screen.getByRole('button', { name: 'Save' })).toBeEnabled();
+    await userEvent.click(screen.getByRole('button', { name: 'Save' }));
+    await waitFor(() => expect(onClose).toHaveBeenCalled());
+    expect(api.saveEntry).toHaveBeenCalledWith(expect.objectContaining({ entry: expect.objectContaining({ classIds: [C.c6b], groupKey: 'religion' }) }));
+    expect(api.deleteEntry).toHaveBeenCalledWith({ schoolId: ctx.school.id, yearId: 'y-2026', entryId: 'old' });
+    expect(vi.mocked(api.saveEntry).mock.invocationCallOrder[0]!).toBeLessThan(vi.mocked(api.deleteEntry).mock.invocationCallOrder[0]!);
+  });
+
+  it('keeps the replaced lesson when the block save fails', async () => {
+    const old = entry('old', 2, 4, [C.c12a], [[S.buddhism, T.ananda]]);
+    const { api, onClose } = setup({ preset: { subjectId: S.buddhism, teacherId: T.ananda }, replacesEntryId: 'old' }, { entries: [...entries6B, old] });
+    vi.mocked(api.saveEntry).mockRejectedValueOnce(new Error('boom'));
+    await userEvent.click(screen.getByRole('button', { name: 'Save' }));
+    await waitFor(() => expect(api.saveEntry).toHaveBeenCalled());
+    expect(api.deleteEntry).not.toHaveBeenCalled();
+    expect(onClose).not.toHaveBeenCalled();
+  });
+
   it('preselects a preset teacher for its option', () => {
     setup({ preset: { subjectId: S.buddhism, teacherId: T.ananda } });
     expect(screen.getByLabelText(/Buddhism/)).toHaveValue(T.ananda);

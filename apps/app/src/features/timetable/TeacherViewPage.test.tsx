@@ -125,6 +125,23 @@ describe('TeacherViewPage', () => {
     expect(within(dialog).getByLabelText(/Buddhism/)).toHaveValue(T.ananda);
   });
 
+  it('moves an edited lesson into a group block in another class, replacing the old lesson', async () => {
+    const old = entry('old', 2, 4, [C.c12a], [[S.buddhism, T.ananda]]);
+    const api = setup(T.ananda, { entries: [old] });
+    await activate('Wednesday', 4);
+    expect(screen.getByRole('dialog', { name: 'Choose a class' })).toHaveTextContent('Now: 12A · Buddhism');
+    await userEvent.click(screen.getByRole('button', { name: /^6A/ }));
+    const dialog = await screen.findByRole('dialog', { name: 'Religion' });
+    expect(within(dialog).getByLabelText(/Buddhism/)).toHaveValue(T.ananda);
+    expect(within(dialog).getByRole('button', { name: 'Save' })).toBeEnabled();
+    await userEvent.click(within(dialog).getByRole('button', { name: 'Save' }));
+    await waitFor(() => expect(api.deleteEntry).toHaveBeenCalledWith(expect.objectContaining({ entryId: 'old' })));
+    expect(api.saveEntry).toHaveBeenCalledWith(
+      expect.objectContaining({ entry: expect.objectContaining({ day: 2, period: 4, classIds: [C.c6a], groupKey: 'religion' }) }),
+    );
+    expect(vi.mocked(api.saveEntry).mock.invocationCallOrder[0]!).toBeLessThan(vi.mocked(api.deleteEntry).mock.invocationCallOrder[0]!);
+  });
+
   it('opens the block editor for a block cell, and on Delete instead of deleting', async () => {
     const api = setup();
     await activate('Monday', 4);

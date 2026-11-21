@@ -5,11 +5,11 @@ import { effectivePlan, type Entry, type SchoolContext } from '@sathiya/core';
 import type { BlockEditorProps } from './BlockEditor';
 import type { GroupItem } from './SlotPicker';
 
-export type BlockState = Pick<BlockEditorProps, 'baseClassId' | 'day' | 'period' | 'mode' | 'entry' | 'preset'>;
+export type BlockState = Pick<BlockEditorProps, 'baseClassId' | 'day' | 'period' | 'mode' | 'entry' | 'preset' | 'replacesEntryId'>;
 
 export function blockKey(b: BlockState): string {
   const m = b.mode.kind === 'group' ? b.mode.item.key : b.mode.subjectId;
-  return `${b.baseClassId}-${b.day}-${b.period}-${b.mode.kind}-${m}-${b.entry?.id ?? ''}-${b.preset?.teacherId ?? ''}`;
+  return `${b.baseClassId}-${b.day}-${b.period}-${b.mode.kind}-${m}-${b.entry?.id ?? ''}-${b.preset?.teacherId ?? ''}-${b.replacesEntryId ?? ''}`;
 }
 
 export function isBlock(e: Entry): boolean {

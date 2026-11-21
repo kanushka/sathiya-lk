@@ -37,6 +37,7 @@ export interface BlockEditorProps {
   onSave(d: EntryDraft): Promise<boolean>;
   onRemove(id: string): Promise<boolean>;
   preset?: { subjectId: string; teacherId: string };
+  replacesEntryId?: string;
 }
 
 export function BlockEditor(props: BlockEditorProps) {
@@ -44,7 +45,7 @@ export function BlockEditor(props: BlockEditorProps) {
   return <BlockEditorBody {...props} />;
 }
 
-function BlockEditorBody({ onClose, baseClassId, day, period, mode, entry, entries, onSave: save, onRemove: remove, preset }: BlockEditorProps) {
+function BlockEditorBody({ onClose, baseClassId, day, period, mode, entry, entries: allEntries, onSave: save, onRemove: remove, preset, replacesEntryId }: BlockEditorProps) {
   const { t } = useTranslation('timetable');
   const { t: tc } = useTranslation('common');
   const { lang } = useLang();
@@ -58,7 +59,8 @@ function BlockEditorBody({ onClose, baseClassId, day, period, mode, entry, entri
   const template = base && ctx.templates.find((x) => x.id === base.templateId);
   const slotExists = !!template && windowOf(template, day, period) !== null;
 
-  const optionIds = mode.kind === 'group' ? mode.item.optionSubjectIds : [mode.subjectId];
+  const entries = useMemo(() => (replacesEntryId ? allEntries.filter((e) => e.id !== replacesEntryId) : allEntries), [allEntries, replacesEntryId]);
+  const optionIds = useMemo(() => (mode.kind === 'group' ? mode.item.optionSubjectIds : [mode.subjectId]), [mode]);
   const [classIds, setClassIds] = useState<string[]>(() => [baseClassId, ...(entry?.classIds ?? []).filter((c) => c !== baseClassId)]);
   const [teachers, setTeachers] = useState<Record<string, string | null>>(() =>
     Object.fromEntries(
@@ -90,8 +92,7 @@ function BlockEditorBody({ onClose, baseClassId, day, period, mode, entry, entri
       out[id] = teacherOptionsForSlot({ ctx, entries, classIds, day, period, subjectId: id, ...(entry ? { editingEntryId: entry.id } : {}) });
     }
     return out;
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [ctx, entries, classIds, day, period, entry, slotExists, mode]);
+  }, [ctx, entries, classIds, day, period, entry, slotExists, optionIds]);
 
   if (!base || !slotExists) return null;
 
@@ -129,6 +130,7 @@ function BlockEditorBody({ onClose, baseClassId, day, period, mode, entry, entri
       ...(mode.kind === 'group' ? { groupKey: mode.item.key } : {}),
     };
     const ok = await save(draft);
+    if (ok && replacesEntryId) await remove(replacesEntryId);
     setBusy(false);
     if (ok) onClose();
   }

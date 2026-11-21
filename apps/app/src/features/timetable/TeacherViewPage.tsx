@@ -314,7 +314,7 @@ function TeacherView({ teacher, teachers, template }: { teacher: Teacher; teache
               period,
               mode: { kind: 'group', item },
               preset: { subjectId, teacherId: teacher.id },
-              ...(editing && editing.classIds[0] === classId && editing.period === period ? { entry: editing } : {}),
+              ...(editing ? (editing.classIds[0] === classId && editing.period === period ? { entry: editing } : { replacesEntryId: editing.id }) : {}),
             });
           }}
         />
