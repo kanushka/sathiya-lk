@@ -303,6 +303,12 @@ describe('years', () => {
       await assertFails(set('admin', y3, { label: '2028', status: 'draft', publishedAt: 1 }));
       await assertFails(set('admin', y3, { label: '2028' }));
     });
+    it('denies admin creating a year without a non-empty string label', async () => {
+      await assertFails(set('admin', y3, { status: 'draft' }));
+      await assertFails(set('admin', y3, { label: '', status: 'draft' }));
+      await assertFails(set('admin', y3, { label: '  ', status: 'draft' }));
+      await assertFails(set('admin', y3, { label: 2028, status: 'draft' }));
+    });
     deny([['teacher', y3], ['super', y3], ['otherAdmin', y3], ['anon', y3]], (r, p) => set(r, p, { label: '2028', status: 'draft' }));
   });
   describe('update', () => {
@@ -312,6 +318,11 @@ describe('years', () => {
       await assertFails(update('admin', y1, { status: 'draft' }));
       await assertFails(update('admin', y1, { publishedAt: 2 }));
       await assertFails(update('admin', y2, { publishedAt: 2 }));
+    });
+    it('denies admin blanking or removing the label', async () => {
+      await assertFails(update('admin', y2, { label: ' ' }));
+      await assertFails(update('admin', y2, { label: 7 }));
+      await assertFails(set('admin', y2, { status: 'draft' }));
     });
     deny([['teacher', y2], ['super', y2]], (r, p) => update(r, p, { label: 'x' }));
   });
@@ -390,6 +401,19 @@ describe('unknown paths', () => {
   deny([['admin', `${paths.school('s1')}/secrets/x`], ['super', 'other/x']], (r, p) => set(r, p, { a: 1 }));
 });
 
+describe('default period template', () => {
+  const p1 = `${paths.templates('s1')}/p1`;
+  it('denies admin clearing or removing isDefault on the default template', async () => {
+    await assertFails(update('admin', p1, { isDefault: false }));
+    const { isDefault: _, ...rest } = { name: 'Default', isDefault: true, mode: 'same', rows: [] };
+    await assertFails(set('admin', p1, rest));
+  });
+  it('allows other edits of the default template', async () => {
+    await assertSucceeds(update('admin', p1, { name: 'Main', isDefault: true }));
+    await assertSucceeds(update('admin', p1, { rows: [] }));
+  });
+});
+
 describe('censusIndex (functions only)', () => {
   const c = 'censusIndex/12345';
   const n = 'censusIndex/99999';
@@ -413,8 +437,17 @@ describe('reports', () => {
   allow([['super', 'reports']], list);
   deny([['admin', r1], ['teacher', r1], ['noClaims', r1], ['anon', r1]], read);
   deny([['admin', 'reports'], ['anon', 'reports']], list);
-  allow([['super', r1]], (r, p) => update(r, p, { status: 'closed' }));
-  deny([['admin', r1], ['noClaims', r1], ['anon', r1]], (r, p) => update(r, p, { status: 'closed' }));
+  it.each(['resolved', 'dismissed', 'open'])('allows super to set status %s with a note', async (status) => {
+    await assertSucceeds(update('super', r1, { status, note: 'checked' }));
+  });
+  it('denies super invalid status, long note or other fields', async () => {
+    await assertFails(update('super', r1, { status: 'closed' }));
+    await assertFails(update('super', r1, { note: 'x'.repeat(1001) }));
+    await assertFails(update('super', r1, { note: 5 }));
+    await assertFails(update('super', r1, { reason: 'other' }));
+    await assertFails(update('super', r1, { schoolId: 's2' }));
+  });
+  deny([['admin', r1], ['noClaims', r1], ['anon', r1]], (r, p) => update(r, p, { status: 'resolved' }));
   const fresh = { schoolId: 's1', reason: 'fake', status: 'open', createdAt: 1 };
   deny([['anon', 'reports/new'], ['noClaims', 'reports/new'], ['admin', 'reports/new'], ['super', 'reports/new']], (r, p) => set(r, p, fresh));
   deny([['super', r1], ['admin', r1]], del);

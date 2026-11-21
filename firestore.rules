@@ -45,7 +45,10 @@ service cloud.firestore {
       }
       match /periodTemplates/{id} {
         allow read: if adminRead(sid);
-        allow create, update: if adminWrite(sid);
+        allow create: if adminWrite(sid);
+        // The default template stays the default (deleteSetupItem also refuses to delete it).
+        allow update: if adminWrite(sid)
+          && (resource.data.get('isDefault', false) != true || request.resource.data.get('isDefault', false) == true);
       }
       match /classes/{id} {
         allow read: if adminRead(sid);
@@ -66,9 +69,13 @@ service cloud.firestore {
       match /years/{yid} {
         allow read: if adminRead(sid) || isTeacher(sid);
         allow create: if adminWrite(sid)
+          && request.resource.data.get('label', null) is string
+          && request.resource.data.label.matches('.*\\S.*')
           && request.resource.data.get('status', null) == 'draft'
           && !('publishedAt' in request.resource.data);
-        allow update: if adminWrite(sid) && !changed().hasAny(['status', 'publishedAt']);
+        allow update: if adminWrite(sid) && !changed().hasAny(['status', 'publishedAt'])
+          && (!('label' in changed())
+            || (request.resource.data.get('label', null) is string && request.resource.data.label.matches('.*\\S.*')));
 
         match /entries/{id} {
           allow read: if adminRead(sid);
@@ -95,7 +102,11 @@ service cloud.firestore {
     }
 
     match /reports/{id} {
-      allow read, update: if isSuper();
+      allow read: if isSuper();
+      allow update: if isSuper()
+        && changed().hasOnly(['status', 'note'])
+        && request.resource.data.status in ['open', 'resolved', 'dismissed']
+        && optText('note', 1000);
     }
 
     // censusIndex, rateLimits: functions only, no client access.
