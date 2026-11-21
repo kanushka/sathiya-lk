@@ -1,16 +1,16 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
 // Copyright (C) 2026 Kanushka Gayan
+import { REPORT_REASONS, type ReportReason } from '@sathiya/core';
 import { useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Button } from '../../ui/Button';
 import { Field, inputClass } from '../../ui/Field';
 import { Modal } from '../../ui/Modal';
 import { useToast } from '../../ui/Toast';
-import { getDirectorySchool, reportSchool, type DirectorySchool, type ReportReason } from './api';
+import { getDirectorySchool, reportSchool, type DirectorySchool } from './api';
 import { detailCode } from './errors';
 import { SchoolSearch } from './SchoolSearch';
 
-const reasons: ReportReason[] = ['fake', 'duplicate', 'abuse', 'other'];
 
 export interface ReportSchoolModalProps {
   open: boolean;
@@ -91,7 +91,7 @@ export function ReportSchoolModal({ open, onClose, initialSchoolId }: ReportScho
         <fieldset className="m-0 border-0 p-0">
           <legend className="mb-1.5 p-0 text-[13px] font-semibold text-ink-soft">{t('report.reason')}</legend>
           <div className="flex flex-col gap-2">
-            {reasons.map((r) => (
+            {REPORT_REASONS.map((r) => (
               <label key={r} className="flex items-center gap-2.5 text-sm">
                 <input type="radio" name="report-reason" checked={reason === r} onChange={() => setReason(r)} />
                 {t(`report.reasons.${r}`)}

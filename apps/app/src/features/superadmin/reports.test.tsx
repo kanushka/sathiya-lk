@@ -1,18 +1,17 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
 // Copyright (C) 2026 Kanushka Gayan
+import type { School, SchoolReport } from '@sathiya/core';
 import { ctx } from '@sathiya/core/fixtures';
 import { screen, waitFor, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { Route, Routes } from 'react-router-dom';
 import { describe, expect, it, vi } from 'vitest';
 import { renderWithSchool } from '../../test/renderWithSchool';
-import type { SchoolReport } from './reports';
 import { ReportsPage } from './ReportsPage';
-import type { SchoolRecord } from './school';
 import { SuperLayout } from './SuperLayout';
 
 const opts = { ctx, claims: { super: true } };
-const school = (id: string, nameEn: string, status: 'active' | 'disabled' = 'active'): SchoolRecord => ({
+const school = (id: string, nameEn: string, status: 'active' | 'disabled' = 'active'): School => ({
   ...ctx.school,
   id,
   nameEn,

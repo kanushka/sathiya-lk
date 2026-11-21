@@ -1,13 +1,13 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
 // Copyright (C) 2026 Kanushka Gayan
+import { SCHOOL_TYPES, type SchoolType } from '@sathiya/core';
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Button } from '../../ui/Button';
 import { Field, inputClass } from '../../ui/Field';
 import { Trans } from 'react-i18next';
-import { censusError, gradesOk, prefixOk, schoolOk, type SchoolDraft, type SchoolType } from './model';
+import { censusError, gradesOk, prefixOk, schoolOk, type SchoolDraft } from './model';
 
-const types: SchoolType[] = ['government', 'private', 'international'];
 
 const grades = Array.from({ length: 13 }, (_, i) => i + 1);
 
@@ -55,7 +55,7 @@ export function StepSchool({ value, onChange, onNext, censusTaken, onReport }: S
                 onChange({ ...value, type, ...(type === 'government' ? { noCensus: false } : {}) });
               }}
             >
-              {types.map((k) => (
+              {SCHOOL_TYPES.map((k) => (
                 <option key={k} value={k}>
                   {t(`school.types.${k}`)}
                 </option>

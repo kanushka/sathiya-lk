@@ -1,5 +1,6 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
 // Copyright (C) 2026 Kanushka Gayan
+import type { SchoolReport } from '@sathiya/core';
 import type { ReactNode } from 'react';
 import { useTranslation } from 'react-i18next';
 import { NavLink } from 'react-router-dom';
@@ -7,7 +8,7 @@ import { useAuth } from '../../app/AuthProvider';
 import { useMaybeLang } from '../../app/LangProvider';
 import type { CollectionState } from '../../lib/firestore';
 import { cx } from '../../ui/cx';
-import { useOpenReports, type SchoolReport } from './reports';
+import { useOpenReports } from './reports';
 
 interface NavItem {
   to: string;

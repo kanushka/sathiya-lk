@@ -11,12 +11,11 @@ import { LoadingState } from '../../ui/LoadingState';
 import { Select } from '../../ui/Select';
 import { Table, TBody, Td, Th, THead, Tr } from '../../ui/Table';
 import { StatusButton, StatusPill } from './StatusControl';
-import type { SchoolRecord } from './school';
 import { useUsageCounts, type CountState } from './source';
 import { defaultSetStatus, type SetStatusFn } from './status';
 
 export interface SchoolsPageProps {
-  schools?: CollectionState<SchoolRecord>;
+  schools?: CollectionState<School>;
   setStatus?: SetStatusFn;
 }
 
@@ -45,7 +44,7 @@ const linkBtn =
 export function SchoolsPage({ schools: injected, setStatus = defaultSetStatus }: SchoolsPageProps) {
   const { t } = useTranslation('superadmin');
   const { lang } = useLang();
-  const live = useCollection<SchoolRecord>(injected ? null : 'schools');
+  const live = useCollection<School>(injected ? null : 'schools');
   const state = injected ?? live;
   const [search, setSearch] = useState('');
   const [status, setStatusFilter] = useState<'all' | School['status']>('all');
@@ -119,7 +118,7 @@ export function SchoolsPage({ schools: injected, setStatus = defaultSetStatus }:
                       {s.city && <span className="block text-xs text-ink-muted">{s.city}</span>}
                       {(s.type || s.censusNo) && (
                         <span className="block text-xs text-ink-muted">
-                          {[s.type, s.censusNo && t('schools.censusShort', { no: s.censusNo })].filter(Boolean).join(' · ')}
+                          {[s.type && t(`schoolTypes.${s.type}`), s.censusNo && t('schools.censusShort', { no: s.censusNo })].filter(Boolean).join(' · ')}
                         </span>
                       )}
                     </div>

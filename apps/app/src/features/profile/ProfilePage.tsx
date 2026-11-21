@@ -13,7 +13,7 @@ import { uploadLogo } from '../register/api';
 import { BrandPreview } from '../register/BrandPreview';
 import { ColorSwatches, PRIMARY_SWATCHES, SECOND_SWATCHES } from '../register/ColorSwatches';
 import { LogoUpload } from '../register/LogoUpload';
-import { prefixOk, type SchoolWithContact } from '../register/model';
+import { prefixOk } from '../register/model';
 import * as api from './api';
 import { contrastWithWhite, isLowContrast } from './contrast';
 
@@ -22,13 +22,13 @@ const blankToUndefined = (v: string) => (v.trim() === '' ? undefined : v.trim())
 export function ProfilePage() {
   const { t } = useTranslation('profile');
   const { t: tr } = useTranslation('register');
-  const { school } = useSchool() as { school: SchoolWithContact };
+  const { school } = useSchool();
   const readOnly = useReadOnly();
   const toast = useToast();
   const [draft, setDraft] = useState(() => ({
     nameEn: school.nameEn,
     nameSi: school.nameSi ?? '',
-    city: school.city ?? '',
+    city: school.city,
     district: school.district,
     address: school.address ?? '',
     phone: school.phone ?? '',

@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
 // Copyright (C) 2026 Kanushka Gayan
-import { paths } from '@sathiya/core';
+import { paths, type CallableTypes } from '@sathiya/core';
 import {
   applyActionCode,
   checkActionCode,
@@ -11,9 +11,8 @@ import {
   verifyPasswordResetCode,
 } from 'firebase/auth';
 import { collection, doc, getDoc, getDocs, limit, orderBy, query, where } from 'firebase/firestore';
-import { auth, db, functions } from '../../lib/firebase';
-import { httpsCallable } from 'firebase/functions';
-import { call, toApiError } from '../../lib/callable';
+import { auth, db } from '../../lib/firebase';
+import { call } from '../../lib/callable';
 import { mergeDirectoryResults, type DirectorySchool } from './directory';
 
 export type { DirectorySchool };
@@ -68,20 +67,8 @@ export async function claimInvites(): Promise<void> {
   await call('claimInvites', {});
 }
 
-export type ReportReason = 'fake' | 'duplicate' | 'abuse' | 'other';
-export interface ReportSchoolReq {
-  schoolId: string;
-  reason: ReportReason;
-  details?: string;
-  email?: string;
-}
-
-export async function reportSchool(req: ReportSchoolReq): Promise<void> {
-  try {
-    await httpsCallable<ReportSchoolReq, { ok: true }>(functions, 'reportSchool')(req);
-  } catch (err) {
-    throw toApiError(err);
-  }
+export async function reportSchool(req: CallableTypes['reportSchool']['req']): Promise<void> {
+  await call('reportSchool', req);
 }
 
 export async function applyEmailCode(oobCode: string): Promise<void> {

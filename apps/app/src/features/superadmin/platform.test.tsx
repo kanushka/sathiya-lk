@@ -1,5 +1,6 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
 // Copyright (C) 2026 Kanushka Gayan
+import type { PlatformConfig } from '@sathiya/core';
 import { ctx } from '@sathiya/core/fixtures';
 import { screen, waitFor, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
@@ -8,7 +9,7 @@ import { renderWithSchool } from '../../test/renderWithSchool';
 import { AnnouncementBanner } from './AnnouncementBanner';
 import { AnnouncementsPage } from './AnnouncementsPage';
 import { DefaultSubjectsPage } from './DefaultSubjectsPage';
-import { termsCollectionPath, TermsExistsError, type PlatformConfig, type PlatformWriter } from './platform';
+import { termsCollectionPath, TermsExistsError, type PlatformWriter } from './platform';
 import { TermsPage } from './TermsPage';
 
 const opts = { ctx, claims: { super: true } };

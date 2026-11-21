@@ -1,13 +1,6 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
 // Copyright (C) 2026 Kanushka Gayan
-import type { RegisterSchoolReq, School } from '@sathiya/core';
-
-export type SchoolType = 'government' | 'private' | 'international';
-export type SchoolContact = { city: string; address?: string; phone?: string; type: SchoolType; censusNo?: string };
-export type SchoolWithContact = Omit<School, 'city'> & Partial<SchoolContact>;
-export type RegisterSchoolWithContactReq = Omit<RegisterSchoolReq, 'school'> & {
-  school: RegisterSchoolReq['school'] & SchoolContact;
-};
+import { CENSUS_NO_RE, type SchoolType } from '@sathiya/core';
 
 export interface SchoolDraft {
   type: SchoolType;
@@ -43,7 +36,7 @@ export const emptyAccount: AccountDraft = { adminName: '', email: '', password: 
 
 export const prefixOk = (p: string) => /^[A-Z]{2,5}$/.test(p);
 export const gradesOk = (s: SchoolDraft) => s.gradeFrom <= s.gradeTo;
-export const censusValid = (c: string) => /^\d{4,6}$/.test(c);
+export const censusValid = (c: string) => CENSUS_NO_RE.test(c);
 export const censusError = (s: SchoolDraft): 'format' | null => (s.censusNo !== '' && !censusValid(s.censusNo) ? 'format' : null);
 const censusOk = (s: SchoolDraft) => (s.type !== 'government' && s.noCensus ? s.censusNo === '' : censusValid(s.censusNo));
 export const schoolOk = (s: SchoolDraft) =>

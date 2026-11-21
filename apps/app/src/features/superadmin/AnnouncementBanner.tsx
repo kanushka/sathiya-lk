@@ -1,12 +1,11 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
 // Copyright (C) 2026 Kanushka Gayan
-import { paths } from '@sathiya/core';
+import { paths, type PlatformConfig } from '@sathiya/core';
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useLang } from '../../app/LangProvider';
 import { useDoc } from '../../lib/firestore';
 import { Icon } from '../../ui/Icon';
-import type { PlatformConfig } from './platform';
 
 const storageKey = 'sathiya.announcement.dismissed';
 

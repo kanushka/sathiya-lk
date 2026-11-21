@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
 // Copyright (C) 2026 Kanushka Gayan
-import { paths, type Subject } from '@sathiya/core';
+import { paths, type DefaultSubjectsDoc, type Subject } from '@sathiya/core';
 import { addDoc, collection, deleteField, doc, getDoc, updateDoc, writeBatch } from 'firebase/firestore';
 import { db } from '../../lib/firebase';
 
@@ -28,6 +28,6 @@ export async function updateSubject(schoolId: string, subjectId: string, subject
 
 export async function fetchDefaultSubjects(): Promise<SubjectInput[]> {
   const snap = await getDoc(doc(db, paths.platform.defaultSubjects));
-  const list = snap.data()?.subjects;
-  return Array.isArray(list) ? (list as SubjectInput[]) : [];
+  const list = (snap.data() as Partial<DefaultSubjectsDoc> | undefined)?.subjects;
+  return Array.isArray(list) ? list : [];
 }

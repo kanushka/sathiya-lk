@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
 // Copyright (C) 2026 Kanushka Gayan
-import { paths } from '@sathiya/core';
+import { paths, type PlatformConfig } from '@sathiya/core';
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useDoc, type DocState } from '../../lib/firestore';
@@ -11,7 +11,7 @@ import { LoadingState } from '../../ui/LoadingState';
 import { useToast } from '../../ui/Toast';
 import { errorMessage } from './errors';
 import { announcementText, BannerView } from './AnnouncementBanner';
-import { firestorePlatformWriter, type PlatformConfig, type PlatformWriter } from './platform';
+import { firestorePlatformWriter, type PlatformWriter } from './platform';
 
 export interface AnnouncementsPageProps {
   config?: DocState<PlatformConfig>;

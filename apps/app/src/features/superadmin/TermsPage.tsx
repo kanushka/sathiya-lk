@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
 // Copyright (C) 2026 Kanushka Gayan
-import { paths } from '@sathiya/core';
+import { paths, type PlatformConfig, type TermsVersion } from '@sathiya/core';
 import { orderBy } from 'firebase/firestore';
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
@@ -15,7 +15,7 @@ import { Table, TBody, Td, Th, THead, Tr } from '../../ui/Table';
 import { useToast } from '../../ui/Toast';
 import { errorMessage } from './errors';
 import { formatDate } from './format';
-import { firestorePlatformWriter, termsCollectionPath, TermsExistsError, type PlatformConfig, type PlatformWriter, type TermsVersion } from './platform';
+import { firestorePlatformWriter, termsCollectionPath, TermsExistsError, type PlatformWriter } from './platform';
 
 export interface TermsPageProps {
   versions?: CollectionState<TermsVersion>;

@@ -11,7 +11,6 @@ import { AuthContextProvider, type AuthState } from '../../app/AuthProvider';
 import { LangContextProvider } from '../../app/LangProvider';
 import { ApiError } from '../../lib/callable';
 import { renderWithSchool } from '../../test/renderWithSchool';
-import type { SchoolRecord } from './school';
 import { SchoolDetail } from './SchoolDetail';
 import { SchoolsPage } from './SchoolsPage';
 import { SuperAdminLink } from './SuperAdminLink';
@@ -314,7 +313,7 @@ describe('SuperLayout and SuperAdminLink', () => {
 });
 
 describe('school contact fields', () => {
-  const withContact: SchoolRecord[] = [
+  const withContact: School[] = [
     { ...schools[0]!, city: 'Kandy Town', address: '12 Temple Rd', phone: '081 222 3344' },
     { ...schools[1]!, city: 'Galle Fort' },
     { ...schools[2]!, city: 'Peradeniya' },
@@ -357,9 +356,9 @@ describe('school contact fields', () => {
 });
 
 describe('school type and census number', () => {
-  const typed: SchoolRecord[] = [
-    { ...schools[0]!, type: '1AB', censusNo: '10234' },
-    { ...schools[1]!, type: 'Type 2', censusNo: '20987' },
+  const typed: School[] = [
+    { ...schools[0]!, type: 'government', censusNo: '10234' },
+    { ...schools[1]!, type: 'private', censusNo: '20987' },
     schools[2]!,
   ];
 
@@ -370,7 +369,7 @@ describe('school type and census number', () => {
       </UsageSourceProvider>,
       opts,
     );
-    expect(screen.getByText(/1AB/)).toBeInTheDocument();
+    expect(screen.getByText(/Government/)).toBeInTheDocument();
     expect(screen.getByText(/10234/)).toBeInTheDocument();
     fireEvent.change(screen.getByRole('textbox', { name: 'Search schools' }), { target: { value: '2098' } });
     expect(rowNames()).toEqual([expect.stringContaining('Lakeside Girls')]);
@@ -383,7 +382,7 @@ describe('school type and census number', () => {
       </UsageSourceProvider>,
       opts,
     );
-    expect(screen.getByText('1AB')).toBeInTheDocument();
+    expect(screen.getByText('Government')).toBeInTheDocument();
     expect(screen.getByText('10234')).toBeInTheDocument();
     unmount();
     renderWithSchool(

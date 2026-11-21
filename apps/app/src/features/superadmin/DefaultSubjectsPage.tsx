@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
 // Copyright (C) 2026 Kanushka Gayan
-import { paths } from '@sathiya/core';
+import { paths, type DefaultSubject, type DefaultSubjectsDoc } from '@sathiya/core';
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useDoc, type DocState } from '../../lib/firestore';
@@ -12,7 +12,7 @@ import { Modal } from '../../ui/Modal';
 import { Table, TBody, Td, Th, THead, Tr } from '../../ui/Table';
 import { useToast } from '../../ui/Toast';
 import { errorMessage } from './errors';
-import { firestorePlatformWriter, hexColor, type DefaultSubject, type DefaultSubjectsDoc, type PlatformWriter } from './platform';
+import { firestorePlatformWriter, hexColor, type PlatformWriter } from './platform';
 
 export interface DefaultSubjectsPageProps {
   doc?: DocState<DefaultSubjectsDoc>;

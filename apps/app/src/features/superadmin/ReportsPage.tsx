@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
 // Copyright (C) 2026 Kanushka Gayan
-import { pickName } from '@sathiya/core';
+import { pickName, type School, type SchoolReport } from '@sathiya/core';
 import { useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Link } from 'react-router-dom';
@@ -14,14 +14,13 @@ import { Table, TBody, Td, Th, THead, Tr } from '../../ui/Table';
 import { useToast } from '../../ui/Toast';
 import { errorMessage } from './errors';
 import { formatDate } from './format';
-import { firestoreReportWriter, useOpenReports, type ReportWriter, type SchoolReport } from './reports';
-import type { SchoolRecord } from './school';
+import { firestoreReportWriter, useOpenReports, type ReportWriter } from './reports';
 import { StatusPill } from './StatusControl';
 import { defaultSetStatus, type SetStatusFn } from './status';
 
 export interface ReportsPageProps {
   reports?: CollectionState<SchoolReport>;
-  schools?: CollectionState<SchoolRecord>;
+  schools?: CollectionState<School>;
   writer?: ReportWriter;
   setStatus?: SetStatusFn;
 }
@@ -35,7 +34,7 @@ export function ReportsPage({
   const { t } = useTranslation('superadmin');
   const { lang } = useLang();
   const state = useOpenReports(injected);
-  const liveSchools = useCollection<SchoolRecord>(injectedSchools ? null : 'schools');
+  const liveSchools = useCollection<School>(injectedSchools ? null : 'schools');
   const schools = injectedSchools ?? liveSchools;
   const byId = useMemo(() => new Map(schools.data.map((s) => [s.id, s])), [schools.data]);
   const rows = useMemo(
@@ -130,7 +129,7 @@ function CloseButton({ report, writer }: { report: SchoolReport; writer: ReportW
   );
 }
 
-function SuspendButton({ school, setStatus }: { school: SchoolRecord; setStatus: SetStatusFn }) {
+function SuspendButton({ school, setStatus }: { school: School; setStatus: SetStatusFn }) {
   const { t } = useTranslation('superadmin');
   const { lang } = useLang();
   const toast = useToast();

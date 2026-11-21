@@ -1,12 +1,11 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
 // Copyright (C) 2026 Kanushka Gayan
-import { paths } from '@sathiya/core';
+import { paths, type RegisterSchoolReq } from '@sathiya/core';
 import { createUserWithEmailAndPassword, updateProfile } from 'firebase/auth';
 import { doc, getDoc, updateDoc } from 'firebase/firestore';
 import { getDownloadURL, ref, uploadBytes } from 'firebase/storage';
 import { call } from '../../lib/callable';
 import { auth, db, storage } from '../../lib/firebase';
-import type { RegisterSchoolWithContactReq } from './model';
 
 export const FALLBACK_TERMS_VERSION = '1';
 
@@ -34,7 +33,7 @@ export async function currentTermsVersion(): Promise<string> {
   }
 }
 
-export async function registerSchool(req: RegisterSchoolWithContactReq): Promise<string> {
+export async function registerSchool(req: RegisterSchoolReq): Promise<string> {
   const res = await call('registerSchool', req);
   return res.schoolId;
 }
