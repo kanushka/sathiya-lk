@@ -2,8 +2,6 @@
 // Copyright (C) 2026 Kanushka Gayan
 
 import {
-  classProgress,
-  effectivePlan,
   periodsFor,
   pickName,
   preferredTeacherFor,
@@ -12,7 +10,6 @@ import {
   type DayIndex,
   type Entry,
   type EntryDraft,
-  type PlanItem,
   type TeacherOption,
 } from '@sathiya/core';
 import { useEffect, useMemo, useRef, useState } from 'react';
@@ -23,9 +20,10 @@ import { useReadOnly } from '../../ui/AdminLayout';
 import { Button } from '../../ui/Button';
 import { Combobox } from '../../ui/Combobox';
 import { Modal } from '../../ui/Modal';
-import { limitWarning, planItemColor, planItemName, teacherReason, teachesAtAll } from './labels';
+import { limitWarning, planItemColor, teacherReason, teachesAtAll } from './labels';
+import { initials, usePickItems, type GroupItem, type PickItem } from './pickerData';
 
-export type GroupItem = Extract<PlanItem, { kind: 'group' }>;
+export type { GroupItem };
 
 export interface SlotPickerProps {
   open: boolean;
@@ -41,29 +39,10 @@ export interface SlotPickerProps {
   onCombine(subjectId: string): void;
 }
 
-interface PickItem {
-  item: PlanItem;
-  key: string;
-  name: string;
-  placed: number;
-  needed: number;
-}
-
 export function SlotPicker(props: SlotPickerProps) {
   const readOnly = useReadOnly();
   if (!props.open || readOnly) return null;
   return <SlotPickerBody {...props} />;
-}
-
-function initials(name: string): string {
-  return name
-    .replace(/^((Mrs?|Ms|Rev|Ven|Fr|Dr)\.\s*)+/, '')
-    .split(/[\s.]+/)
-    .filter(Boolean)
-    .map((w) => w[0])
-    .join('')
-    .slice(0, 2)
-    .toUpperCase();
 }
 
 function SlotPickerBody({ onClose, classId, day, period, entries, editing, onSave, onClear, onGroup, onCombine }: SlotPickerProps) {
@@ -83,17 +62,7 @@ function SlotPickerBody({ onClose, classId, day, period, entries, editing, onSav
   const time = template && periodsFor(template, day).find((p) => p.period === period);
   const others = useMemo(() => entries.filter((e) => e.id !== editing?.id), [entries, editing]);
 
-  const items = useMemo<PickItem[]>(() => {
-    if (!cls || !grade) return [];
-    const rows = classProgress(classId, others, effectivePlan(cls, grade)).map((r) => ({
-      item: r.item,
-      key: r.key,
-      name: planItemName(r.item, ctx, lang),
-      placed: r.placed,
-      needed: r.needed,
-    }));
-    return [...rows.filter((r) => r.placed < r.needed), ...rows.filter((r) => r.placed >= r.needed)];
-  }, [cls, grade, classId, others, ctx, lang]);
+  const items = usePickItems(ctx, classId, others, lang);
 
   const options = useMemo(() => {
     if (!subjectId || !time) return null;
