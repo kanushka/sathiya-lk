@@ -1,0 +1,88 @@
+import { useTranslation } from 'react-i18next';
+import { Button } from '../../ui/Button';
+import { Field, inputClass } from '../../ui/Field';
+import { gradesOk, prefixOk, schoolOk, type SchoolDraft } from './model';
+
+const grades = Array.from({ length: 13 }, (_, i) => i + 1);
+
+export interface StepSchoolProps {
+  value: SchoolDraft;
+  onChange(next: SchoolDraft): void;
+  onNext(): void;
+}
+
+export function StepSchool({ value, onChange, onNext }: StepSchoolProps) {
+  const { t } = useTranslation('register');
+  const set = <K extends keyof SchoolDraft>(k: K, v: SchoolDraft[K]) => onChange({ ...value, [k]: v });
+  const prefixInvalid = value.staffPrefix !== '' && !prefixOk(value.staffPrefix);
+  const example = prefixOk(value.staffPrefix) ? value.staffPrefix : 'SCC';
+
+  return (
+    <section className="rounded-2xl border-2 border-teal bg-white p-5 sm:p-7">
+      <h2 className="mb-1 mt-0 text-lg font-bold">{t('school.title')}</h2>
+      <p className="mb-5 mt-0 text-sm text-ink-muted">{t('school.subtitle')}</p>
+      <div className="flex flex-col gap-3.5">
+        <Field label={t('school.nameEn')}>
+          <input className={inputClass} value={value.nameEn} onChange={(e) => set('nameEn', e.target.value)} />
+        </Field>
+        <Field label={t('school.nameSi')}>
+          <input
+            lang="si"
+            className={inputClass}
+            value={value.nameSi}
+            onChange={(e) => set('nameSi', e.target.value)}
+          />
+        </Field>
+        <Field label={t('school.district')}>
+          <input className={inputClass} value={value.district} onChange={(e) => set('district', e.target.value)} />
+        </Field>
+        <div className="flex gap-3">
+          <Field label={t('school.gradeFrom')} className="flex-1">
+            <select
+              className={inputClass}
+              value={value.gradeFrom}
+              onChange={(e) => set('gradeFrom', Number(e.target.value))}
+            >
+              {grades.map((g) => (
+                <option key={g} value={g}>
+                  {g}
+                </option>
+              ))}
+            </select>
+          </Field>
+          <Field
+            label={t('school.gradeTo')}
+            className="flex-1"
+            error={gradesOk(value) ? undefined : t('school.gradesError')}
+          >
+            <select className={inputClass} value={value.gradeTo} onChange={(e) => set('gradeTo', Number(e.target.value))}>
+              {grades.map((g) => (
+                <option key={g} value={g}>
+                  {g}
+                </option>
+              ))}
+            </select>
+          </Field>
+        </div>
+        <Field
+          label={t('school.prefix')}
+          hint={t('school.prefixHint', { example1: `${example}001`, example2: `${example}024` })}
+          error={prefixInvalid ? t('school.prefixError') : undefined}
+        >
+          <input
+            className={`${inputClass} uppercase tracking-[.08em]`}
+            maxLength={5}
+            spellCheck={false}
+            value={value.staffPrefix}
+            onChange={(e) => set('staffPrefix', e.target.value.toUpperCase().replace(/[^A-Z]/g, ''))}
+          />
+        </Field>
+      </div>
+      <div className="mt-7 flex justify-end border-t border-line-soft pt-5">
+        <Button variant="primary" size="lg" disabled={!schoolOk(value)} onClick={onNext}>
+          {t('school.next')}
+        </Button>
+      </div>
+    </section>
+  );
+}

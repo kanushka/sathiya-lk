@@ -1,0 +1,37 @@
+import { paths, type RegisterSchoolReq } from '@sathiya/core';
+import { createUserWithEmailAndPassword, updateProfile } from 'firebase/auth';
+import { doc, getDoc, updateDoc } from 'firebase/firestore';
+import { getDownloadURL, ref, uploadBytes } from 'firebase/storage';
+import { call } from '../../lib/callable';
+import { auth, db, storage } from '../../lib/firebase';
+
+export const FALLBACK_TERMS_VERSION = '1';
+
+export async function createAccount(email: string, password: string, displayName: string): Promise<void> {
+  const cred = await createUserWithEmailAndPassword(auth, email, password);
+  await updateProfile(cred.user, { displayName }).catch(() => undefined);
+}
+
+export async function currentTermsVersion(): Promise<string> {
+  try {
+    const snap = await getDoc(doc(db, paths.platform.config));
+    const v = snap.data()?.currentTermsVersion;
+    return typeof v === 'string' && v ? v : FALLBACK_TERMS_VERSION;
+  } catch {
+    return FALLBACK_TERMS_VERSION;
+  }
+}
+
+export async function registerSchool(req: RegisterSchoolReq): Promise<string> {
+  const res = await call('registerSchool', req);
+  return res.schoolId;
+}
+
+export async function uploadLogo(schoolId: string, file: File): Promise<string> {
+  const ext = file.type === 'image/svg+xml' ? 'svg' : 'png';
+  const fileRef = ref(storage, `schools/${schoolId}/logo.${ext}`);
+  await uploadBytes(fileRef, file, { contentType: file.type });
+  const url = await getDownloadURL(fileRef);
+  await updateDoc(doc(db, paths.school(schoolId)), { logoUrl: url });
+  return url;
+}
