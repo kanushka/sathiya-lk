@@ -15,7 +15,7 @@ import {
   type PinSlot,
   type SchoolContext,
 } from '@sathiya/core';
-import { useCallback, useMemo, useState } from 'react';
+import { useCallback, useMemo, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useLang } from '../../app/LangProvider';
 import type { PinTarget } from './AssignPicker';
@@ -54,7 +54,11 @@ export function usePinMode(args: {
   const slots = useMemo(() => (target ? pinSlots({ ctx, entries, classId, ...target }) : []), [ctx, entries, classId, target]);
   const progress = useMemo(() => (target ? pinProgress({ ctx, entries, classId, subjectId: target.subjectId }) : null), [ctx, entries, classId, target]);
   const cellAt = useCallback((day: DayIndex, period: number) => slots.find((s) => s.day === day && s.period === period)?.cell, [slots]);
-  const suggested = useMemo(() => rawSuggested.filter((s) => cellAt(s.day, s.period)?.kind === 'free'), [rawSuggested, cellAt]);
+  const suggested = useMemo(
+    () => rawSuggested.filter((s) => cellAt(s.day, s.period)?.kind === 'free').slice(0, progress?.left ?? 0),
+    [rawSuggested, cellAt, progress],
+  );
+  const seq = useRef(new Map<string, number>());
   const isSuggested = useCallback((day: DayIndex, period: number) => suggested.some((s) => s.day === day && s.period === period), [suggested]);
 
   const subjectName = useCallback(() => {
@@ -67,28 +71,39 @@ export function usePinMode(args: {
     [classId],
   );
 
-  const start = useCallback((next: PinTarget) => {
-    setTarget(next);
-    setRawSuggested([]);
-    setMessage('');
-  }, []);
+  const start = useCallback(
+    (next: PinTarget) => {
+      const s = ctx.subjects.find((x) => x.id === next.subjectId);
+      const teacher = ctx.teachers.find((x) => x.id === next.teacherId);
+      setTarget(next);
+      setRawSuggested([]);
+      setMessage(t('pin.started', { subject: s ? pickName(s, lang) : next.subjectId, teacher: teacher ? teacherDisplayName(teacher, lang) : '' }));
+    },
+    [ctx.subjects, ctx.teachers, t, lang],
+  );
 
   const stop = useCallback(() => {
     setTarget(null);
     setRawSuggested([]);
-    setMessage('');
-  }, []);
+    setMessage(t('pin.stopped'));
+  }, [t]);
 
   const toggle = useCallback(
     async (day: DayIndex, period: number) => {
       const c = cellAt(day, period);
       if (!target || !c) return;
       const where = { day: tc(`days.long.${day}`), n: period, subject: subjectName() };
+      const key = `${day}-${period}`;
+      const mine = (seq.current.get(key) ?? 0) + 1;
+      seq.current.set(key, mine);
+      const latest = () => seq.current.get(key) === mine;
       if (c.kind === 'pinned') {
-        if (await remove(c.entry.id)) setMessage(t('pin.unpinned', where));
+        const ok = await remove(c.entry.id);
+        if (ok && latest()) setMessage(t('pin.unpinned', where));
       } else if (c.kind === 'free') {
         setRawSuggested((list) => list.filter((s) => s.day !== day || s.period !== period));
-        setMessage((await save(draftFor(day, period, target))) ? t('pin.pinned', where) : '');
+        const ok = await save(draftFor(day, period, target));
+        if (latest()) setMessage(ok ? t('pin.pinned', where) : '');
       }
     },
     [cellAt, target, tc, subjectName, remove, save, draftFor, t],

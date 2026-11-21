@@ -156,8 +156,7 @@
     "weekFree_other": "{{staffId}} · {{count}} free periods for {{class}} this week",
     "weekNone": "{{staffId}} · No free periods for {{class}} this week",
     "useOther": "Use for other slots",
-    "start": "Start pinning",
-    "selected": "Selected"
+    "start": "Start pinning"
   },
   "pin": {
     "mode": "Pin mode",
@@ -200,6 +199,8 @@
     "noteSuggested": "suggested",
     "noteOver": "over plan",
     "noteLimit": "at daily limit {{load}}/{{max}}",
-    "legendLabel": "Pin mode legend"
+    "legendLabel": "Pin mode legend",
+    "started": "Pin mode on: {{subject}} with {{teacher}}. Click free periods to pin, Esc to finish.",
+    "stopped": "Pin mode off."
   }
 }

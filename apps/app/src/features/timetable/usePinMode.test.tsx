@@ -119,13 +119,68 @@ describe('usePinMode', () => {
     expect(pin.suggested).toEqual([{ day: 3, period: 7 }]);
   });
 
-  it('stop clears the target, suggestions and message', async () => {
+  it('stop clears the target and suggestions', async () => {
     setup();
     act(() => pin.start(science));
     act(() => pin.suggest());
     act(() => pin.stop());
     await waitFor(() => expect(pin.target).toBeNull());
     expect(pin.suggested).toEqual([]);
-    expect(pin.message).toBe('');
+  });
+
+  it('caps suggestions at what is still needed after hand pins', async () => {
+    const api = setup();
+    act(() => pin.start(science));
+    act(() => pin.suggest());
+    expect(pin.suggested).toHaveLength(2);
+    await act(async () => {
+      await pin.toggle(4, 5);
+    });
+    expect(pin.progress?.left).toBe(1);
+    expect(pin.suggested).toEqual([{ day: 2, period: 4 }]);
+    await act(async () => {
+      await pin.pinSuggested();
+    });
+    expect(api.saveEntry).toHaveBeenCalledTimes(2);
+    expect(pin.progress).toEqual({ placed: 5, needed: 5, left: 0, over: 0 });
+    expect(pin.suggested).toEqual([]);
+  });
+
+  it('drops all suggestions once the plan is met by hand', async () => {
+    setup();
+    act(() => pin.start(science));
+    act(() => pin.suggest());
+    await act(async () => {
+      await pin.toggle(4, 5);
+      await pin.toggle(4, 6);
+    });
+    expect(pin.suggested).toEqual([]);
+  });
+
+  it('announces entering and leaving pin mode', () => {
+    setup();
+    act(() => pin.start(science));
+    expect(pin.message).toBe('Pin mode on: Science with Mrs. S. Gunasekara. Click free periods to pin, Esc to finish.');
+    act(() => pin.stop());
+    expect(pin.message).toBe('Pin mode off.');
+  });
+
+  it('reports the final state when a pin is undone before it settles', async () => {
+    let resolveSave!: (v: { entryId: string }) => void;
+    setup({ saveEntry: vi.fn(() => new Promise<{ entryId: string }>((r) => (resolveSave = r))) });
+    act(() => pin.start(science));
+    let first!: Promise<void>;
+    act(() => {
+      first = pin.toggle(2, 4);
+    });
+    expect(cell(2, 4)).toBe('pinned');
+    await act(async () => {
+      await pin.toggle(2, 4);
+    });
+    await act(async () => {
+      resolveSave({ entryId: 'late' });
+      await first;
+    });
+    expect(pin.message).toBe('Science removed from Wednesday, period 4.');
   });
 });
