@@ -5,6 +5,12 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { renderWithI18n } from '../test/render';
 
 const auth = vi.hoisted(() => ({ value: { claims: { sid: 's1', role: 'admin' } as Record<string, unknown> } }));
+const yearState = vi.hoisted(() => ({
+  years: [
+    { id: 'y27', label: '2027', status: 'draft' },
+    { id: 'y26', label: '2026', status: 'published' },
+  ],
+}));
 
 vi.mock('../lib/firebase', () => ({ app: {}, auth: {}, db: {}, functions: {}, storage: {} }));
 vi.mock('../app/AuthProvider', () => ({
@@ -17,10 +23,7 @@ vi.mock('../app/SchoolProvider', () => ({
     teachers: [], subjects: [], templates: [], grades: [], classes: [],
   }),
   useYear: () => ({
-    years: [
-      { id: 'y27', label: '2027', status: 'draft' },
-      { id: 'y26', label: '2026', status: 'published' },
-    ],
+    years: yearState.years,
     yearId: 'y27',
     setYearId: vi.fn(),
     entries: [],
@@ -40,6 +43,18 @@ function renderSidebar(path = '/admin/teachers') {
 describe('Sidebar', () => {
   beforeEach(() => {
     auth.value.claims = { sid: 's1', role: 'admin' };
+    yearState.years = [
+      { id: 'y27', label: '2027', status: 'draft' },
+      { id: 'y26', label: '2026', status: 'published' },
+    ];
+  });
+
+  it('shows the year heading as plain text when there are no years', () => {
+    yearState.years = [];
+    renderSidebar();
+    expect(screen.getByText('No years yet')).toBeInTheDocument();
+    expect(screen.getByText('Timetable year').tagName).toBe('P');
+    expect(document.querySelector('label[for]')).toBeNull();
   });
 
   it('lists the admin nav paths', () => {

@@ -31,6 +31,7 @@ export const navItems: readonly NavItem[] = [
 
 const groups: NavGroup[] = ['main', 'timetable', 'setup', 'school'];
 const storageKey = 'sathiya.sidebar';
+const yearLabelClass = 'mx-3 mb-1.5 mt-3.5 block text-[11px] font-bold uppercase tracking-[.08em] text-ink-muted';
 
 function readCollapsed(): boolean {
   try {
@@ -170,27 +171,29 @@ export function Sidebar({ basePath = '/admin', readOnly = false }: SidebarProps)
               <Icon name="chevronLeft" size={16} strokeWidth={2} />
             </button>
           </div>
-          <label
-            htmlFor={yearSelectId}
-            className="mx-3 mb-1.5 mt-3.5 block text-[11px] font-bold uppercase tracking-[.08em] text-ink-muted"
-          >
-            {t('sidebar.year')}
-          </label>
           {years.length === 0 ? (
-            <p className="mx-3 text-sm text-ink-muted">{t('sidebar.noYears')}</p>
+            <>
+              <p className={yearLabelClass}>{t('sidebar.year')}</p>
+              <p className="mx-3 text-sm text-ink-muted">{t('sidebar.noYears')}</p>
+            </>
           ) : (
-            <select
-              id={yearSelectId}
-              value={yearId}
-              onChange={(e) => setYearId(e.target.value)}
-              className="mx-1 h-[38px] w-[calc(100%-8px)] rounded-lg border border-line-strong bg-white px-2.5 text-sm text-ink focus:border-brand focus:outline-none focus:ring-2 focus:ring-brand/30"
-            >
-              {years.map((y) => (
-                <option key={y.id} value={y.id}>
-                  {t('year.option', { label: y.label, status: t(`year.${y.status}`) })}
-                </option>
-              ))}
-            </select>
+            <>
+              <label htmlFor={yearSelectId} className={yearLabelClass}>
+                {t('sidebar.year')}
+              </label>
+              <select
+                id={yearSelectId}
+                value={yearId}
+                onChange={(e) => setYearId(e.target.value)}
+                className="mx-1 h-[38px] w-[calc(100%-8px)] rounded-lg border border-line-strong bg-white px-2.5 text-sm text-ink focus:border-brand focus:outline-none focus:ring-2 focus:ring-brand/30"
+              >
+                {years.map((y) => (
+                  <option key={y.id} value={y.id}>
+                    {t('year.option', { label: y.label, status: t(`year.${y.status}`) })}
+                  </option>
+                ))}
+              </select>
+            </>
           )}
         </>
       )}
@@ -256,7 +259,7 @@ export function Sidebar({ basePath = '/admin', readOnly = false }: SidebarProps)
             className={cx(linkBase, collapsed ? 'h-11 w-11 justify-center text-xs font-bold' : 'gap-2.5 px-3 py-[9px]')}
           >
             {collapsed
-              ? langCtl.lang === 'en' ? 'සිං' : 'EN'
+              ? t(`sidebar.langShort.${langCtl.lang === 'en' ? 'si' : 'en'}`)
               : t(`common:languages.${langCtl.lang === 'en' ? 'si' : 'en'}`)}
           </button>
         )}

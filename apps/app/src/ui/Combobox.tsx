@@ -178,7 +178,7 @@ export function Combobox<T>({
                     key={key}
                     id={optionId(key)}
                     role="option"
-                    aria-selected={isActive}
+                    aria-selected={selected}
                     data-active={isActive}
                     onMouseDown={(e) => e.preventDefault()}
                     onMouseEnter={() => setActive(i)}

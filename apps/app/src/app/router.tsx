@@ -94,7 +94,7 @@ export function buildRoutes(featureRoutes: RouteObject[]): RouteObject[] {
     {
       element: (
         <RequireRole role="teacher">
-          <SchoolProvider>
+          <SchoolProvider scope="school">
             <Outlet />
           </SchoolProvider>
         </RequireRole>

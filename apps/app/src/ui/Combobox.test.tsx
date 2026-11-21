@@ -65,11 +65,31 @@ describe('Combobox', () => {
     const { user, onChange } = setup();
     await user.click(screen.getByRole('button', { name: /click to search/i }));
     await user.keyboard('{ArrowDown}{ArrowDown}');
-    expect(screen.getByRole('option', { name: 'Science' })).toHaveAttribute('aria-selected', 'true');
+    const science = screen.getByRole('option', { name: 'Science' });
+    expect(science).toHaveAttribute('data-active', 'true');
+    expect(screen.getByRole('combobox')).toHaveAttribute('aria-activedescendant', science.id);
     await user.keyboard('{Enter}');
     expect(onChange).toHaveBeenCalledWith(items[1]);
     await user.click(screen.getByRole('button', { name: /click to search/i }));
     await user.keyboard('{Escape}');
     expect(screen.queryByRole('listbox')).not.toBeInTheDocument();
+  });
+
+  it('marks only the chosen value as selected', async () => {
+    const user = userEvent.setup();
+    renderWithI18n(
+      <Combobox
+        items={items}
+        getKey={(s) => s.id}
+        getLabel={(s) => s.name}
+        value={items[3]}
+        onChange={() => {}}
+        placeholder="Pick"
+        searchPlaceholder="Search subject…"
+      />,
+    );
+    await user.click(screen.getByRole('button', { name: 'History' }));
+    expect(screen.getByRole('option', { name: 'History' })).toHaveAttribute('aria-selected', 'true');
+    expect(screen.getByRole('option', { name: 'Mathematics' })).toHaveAttribute('aria-selected', 'false');
   });
 });

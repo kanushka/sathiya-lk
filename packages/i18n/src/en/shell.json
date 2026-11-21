@@ -25,7 +25,11 @@
     "readOnly": "Read-only view",
     "noYears": "No years yet",
     "signOut": "Sign out",
-    "language": "Language"
+    "language": "Language",
+    "langShort": {
+      "en": "EN",
+      "si": "සිං"
+    }
   },
   "year": {
     "draft": "draft",

@@ -10,7 +10,11 @@ vi.mock('./AuthProvider', () => ({
   useAuth: () => ({ user: state.user, claims: state.claims, loading: false }),
 }));
 vi.mock('./SchoolProvider', () => ({
-  SchoolProvider: ({ children }: { children: React.ReactNode }) => <div data-testid="school">{children}</div>,
+  SchoolProvider: ({ children, scope }: { children: React.ReactNode; scope?: string }) => (
+    <div data-testid="school" data-scope={scope ?? 'full'}>
+      {children}
+    </div>
+  ),
 }));
 vi.mock('../ui/AdminLayout', () => ({
   AdminLayout: ({ basePath }: { basePath?: string }) => (
@@ -84,6 +88,7 @@ describe('router', () => {
     state.claims = { sid: 's1', role: 'teacher', tid: 't1' };
     renderAt('/me');
     expect(screen.getByTestId('school')).toContainElement(screen.getByText('my timetable'));
+    expect(screen.getByTestId('school')).toHaveAttribute('data-scope', 'school');
     expect(screen.queryByTestId('admin-layout')).not.toBeInTheDocument();
   });
 

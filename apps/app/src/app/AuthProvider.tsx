@@ -42,9 +42,19 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           setLoading(false);
           return;
         }
+        const stale = () => auth.currentUser !== next;
         readClaims(next)
-          .then(setClaims, () => setClaims({}))
-          .finally(() => setLoading(false));
+          .then(
+            (c) => {
+              if (!stale()) setClaims(c);
+            },
+            () => {
+              if (!stale()) setClaims({});
+            },
+          )
+          .finally(() => {
+            if (!stale()) setLoading(false);
+          });
       }),
     [],
   );

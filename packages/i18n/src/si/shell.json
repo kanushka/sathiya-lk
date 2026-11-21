@@ -25,7 +25,11 @@
     "readOnly": "කියවීමට පමණි",
     "noYears": "තවම වර්ෂ නැත",
     "signOut": "ඉවත් වන්න",
-    "language": "භාෂාව"
+    "language": "භාෂාව",
+    "langShort": {
+      "en": "EN",
+      "si": "සිං"
+    }
   },
   "year": {
     "draft": "කෙටුම්පත",

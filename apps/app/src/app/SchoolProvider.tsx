@@ -41,29 +41,43 @@ export function useHasSchool(): boolean {
   return useContext(SchoolCtx) !== null;
 }
 
-export function SchoolProvider({ sid: sidProp, children }: { sid?: string; children: ReactNode }) {
+export type SchoolScope = 'full' | 'school';
+
+export interface SchoolProviderProps {
+  sid?: string;
+  scope?: SchoolScope;
+  children: ReactNode;
+}
+
+const noYears: Year[] = [];
+const noEntries: Entry[] = [];
+
+export function SchoolProvider({ sid: sidProp, scope = 'full', children }: SchoolProviderProps) {
   const { t } = useTranslation('shell');
   const params = useParams();
   const { claims } = useAuth();
   const sid = sidProp ?? params.sid ?? claims.sid ?? null;
+  const full = scope === 'full' ? sid : null;
 
   const school = useDoc<School>(sid ? paths.school(sid) : null);
-  const teachers = useCollection<Teacher>(sid ? paths.teachers(sid) : null);
-  const subjects = useCollection<Subject>(sid ? paths.subjects(sid) : null);
-  const templates = useCollection<PeriodTemplate>(sid ? paths.templates(sid) : null);
-  const grades = useCollection<Grade>(sid ? paths.grades(sid) : null);
-  const classes = useCollection<SchoolClass>(sid ? paths.classes(sid) : null);
-  const years = useCollection<Year>(sid ? paths.years(sid) : null);
+  const teachers = useCollection<Teacher>(full ? paths.teachers(full) : null);
+  const subjects = useCollection<Subject>(full ? paths.subjects(full) : null);
+  const templates = useCollection<PeriodTemplate>(full ? paths.templates(full) : null);
+  const grades = useCollection<Grade>(full ? paths.grades(full) : null);
+  const classes = useCollection<SchoolClass>(full ? paths.classes(full) : null);
+  const years = useCollection<Year>(full ? paths.years(full) : null);
 
   const [selectedYear, setYearId] = useState('');
   const sortedYears = useMemo(
     () => [...years.data].sort((a, b) => b.label.localeCompare(a.label)),
     [years.data],
   );
-  const yearId = sortedYears.some((y) => y.id === selectedYear)
-    ? selectedYear
-    : pickDefaultYear(sortedYears, school.data?.activeYearId);
-  const entries = useCollection<Entry>(sid && yearId ? paths.entries(sid, yearId) : null);
+  const yearId = !full
+    ? (school.data?.activeYearId ?? '')
+    : sortedYears.some((y) => y.id === selectedYear)
+      ? selectedYear
+      : pickDefaultYear(sortedYears, school.data?.activeYearId);
+  const entries = useCollection<Entry>(full && yearId ? paths.entries(full, yearId) : null);
 
   const primary = school.data?.colors.primary;
   const second = school.data?.colors.second;
@@ -92,8 +106,11 @@ export function SchoolProvider({ sid: sidProp, children }: { sid?: string; child
   );
 
   const yearValue = useMemo<YearState>(
-    () => ({ years: sortedYears, yearId, setYearId, entries: entries.data }),
-    [sortedYears, yearId, entries.data],
+    () =>
+      full
+        ? { years: sortedYears, yearId, setYearId, entries: entries.data }
+        : { years: noYears, yearId, setYearId, entries: noEntries },
+    [full, sortedYears, yearId, entries.data],
   );
 
   if (school.loading) return <LoadingState />;
