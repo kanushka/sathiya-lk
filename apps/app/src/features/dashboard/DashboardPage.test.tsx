@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
 // Copyright (C) 2026 Kanushka Gayan
-import { ctx, entries } from '@sathiya/core/fixtures';
+import { C, ctx, entries, entry, S, T } from '@sathiya/core/fixtures';
 import { screen, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
@@ -38,6 +38,18 @@ describe('dashboard page', () => {
   it('links class chips to the class timetable', () => {
     setup();
     expect(screen.getByRole('link', { name: /^6B/ })).toHaveAttribute('href', '/admin/timetable/class?c=c-6b');
+  });
+
+  it('renders translated attention items with links', () => {
+    const over = Array.from({ length: 8 }, (_, i) => entry(`o${i}`, 0, i + 1, [C.c6a], [[S.sinhala, T.kumara]]));
+    renderWithSchool(<DashboardPage />, { ctx, entries: [...entries, ...over] });
+    const limit = screen.getByRole('link', { name: /Mr\. S\. Kumara — 8 periods on Monday/ });
+    expect(limit).toHaveAttribute('href', '/admin/timetable/teacher?t=t-kumara');
+    expect(within(limit).getByText('Daily limit is 7')).toBeInTheDocument();
+    const target = screen.getByRole('link', { name: /6A Sinhala 8 \/ 5/ });
+    expect(target).toHaveAttribute('href', '/admin/timetable/class?c=c-6a');
+    expect(within(target).getByText('3 too many periods')).toBeInTheDocument();
+    expect(screen.queryByText(/periods on Mon\b/)).not.toBeInTheDocument();
   });
 
   it('publishes through the callable after confirming', async () => {
