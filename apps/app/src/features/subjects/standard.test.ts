@@ -31,7 +31,25 @@ describe('missingDefaults', () => {
 
 describe('missingDefaults short names', () => {
   it('keeps added short names unique against existing ones', () => {
-    const added = missingDefaults([{ nameEn: 'Maths', short: 'math' }], [{ nameEn: 'Mathematics', short: 'Math', color: '#D4ECEA' }]);
+    const added = missingDefaults([{ nameEn: 'Mental Arithmetic', short: 'math' }], [{ nameEn: 'Mathematics', short: 'Math', color: '#D4ECEA' }]);
     expect(added).toEqual([{ nameEn: 'Mathematics', short: 'Math2', color: '#D4ECEA' }]);
+  });
+});
+
+describe('missingDefaults aliases', () => {
+  it('treats a known alias or matching short name as the same subject', () => {
+    const added = missingDefaults(
+      [{ nameEn: 'Maths', short: 'Maths' }, { nameEn: 'ICT', short: 'ICT' }],
+      [
+        { nameEn: 'Mathematics', short: 'Math', color: '#D4ECEA' },
+        { nameEn: 'Information & Communication Technology', short: 'ICT', color: '#DDEFF2' },
+        { nameEn: 'Science', short: 'Sci', color: '#DCE7FA' },
+      ],
+    );
+    expect(added.map((s) => s.nameEn)).toEqual(['Science']);
+  });
+  it('never leaves a colliding entry with an empty short name', () => {
+    const added = missingDefaults([{ nameEn: 'Other', short: 'X' }], [{ nameEn: 'වෙනත්', short: 'x', color: '#E9E9E9' }]);
+    expect(added).toEqual([{ nameEn: 'වෙනත්', short: 'x2', color: '#E9E9E9' }]);
   });
 });
