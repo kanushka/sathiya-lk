@@ -64,7 +64,8 @@ function cellErrors<C extends ImportColumn>(
   errors: ImportError[],
 ): Set<C> {
   const bad = new Set<C>();
-  for (const { key: column } of IMPORT_COLUMNS[sheet] as readonly { key: C }[]) {
+  for (const def of IMPORT_COLUMNS[sheet]) {
+    const column = def.key as C;
     const text = r.cells[column];
     if (text === undefined) continue;
     const type = r.cellTypes?.[column];
@@ -98,7 +99,7 @@ function validateSubjects(rows: ImportRow<SubjectColumn>[], ctx: ImportContext, 
   rows.forEach((r, i) => {
     const err = (column: SubjectColumn, code: ImportErrorCode, value?: string) =>
       errors.push({ sheet: 'subjects', row: r.row, column, code, ...(value !== undefined && { params: { value } }) });
-    const bad = cellErrors(r, 'subjects', ['nameEn', 'nameSi', 'short'], errors);
+    const bad = cellErrors<SubjectColumn>(r, 'subjects', ['nameEn', 'nameSi', 'short'], errors);
     const nameEn = r.cells.nameEn ?? '';
     const nameSi = r.cells.nameSi ?? '';
 
@@ -173,7 +174,7 @@ function validateTeachers(
   };
 
   rows.forEach((r, i) => {
-    const bad = cellErrors(r, 'teachers', ['name'], errors);
+    const bad = cellErrors<TeacherColumn>(r, 'teachers', ['name'], errors);
     const c: Partial<Record<TeacherColumn, string>> = Object.fromEntries(Object.entries(r.cells).filter(([k]) => !bad.has(k as TeacherColumn)));
     const err = (column: ImportColumn, code: ImportErrorCode, params?: Record<string, string | number>) =>
       errors.push({ sheet: 'teachers' as ImportKind, row: r.row, column, code, ...(params && { params }) });
