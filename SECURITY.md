@@ -18,6 +18,10 @@ Please test only against your own local setup (`pnpm dev:local`) or your own acc
 
 We will acknowledge your report, investigate, and keep you updated on the fix. Please give us reasonable time to fix the issue before disclosing it. We are happy to credit you in the advisory if you wish.
 
+## Automated checks
+
+Every PR and push to `main` runs CodeQL and a Trivy scan (dependencies, secrets, misconfiguration), with results in the repository's **Security** tab. OpenSSF Scorecard runs weekly, Dependabot opens weekly dependency updates, and GitHub secret scanning with push protection is on. See [docs/security-tooling.md](docs/security-tooling.md).
+
 ## Supported versions
 
 Only the current `main` branch, which is what runs at https://app.sathiya.kanushka.com, receives security fixes.

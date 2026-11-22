@@ -1,6 +1,7 @@
 # Sathiya (සතිය)
 
 [![CI](https://github.com/kanushka/sathiya-lk/actions/workflows/ci.yml/badge.svg?branch=main)](https://github.com/kanushka/sathiya-lk/actions/workflows/ci.yml)
+[![OpenSSF Scorecard](https://api.scorecard.dev/projects/github.com/kanushka/sathiya-lk/badge)](https://scorecard.dev/viewer/?uri=github.com/kanushka/sathiya-lk)
 [![License: AGPL-3.0-or-later](https://img.shields.io/badge/license-AGPL--3.0--or--later-blue.svg)](LICENSE)
 
 A free, open-source school timetable app for Sri Lankan schools, in Sinhala and English.

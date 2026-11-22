@@ -1,0 +1,66 @@
+# yaml-language-server: $schema=https://coderabbit.ai/integrations/schema.v2.json
+language: en-US
+early_access: false
+
+reviews:
+  profile: chill
+  request_changes_workflow: false
+  high_level_summary: true
+  poem: false
+  review_status: true
+  collapse_walkthrough: true
+  sequence_diagrams: false
+  auto_review:
+    enabled: true
+    drafts: false
+    ignore_title_keywords: ['wip', 'do not review']
+  path_filters:
+    - '!pnpm-lock.yaml'
+    - '!**/dist/**'
+    - '!functions/lib/**'
+    - '!**/coverage/**'
+    - '!.superpowers/**'
+    - '!**/*.canvas'
+    - '!**/__screenshots__/**'
+    - '!e2e/test-results/**'
+    - '!e2e/playwright-report/**'
+  path_instructions:
+    - path: '**/*.{ts,tsx,js,mjs,cjs,css,html,astro,rules}'
+      instructions: |
+        - The file must start with the SPDX header `SPDX-License-Identifier: AGPL-3.0-or-later` and `Copyright (C) 2026 Kanushka Gayan`, in the file type's comment syntax.
+        - Code comments are allowed only to explain a non-obvious why (workaround, hidden constraint). Flag comments that restate the code, narrate changes, or reference tasks/tickets/PRs.
+    - path: 'apps/app/src/**'
+      instructions: |
+        - Use the shared components in `apps/app/src/ui` (Button, Field, Select, Combobox, Modal, Tabs, ...). Flag one-off re-implementations.
+        - Use popup modals (`Modal`), not side panels or drawers.
+        - Use brand tokens (`bg-brand`, `text-on-brand`, `brand-2`, `--danger`), not hard-coded colours.
+        - Every user-visible string must go through i18next; flag literal UI text.
+        - Keep keyboard and screen-reader support: labelled controls, dialog focus handling, Esc to close.
+        - App Check must stay initialised before Firestore/Functions calls; flag changes that bypass or weaken it.
+    - path: 'packages/i18n/src/**/*.json'
+      instructions: |
+        - Every key in `en/*.json` must exist in the matching `si/*.json` (and vice versa). Counts use `_one` / `_other` plurals.
+        - Sinhala text should read naturally to Sri Lankan teachers and admins.
+    - path: 'packages/core/**'
+      instructions: |
+        - Domain logic (clashes, pin mode, plans, publishing) lives here and needs Vitest tests.
+    - path: '{firestore.rules,storage.rules}'
+      instructions: |
+        - Treat as security-critical. Check every match block for least privilege, school/tenant isolation, role checks and field validation on writes.
+        - Rules changes must come with tests in `tests/rules`.
+    - path: 'functions/**'
+      instructions: |
+        - Callables must use the shared `callOpts` (`functions/src/lib/callOptions.ts`, which sets `enforceAppCheck`) and check auth, validate input, and check the caller's school membership and role server-side.
+        - Never log secrets, tokens or personal data.
+    - path: '{firebase.json,firestore.indexes.json,.firebaserc}'
+      instructions: |
+        - Keep the hosting security headers (CSP frame-ancestors, HSTS, X-Frame-Options, nosniff, Referrer-Policy, Permissions-Policy).
+    - path: '.github/workflows/**'
+      instructions: |
+        - Pin third-party actions by full commit SHA with a version comment.
+        - Use least-privilege `permissions` and `persist-credentials: false` on checkout.
+        - Don't interpolate untrusted `${{ }}` expressions straight into `run:`; pass them through `env`.
+        - Don't rename the required CI jobs `ci-fast`, `ci-emulators`, `ci-e2e`.
+
+chat:
+  auto_reply: true
