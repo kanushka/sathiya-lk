@@ -55,7 +55,7 @@ docs                     deploy, email setup, design notes
 
 ## Quick start
 
-Requirements: Node 22 (see `.nvmrc`), pnpm 9, and Java 17+ for the Firebase emulators.
+Requirements: Node 22 (see `.nvmrc`), pnpm 9, and Java 21+ for the Firebase emulators.
 
 ```bash
 pnpm install
