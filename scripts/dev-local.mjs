@@ -11,10 +11,10 @@ const children = [];
 let stopping = false;
 
 // The emulator reads functions/.env.local over functions/.env, so mail links point at the local app and website.
-// A file starting with the marker is ours, possibly left behind by a crash, so it is safe to overwrite.
+// A file whose first line is the marker is ours, possibly left behind by a crash, so it is safe to overwrite.
 const ENV_LOCAL = new URL('../functions/.env.local', import.meta.url);
 const MARKER = '# dev-local';
-const wroteEnvLocal = !existsSync(ENV_LOCAL) || readFileSync(ENV_LOCAL, 'utf8').startsWith(MARKER);
+const wroteEnvLocal = !existsSync(ENV_LOCAL) || readFileSync(ENV_LOCAL, 'utf8').split('\n', 1)[0] === MARKER;
 if (wroteEnvLocal) writeFileSync(ENV_LOCAL, `${MARKER}\nAPP_URL=${APP_URL}\nWEB_URL=${WEB_URL}\n`);
 else console.warn('functions/.env.local already exists; mail links use its values');
 
