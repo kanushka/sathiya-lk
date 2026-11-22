@@ -14,6 +14,7 @@ import { LangContextProvider } from './LangProvider';
 const state = vi.hoisted(() => ({
   claims: {} as Claims,
   status: 'disabled' as 'active' | 'disabled',
+  schoolLoading: false,
   collections: [] as (string | null)[],
   signOut: vi.fn(async () => undefined),
 }));
@@ -22,10 +23,12 @@ vi.mock('../lib/firebase', () => ({ app: {}, auth: {}, db: {}, functions: {}, st
 vi.mock('./AuthProvider', () => ({ useAuth: () => ({ claims: state.claims, signOut: state.signOut }) }));
 vi.mock('../features/auth/api', () => ({ getDirectorySchool: vi.fn(async () => null), searchSchools: vi.fn(async () => []), reportSchool: vi.fn() }));
 vi.mock('../lib/firestore', () => ({
-  useDoc: (path: string | null) =>
-    path === 'schools/s1'
+  useDoc: (path: string | null) => {
+    if (state.schoolLoading) return { loading: true };
+    return path === 'schools/s1'
       ? { loading: false, data: { id: 's1', nameEn: 'Siripura', status: state.status, activeYearId: 'y1', colors: { primary: '#7A1F3D', second: '#D9A441' } } }
-      : { loading: false },
+      : { loading: false };
+  },
   useCollection: (path: string | null) => {
     state.collections.push(path);
     return { loading: false, data: [] };
@@ -54,6 +57,7 @@ function renderProvider(scope?: 'full' | 'school', sid?: string) {
 describe('suspended school gate', () => {
   beforeEach(() => {
     state.status = 'disabled';
+    state.schoolLoading = false;
     state.collections.length = 0;
     state.signOut.mockClear();
   });
@@ -96,5 +100,20 @@ describe('suspended school gate', () => {
     state.status = 'active';
     renderProvider();
     expect(screen.getByText('dashboard')).toBeInTheDocument();
+  });
+
+  it('opens no school data listeners until the school doc has loaded', () => {
+    state.claims = { sid: 's1', role: 'admin' };
+    state.status = 'active';
+    state.schoolLoading = true;
+    renderProvider();
+    expect(state.collections.length).toBeGreaterThan(0);
+    expect(state.collections.every((p) => p === null)).toBe(true);
+  });
+
+  it('subscribes school data for a super admin viewing a suspended school', () => {
+    state.claims = { super: true };
+    renderProvider('full', 's1');
+    expect(state.collections).toContain('schools/s1/teachers');
   });
 });

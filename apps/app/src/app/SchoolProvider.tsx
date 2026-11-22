@@ -66,7 +66,7 @@ export function SchoolProvider({ sid: sidProp, scope = 'full', children }: Schoo
   const sid = sidProp ?? params.sid ?? claims.sid ?? null;
   const school = useDoc<School>(sid ? paths.school(sid) : null);
   const suspended = school.data?.status === 'disabled' && claims.super !== true;
-  const full = scope === 'full' && !suspended ? sid : null;
+  const full = scope === 'full' && school.data && !suspended ? sid : null;
   const teachers = useCollection<Teacher>(full ? paths.teachers(full) : null);
   const subjects = useCollection<Subject>(full ? paths.subjects(full) : null);
   const templates = useCollection<PeriodTemplate>(full ? paths.templates(full) : null);
