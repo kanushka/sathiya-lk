@@ -218,6 +218,7 @@ function TeacherView({ teacher, teachers, template }: { teacher: Teacher; teache
       progress: pin.progress,
       suggested: pin.isSuggested(day, row),
       group: pinTarget.groupKey !== undefined,
+      teacherView: true,
       ...(classNote ? { classNote } : {}),
       entryView: (e) => cellView(e, row),
     });

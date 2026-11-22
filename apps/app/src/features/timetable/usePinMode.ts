@@ -33,6 +33,7 @@ export interface PinNames {
   subject: string;
   teacher: string;
   classes: string;
+  base: string;
   color: string;
 }
 
@@ -45,7 +46,6 @@ interface RowSlot {
 
 export interface PinMode {
   target: PinSpec | null;
-  slots: Array<{ day: DayIndex; period: number; cell: TeacherPinCell }>;
   progress: PinProgress | null;
   suggested: Slot[];
   message: string;
@@ -88,14 +88,18 @@ export function usePinMode(args: {
   const cellAt = useCallback((day: DayIndex, n: number) => slotAt(day, n)?.cell, [slotAt]);
   const periodAt = useCallback((day: DayIndex, n: number) => slotAt(day, n)?.classPeriod ?? null, [slotAt]);
 
-  const suggested = useMemo(() => {
-    const out: Slot[] = [];
-    for (const r of rawSuggested) {
-      const s = slots.find((x) => x.day === r.day && x.classPeriod === r.period);
-      if (s && s.cell.kind === 'free') out.push({ day: s.day, period: s.period });
-    }
-    return out.slice(0, progress?.left ?? 0);
-  }, [rawSuggested, slots, progress]);
+  const toRows = useCallback(
+    (picks: Slot[]) => {
+      const out: Slot[] = [];
+      for (const r of picks) {
+        const s = slots.find((x) => x.day === r.day && x.classPeriod === r.period);
+        if (s && s.cell.kind === 'free') out.push({ day: s.day, period: s.period });
+      }
+      return out.slice(0, progress?.left ?? 0);
+    },
+    [slots, progress],
+  );
+  const suggested = useMemo(() => toRows(rawSuggested), [toRows, rawSuggested]);
   const seq = useRef(new Map<string, number>());
   const isSuggested = useCallback((day: DayIndex, n: number) => suggested.some((s) => s.day === day && s.period === n), [suggested]);
 
@@ -111,6 +115,7 @@ export function usePinMode(args: {
         return x ? teacherDisplayName(x, lang) : '';
       };
       const base = ctx.classes.find((c) => c.id === spec.classIds[0]);
+      const baseName = base?.name ?? spec.classIds[0] ?? '';
       const template = teacherViewId !== null && base ? ctx.templates.find((x) => x.id === base.templateId) : undefined;
       const templateNote = base && template && !template.isDefault ? t('pin.otherTemplate', { class: base.name, template: template.name }) : undefined;
       if (spec.groupKey === undefined) {
@@ -124,6 +129,7 @@ export function usePinMode(args: {
           subject,
           teacher,
           classes,
+          base: baseName,
           color: sub ? sub.color : '#E9E9E9',
         };
       }
@@ -137,6 +143,7 @@ export function usePinMode(args: {
         subject: group,
         teacher: teachers,
         classes,
+        base: baseName,
         color: item ? planItemColor(item, ctx) : '#E9E9E9',
       };
     },
@@ -149,9 +156,15 @@ export function usePinMode(args: {
       const n = namesFor(next);
       setTarget(next);
       setRawSuggested([]);
-      setMessage(next.groupKey === undefined ? t('pin.started', { subject: n.subject, teacher: n.teacher }) : t('pin.startedGroup', { group: n.subject, classes: n.classes }));
+      setMessage(
+        next.groupKey !== undefined
+          ? t('pin.startedGroup', { group: n.subject, classes: n.classes })
+          : teacherViewId !== null
+            ? t('pin.startedFor', { subject: n.subject, classes: n.classes })
+            : t('pin.started', { subject: n.subject, teacher: n.teacher }),
+      );
     },
-    [namesFor, t],
+    [namesFor, t, teacherViewId],
   );
 
   const stop = useCallback(() => {
@@ -184,16 +197,17 @@ export function usePinMode(args: {
 
   const suggest = useCallback(() => {
     if (!target || !progress || !names) return;
-    const picks = suggestPins({ ctx, entries, spec: target, count: progress.left });
+    const picks = suggestPins({ ctx, entries, spec: target, count: progress.left, ...(teacherViewId === null ? {} : { teacherId: teacherViewId }) });
+    const shown = toRows(picks).length;
     setRawSuggested(picks);
     setMessage(
-      picks.length > 0
-        ? t('pin.suggestedMsg', { count: picks.length })
+      shown > 0
+        ? t('pin.suggestedMsg', { count: shown })
         : target.groupKey === undefined
           ? t('pin.noSuggest', { teacher: names.teacher })
           : t('pin.noSuggestGroup', { group: names.subject }),
     );
-  }, [target, progress, names, ctx, entries, t]);
+  }, [target, progress, names, ctx, entries, t, teacherViewId, toRows]);
 
   const pinSuggested = useCallback(async () => {
     if (!target || !names) return;
@@ -208,5 +222,5 @@ export function usePinMode(args: {
     setMessage(done > 0 ? t('pin.pinnedMany', { count: done, subject: names.subject }) : '');
   }, [target, names, suggested, periodAt, save, t]);
 
-  return { target, slots, progress, suggested, message, names, cellAt, periodAt, isSuggested, start, stop, toggle, suggest, pinSuggested };
+  return { target, progress, suggested, message, names, cellAt, periodAt, isSuggested, start, stop, toggle, suggest, pinSuggested };
 }

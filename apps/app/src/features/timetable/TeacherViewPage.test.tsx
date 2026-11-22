@@ -133,7 +133,7 @@ describe('TeacherViewPage', () => {
     });
     expect(pinBar()).toHaveTextContent('Mathematics · 1A');
     expect(pinBar()).toHaveTextContent('1A runs on the Primary (Gr 1–2) template: cells show its own period and time where they differ');
-    expect(screen.getByRole('status')).toHaveTextContent('Pin mode on: Mathematics with Mrs. S. Wickramasinghe.');
+    expect(screen.getByRole('status')).toHaveTextContent('Pin mode on: Mathematics for 1A.');
   });
 
   it('offers pinning other slots when the row has no period of the class', async () => {
@@ -302,7 +302,7 @@ describe('TeacherViewPage', () => {
       expect(grid().closest('section')).toHaveAttribute('data-pin-mode', 'true');
       expect(screen.getByLabelText('Pin mode legend')).toHaveTextContent('Free for Mrs. S. Wickramasinghe and 1A');
       expect(screen.getByLabelText('Pin mode legend')).toHaveTextContent('No 1A period in this row');
-      const free = cellNamed(/^Tuesday, period 5, 10:50–11:30: pin Mathematics with Mrs\. S\. Wickramasinghe, 1A P5 · 10:40–11:05$/);
+      const free = cellNamed(/^Tuesday, period 5, 10:50–11:30: pin Mathematics for 1A, 1A P5 · 10:40–11:05$/);
       expect(free).toHaveTextContent('1A P5 · 10:40–11:05');
       const none = cellNamed(/^Tuesday, period 6, 11:30–12:10: no 1A period at this time$/);
       expect(none).toHaveAttribute('aria-disabled', 'true');
@@ -319,7 +319,7 @@ describe('TeacherViewPage', () => {
       await userEvent.click(within(screen.getByRole('dialog')).getByRole('button', { name: 'Assign' }));
       await waitFor(() => expect(screen.queryByRole('dialog')).not.toBeInTheDocument());
       expect(pinBar()).toHaveTextContent('English · 6B');
-      const free = cellNamed(/^Friday, period 5, 10:50–11:30: pin English with Mr\. A\. Rizan/);
+      const free = cellNamed(/^Friday, period 5, 10:50–11:30: pin English for 6B/);
       expect(free.getAttribute('aria-label')).not.toContain('6B P');
     });
 

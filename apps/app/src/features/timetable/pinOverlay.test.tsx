@@ -11,9 +11,9 @@ import { pinOverlayCell, PinLegend } from './pinOverlay';
 
 const t = testI18n.getFixedT('en', 'timetable');
 const tc = testI18n.getFixedT('en', 'common');
-const names = { subject: 'Science', teacher: 'Mrs. S. Gunasekara', classes: '6B' };
+const names = { subject: 'Science', teacher: 'Mrs. S. Gunasekara', classes: '6B', base: '6B' };
 
-function overlay(cell: TeacherPinCell, extra: { suggested?: boolean; left?: number; classNote?: string } = {}) {
+function overlay(cell: TeacherPinCell, extra: { suggested?: boolean; left?: number; classNote?: string; teacherView?: boolean; classes?: string } = {}) {
   return pinOverlayCell({
     cell,
     day: 2,
@@ -23,10 +23,11 @@ function overlay(cell: TeacherPinCell, extra: { suggested?: boolean; left?: numb
     lang: 'en',
     t,
     tc,
-    names,
+    names: extra.classes ? { ...names, classes: extra.classes } : names,
     progress: { placed: 3, needed: 5, left: extra.left ?? 2, over: 0 },
     suggested: extra.suggested ?? false,
     ...(extra.classNote ? { classNote: extra.classNote } : {}),
+    ...(extra.teacherView ? { teacherView: true } : {}),
     entryView: (e) => classCellView(e, ctx, 'en', t),
   })!;
 }
@@ -64,6 +65,18 @@ describe('pinOverlayCell', () => {
     expect(screen.getByText('No 6B period')).toBeInTheDocument();
   });
 
+  it('names the base class, not the joined classes, in a no-period row', () => {
+    const o = overlay({ kind: 'none' }, { classes: '6A+6B', teacherView: true });
+    expect(o.label).toBe('Wednesday, period 4, 10:00–10:40: no 6B period at this time');
+    renderWithI18n(<>{o.content}</>);
+    expect(screen.getByText('No 6B period')).toBeInTheDocument();
+  });
+
+  it('names the class instead of the teacher on a free teacher-view cell', () => {
+    const o = overlay({ kind: 'free', load: 1, max: 6, limit: false, teacherId: T.gunasekara, subjectThatDay: false }, { teacherView: true });
+    expect(o.label).toBe('Wednesday, period 4, 10:00–10:40: pin Science for 6B');
+  });
+
   it('appends the class period note to a free cell label', () => {
     const o = overlay({ kind: 'free', load: 1, max: 6, limit: false, teacherId: T.gunasekara, subjectThatDay: false }, { classNote: '6B period 5' });
     expect(o.label).toBe('Wednesday, period 4, 10:00–10:40: pin Science with Mrs. S. Gunasekara, 6B period 5');
@@ -89,7 +102,7 @@ describe('pinOverlayCell', () => {
       lang: 'en',
       t,
       tc,
-      names: { subject: 'Religion', teacher: 'Ven. Ananda Thero', classes: '6C' },
+      names: { subject: 'Religion', teacher: 'Ven. Ananda Thero', classes: '6C', base: '6C' },
       progress: null,
       suggested: false,
       group: true,
@@ -111,7 +124,7 @@ describe('pinOverlayCell', () => {
       lang: 'en',
       t,
       tc,
-      names: { subject: 'Religion', teacher: 'Ven. Ananda Thero', classes: '6C' },
+      names: { subject: 'Religion', teacher: 'Ven. Ananda Thero', classes: '6C', base: '6C' },
       progress: null,
       suggested: false,
       group: true,

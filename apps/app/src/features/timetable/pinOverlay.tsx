@@ -37,23 +37,24 @@ export interface PinOverlayInput {
   lang: Lang;
   t: TFunction;
   tc: TFunction;
-  names: { subject: string; teacher: string; classes: string };
+  names: { subject: string; teacher: string; classes: string; base: string };
   progress: PinProgress | null;
   suggested: boolean;
   classNote?: string;
   group?: boolean;
+  teacherView?: boolean;
   entryView(e: Entry): CellView;
 }
 
 export function pinOverlayCell(a: PinOverlayInput): GridOverlay | null {
-  const { cell: c, day, n, time, ctx, lang, t, tc, names, progress, suggested, classNote, group, entryView } = a;
+  const { cell: c, day, n, time, ctx, lang, t, tc, names, progress, suggested, classNote, group, teacherView, entryView } = a;
   if (!c) return null;
   const where = { day: tc(`days.long.${day}`), n, time };
   if (c.kind === 'none') {
     return {
-      label: t('pin.cellNone', { ...where, class: names.classes }),
+      label: t('pin.cellNone', { ...where, class: names.base }),
       className: pinNone,
-      content: <span className="text-[11px]">{t('pin.noPeriod', { class: names.classes })}</span>,
+      content: <span className="text-[11px]">{t('pin.noPeriod', { class: names.base })}</span>,
       disabled: true,
     };
   }
@@ -90,7 +91,11 @@ export function pinOverlayCell(a: PinOverlayInput): GridOverlay | null {
       disabled: true,
     };
   }
-  const base = group ? t('pin.cellPinGroup', { ...where, group: names.subject, classes: names.classes }) : t('pin.cellPin', { ...where, subject: names.subject, teacher: names.teacher });
+  const base = group
+    ? t('pin.cellPinGroup', { ...where, group: names.subject, classes: names.classes })
+    : teacherView
+      ? t('pin.cellPinFor', { ...where, subject: names.subject, classes: names.classes })
+      : t('pin.cellPin', { ...where, subject: names.subject, teacher: names.teacher });
   const label = classNote ? `${base}, ${classNote}` : base;
   if (progress && progress.left === 0) {
     return { label: `${label}, ${t('pin.noteOver')}`, className: pinOver, content: <PinGlyph sub={t('pin.overPlan')} note={classNote} /> };

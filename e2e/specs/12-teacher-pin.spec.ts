@@ -4,8 +4,6 @@ import { expect, test } from '@playwright/test';
 import { ADMIN } from '../../scripts/seed';
 import { loginAdmin, shot } from '../helpers';
 
-const WHO = 'Mrs\\. S\\. Wickramasinghe';
-
 test('teacher view: pin a primary class by its own period times', async ({ page }) => {
   await loginAdmin(page, ADMIN.email, ADMIN.password);
   await page.goto('/admin/timetable/teacher/t-wickramasinghe');
@@ -28,14 +26,14 @@ test('teacher view: pin a primary class by its own period times', async ({ page 
   await expect(bar).toContainText('English · 1A');
   await expect(bar).toContainText('1 of 3 placed · 2 to go');
   await expect(page.getByRole('button', { name: /^Monday, period 5, 10:50–11:30: 1A English · 10:40–11:05, pinned, click to unpin$/ })).toBeVisible();
-  await expect(page.getByRole('button', { name: new RegExp(`^Tuesday, period 5, 10:50–11:30: pin English with ${WHO}, 1A P5 · 10:40–11:05$`) })).toBeVisible();
+  await expect(page.getByRole('button', { name: /^Tuesday, period 5, 10:50–11:30: pin English for 1A, 1A P5 · 10:40–11:05$/ })).toBeVisible();
   for (const n of [6, 7, 8]) {
     const none = page.getByRole('button', { name: new RegExp(`^Tuesday, period ${n}, [0-9:–]+: no 1A period at this time$`) });
     await expect(none).toHaveAttribute('aria-disabled', 'true');
     await expect(none).toContainText('No 1A period');
   }
 
-  await page.getByRole('button', { name: new RegExp(`^Tuesday, period 2, 08:30–09:10: pin English with ${WHO}, 1A P2 · 08:20–09:00$`) }).click();
+  await page.getByRole('button', { name: /^Tuesday, period 2, 08:30–09:10: pin English for 1A, 1A P2 · 08:20–09:00$/ }).click();
   await expect(page.getByRole('button', { name: /^Tuesday, period 2, 08:30–09:10: 1A English · 08:20–09:00, pinned, click to unpin$/ })).toBeVisible();
   await expect(page.getByText('English pinned to Tuesday, period 2.')).toBeVisible();
   await expect(bar).toContainText('2 of 3 placed · 1 to go');

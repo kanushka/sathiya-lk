@@ -1,8 +1,8 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
 // Copyright (C) 2026 Kanushka Gayan
 
-import { singleSpec, type Entry } from '@sathiya/core';
-import { C, ctx, entries6B, S, T } from '@sathiya/core/fixtures';
+import { periodsFor, singleSpec, type DayIndex, type Entry } from '@sathiya/core';
+import { C, ctx, entries6B, entry, S, T, TPL } from '@sathiya/core/fixtures';
 import { act, screen, waitFor } from '@testing-library/react';
 import { describe, expect, it, vi } from 'vitest';
 import { ApiError } from '../../lib/callable';
@@ -35,13 +35,13 @@ function setup(api: Partial<TimetableApi> = {}, es: Entry[] = entries6B, view: P
 }
 
 const science = singleSpec(C.c6b, S.science, T.gunasekara);
-const cell = (day: number, period: number) => pin.slots.find((s) => s.day === day && s.period === period)?.cell.kind;
+const cell = (day: number, period: number) => pin.cellAt(day as DayIndex, period)?.kind;
 
 describe('usePinMode', () => {
   it('is off until started, then exposes slots and progress for the target', () => {
     setup();
     expect(pin.target).toBeNull();
-    expect(pin.slots).toEqual([]);
+    expect(pin.cellAt(2, 4)).toBeUndefined();
     act(() => pin.start(science));
     expect(pin.target).toEqual(science);
     expect(pin.progress).toEqual({ placed: 3, needed: 5, left: 2, over: 0 });
@@ -261,6 +261,26 @@ describe('usePinMode in the teacher view', () => {
       await pin.toggle(1, 6);
     });
     expect(api.saveEntry).not.toHaveBeenCalled();
+  });
+
+  it('names the class when starting', () => {
+    setup({}, [], view);
+    act(() => pin.start(spec));
+    expect(pin.message).toBe('Pin mode on: Mathematics for 1A. Click free periods to pin, Esc to finish.');
+  });
+
+  it('suggests only periods shown on a free row and announces that count', () => {
+    const primary = ctx.templates.find((x) => x.id === TPL.primary)!;
+    const filler = ([0, 1, 2, 3, 4] as DayIndex[]).flatMap((day) =>
+      periodsFor(primary, day)
+        .filter(({ period }) => day !== 1 || (period !== 5 && period !== 6))
+        .map(({ period }) => entry(`f-${day}-${period}`, day, period, [C.c1a], [[S.science, T.kumari]])),
+    );
+    setup({}, filler, view);
+    act(() => pin.start(spec));
+    act(() => pin.suggest());
+    expect(pin.suggested).toEqual([{ day: 1, period: 5 }]);
+    expect(pin.message).toBe('Suggested 1 slot, spread across days.');
   });
 
   it('maps suggestions to rows', () => {
