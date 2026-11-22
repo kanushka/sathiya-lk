@@ -38,6 +38,9 @@
   },
   "search": "Search",
   "noMatches": "No matches",
+  "select": {
+    "placeholder": "Choose…"
+  },
   "loading": "Loading…",
   "notFound": {
     "title": "Page not found",

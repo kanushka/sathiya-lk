@@ -1,13 +1,13 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
 // Copyright (C) 2026 Kanushka Gayan
 
-import { useEffect, useId, useLayoutEffect, useMemo, useRef, useState, type KeyboardEvent, type ReactNode } from 'react';
+import { useEffect, useId, useMemo, useRef, useState, type KeyboardEvent, type ReactNode } from 'react';
 import { createPortal } from 'react-dom';
 import { useTranslation } from 'react-i18next';
 import { isComposing } from './composing';
 import { cx } from './cx';
 import { Icon } from './Icon';
-import { placePopover, type Placement } from './popoverPlacement';
+import { usePopover } from './listbox/usePopover';
 
 export interface ComboboxProps<T> {
   items: T[];
@@ -21,8 +21,6 @@ export interface ComboboxProps<T> {
   searchPlaceholder: string;
   id?: string;
 }
-
-const LIST_MAX = 288;
 
 interface Group<T> {
   name: string;
@@ -48,12 +46,10 @@ export function Combobox<T>({
   const [open, setOpen] = useState(false);
   const [query, setQuery] = useState('');
   const [active, setActive] = useState(0);
-  const rootRef = useRef<HTMLDivElement>(null);
   const triggerRef = useRef<HTMLButtonElement>(null);
   const searchRef = useRef<HTMLInputElement>(null);
   const listRef = useRef<HTMLDivElement>(null);
   const popRef = useRef<HTMLDivElement>(null);
-  const [pos, setPos] = useState<(Placement & { listMax: number }) | null>(null);
 
   const groups = useMemo<Group<T>[]>(() => {
     const q = query.trim().toLowerCase();
@@ -76,49 +72,7 @@ export function Combobox<T>({
     if (open) searchRef.current?.focus();
   }, [open]);
 
-  useEffect(() => {
-    if (!open) return;
-    function onDown(e: MouseEvent) {
-      const target = e.target as Node;
-      if (rootRef.current?.contains(target) || popRef.current?.contains(target)) return;
-      setOpen(false);
-    }
-    document.addEventListener('mousedown', onDown);
-    return () => document.removeEventListener('mousedown', onDown);
-  }, [open]);
-
-  useLayoutEffect(() => {
-    if (!open) {
-      setPos(null);
-      return;
-    }
-    function reposition() {
-      const trigger = triggerRef.current;
-      const pop = popRef.current;
-      if (!trigger || !pop) return;
-      const r = trigger.getBoundingClientRect();
-      const list = listRef.current;
-      const chrome = pop.offsetHeight - (list?.offsetHeight ?? 0);
-      const contentHeight = chrome + Math.min(list?.scrollHeight ?? 0, LIST_MAX);
-      const placed = placePopover({
-        anchor: { top: r.top, bottom: r.bottom, left: r.left, width: r.width },
-        contentHeight,
-        viewportHeight: window.innerHeight,
-      });
-      setPos({ ...placed, listMax: Math.max(0, Math.min(LIST_MAX, placed.maxHeight - chrome)) });
-    }
-    reposition();
-    function onScroll(e: Event) {
-      if (e.target instanceof Node && popRef.current?.contains(e.target)) return;
-      reposition();
-    }
-    window.addEventListener('scroll', onScroll, true);
-    window.addEventListener('resize', reposition);
-    return () => {
-      window.removeEventListener('scroll', onScroll, true);
-      window.removeEventListener('resize', reposition);
-    };
-  }, [open, flat.length, query]);
+  const { pos, listMax } = usePopover(triggerRef, popRef, open, [flat.length, query], () => setOpen(false));
 
   useEffect(() => {
     listRef.current?.querySelector('[data-active="true"]')?.scrollIntoView?.({ block: 'nearest' });
@@ -166,7 +120,7 @@ export function Combobox<T>({
   let index = -1;
 
   return (
-    <div ref={rootRef} className="relative">
+    <div className="relative">
       <button
         ref={triggerRef}
         id={baseId}
@@ -229,7 +183,7 @@ export function Combobox<T>({
             id={listId}
             role="listbox"
             aria-label={placeholder}
-            style={{ maxHeight: pos?.listMax ?? LIST_MAX }}
+            style={{ maxHeight: listMax }}
             className="mt-1 overflow-y-auto"
           >
             {flat.length === 0 && <p className="px-2 py-3 text-sm text-ink-muted">{t('noMatches')}</p>}
