@@ -34,6 +34,8 @@ pnpm e2e              # if you changed a user flow
   - `ci-fast` on every PR: licence headers, typecheck, unit tests, app build, website build and tests.
   - `ci-emulators`: functions and security rules tests. On PRs it runs only when `functions/`, `firestore.rules`, `storage.rules`, `firestore.indexes.json`, `tests/rules/` or `packages/core/` change.
   - `ci-e2e`: Playwright end-to-end tests. On PRs it runs only when the PR has the `e2e` label; a maintainer can add it.
+- Security checks also run on every PR: CodeQL and Trivy (results in the **Security** tab), and CodeRabbit leaves an AI review. Treat CodeRabbit comments like any reviewer's: fix them or reply why not. See [docs/security-tooling.md](docs/security-tooling.md).
+- Dependabot PRs are grouped weekly; a maintainer merges them after CI passes.
 - All checks must pass before merge. A maintainer reviews and merges.
 - Fill in the PR template: what changed, how you tested it, screenshots for UI changes.
 
