@@ -22,7 +22,7 @@ pnpm test:emulators   # needs Java 17+
 pnpm emulators
 ```
 
-Requires Node 20+ and pnpm 9+.
+Requires Node 22+ and pnpm 9+.
 
 ## Firebase setup
 
