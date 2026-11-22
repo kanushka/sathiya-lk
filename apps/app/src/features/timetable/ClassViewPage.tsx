@@ -27,7 +27,7 @@ import { EmptyState } from '../../ui/EmptyState';
 import { Icon } from '../../ui/Icon';
 import { LoadingState } from '../../ui/LoadingState';
 import { Modal } from '../../ui/Modal';
-import { NativeSelect } from '../../ui/NativeSelect';
+import { Select } from '../../ui/Select';
 import { cx } from '../../ui/cx';
 import { AssignPicker } from './AssignPicker';
 import { BlockEditor } from './BlockEditor';
@@ -282,18 +282,16 @@ function ClassView({ cls, classes }: { cls: SchoolClass; classes: SchoolClass[] 
           <button type="button" aria-label={t('classView.prev')} className={navBtn} disabled={index <= 0} onClick={() => go(classes[index - 1])}>
             <Icon name="chevronLeft" size={16} />
           </button>
-          <NativeSelect
+          <Select
             aria-label={t('classView.classLabel')}
             value={cls.id}
-            onChange={(e) => go(classes.find((c) => c.id === e.target.value))}
-            className="w-52 [&_select]:text-[15px] [&_select]:font-semibold"
-          >
-            {classes.map((c) => (
-              <option key={c.id} value={c.id}>
-                {t('classView.classOption', { grade: gradeNumber(c), name: c.name })}
-              </option>
-            ))}
-          </NativeSelect>
+            onChange={(id) => go(classes.find((c) => c.id === id))}
+            className="w-52"
+            options={classes.map((c) => ({
+              value: c.id,
+              label: t('classView.classOption', { grade: gradeNumber(c), name: c.name }),
+            }))}
+          />
           <button type="button" aria-label={t('classView.next')} className={navBtn} disabled={index >= classes.length - 1} onClick={() => go(classes[index + 1])}>
             <Icon name="chevronRight" size={16} />
           </button>

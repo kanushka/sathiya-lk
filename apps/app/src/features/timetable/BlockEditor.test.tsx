@@ -3,9 +3,10 @@
 
 import type { Entry, PlanItem, SchoolContext } from '@sathiya/core';
 import { C, ctx, entries6B, entry, S, T } from '@sathiya/core/fixtures';
-import { fireEvent, screen, waitFor, within } from '@testing-library/react';
+import { screen, waitFor, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { pickOption } from '../../test/pickOption';
 import { renderWithSchool } from '../../test/renderWithSchool';
 import { BlockEditor, type BlockEditorProps } from './BlockEditor';
 import { TimetableApiContext, useTimetable, type TimetableApi } from './useTimetable';
@@ -37,7 +38,12 @@ function setup(props: Partial<Props> = {}, opts: { ctx?: SchoolContext; entries?
   return { api, onClose };
 }
 
-const pick = (name: RegExp, value: string) => fireEvent.change(screen.getByLabelText(name), { target: { value } });
+const teacherCombo = (name: RegExp) => screen.getByRole('combobox', { name });
+const pick = (name: RegExp, teacher: RegExp) => pickOption(userEvent.setup(), teacherCombo(name), teacher);
+const openTeachers = async (name: RegExp) => {
+  await userEvent.click(teacherCombo(name));
+  return within(screen.getByRole('listbox', { name }));
+};
 
 beforeEach(() => {
   ro.value = false;
@@ -51,32 +57,32 @@ describe('BlockEditor', () => {
     expect(screen.queryByRole('button', { name: '1A' })).not.toBeInTheDocument();
   });
 
-  it('flags a busy teacher and does not allow selecting them', () => {
+  it('flags a busy teacher and does not allow selecting them', async () => {
     const busy = [...entries6B, entry('x', 2, 4, [C.c6a], [[S.sinhala, T.ananda]])];
     setup({ baseClassId: C.c6b }, { entries: busy });
-    const opt = within(screen.getByLabelText(/Buddhism/)).getByRole('option', { name: /Ananda/ });
-    expect(opt).toBeDisabled();
+    const opt = (await openTeachers(/^Buddhism/)).getByRole('option', { name: /Ananda/ });
+    expect(opt).toHaveAttribute('aria-disabled', 'true');
     expect(opt).toHaveTextContent('Teaching 6A · Sinhala');
   });
 
-  it("lists only teachers of the option's subject; a subject teacher outside the grade is shown as not teaching it", () => {
+  it("lists only teachers of the option's subject; a subject teacher outside the grade is shown as not teaching it", async () => {
     const seniorMonk = { ...ctx.teachers.find((x) => x.id === T.ananda)!, id: 't-senior', staffId: 'SCC090', name: 'Ven. Senior Thero', grades: [12, 13] };
     setup({}, { ctx: { ...ctx, teachers: [...ctx.teachers, seniorMonk] } });
-    const buddhism = within(screen.getByLabelText(/Buddhism/));
+    const buddhism = await openTeachers(/^Buddhism/);
     expect(buddhism.queryByRole('option', { name: /M\. Silva/ })).not.toBeInTheDocument();
     expect(buddhism.queryByRole('option', { name: /Bandara/ })).not.toBeInTheDocument();
-    expect(buddhism.getByRole('option', { name: /Ananda/ })).toBeEnabled();
+    expect(buddhism.getByRole('option', { name: /Ananda/ })).not.toHaveAttribute('aria-disabled');
     const senior = buddhism.getByRole('option', { name: /Senior Thero/ });
-    expect(senior).toBeDisabled();
+    expect(senior).toHaveAttribute('aria-disabled', 'true');
     expect(senior).toHaveTextContent("Doesn't teach Grade 6");
   });
 
   it('saves a group draft for two classes with a teacher per option', async () => {
     const { api, onClose } = setup();
     await userEvent.click(screen.getByRole('button', { name: '6A' }));
-    pick(/Buddhism/, T.ananda);
-    pick(/Catholicism/, T.mSilva);
-    pick(/Islam/, T.rizan);
+    await pick(/^Buddhism/, /Ananda/);
+    await pick(/^Catholicism/, /M\. Silva/);
+    await pick(/^Islam/, /Rizan/);
     await userEvent.click(screen.getByRole('button', { name: 'Save' }));
     await waitFor(() => expect(onClose).toHaveBeenCalled());
     expect(api.saveEntry).toHaveBeenCalledWith({
@@ -99,7 +105,7 @@ describe('BlockEditor', () => {
   it('saves with a null teacher and shows the no-teacher warning', async () => {
     const { api } = setup();
     expect(screen.getAllByText('No teacher yet')).toHaveLength(3);
-    pick(/Buddhism/, T.ananda);
+    await pick(/^Buddhism/, /Ananda/);
     expect(screen.getAllByText('No teacher yet')).toHaveLength(2);
     await userEvent.click(screen.getByRole('button', { name: 'Save' }));
     await waitFor(() => expect(api.saveEntry).toHaveBeenCalled());
@@ -115,7 +121,7 @@ describe('BlockEditor', () => {
     const { api } = setup({ mode: { kind: 'combined', subjectId: S.maths } });
     expect(screen.getByRole('button', { name: 'Save' })).toBeDisabled();
     await userEvent.click(screen.getByRole('button', { name: '6A' }));
-    pick(/^Mathematics$/, T.bandara);
+    await pick(/^Mathematics/, /Bandara/);
     await userEvent.click(screen.getByRole('button', { name: 'Save' }));
     await waitFor(() => expect(api.saveEntry).toHaveBeenCalled());
     const draft = vi.mocked(api.saveEntry).mock.calls[0]![0].entry;
@@ -151,14 +157,14 @@ describe('BlockEditor', () => {
     setup({ period: 2, entry: existing });
     expect(screen.queryByRole('button', { name: 'Save' })).not.toBeInTheDocument();
     expect(screen.queryByRole('button', { name: 'Remove block' })).not.toBeInTheDocument();
-    expect(screen.getByLabelText(/Buddhism/)).toBeDisabled();
+    expect(teacherCombo(/^Buddhism/)).toBeDisabled();
   });
 
   it('blocks save when one teacher is chosen for two options', async () => {
     const teachers = ctx.teachers.map((x) => (x.id === T.ananda ? { ...x, subjectIds: [...x.subjectIds, S.islam] } : x));
     setup({}, { ctx: { ...ctx, teachers } });
-    pick(/Buddhism/, T.ananda);
-    pick(/Islam/, T.ananda);
+    await pick(/^Buddhism/, /Ananda/);
+    await pick(/^Islam/, /Ananda/);
     expect(screen.getAllByText('Already chosen for another option').length).toBeGreaterThan(0);
     expect(screen.getByRole('button', { name: 'Save' })).toBeDisabled();
   });
@@ -166,8 +172,9 @@ describe('BlockEditor', () => {
   it('flags a limit-reached teacher but still allows saving', async () => {
     const full = Array.from({ length: 5 }, (_, i) => entry(`f${i}`, 2, i + 5, [C.c6a], [[S.buddhism, T.ananda]]));
     const { api } = setup({}, { entries: [...entries6B, ...full] });
-    expect(within(screen.getByLabelText(/Buddhism/)).getByRole('option', { name: /Ananda/ })).toHaveTextContent('Limit reached · 6/6 today');
-    pick(/Buddhism/, T.ananda);
+    expect((await openTeachers(/^Buddhism/)).getByRole('option', { name: /Ananda/ })).toHaveTextContent('Limit reached · 6/6 today');
+    await userEvent.keyboard('{Escape}');
+    await pick(/^Buddhism/, /Ananda/);
     expect(screen.getByRole('button', { name: 'Save' })).toBeEnabled();
     await userEvent.click(screen.getByRole('button', { name: 'Save' }));
     await waitFor(() => expect(api.saveEntry).toHaveBeenCalled());
@@ -176,7 +183,8 @@ describe('BlockEditor', () => {
   it('replaces a moved lesson: ignores it for availability and removes it after saving', async () => {
     const old = entry('old', 2, 4, [C.c12a], [[S.buddhism, T.ananda]]);
     const { api, onClose } = setup({ preset: { subjectId: S.buddhism, teacherId: T.ananda }, replacesEntryId: 'old' }, { entries: [...entries6B, old] });
-    expect(within(screen.getByLabelText(/Buddhism/)).getByRole('option', { name: /Ananda/ })).toBeEnabled();
+    expect((await openTeachers(/^Buddhism/)).getByRole('option', { name: /Ananda/ })).not.toHaveAttribute('aria-disabled');
+    await userEvent.keyboard('{Escape}');
     expect(screen.getByRole('button', { name: 'Save' })).toBeEnabled();
     await userEvent.click(screen.getByRole('button', { name: 'Save' }));
     await waitFor(() => expect(onClose).toHaveBeenCalled());
@@ -197,8 +205,8 @@ describe('BlockEditor', () => {
 
   it('preselects a preset teacher for its option', () => {
     setup({ preset: { subjectId: S.buddhism, teacherId: T.ananda } });
-    expect(screen.getByLabelText(/Buddhism/)).toHaveValue(T.ananda);
-    expect(screen.getByLabelText(/Catholicism/)).toHaveValue('');
+    expect(teacherCombo(/^Buddhism/)).toHaveTextContent(/Ananda/);
+    expect(teacherCombo(/^Catholicism/)).toHaveTextContent('Choose a teacher');
   });
 
   it('renders nothing actionable when the slot is not in the class template', () => {

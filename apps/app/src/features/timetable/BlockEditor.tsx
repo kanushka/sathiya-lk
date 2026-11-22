@@ -23,7 +23,7 @@ import { useReadOnly } from '../../ui/AdminLayout';
 import { Button } from '../../ui/Button';
 import { cx } from '../../ui/cx';
 import { Modal } from '../../ui/Modal';
-import { NativeSelect } from '../../ui/NativeSelect';
+import { Select, type SelectOption } from '../../ui/Select';
 import { limitWarning, teacherReason, teachesAtAll } from './labels';
 
 export interface BlockEditorProps {
@@ -206,6 +206,16 @@ function BlockEditorBody({ onClose, baseClassId, day, period, mode, entry, entri
           const unavailable = (s?.unavailable ?? []).filter((o) => teachesAtAll(o, id) || o.teacher.id === teachers[id]);
           const p = problems[i];
           const selectId = `block-teacher-${id}`;
+          const teacherOptions: SelectOption[] = [
+            { value: '', label: t('block.teacherPlaceholder') },
+            ...(s?.available ?? []).map((o) => ({ value: o.teacher.id, label: optionLabel(o), group: t('block.available') })),
+            ...unavailable.map((o) => ({
+              value: o.teacher.id,
+              label: optionLabel(o),
+              group: t('block.unavailable'),
+              disabled: o.reason !== 'limit',
+            })),
+          ];
           const note =
             p && 'missing' in p ? (
               <span className="inline-flex rounded-full bg-[#FBEAC9] px-2 py-0.5 text-xs font-semibold text-[#7A5A12]">{t('block.noTeacher')}</span>
@@ -221,27 +231,13 @@ function BlockEditorBody({ onClose, baseClassId, day, period, mode, entry, entri
               <label htmlFor={selectId} className="mb-1.5 block text-sm font-bold text-ink">
                 {subjectName(id)}
               </label>
-              <NativeSelect id={selectId} disabled={readOnly} value={teachers[id] ?? ''} onChange={(e) => setTeachers((m) => ({ ...m, [id]: e.target.value || null }))}>
-                <option value="">{t('block.teacherPlaceholder')}</option>
-                {s && s.available.length > 0 && (
-                  <optgroup label={t('block.available')}>
-                    {s.available.map((o) => (
-                      <option key={o.teacher.id} value={o.teacher.id}>
-                        {optionLabel(o)}
-                      </option>
-                    ))}
-                  </optgroup>
-                )}
-                {unavailable.length > 0 && (
-                  <optgroup label={t('block.unavailable')}>
-                    {unavailable.map((o) => (
-                      <option key={o.teacher.id} value={o.teacher.id} disabled={o.reason !== 'limit'}>
-                        {optionLabel(o)}
-                      </option>
-                    ))}
-                  </optgroup>
-                )}
-              </NativeSelect>
+              <Select
+                id={selectId}
+                disabled={readOnly}
+                value={teachers[id] ?? ''}
+                onChange={(v) => setTeachers((m) => ({ ...m, [id]: v || null }))}
+                options={teacherOptions}
+              />
               <div className="mt-1.5 flex flex-col gap-1">{note}</div>
             </div>
           );

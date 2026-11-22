@@ -50,7 +50,7 @@ beforeEach(() => {
 describe('ClassViewPage', () => {
   it('shows the class header, class teacher and grid cells', () => {
     setup();
-    expect(screen.getByRole('combobox', { name: 'Class' })).toHaveValue(C.c6b);
+    expect(screen.getByRole('combobox', { name: /^Class/ })).toHaveTextContent('Grade 6 · 6B');
     expect(screen.getByText(/^Class teacher:/)).toHaveTextContent('Class teacher: Mrs. N. Perera · School default');
     expect(slot('Monday', 1)).toHaveTextContent('Maths');
     expect(slot('Monday', 1)).toHaveTextContent('Mrs. N. Perera');
@@ -75,10 +75,10 @@ describe('ClassViewPage', () => {
   it('moves between classes with prev/next', async () => {
     setup();
     await userEvent.click(screen.getByRole('button', { name: 'Next class' }));
-    expect(screen.getByRole('combobox', { name: 'Class' })).toHaveValue(C.c6c);
+    expect(screen.getByRole('combobox', { name: /^Class/ })).toHaveTextContent('Grade 6 · 6C');
     await userEvent.click(screen.getByRole('button', { name: 'Previous class' }));
     await userEvent.click(screen.getByRole('button', { name: 'Previous class' }));
-    expect(screen.getByRole('combobox', { name: 'Class' })).toHaveValue(C.c6a);
+    expect(screen.getByRole('combobox', { name: /^Class/ })).toHaveTextContent('Grade 6 · 6A');
   });
 
   it('assigns a lesson to an empty slot through the two-step popup', async () => {
@@ -182,7 +182,7 @@ describe('ClassViewPage', () => {
     await userEvent.click(screen.getByRole('button', { name: 'Print' }));
     expect(open).toHaveBeenCalledWith(`/s/siripura/print/class/${C.c6b}?year=y-2026&auto=1`, '_blank', 'noopener');
     await userEvent.click(screen.getByRole('button', { name: 'Next class' }));
-    expect(screen.getByRole('combobox', { name: 'Class' })).toHaveValue(C.c6c);
+    expect(screen.getByRole('combobox', { name: /^Class/ })).toHaveTextContent('Grade 6 · 6C');
     open.mockRestore();
   });
 
@@ -207,7 +207,7 @@ describe('ClassViewPage', () => {
 
   it('redirects the index route to the first class', () => {
     setup(C.c6b, makeApi(), '/admin/timetable/class');
-    expect(screen.getByRole('combobox', { name: 'Class' })).toHaveValue(C.c1a);
+    expect(screen.getByRole('combobox', { name: /^Class/ })).toHaveTextContent('Grade 1 · 1A');
   });
 
   it('shows an empty state when there are no classes', () => {
@@ -356,7 +356,10 @@ describe('ClassViewPage', () => {
 
     it('does not exit when Escape is pressed in a form control', async () => {
       await assignScience();
-      fireEvent.keyDown(screen.getByRole('combobox', { name: 'Class' }), { key: 'Escape' });
+      await userEvent.click(screen.getByRole('combobox', { name: /^Class/ }));
+      expect(screen.getByRole('listbox', { name: 'Class' })).toBeInTheDocument();
+      await userEvent.keyboard('{Escape}');
+      expect(screen.queryByRole('listbox')).not.toBeInTheDocument();
       expect(pinBar()).toBeInTheDocument();
     });
 
