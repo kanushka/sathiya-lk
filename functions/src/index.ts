@@ -2,6 +2,7 @@
 // Copyright (C) 2026 Kanushka Gayan
 export { registerSchool } from './registerSchool';
 export { createTeacher } from './createTeacher';
+export { importSetup } from './importSetup';
 export { resetTeacherPassword } from './resetTeacherPassword';
 export { inviteAdmin } from './inviteAdmin';
 export { claimInvites } from './claimInvites';
