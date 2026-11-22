@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
 // Copyright (C) 2026 Kanushka Gayan
-import type { School } from '@sathiya/core';
+import { followPrefix, type School } from '@sathiya/core';
 import { useEffect, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useSchool } from '../../app/SchoolProvider';
@@ -94,7 +94,14 @@ export function ProfilePage() {
       >
         <fieldset disabled={readOnly} className="m-0 flex min-w-[300px] flex-[1_1_320px] flex-col gap-3.5 border-0 p-0">
           <Field label={t('fields.nameEn')} error={nameOk ? undefined : t('fields.required')}>
-            <input className={inputClass} value={draft.nameEn} onChange={(e) => set('nameEn', e.target.value)} />
+            <input
+              className={inputClass}
+              value={draft.nameEn}
+              onChange={(e) => {
+                const nameEn = e.target.value;
+                setDraft((d) => ({ ...d, nameEn, staffPrefix: followPrefix(d.nameEn, nameEn, d.staffPrefix) }));
+              }}
+            />
           </Field>
           <Field label={t('fields.nameSi')}>
             <input lang="si" className={inputClass} value={draft.nameSi} onChange={(e) => set('nameSi', e.target.value)} />

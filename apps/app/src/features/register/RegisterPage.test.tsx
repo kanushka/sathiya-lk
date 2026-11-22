@@ -31,12 +31,29 @@ async function fillSchool(user: ReturnType<typeof userEvent.setup>) {
   await user.type(screen.getByLabelText('School name (English)'), 'Siripura Central College');
   await user.type(screen.getByLabelText('City'), 'Kandy');
   await user.type(screen.getByLabelText('District'), 'Kandy');
+  await user.clear(screen.getByLabelText('Staff ID prefix'));
   await user.type(screen.getByLabelText('Staff ID prefix'), 'scc');
   await user.type(screen.getByLabelText('Census number'), '03214');
   await user.click(screen.getByRole('button', { name: 'Next: logo & colours' }));
 }
 
 describe('register', () => {
+  it('suggests a staff ID prefix from the school name until the user types their own', async () => {
+    const user = userEvent.setup();
+    renderAuth(<RegisterPage />, { route: '/register', at: '/register' });
+    const name = screen.getByLabelText('School name (English)');
+    const prefix = screen.getByLabelText('Staff ID prefix');
+    await user.type(name, 'G/ P. D. S. Kularathne Collage');
+    expect(prefix).toHaveValue('KC');
+    await user.clear(name);
+    await user.type(name, 'Royal College');
+    expect(prefix).toHaveValue('RC');
+    await user.clear(prefix);
+    await user.type(prefix, 'roy');
+    await user.type(name, ' Kandy');
+    expect(prefix).toHaveValue('ROY');
+  });
+
   it('blocks step 1 until the school details are valid', async () => {
     const user = userEvent.setup();
     renderAuth(<RegisterPage />, { route: '/register', at: '/register' });
@@ -46,6 +63,7 @@ describe('register', () => {
     await user.type(screen.getByLabelText('District'), 'Kandy');
     expect(next).toBeDisabled();
     await user.type(screen.getByLabelText('City'), 'Kandy');
+    await user.clear(screen.getByLabelText('Staff ID prefix'));
     await user.type(screen.getByLabelText('Staff ID prefix'), 'S');
     expect(next).toBeDisabled();
     await user.type(screen.getByLabelText('Staff ID prefix'), 'cc');

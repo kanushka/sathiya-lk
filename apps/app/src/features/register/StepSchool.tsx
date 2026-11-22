@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
 // Copyright (C) 2026 Kanushka Gayan
-import { SCHOOL_TYPES, type SchoolType } from '@sathiya/core';
+import { followPrefix, SCHOOL_TYPES, type SchoolType } from '@sathiya/core';
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Button } from '../../ui/Button';
@@ -74,7 +74,11 @@ export function StepSchool({ value, onChange, onNext, censusTaken, onReport }: S
           label={t('school.noCensus')}
         />
         <Field label={t('school.nameEn')}>
-          <input className={inputClass} value={value.nameEn} onChange={(e) => set('nameEn', e.target.value)} />
+          <input
+            className={inputClass}
+            value={value.nameEn}
+            onChange={(e) => onChange({ ...value, nameEn: e.target.value, staffPrefix: followPrefix(value.nameEn, e.target.value, value.staffPrefix) })}
+          />
         </Field>
         <Field label={t('school.nameSi')}>
           <input
