@@ -4,8 +4,8 @@ Two Firebase projects: production `sathiya-lk` (alias `default`) and staging `sa
 
 | Target | Production site | Staging site |
 |---|---|---|
-| `web` | `sathiya-lk-web` | `sathiya-lk-staging-web` |
-| `app` | `sathiya-lk-app` | `sathiya-lk-staging-app` |
+| `web` | `sathiya-lk` | `sathiya-lk-staging-web` |
+| `app` | `sathiya-lk-portal` | `sathiya-lk-staging-app` |
 
 Production deploys only from `main`, after the same build was checked on staging.
 
@@ -44,8 +44,8 @@ There is no production deploy workflow; production is deployed by hand.
 Every callable function enforces App Check (`functions/src/lib/callOptions.ts`) unless `ENFORCE_APP_CHECK=false` is set in the project's functions env. An app built without `VITE_APPCHECK_SITE_KEY` sends no App Check token, so every callable (register, save, publish, …) fails with `unauthenticated`. The `app` hosting target's predeploy (`apps/app/deploy/check-app-check.mjs`, also a step in the staging workflow) therefore refuses to deploy a build without a site key while the target project enforces App Check. It reads `apps/app/dist/.build-env.json` (written by the build, never uploaded) and `functions/.env` + `functions/.env.<project id>`. `firebase deploy --only functions` does not run it, so keep the order below.
 
 Per project (production `sathiya-lk` / app domain `app.sathiya.kanushka.com`; staging `sathiya-lk-staging` / `app.staging.sathiya.kanushka.com`):
-1. Google Cloud console (that project) → Security → reCAPTCHA → create a **website** key, score-based (no checkbox challenge), domains: the app domain plus `<site>.web.app` / `<site>.firebaseapp.com` if those are used.
-2. Firebase console → App Check → Apps → the **app** web app → reCAPTCHA Enterprise → paste the site key → Save. This registers the web app with App Check.
+1. Google Cloud console (that project) → Security → Fraud Defense (formerly reCAPTCHA Enterprise) → enable the API if asked → **Create key**: type **Website**, score-based (no checkbox challenge), domains: the app domain plus `<site>.web.app` and `<site>.firebaseapp.com` (production: `app.sathiya.kanushka.com`, `sathiya-lk-portal.web.app`, `sathiya-lk-portal.firebaseapp.com`). Copy the key ID: that is the **site key**. reCAPTCHA Classic (v3) is deprecated in App Check; don't use it.
+2. Firebase console → App Check → Apps → the **app** web app → Fraud Defense → paste the site key → Save. This registers the web app with App Check.
 3. Put the site key in `apps/app/.env.production` (production) or `apps/app/.env.staging` (staging) as `VITE_APPCHECK_SITE_KEY=…` and commit it. Site keys are public; they are not secrets.
 4. Deploy the app with the key **before** functions that enforce App Check: `pnpm build` (or `pnpm build:staging`), then `firebase deploy -P <alias> --only hosting:app`. Open the app, sign in, and check App Check → APIs → Cloud Functions shows verified requests.
 5. Then deploy functions (`--only functions`, or the full deploy above). If the key is not ready yet and the backend must go out first, set `ENFORCE_APP_CHECK=false` in `functions/.env.<project id>` (`functions/.env.sathiya-lk` is git-ignored), deploy, and remove the line and redeploy functions once step 4 is live.

@@ -4,8 +4,8 @@ Free timetable web app for Sri Lankan schools.
 
 ## Layout
 
-- `apps/web` – public website (Firebase Hosting site `sathiya-lk-web`)
-- `apps/app` – admin/teacher app (Hosting site `sathiya-lk-app`)
+- `apps/web` – public website (Firebase Hosting site `sathiya-lk`)
+- `apps/app` – admin/teacher app (Hosting site `sathiya-lk-portal`)
 - `packages/core` – domain logic
 - `packages/i18n` – translations
 - `packages/firebase-config` – Firebase web configs
@@ -26,4 +26,4 @@ Requires Node 20+ and pnpm 9+.
 
 ## Firebase setup
 
-In the Firebase console (project `sathiya-lk`), create two Hosting sites: `sathiya-lk-web` and `sathiya-lk-app`.
+In the Firebase console (project `sathiya-lk`), two Hosting sites: `sathiya-lk` (website, the default site) and `sathiya-lk-portal` (app).
