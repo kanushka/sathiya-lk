@@ -56,6 +56,7 @@ describe('ImportModal preview', () => {
 
     expect(call).toHaveBeenCalledWith('importSetup', {
       schoolId: ctx.school.id,
+      knownSubjectIds: ctx.subjects.map((s) => s.id),
       subjects: [{ row: 2, cells: { nameEn: 'Drama', nameSi: 'නාට්‍ය', short: 'Drama' } }],
       teachers: [],
     }, { timeout: 310_000 });
@@ -189,6 +190,19 @@ describe('ImportModal import', () => {
 
     const table = await within(dialog).findByRole('table');
     expect(within(table).getByText('Staff ID SCC059 is already in use')).toBeInTheDocument();
+    expect(within(dialog).getByRole('button', { name: 'Import' })).toBeDisabled();
+  });
+
+  it('asks to choose the file again when subjects changed', async () => {
+    const user = userEvent.setup();
+    vi.mocked(call).mockRejectedValue(
+      new ApiError('invalid', 'Subjects changed', { code: 'invalid', errors: [{ sheet: 'file', row: null, column: null, code: 'subjectsChanged' }] }),
+    );
+    const dialog = open();
+    await choose(user, dialog, csv(SUBJECTS_CSV, 'subjects.csv'));
+    await user.click(await within(dialog).findByRole('button', { name: 'Import' }));
+    const table = await within(dialog).findByRole('table');
+    expect(within(table).getByText('Subjects changed since you chose this file. Choose the file again to re-check.')).toBeInTheDocument();
     expect(within(dialog).getByRole('button', { name: 'Import' })).toBeDisabled();
   });
 

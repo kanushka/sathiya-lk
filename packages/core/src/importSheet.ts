@@ -43,7 +43,8 @@ export type ImportErrorCode =
   | 'gradesRequired'
   | 'tooLong'
   | 'excelDate'
-  | 'excelNumber';
+  | 'excelNumber'
+  | 'subjectsChanged';
 
 export interface ImportError {
   sheet: ImportKind | 'file';

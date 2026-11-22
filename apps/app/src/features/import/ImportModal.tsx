@@ -33,7 +33,7 @@ import { downloadBlob, templateCsv, templateSheetNames, templateXlsx } from './t
 
 type View =
   | { kind: 'start' }
-  | { kind: 'preview'; fileName: string; parsed: ParsedSheets; plan: ImportPlan; errors: ImportError[] }
+  | { kind: 'preview'; fileName: string; parsed: ParsedSheets; plan: ImportPlan; errors: ImportError[]; knownSubjectIds: string[] }
   | { kind: 'done'; res: ImportSetupRes };
 
 function isImportErrors(details: unknown): details is { errors: ImportError[] } {
@@ -146,7 +146,14 @@ export function ImportModal({ onClose }: { onClose: () => void }) {
         staffIds: teachers.map((x) => x.staffId),
       });
       if (seq !== readSeq.current) return;
-      setView({ kind: 'preview', fileName: file.name, parsed, plan, errors: [...parsed.errors, ...plan.errors] });
+      setView({
+        kind: 'preview',
+        fileName: file.name,
+        parsed,
+        plan,
+        errors: [...parsed.errors, ...plan.errors],
+        knownSubjectIds: subjects.map((s) => s.id),
+      });
     } catch (err) {
       if (seq !== readSeq.current) return;
       setView({ kind: 'start' });
@@ -162,7 +169,12 @@ export function ImportModal({ onClose }: { onClose: () => void }) {
     setFailure(null);
     try {
       const strip = <C extends string>(rows: ImportRow<C>[]) => rows.map(({ row, cells }) => ({ row, cells }));
-      const res = await importSetup({ schoolId: school.id, subjects: strip(view.parsed.subjects), teachers: strip(view.parsed.teachers) });
+      const res = await importSetup({
+        schoolId: school.id,
+        knownSubjectIds: view.knownSubjectIds,
+        subjects: strip(view.parsed.subjects),
+        teachers: strip(view.parsed.teachers),
+      });
       for (const x of res.teachers) setSessionPassword(x.teacherId, x.password);
       setView({ kind: 'done', res });
     } catch (err) {

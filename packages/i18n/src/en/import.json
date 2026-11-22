@@ -75,7 +75,8 @@
     "gradesRequired": "Add at least one grade",
     "tooLong": "Too long (max {{max}} characters)",
     "excelDate": "Excel changed this to a date. Format the column as Plain text and type it again.",
-    "excelNumber": "Excel changed this to a number and may have dropped a leading 0. Format the column as Plain text and type it again."
+    "excelNumber": "Excel changed this to a number and may have dropped a leading 0. Format the column as Plain text and type it again.",
+    "subjectsChanged": "Subjects changed since you chose this file. Choose the file again to re-check."
   },
   "fileErrors": {
     "unsupported": "Choose an .xlsx or .csv file.",

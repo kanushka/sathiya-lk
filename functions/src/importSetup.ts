@@ -6,6 +6,7 @@ import {
   IMPORT_MAX_ROWS,
   paths,
   validateImport,
+  type ImportError,
   type ImportRow,
   type ImportSetupRes,
   type Subject,
@@ -14,10 +15,11 @@ import { logger } from 'firebase-functions/logger';
 import { onCall } from 'firebase-functions/v2/https';
 import { db } from './lib/admin';
 import { callOpts } from './lib/callOptions';
-import { fail, int, invalid, obj, requireSchoolAdmin } from './lib/guards';
+import { docIdList, fail, int, invalid, obj, requireSchoolAdmin } from './lib/guards';
 import { createTeacherAccount } from './lib/teacherAccount';
 
 const CONCURRENCY = 5;
+const MAX_KNOWN_SUBJECTS = 1000;
 
 function rows<C extends string>(v: unknown, name: string, columns: readonly C[]): ImportRow<C>[] {
   if (!Array.isArray(v) || v.length > IMPORT_MAX_ROWS) invalid(`${name} must be a list of at most ${IMPORT_MAX_ROWS} rows`);
@@ -37,6 +39,10 @@ function rows<C extends string>(v: unknown, name: string, columns: readonly C[])
 export const importSetup = onCall({ ...callOpts, timeoutSeconds: 300 }, async (req): Promise<ImportSetupRes> => {
   const data = obj(req.data, 'request');
   const { sid, school } = await requireSchoolAdmin(req, data.schoolId);
+  if (!Array.isArray(data.knownSubjectIds) || data.knownSubjectIds.length > MAX_KNOWN_SUBJECTS) {
+    invalid(`knownSubjectIds must be a list of at most ${MAX_KNOWN_SUBJECTS} ids`);
+  }
+  const knownSubjectIds = new Set(docIdList(data.knownSubjectIds, 'knownSubjectIds'));
   const subjectRows = rows(data.subjects, 'subjects', IMPORT_COLUMNS.subjects.map((c) => c.key));
   const teacherRows = rows(data.teachers, 'teachers', IMPORT_COLUMNS.teachers.map((c) => c.key));
   if (subjectRows.length + teacherRows.length === 0) invalid('Nothing to import');
@@ -45,6 +51,11 @@ export const importSetup = onCall({ ...callOpts, timeoutSeconds: 300 }, async (r
     db.collection(paths.teachers(sid)).select('staffId').get(),
     db.collection(paths.subjects(sid)).get(),
   ]);
+  // Subject tokens and generated short names were resolved against the client's list; refuse if it is stale.
+  if (subjectSnap.size !== knownSubjectIds.size || subjectSnap.docs.some((d) => !knownSubjectIds.has(d.id))) {
+    const errors: ImportError[] = [{ sheet: 'file', row: null, column: null, code: 'subjectsChanged' }];
+    fail('invalid-argument', 'invalid', 'Subjects changed since the file was checked', { errors });
+  }
   const plan = validateImport(
     { subjects: subjectRows, teachers: teacherRows },
     {
