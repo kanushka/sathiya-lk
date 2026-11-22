@@ -50,6 +50,7 @@ function validateSubjects(rows: ImportRow<SubjectColumn>[], ctx: ImportContext, 
   const existingShorts = ctx.subjects.map((s) => s.short);
   const fileNames: string[] = [];
   const fileShorts: string[] = [];
+  const reserved = rows.map((r) => r.cells.short ?? '').filter((x) => x !== '');
   const out: ImportSubject[] = [];
 
   rows.forEach((r, i) => {
@@ -74,7 +75,7 @@ function validateSubjects(rows: ImportRow<SubjectColumn>[], ctx: ImportContext, 
       else if (shortTaken(short, existingShorts)) err('short', 'shortTaken', short);
       else if (shortTaken(short, fileShorts)) err('short', 'shortDuplicate', short);
     } else if (nameEn !== '') {
-      short = suggestSubjectShort(nameEn, [...existingShorts, ...fileShorts]).slice(0, SHORT_MAX);
+      short = suggestSubjectShort(nameEn, [...existingShorts, ...reserved, ...fileShorts]).slice(0, SHORT_MAX);
       if (short === '') err('short', 'required');
     }
     fileShorts.push(short);
@@ -178,11 +179,15 @@ function validateTeachers(
 
     const flag = key(c.isPrimary ?? '');
     let isPrimary = false;
+    let primaryInvalid = false;
     if (YES.has(flag)) isPrimary = true;
-    else if (!NO.has(flag)) err('isPrimary', 'primaryValue', { value: c.isPrimary! });
+    else if (!NO.has(flag)) {
+      primaryInvalid = true;
+      err('isPrimary', 'primaryValue', { value: c.isPrimary! });
+    }
 
     const subjectRefs: SubjectRef[] = [];
-    if (!isPrimary) {
+    if (!isPrimary && !primaryInvalid) {
       const tokens = (c.subjects ?? '').split(',').map((t) => t.trim()).filter((t) => t !== '');
       if (tokens.length === 0) err('subjects', 'subjectsRequired');
       const unknown: string[] = [];

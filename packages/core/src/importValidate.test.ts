@@ -101,6 +101,14 @@ describe('validateImport subject errors', () => {
   });
 });
 
+describe('validateImport short reservation', () => {
+  it('generated short never collides with a later explicit short', () => {
+    const p = run([sub(2, { nameEn: 'Drama' }), sub(3, { nameEn: 'Dance', short: 'Dra' })], []);
+    expect(p.errors).toEqual([]);
+    expect(p.subjects.map((x) => x.short)).toEqual(['Dram', 'Dra']);
+  });
+});
+
 describe('validateImport teacher errors', () => {
   const one = (cells: Partial<Record<TeacherColumn, string>>, c = ctx) => run([], [tch(7, cells)], c);
   const only = (cells: Partial<Record<TeacherColumn, string>>) => errs(one(cells));
@@ -156,7 +164,7 @@ describe('validateImport teacher errors', () => {
     expect(one({ ...okTeacher, maxPerDay: '10' }).teachers[0]?.teacher.maxPerDay).toBe(10);
   });
   it('primaryValue and accepted spellings', () => {
-    expect(only({ ...okTeacher, isPrimary: 'maybe' })).toEqual([e('isPrimary', 'primaryValue'), e('subjects', 'subjectsRequired')]);
+    expect(only({ ...okTeacher, isPrimary: 'maybe' })).toEqual([e('isPrimary', 'primaryValue')]);
     for (const v of ['yes', 'Y', 'TRUE', 'ඔව්']) expect(one({ ...okTeacher, isPrimary: v }).teachers[0]?.teacher.isPrimary).toBe(true);
     for (const v of ['no', 'n', 'false', 'නැත']) {
       expect(one({ name: 'A', grades: '6', subjects: 'math', isPrimary: v }).teachers[0]?.teacher.isPrimary).toBe(false);
