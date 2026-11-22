@@ -9,6 +9,7 @@ import { useReadOnly } from '../../ui/AdminLayout';
 import { Button } from '../../ui/Button';
 import { EmptyState } from '../../ui/EmptyState';
 import { inputClass } from '../../ui/Field';
+import { LoadingState } from '../../ui/LoadingState';
 import { Table, TBody, Td, Th, THead, Tr } from '../../ui/Table';
 import { Badge } from '../../ui/Badge';
 import { PageHeader } from '../../ui/PageHeader';
@@ -107,7 +108,9 @@ export function TeachersPage() {
         }
       />
 
-      {teachers.length === 0 ? (
+      {state.loading ? (
+        <LoadingState />
+      ) : teachers.length === 0 ? (
         <EmptyState icon="teachers" title={t('page.empty')} body={t('page.emptyBody')} action={readOnly ? undefined : add} />
       ) : rows.length === 0 ? (
         <EmptyState icon="search" title={t('page.noMatch')} />

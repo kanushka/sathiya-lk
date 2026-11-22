@@ -8,6 +8,7 @@ import { useReadOnly } from '../../ui/AdminLayout';
 import { Button } from '../../ui/Button';
 import { EmptyState } from '../../ui/EmptyState';
 import { LinkButton } from '../../ui/LinkButton';
+import { LoadingState } from '../../ui/LoadingState';
 import { PageHeader } from '../../ui/PageHeader';
 import { useAdminBase } from '../timetable/paths';
 import { useToast } from '../../ui/Toast';
@@ -87,7 +88,9 @@ export function GradesPage() {
       </nav>
 
       <div className="min-w-0 flex-1">
-        {!grade ? (
+        {school.loading ? (
+          <LoadingState />
+        ) : !grade ? (
           <EmptyState icon="grades" title={t('page.empty')} body={t('page.emptyBody')} action={addGradeButton || undefined} />
         ) : (
           <>

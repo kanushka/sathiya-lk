@@ -7,6 +7,7 @@ import { useSchool, useYear } from '../../app/SchoolProvider';
 import { useReadOnly } from '../../ui/AdminLayout';
 import { Button } from '../../ui/Button';
 import { EmptyState } from '../../ui/EmptyState';
+import { LoadingState } from '../../ui/LoadingState';
 import { PageHeader } from '../../ui/PageHeader';
 import { Table, TBody, Td, Th, THead, Tr } from '../../ui/Table';
 import { useToast } from '../../ui/Toast';
@@ -85,7 +86,9 @@ export function SubjectsPage() {
         }
       />
 
-      {subjects.length === 0 ? (
+      {school.loading ? (
+        <LoadingState />
+      ) : subjects.length === 0 ? (
         <EmptyState icon="subjects" title={t('page.empty')} body={t('page.emptyBody')} action={readOnly ? undefined : add} />
       ) : (
         <Table className="min-w-[720px]">
