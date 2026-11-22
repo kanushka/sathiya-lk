@@ -4,6 +4,7 @@ import { C, ctx, entries, G, S } from '@sathiya/core/fixtures';
 import { screen, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { pickOption } from '../../test/pickOption';
 import { renderWithSchool } from '../../test/renderWithSchool';
 import * as api from './api';
 import { GradesPage } from './GradesPage';
@@ -63,13 +64,13 @@ describe('grades page', () => {
 
   it('group option remove and add', async () => {
     const user = await openGrade6();
-    await user.click(screen.getByRole('button', { name: 'Remove Music from Aesthetic' }));
+    await user.click(screen.getByRole('button', { name: 'Remove Music' }));
     const afterRemove = vi.mocked(api.saveGradePlan).mock.calls[0]![2];
     const aesthetic = afterRemove.find((p) => p.kind === 'group' && p.key === 'aesthetic');
     expect(aesthetic).toMatchObject({ optionSubjectIds: [S.dancing, S.art] });
     expect(vi.mocked(api.saveGradePlan).mock.calls[0]![1]).toBe(G.g6);
 
-    await user.selectOptions(screen.getByLabelText('Add option to Aesthetic'), 'Pali');
+    await pickOption(user, screen.getByRole('combobox', { name: /^Add option to Aesthetic/ }), 'Pali');
     const afterAdd = vi.mocked(api.saveGradePlan).mock.calls[1]![2];
     expect(afterAdd.find((p) => p.kind === 'group' && p.key === 'aesthetic')).toMatchObject({
       optionSubjectIds: [S.music, S.dancing, S.art, S.pali],
@@ -134,7 +135,8 @@ describe('grades page', () => {
     expect(screen.queryByRole('button', { name: /Add subject|Add group/ })).toBeNull();
     expect(screen.queryByRole('button', { name: 'Remove' })).toBeNull();
     expect(screen.queryByRole('button', { name: 'Custom plan' })).toBeNull();
-    expect(screen.queryByLabelText('Add option to Aesthetic')).toBeNull();
+    expect(screen.getByRole('combobox', { name: /^Add option to Aesthetic/ })).toBeDisabled();
+    screen.getAllByRole('button', { name: /^Remove (Music|Dancing|Art)$/ }).forEach((b) => expect(b).toBeDisabled());
     expect(screen.getByLabelText('Periods per week for Mathematics')).toBeDisabled();
     await user.click(screen.getByRole('button', { name: /^Grade 1\b/ }));
     expect(api.saveGradePlan).not.toHaveBeenCalled();

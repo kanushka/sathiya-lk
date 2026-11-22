@@ -4,7 +4,8 @@ import { pickName, type Lang, type PlanItem, type Subject } from '@sathiya/core'
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Button } from '../../ui/Button';
-import { NativeSelect } from '../../ui/NativeSelect';
+import { MultiSelect } from '../../ui/MultiSelect';
+import { Select } from '../../ui/Select';
 import { GroupModal } from './GroupModal';
 import { newGroupKey, planFit, planTotal, type PlanCapacity, type PlanFit } from './planModel';
 
@@ -104,40 +105,15 @@ export function PlanEditor({ plan, capacity, subjects, readOnly, onChange }: Pla
                     <span className="ml-2 rounded-full bg-[#FBF1DC] px-2 py-0.5 text-[11px] font-bold uppercase tracking-wide text-[#7A5410]">
                       {t('plan.group')}
                     </span>
-                    <div className="mt-2 flex flex-wrap items-center gap-1.5">
-                      {p.optionSubjectIds.map((id) => (
-                        <span key={id} className="inline-flex items-center gap-1.5 rounded-full border border-line-soft bg-white px-2.5 py-1 text-[13px]">
-                          {subjectName(id)}
-                          {!readOnly && (
-                            <button
-                              type="button"
-                              aria-label={t('plan.removeOption', { name: subjectName(id), group: name })}
-                              className="text-ink-muted hover:text-ink"
-                              onClick={() => setGroupOptions(i, p, p.optionSubjectIds.filter((o) => o !== id))}
-                            >
-                              ×
-                            </button>
-                          )}
-                        </span>
-                      ))}
-                      {!readOnly && subjects.some((s) => !p.optionSubjectIds.includes(s.id)) && (
-                        <NativeSelect
-                          className="w-40"
-                          aria-label={t('plan.addOption', { group: name })}
-                          value=""
-                          onChange={(e) => e.target.value && setGroupOptions(i, p, [...p.optionSubjectIds, e.target.value])}
-                        >
-                          <option value="">{t('plan.optionPlaceholder')}</option>
-                          {subjects
-                            .filter((s) => !p.optionSubjectIds.includes(s.id))
-                            .map((s) => (
-                              <option key={s.id} value={s.id}>
-                                {pickName(s, lang)}
-                              </option>
-                            ))}
-                        </NativeSelect>
-                      )}
-                    </div>
+                    <MultiSelect
+                      className="mt-2 max-w-md"
+                      aria-label={t('plan.addOption', { group: name })}
+                      disabled={readOnly}
+                      value={p.optionSubjectIds}
+                      onChange={(ids) => setGroupOptions(i, p, ids)}
+                      placeholder={t('plan.optionPlaceholder')}
+                      options={subjects.map((s) => ({ value: s.id, label: pickName(s, lang) }))}
+                    />
                   </>
                 )}
               </div>
@@ -166,19 +142,14 @@ export function PlanEditor({ plan, capacity, subjects, readOnly, onChange }: Pla
         {!readOnly && (
           <div className="flex flex-wrap items-center gap-4 bg-[#FAFAFB] px-3.5 py-3">
             {unused.length > 0 && (
-              <NativeSelect
+              <Select
                 className="w-56"
                 aria-label={t('plan.addSubject')}
                 value=""
-                onChange={(e) => e.target.value && onChange([...plan, { kind: 'subject', subjectId: e.target.value, perWeek: 1 }])}
-              >
-                <option value="">{t('plan.addSubject')}</option>
-                {unused.map((s) => (
-                  <option key={s.id} value={s.id}>
-                    {pickName(s, lang)}
-                  </option>
-                ))}
-              </NativeSelect>
+                placeholder={t('plan.addSubject')}
+                onChange={(subjectId) => onChange([...plan, { kind: 'subject', subjectId, perWeek: 1 }])}
+                options={unused.map((s) => ({ value: s.id, label: pickName(s, lang) }))}
+              />
             )}
             <button type="button" className={linkBtn} onClick={() => setDialog({ index: null })}>
               {t('plan.addGroup')}

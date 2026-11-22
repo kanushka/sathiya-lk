@@ -5,8 +5,8 @@ import { useState, type FormEvent } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Button } from '../../ui/Button';
 import { Field, inputClass } from '../../ui/Field';
+import { MultiSelect } from '../../ui/MultiSelect';
 import { Modal } from '../../ui/Modal';
-import { NativeSelect } from '../../ui/NativeSelect';
 
 type Group = Extract<PlanItem, { kind: 'group' }>;
 
@@ -27,8 +27,6 @@ export function GroupModal({ initial, subjects, newKey, onSave, onClose }: Group
   const [options, setOptions] = useState<string[]>(initial?.optionSubjectIds ?? []);
   const [submitted, setSubmitted] = useState(false);
 
-  const byId = new Map(subjects.map((s) => [s.id, s]));
-  const available = subjects.filter((s) => !options.includes(s.id));
   const nameError = nameEn.trim() ? null : t('group.errors.name');
   const optionsError = options.length > 0 ? null : t('group.errors.options');
 
@@ -78,47 +76,14 @@ export function GroupModal({ initial, subjects, newKey, onSave, onClose }: Group
             onChange={(e) => setPerWeek(Math.max(0, Math.floor(Number(e.target.value) || 0)))}
           />
         </Field>
-        <div>
-          <p className="mb-1.5 text-[13px] font-semibold text-ink-soft">{t('group.options')}</p>
-          <div className="flex flex-wrap gap-1.5">
-            {options.map((id) => {
-              const name = byId.get(id) ? pickName(byId.get(id)!, lang) : id;
-              return (
-                <span key={id} className="inline-flex items-center gap-1.5 rounded-full border border-line-soft bg-white px-2.5 py-1 text-[13px]">
-                  {name}
-                  <button
-                    type="button"
-                    aria-label={t('group.removeOption', { name })}
-                    className="text-ink-muted hover:text-ink"
-                    onClick={() => setOptions(options.filter((o) => o !== id))}
-                  >
-                    ×
-                  </button>
-                </span>
-              );
-            })}
-          </div>
-          {available.length > 0 && (
-            <NativeSelect
-              className="mt-2 w-60"
-              aria-label={t('group.addOption')}
-              value=""
-              onChange={(e) => e.target.value && setOptions([...options, e.target.value])}
-            >
-              <option value="">{t('group.addOptionPlaceholder')}</option>
-              {available.map((s) => (
-                <option key={s.id} value={s.id}>
-                  {pickName(s, lang)}
-                </option>
-              ))}
-            </NativeSelect>
-          )}
-          {submitted && optionsError && (
-            <p role="alert" className="mt-1 text-xs font-medium text-danger">
-              {optionsError}
-            </p>
-          )}
-        </div>
+        <Field label={t('group.options')} error={submitted ? optionsError : null}>
+          <MultiSelect
+            value={options}
+            onChange={setOptions}
+            placeholder={t('group.addOptionPlaceholder')}
+            options={subjects.map((s) => ({ value: s.id, label: pickName(s, lang) }))}
+          />
+        </Field>
       </form>
     </Modal>
   );
