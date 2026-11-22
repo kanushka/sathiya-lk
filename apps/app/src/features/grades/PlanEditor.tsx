@@ -3,6 +3,7 @@
 import { pickName, type Lang, type PlanItem, type Subject } from '@sathiya/core';
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
+import { Badge } from '../../ui/Badge';
 import { cx } from '../../ui/cx';
 import { Button } from '../../ui/Button';
 import { Chip } from '../../ui/Chip';
@@ -54,9 +55,9 @@ function PerWeekInput({ label, value, disabled, onCommit }: { label: string; val
 }
 
 const fitColor: Record<PlanFit, string> = {
-  exact: 'text-[#1F6B34]',
-  under: 'text-[#7A5410]',
-  mixed: 'text-[#7A5410]',
+  exact: 'text-success',
+  under: 'text-warning',
+  mixed: 'text-warning',
   over: 'text-danger',
 };
 
@@ -97,16 +98,16 @@ export function PlanEditor({ plan, capacity, subjects, readOnly, onChange }: Pla
           return (
             <div
               key={p.kind === 'group' ? `g:${p.key}` : `s:${p.subjectId}`}
-              className={`flex items-center gap-3.5 border-b border-line-soft px-3.5 py-2.5 ${p.kind === 'group' ? 'bg-[#FFFCF5]' : ''}`}
+              className={`flex items-center gap-3.5 border-b border-line-soft px-3.5 py-2.5 ${p.kind === 'group' ? 'bg-warning-soft/40' : ''}`}
             >
               <span className="h-3.5 w-3.5 shrink-0 rounded" style={{ background: subject?.color ?? '#FBEAC9' }} />
               <div className="min-w-0 flex-1">
                 <strong className="text-sm">{name}</strong>
                 {p.kind === 'group' && (
                   <>
-                    <span className="ml-2 rounded-full bg-[#FBF1DC] px-2 py-0.5 text-[11px] font-bold uppercase tracking-wide text-[#7A5410]">
+                    <Badge tone="warning" className="ml-2 uppercase tracking-wide">
                       {t('plan.group')}
-                    </span>
+                    </Badge>
                     {readOnly ? (
                       <div className="mt-2 flex flex-wrap items-center gap-1.5">
                         {p.optionSubjectIds.map((id) => (
@@ -153,7 +154,7 @@ export function PlanEditor({ plan, capacity, subjects, readOnly, onChange }: Pla
           );
         })}
         {!readOnly && (
-          <div className="flex flex-wrap items-center gap-4 bg-[#FAFAFB] px-3.5 py-3">
+          <div className="flex flex-wrap items-center gap-4 bg-surface px-3.5 py-3">
             {unused.length > 0 && (
               <Select
                 className="w-56"

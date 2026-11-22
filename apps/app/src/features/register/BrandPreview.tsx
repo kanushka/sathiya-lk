@@ -2,6 +2,7 @@
 // Copyright (C) 2026 Kanushka Gayan
 import { onColor, pickName, type Lang } from '@sathiya/core';
 import { useTranslation } from 'react-i18next';
+import { Badge } from '../../ui/Badge';
 
 export interface BrandPreviewProps {
   name: string;
@@ -30,11 +31,9 @@ export function BrandPreview({ name, nameSi, primary, second, logoUrl, year }: B
             <span className="text-xs opacity-80">{t('brand.previewTimetable', { year: year ?? new Date().getFullYear() })}</span>
           </div>
         </div>
-        <div className="bg-[#FAFAFB] p-3.5">
-          <div className="rounded-[10px] bg-white p-3" style={{ border: `2px solid ${second}` }}>
-            <span className="rounded-full bg-[#FBF1DC] px-2 py-[3px] text-[11px] font-bold tracking-[.06em] text-[#7A5410]">
-              {t('brand.previewNow')}
-            </span>
+        <div className="bg-surface p-3.5">
+          <div className="rounded-lg bg-white p-3" style={{ border: `2px solid ${second}` }}>
+            <Badge tone="warning">{t('brand.previewNow')}</Badge>
             <p className="mb-0 mt-2 font-bold">{t('brand.previewLesson')}</p>
           </div>
           <div className="mt-3 flex gap-2">

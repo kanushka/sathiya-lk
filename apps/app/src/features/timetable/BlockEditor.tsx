@@ -19,6 +19,7 @@ import { useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useLang } from '../../app/LangProvider';
 import { useSchool } from '../../app/SchoolProvider';
+import { Badge } from '../../ui/Badge';
 import { useReadOnly } from '../../ui/AdminLayout';
 import { Button } from '../../ui/Button';
 import { ToggleChip } from '../../ui/Chip';
@@ -208,11 +209,11 @@ function BlockEditorBody({ onClose, baseClassId, day, period, mode, entry, entri
           ];
           const note =
             p && 'missing' in p ? (
-              <span className="inline-flex rounded-full bg-[#FBEAC9] px-2 py-0.5 text-xs font-semibold text-[#7A5A12]">{t('block.noTeacher')}</span>
+              <Badge tone="warning">{t('block.noTeacher')}</Badge>
             ) : (
               <>
                 {p?.hard && <p className="text-xs font-semibold text-danger">{reasonText(p.hard)}</p>}
-                {p?.limit && <p className="text-xs font-semibold text-[#7A5A12]">{limitWarning(t, p.limit.loadToday, p.limit.teacher.maxPerDay)}</p>}
+                {p?.limit && <p className="text-xs font-semibold text-warning">{limitWarning(t, p.limit.loadToday, p.limit.teacher.maxPerDay)}</p>}
                 {p?.duplicate && <p className="text-xs font-semibold text-danger">{t('block.duplicate')}</p>}
               </>
             );

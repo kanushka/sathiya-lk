@@ -4,6 +4,7 @@
 import type { PinProgress } from '@sathiya/core';
 import { useId } from 'react';
 import { useTranslation } from 'react-i18next';
+import { Badge } from '../../ui/Badge';
 import { Button } from '../../ui/Button';
 import { Icon } from '../../ui/Icon';
 
@@ -43,7 +44,7 @@ export function PinBar({ subject, teacher, color, progress, suggestedCount, onSu
       <div className="flex min-w-[170px] flex-col gap-1">
         <span className="flex flex-wrap items-center gap-1.5 text-[13px] font-bold">
           <span>{text}</span>
-          {over > 0 && <span className="rounded-full bg-[#FDECEA] px-2 py-px text-xs font-bold text-[#9A3412]">{t('pin.over', { count: over })}</span>}
+          {over > 0 && <Badge tone="danger">{t('pin.over', { count: over })}</Badge>}
         </span>
         <span
           role="meter"
@@ -56,7 +57,7 @@ export function PinBar({ subject, teacher, color, progress, suggestedCount, onSu
           className="relative block h-1.5 w-[170px] overflow-hidden rounded-full bg-on-brand/25"
         >
           <span className="absolute inset-y-0 left-0 block bg-on-brand" style={{ width: `${pct}%` }} />
-          {over > 0 && <span className="absolute inset-y-0 right-0 block bg-[#F2994A]" style={{ width: `${100 - pct}%` }} />}
+          {over > 0 && <span className="absolute inset-y-0 right-0 block bg-danger" style={{ width: `${100 - pct}%` }} />}
         </span>
       </div>
       <div className="flex flex-wrap gap-2">

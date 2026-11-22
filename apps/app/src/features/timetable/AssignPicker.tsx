@@ -18,10 +18,12 @@ import { useEffect, useId, useMemo, useRef, useState, type KeyboardEvent } from 
 import { useTranslation } from 'react-i18next';
 import { useLang } from '../../app/LangProvider';
 import { useSchool } from '../../app/SchoolProvider';
+import { Badge } from '../../ui/Badge';
 import { useReadOnly } from '../../ui/AdminLayout';
 import { Button } from '../../ui/Button';
 import { isComposing } from '../../ui/composing';
 import { cx } from '../../ui/cx';
+import { inputClass } from '../../ui/Field';
 import { Icon } from '../../ui/Icon';
 import { Modal } from '../../ui/Modal';
 import { limitWarning, planItemColor, teacherReason, teachesAtAll } from './labels';
@@ -59,8 +61,6 @@ export function AssignPicker(props: AssignPickerProps) {
   return <AssignPickerBody {...props} />;
 }
 
-const inputClass =
-  'box-border h-[42px] w-full rounded-[10px] border border-line-strong px-3 text-sm text-ink focus:border-brand focus:outline-none focus:ring-2 focus:ring-brand/30';
 const capClass = 'm-0 text-[11px] font-bold uppercase tracking-[.06em]';
 
 function AssignPickerBody({ classId, slot, subjectId: initialSubject, entries, onClose, onSave, onPin, onGroup, onCombine }: AssignPickerProps) {
@@ -265,7 +265,7 @@ function AssignPickerBody({ classId, slot, subjectId: initialSubject, entries, o
         aria-hidden="true"
         className={cx(
           'flex h-8 w-8 shrink-0 items-center justify-center rounded-full text-xs font-extrabold',
-          c.selectable ? 'bg-[#E4F2E7] text-[#1F6B34]' : 'bg-[#E9EBF0] text-ink-muted',
+          c.selectable ? 'bg-success-soft text-success' : 'bg-surface-3 text-ink-muted',
         )}
       >
         {initials(c.teacher.name)}
@@ -274,13 +274,13 @@ function AssignPickerBody({ classId, slot, subjectId: initialSubject, entries, o
         <span className="flex flex-wrap items-center gap-1.5">
           <strong className="text-sm">{teacherDisplayName(c.teacher, lang)}</strong>
           {c.preferred && (
-            <span className="rounded-full bg-brand/10 px-2 py-0.5 text-[11px] font-bold text-brand">
+            <Badge tone="brand">
               <span aria-hidden="true">★ </span>
               {t('picker.teaches', { class: cls.name, subject: subjectName })}
-            </span>
+            </Badge>
           )}
         </span>
-        <span className={cx('mt-0.5 block text-xs', c.warn ? 'font-semibold text-[#7A5A12]' : 'text-ink-muted')}>{c.note}</span>
+        <span className={cx('mt-0.5 block text-xs', c.warn ? 'font-semibold text-warning' : 'text-ink-muted')}>{c.note}</span>
       </span>
     </>
   );
@@ -289,7 +289,7 @@ function AssignPickerBody({ classId, slot, subjectId: initialSubject, entries, o
     list.length > 0 && (
       <ul className="m-0 mb-1.5 flex list-none flex-col gap-1.5 p-0">
         {list.map((c) => (
-          <li key={c.teacher.id} className="flex items-center gap-2.5 rounded-[10px] border border-line bg-[#F6F7F9] px-3 py-2.5 text-ink-muted">
+          <li key={c.teacher.id} className="flex items-center gap-2.5 rounded-lg border border-line bg-surface-2 px-3 py-2.5 text-ink-muted">
             {teacherBody(c)}
             {c.canPinElsewhere && subjectId && (
               <Button
@@ -337,7 +337,7 @@ function AssignPickerBody({ classId, slot, subjectId: initialSubject, entries, o
             onKeyDown={onSubjectKey}
             className={inputClass}
           />
-          <p className={cx(capClass, 'mb-1.5 mt-3 text-[#7A5410]')}>{t('assign.neededFirst', { count: subjectOptions.length })}</p>
+          <p className={cx(capClass, 'mb-1.5 mt-3 text-warning')}>{t('assign.neededFirst', { count: subjectOptions.length })}</p>
           {subjectOptions.length === 0 && <p className="mx-0.5 my-2 text-[13px] text-ink-muted">{t('assign.noSubjectMatch', { q: query.trim() })}</p>}
           <ul id={subjectListId} role="listbox" aria-label={t('assign.subjects')} className="m-0 flex max-h-[360px] list-none flex-col gap-0.5 overflow-y-auto p-0">
             {subjectOptions.map((p, i) => (
@@ -350,14 +350,14 @@ function AssignPickerBody({ classId, slot, subjectId: initialSubject, entries, o
                 onMouseMove={() => i !== subjectIndex && setSubjectActive(i)}
                 className={cx(
                   'flex w-full cursor-pointer items-center gap-2.5 rounded-lg px-2 py-[9px] text-left text-sm text-ink',
-                  p.placed < p.needed && 'bg-[#FFFCF5]',
-                  i === subjectIndex && 'bg-[#FBF1DC] shadow-[inset_0_0_0_1.5px_var(--brand)]',
+                  p.placed < p.needed && 'bg-warning-soft/40',
+                  i === subjectIndex && 'bg-warning-soft shadow-[inset_0_0_0_1.5px_var(--brand)]',
                 )}
               >
                 <span className="h-3 w-3 shrink-0 rounded-[3px]" style={{ background: planItemColor(p.item, ctx) }} />
                 <span className="flex-1 font-semibold">{p.name}</span>
                 <span className="text-xs text-ink-muted">{preferredName(p)}</span>
-                <span className={cx('w-16 text-right text-xs', p.placed < p.needed ? 'font-bold text-[#7A5410]' : 'text-ink-muted')}>{need(p)}</span>
+                <span className={cx('w-16 text-right text-xs', p.placed < p.needed ? 'font-bold text-warning' : 'text-ink-muted')}>{need(p)}</span>
               </li>
             ))}
           </ul>
@@ -368,7 +368,7 @@ function AssignPickerBody({ classId, slot, subjectId: initialSubject, entries, o
             type="button"
             aria-label={t('assign.backLabel')}
             onClick={back}
-            className="flex h-[42px] w-full items-center gap-2.5 rounded-[10px] border border-line-strong bg-white px-3 text-left text-sm text-ink hover:bg-slate-50 focus-visible:outline focus-visible:outline-2 focus-visible:outline-brand"
+            className="flex h-[42px] w-full items-center gap-2.5 rounded-lg border border-line-strong bg-white px-3 text-left text-sm text-ink hover:bg-surface focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand focus-visible:ring-offset-2"
           >
             <span className="h-3 w-3 rounded-[3px]" style={{ background: subjectColor }} />
             <b className="flex-1">{subjectName}</b>
@@ -409,8 +409,8 @@ function AssignPickerBody({ classId, slot, subjectId: initialSubject, entries, o
                   }}
                   onDoubleClick={() => void confirm(c.teacher.id)}
                   className={cx(
-                    'flex w-full cursor-pointer items-center gap-2.5 rounded-[10px] border px-3 py-2.5 text-left text-ink',
-                    c.warn ? 'border-[#F0DDB0] bg-[#FFF9EC] hover:bg-[#FBF0D6]' : 'border-[#CFE6D4] bg-[#F5FBF6] hover:bg-[#EAF6ED]',
+                    'flex w-full cursor-pointer items-center gap-2.5 rounded-lg border px-3 py-2.5 text-left text-ink focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand focus-visible:ring-offset-2',
+                    c.warn ? 'border-warning-line bg-warning-soft/50 hover:bg-warning-soft' : 'border-success-line bg-success-soft/50 hover:bg-success-soft',
                     on && 'shadow-[inset_0_0_0_2px_var(--brand)]',
                     busy && 'opacity-60',
                   )}

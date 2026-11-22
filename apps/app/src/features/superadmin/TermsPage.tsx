@@ -6,6 +6,7 @@ import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useLang } from '../../app/LangProvider';
 import { useCollection, useDoc, type CollectionState, type DocState } from '../../lib/firestore';
+import { Badge } from '../../ui/Badge';
 import { Button } from '../../ui/Button';
 import { EmptyState } from '../../ui/EmptyState';
 import { Field, inputClass, textareaClass } from '../../ui/Field';
@@ -113,7 +114,7 @@ export function TermsPage({ versions: injectedVersions, config: injectedConfig, 
                 <Td>{formatDate(v.publishedAt, lang)}</Td>
                 <Td>
                   {v.version === current && (
-                    <span className="rounded-full bg-[#E4F2E7] px-2.5 py-0.5 text-xs font-bold text-[#1F6B34]">{t('terms.current')}</span>
+                    <Badge tone="success">{t('terms.current')}</Badge>
                   )}
                 </Td>
               </Tr>
@@ -137,7 +138,7 @@ export function TermsPage({ versions: injectedVersions, config: injectedConfig, 
         }
       >
         <div className="flex flex-col gap-4">
-          <p className="rounded-lg bg-[#FFF4DE] px-3 py-2 text-sm text-ink-soft">{t('terms.warning')}</p>
+          <p className="rounded-lg bg-warning-soft px-3 py-2 text-sm text-ink-soft">{t('terms.warning')}</p>
           <Field label={t('terms.fields.version')} hint={t('terms.fields.versionHint')} error={errors.version}>
             <input className={inputClass} value={version} onChange={(e) => setVersion(e.target.value)} />
           </Field>

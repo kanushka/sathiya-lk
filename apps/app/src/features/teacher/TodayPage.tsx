@@ -4,6 +4,7 @@ import { currentAndNext, toMinutes, type DayIndex, type SnapshotCell, type Teach
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useLang } from '../../app/LangProvider';
+import { Badge as StatusBadge } from '../../ui/Badge';
 import { cx } from '../../ui/cx';
 import { cellText, cellsAt, clock, slotsOf, weekdays } from './cells';
 import { TeacherFrame, type TeacherViewProps } from './TeacherFrame';
@@ -59,7 +60,7 @@ function TodayBody({ snap, now }: { snap: TeacherSnapshot; now: Date }) {
         {slotsOf(snap.rows[day] ?? []).map((slot, i) => {
           if (slot.kind === 'interval') {
             return (
-              <div key={i} className="py-1 text-center text-[11px] font-bold tracking-widest text-[#7A5410]">
+              <div key={i} className="py-1 text-center text-[11px] font-bold tracking-widest text-warning">
                 {t('teacher:interval')} · {clock(slot.row.start)} – {clock(slot.row.end)}
               </div>
             );
@@ -73,7 +74,7 @@ function TodayBody({ snap, now }: { snap: TeacherSnapshot; now: Date }) {
                 key={i}
                 data-testid={`period-${slot.n}`}
                 className={cx(
-                  'flex items-center gap-3 rounded-xl border border-dashed border-[#D3D6DD] px-3.5 py-3',
+                  'flex items-center gap-3 rounded-xl border border-dashed border-line-strong px-3.5 py-3',
                   past(slot.row.end) && 'opacity-55',
                 )}
               >
@@ -93,7 +94,7 @@ function TodayBody({ snap, now }: { snap: TeacherSnapshot; now: Date }) {
                     key={k}
                     className={cx(
                       'flex items-center gap-3 rounded-xl px-3.5 py-3',
-                      isNow ? 'border-2 border-[#D9A441] bg-[#FDF6E6]' : 'border border-line bg-white',
+                      isNow ? 'border-2 border-warning/70 bg-warning-soft' : 'border border-line bg-white',
                       past(cell.end) && 'opacity-55',
                     )}
                   >
@@ -119,13 +120,13 @@ function PeriodLabel({ n, start }: { n: number; start: string }) {
   return (
     <div className="w-12 shrink-0">
       <b className="block text-sm">{t('periods.periodN', { n })}</b>
-      <span className="text-[11px] text-[#6B7385]">{clock(start)}</span>
+      <span className="text-[11px] text-ink-muted">{clock(start)}</span>
     </div>
   );
 }
 
 function Badge({ children }: { children: string }) {
-  return <span className="text-[11px] font-extrabold text-[#7A5410]">{children}</span>;
+  return <span className="text-[11px] font-extrabold text-warning">{children}</span>;
 }
 
 interface NowCardProps {
@@ -139,7 +140,7 @@ interface NowCardProps {
 function NowCard({ todayIndex, current, next, minutesLeft, minutes }: NowCardProps) {
   const { t } = useTranslation(['teacher', 'common']);
   const { lang } = useLang();
-  const box = 'rounded-2xl border-2 border-[#D9A441] bg-white px-4 py-3.5 shadow-[0_14px_30px_-18px_rgba(20,33,61,.45)]';
+  const box = 'rounded-2xl border-2 border-warning/70 bg-white px-4 py-3.5 shadow-[0_14px_30px_-18px_rgba(20,33,61,.45)]';
 
   if (todayIndex === null) {
     return (
@@ -176,9 +177,9 @@ function NowCard({ todayIndex, current, next, minutesLeft, minutes }: NowCardPro
   return (
     <section data-testid="now-card" className={box}>
       <div className="flex items-center justify-between">
-        <span className="rounded-full bg-[#FBF1DC] px-2 py-1 text-[11px] font-extrabold tracking-wider text-[#7A5410]">
+        <StatusBadge tone="warning" className="tracking-wider">
           {t('teacher:now')} · {t('common:periods.periodN', { n: current.period })}
-        </span>
+        </StatusBadge>
         <span className="text-[13px] text-ink-muted">
           {clock(current.start)} – {clock(current.end)} · {t('teacher:minLeft', { n: minutesLeft ?? 0 })}
         </span>
@@ -191,9 +192,9 @@ function NowCard({ todayIndex, current, next, minutesLeft, minutes }: NowCardPro
         aria-valuemin={0}
         aria-valuemax={100}
         aria-valuenow={pct}
-        className="mt-2.5 h-1.5 overflow-hidden rounded-full bg-[#F1F2F5]"
+        className="mt-2.5 h-1.5 overflow-hidden rounded-full bg-surface-3"
       >
-        <span className="block h-1.5 bg-[#D9A441]" style={{ width: `${pct}%` }} />
+        <span className="block h-1.5 bg-warning" style={{ width: `${pct}%` }} />
       </div>
       {nextLine}
     </section>

@@ -4,6 +4,7 @@ import { teacherDisplayName, weekCapacity, type PeriodTemplate, type SchoolClass
 import { useId } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useLang } from '../../app/LangProvider';
+import { Badge } from '../../ui/Badge';
 import { Button } from '../../ui/Button';
 import { Select } from '../../ui/Select';
 
@@ -67,9 +68,9 @@ export function ClassCard({ cls, teachers, templates, readOnly, onTeacher, onTem
           </Button>
         )}
         {cls.planOverride && (
-          <span className="rounded-full bg-[#FBF1DC] px-2 py-0.5 text-[11px] font-bold uppercase tracking-wide text-[#7A5410]">
+          <Badge tone="warning" className="uppercase tracking-wide">
             {t('classes.ownPlan')}
-          </span>
+          </Badge>
         )}
       </div>
     </div>

@@ -4,6 +4,7 @@ import { orphanedEntries, usageCount, type PeriodTemplate } from '@sathiya/core'
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useSchool, useYear } from '../../app/SchoolProvider';
+import { Badge } from '../../ui/Badge';
 import { useReadOnly } from '../../ui/AdminLayout';
 import { Alert } from '../../ui/Alert';
 import { Button } from '../../ui/Button';
@@ -56,7 +57,7 @@ export function TemplatesPage() {
               type="button"
               aria-current={x.id === selected?.id ? 'true' : undefined}
               onClick={() => setSelectedId(x.id)}
-              className={cx('rounded-xl bg-white px-4 py-3.5 text-left', x.id === selected?.id ? 'border-2 border-brand' : 'border border-line-soft')}
+              className={cx('rounded-xl bg-white px-4 py-3.5 text-left focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand focus-visible:ring-offset-2', x.id === selected?.id ? 'border-2 border-brand' : 'border border-line-soft')}
             >
               <strong className="block text-[15px]">{x.name}</strong>
               <span className="text-[13px] text-ink-soft">
@@ -65,7 +66,7 @@ export function TemplatesPage() {
             </button>
           ))}
           {!readOnly && (
-            <button type="button" className="h-[42px] rounded-xl border-[1.5px] border-dashed border-line-strong bg-transparent font-semibold text-brand" onClick={() => setDialog({ kind: 'new' })}>
+            <button type="button" className="h-[42px] rounded-xl border-[1.5px] border-dashed border-line-strong bg-transparent font-semibold text-brand focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand focus-visible:ring-offset-2" onClick={() => setDialog({ kind: 'new' })}>
               {t('list.new')}
             </button>
           )}
@@ -158,7 +159,7 @@ function TemplateDetail({ template, readOnly, dialog, setDialog }: DetailProps) 
               onChange={(e) => setDraft({ ...draft, name: e.target.value })}
             />
           )}
-          {template.isDefault && <span className="ml-2 rounded-full bg-[#E4F2E7] px-2 py-0.5 text-xs font-bold text-[#1F6B34]">{t('editor.default')}</span>}
+          {template.isDefault && <Badge tone="success" className="ml-2">{t('editor.default')}</Badge>}
           <p className="mb-0 mt-1 text-[13px] text-ink-soft">{t('editor.usedBy', { count: classes })}</p>
         </div>
         {!readOnly && (

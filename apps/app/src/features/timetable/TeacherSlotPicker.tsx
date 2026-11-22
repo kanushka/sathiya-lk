@@ -20,6 +20,7 @@ import { useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useLang } from '../../app/LangProvider';
 import { useSchool } from '../../app/SchoolProvider';
+import { Badge } from '../../ui/Badge';
 import { useReadOnly } from '../../ui/AdminLayout';
 import { Button } from '../../ui/Button';
 import { Combobox } from '../../ui/Combobox';
@@ -151,13 +152,13 @@ function TeacherSlotPickerBody({ onClose, teacherId, day, period, entries, editi
           onClick={() => assign(o)}
           className={
             o.free
-              ? 'flex w-full items-center gap-2.5 rounded-[10px] border border-[#CFE6D4] bg-[#F5FBF6] px-3 py-2.5 text-left hover:bg-[#EAF6ED] focus-visible:outline focus-visible:outline-2 focus-visible:outline-brand disabled:opacity-60'
-              : 'flex w-full cursor-not-allowed items-center gap-2.5 rounded-[10px] bg-[#F6F7F9] px-3 py-2 text-left text-ink-muted'
+              ? 'flex w-full items-center gap-2.5 rounded-lg border border-success-line bg-success-soft/50 px-3 py-2.5 text-left hover:bg-success-soft focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand focus-visible:ring-offset-2 disabled:opacity-60'
+              : 'flex w-full cursor-not-allowed items-center gap-2.5 rounded-lg bg-surface-2 px-3 py-2 text-left text-ink-muted'
           }
         >
           <strong className="text-sm">{o.cls.name}</strong>
           <span className="min-w-0 flex-1 text-xs text-ink-muted">{notes.join(' · ')}</span>
-          {isCurrent(o) && <span className="rounded-full bg-brand/10 px-2 py-0.5 text-xs font-semibold text-brand">{t('picker.current')}</span>}
+          {isCurrent(o) && <Badge tone="brand">{t('picker.current')}</Badge>}
           {o.free && <span className="text-xs font-bold text-brand">{t('picker.assign')}</span>}
         </button>
       </li>
@@ -210,12 +211,12 @@ function TeacherSlotPickerBody({ onClose, teacherId, day, period, entries, editi
             <p className="mx-0.5 mt-3 text-[13px] text-ink-muted">{t('teacherPicker.noClasses', { subject: subjectName(subject) })}</p>
           ) : (
             <>
-              {atLimit && <p className="mx-0.5 mt-3 text-xs font-semibold text-[#7A5A12]">{limitWarning(t, load, teacher.maxPerDay)}</p>}
-              <p className={`${sectionLabel} text-[#1F6B34]`}>{t('teacherPicker.free', { count: free.length })}</p>
+              {atLimit && <p className="mx-0.5 mt-3 text-xs font-semibold text-warning">{limitWarning(t, load, teacher.maxPerDay)}</p>}
+              <p className={`${sectionLabel} text-success`}>{t('teacherPicker.free', { count: free.length })}</p>
               <ul className="m-0 flex list-none flex-col gap-1.5 p-0">{free.map(row)}</ul>
               {taken.length > 0 && (
                 <>
-                  <p className={`${sectionLabel} text-[#8A91A3]`}>{t('teacherPicker.taken', { count: taken.length })}</p>
+                  <p className={`${sectionLabel} text-ink-muted`}>{t('teacherPicker.taken', { count: taken.length })}</p>
                   <ul className="m-0 flex list-none flex-col gap-1 p-0">{taken.map(row)}</ul>
                 </>
               )}
