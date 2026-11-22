@@ -2,7 +2,7 @@
 // Copyright (C) 2026 Kanushka Gayan
 import { paths, syntheticEmail } from '@sathiya/core';
 import { describe, expect, it } from 'vitest';
-import { adminDb, adminWithSchool, signIn, teacherInput } from './helpers';
+import { adminDb, adminWithSchool, expectFnError, makeSuper, signIn, signUp, teacherInput } from './helpers';
 
 const lastLogin = async (sid: string, tid: string) => (await adminDb.doc(`${paths.teachers(sid)}/${tid}`).get()).get('lastLoginAt') as number | undefined;
 
@@ -48,5 +48,14 @@ describe('recordSignIn', () => {
     const { teacherId: other } = await admin.call('createTeacher', { schoolId: sid, teacher: teacherInput('SCC304') });
     await t.call('recordSignIn', {});
     expect(await lastLogin(sid, other)).toBeUndefined();
+  });
+
+  it('refuses a teacher of a disabled school without stamping', async () => {
+    const { sid, teacherId, t } = await teacher('SCC305');
+    const sup = await signUp();
+    await makeSuper(sup);
+    await sup.call('setSchoolStatus', { schoolId: sid, status: 'disabled' });
+    await expectFnError(t.call('recordSignIn', {}), 'failed-precondition', 'school-disabled');
+    expect(await lastLogin(sid, teacherId)).toBeUndefined();
   });
 });

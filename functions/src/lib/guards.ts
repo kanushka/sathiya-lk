@@ -10,6 +10,7 @@ export function fail(code: FunctionsErrorCode, apiCode: ApiErrorCode, message: s
 
 export const invalid = (message: string): never => fail('invalid-argument', 'invalid', message);
 export const notAllowed = (message = 'Not allowed'): never => fail('permission-denied', 'not-allowed', message);
+export const schoolDisabled = (): never => fail('failed-precondition', 'school-disabled', 'School is suspended');
 
 export interface Caller {
   uid: string;
@@ -43,7 +44,8 @@ export async function requireSchoolAdmin(req: CallableRequest, sid: unknown): Pr
   if (!isAdminOf(caller.claims, schoolId)) notAllowed('Not an admin of this school');
   const snap = await db.doc(paths.school(schoolId)).get();
   const school = snap.data() as Omit<School, 'id'> | undefined;
-  if (!school || school.status === 'disabled') notAllowed('School is not active');
+  if (!school) notAllowed('School is not active');
+  if (school!.status === 'disabled') schoolDisabled();
   return { ...caller, sid: schoolId, school: school! };
 }
 

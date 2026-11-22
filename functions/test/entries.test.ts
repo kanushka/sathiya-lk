@@ -166,7 +166,7 @@ describe('saveEntry', () => {
     await makeSuper(sup);
     await expectFnError(save(sup, sid, e), 'permission-denied', 'not-allowed');
     await sup.call('setSchoolStatus', { schoolId: sid, status: 'disabled' });
-    await expectFnError(save(admin, sid, e), 'permission-denied', 'not-allowed');
+    await expectFnError(save(admin, sid, e), 'failed-precondition', 'school-disabled');
   });
 });
 
