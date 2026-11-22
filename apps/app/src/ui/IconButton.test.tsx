@@ -27,6 +27,11 @@ describe('IconButton', () => {
     expect(screen.getByRole('button')).toHaveClass('w-10', 'h-10');
   });
 
+  it('supports the primary variant', () => {
+    render(<IconButton icon="check" label="Done" variant="primary" />);
+    expect(screen.getByRole('button', { name: 'Done' })).toHaveClass('bg-brand', 'text-on-brand');
+  });
+
   it('has no horizontal padding class', () => {
     render(<IconButton icon="close" label="x" />);
     expect(screen.getByRole('button').className).not.toMatch(/(^|\s)px-/);

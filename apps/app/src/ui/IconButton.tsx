@@ -9,7 +9,7 @@ import { Icon, type IconName } from './Icon';
 export interface IconButtonProps extends Omit<ButtonHTMLAttributes<HTMLButtonElement>, 'children'> {
   icon: IconName;
   label: string;
-  variant?: 'ghost' | 'secondary' | 'onBrand' | 'danger' | 'subtle';
+  variant?: 'primary' | 'ghost' | 'secondary' | 'onBrand' | 'danger' | 'subtle';
   size?: 'sm' | 'md';
   pressed?: boolean;
 }

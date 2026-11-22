@@ -14,8 +14,10 @@ export interface FieldProps {
   children: ReactElement<{ id?: string; 'aria-describedby'?: string; 'aria-invalid'?: boolean }>;
 }
 
-export const fieldBaseClass =
-  'w-full rounded-lg border border-line-strong bg-white px-3 text-sm text-ink placeholder:text-ink-muted hover:border-line-hover disabled:cursor-not-allowed disabled:border-line disabled:bg-surface-2 disabled:text-ink-muted disabled:hover:border-line aria-[invalid=true]:border-danger';
+const fieldChromeClass =
+  'rounded-lg border border-line-strong bg-white px-3 text-sm text-ink placeholder:text-ink-muted hover:border-line-hover disabled:cursor-not-allowed disabled:border-line disabled:bg-surface-2 disabled:text-ink-muted disabled:hover:border-line aria-[invalid=true]:border-danger';
+
+export const fieldBaseClass = `w-full ${fieldChromeClass}`;
 
 export const fieldFocusClass =
   'focus:border-brand focus:outline-none focus:ring-[3px] focus:ring-brand/30 aria-[invalid=true]:focus:ring-danger/20';
@@ -27,6 +29,8 @@ export const fieldFocusWithinClass =
   'focus-within:border-brand focus-within:ring-[3px] focus-within:ring-brand/30 data-[invalid=true]:focus-within:ring-danger/20';
 
 export const inputClass = `h-10 ${fieldBaseClass} ${fieldFocusClass}`;
+
+export const inputBareClass = `${fieldChromeClass} ${fieldFocusClass}`;
 
 export const textareaClass = `h-auto min-h-[88px] py-2.5 leading-relaxed resize-y ${fieldBaseClass} ${fieldFocusClass}`;
 

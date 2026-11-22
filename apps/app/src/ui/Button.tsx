@@ -36,6 +36,20 @@ const sizes: Record<ButtonSize, string> = {
   lg: 'h-11 px-5 text-[15px] rounded-lg',
 };
 
+export function buttonClass({
+  variant = 'secondary',
+  size = 'md',
+  square = false,
+}: { variant?: ButtonVariant; size?: ButtonSize; square?: boolean } = {}): string {
+  return cx(
+    'inline-flex items-center justify-center gap-2 font-semibold transition-colors',
+    'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand focus-visible:ring-offset-2',
+    'disabled:cursor-not-allowed disabled:opacity-[.45]',
+    variants[variant],
+    variant === 'link' ? 'text-sm' : (square ? squareSizes : sizes)[size],
+  );
+}
+
 export const Button = forwardRef<HTMLButtonElement, ButtonProps>(function Button(
   { variant = 'secondary', size = 'md', square = false, className, type = 'button', ...rest },
   ref,
@@ -44,14 +58,7 @@ export const Button = forwardRef<HTMLButtonElement, ButtonProps>(function Button
     <button
       ref={ref}
       type={type}
-      className={cx(
-        'inline-flex items-center justify-center gap-2 font-semibold transition-colors',
-        'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand focus-visible:ring-offset-2',
-        'disabled:cursor-not-allowed disabled:opacity-[.45]',
-        variants[variant],
-        variant === 'link' ? 'text-sm' : (square ? squareSizes : sizes)[size],
-        className,
-      )}
+      className={cx(buttonClass({ variant, size, square }), className)}
       {...rest}
     />
   );

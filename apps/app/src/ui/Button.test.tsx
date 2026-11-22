@@ -3,7 +3,7 @@
 
 import { render, screen } from '@testing-library/react';
 import { describe, expect, it } from 'vitest';
-import { Button } from './Button';
+import { Button, buttonClass } from './Button';
 
 describe('Button', () => {
   it('defaults to secondary md button type', () => {
@@ -39,5 +39,13 @@ describe('Button', () => {
   it('is not clickable when disabled', () => {
     render(<Button disabled>x</Button>);
     expect(screen.getByRole('button')).toBeDisabled();
+  });
+
+  it('buttonClass gives the same classes a Button uses', () => {
+    render(<Button variant="ghost" size="sm">x</Button>);
+    const cls = buttonClass({ variant: 'ghost', size: 'sm' });
+    expect(screen.getByRole('button').className).toBe(cls);
+    expect(cls).toContain('h-8');
+    expect(buttonClass({ size: 'sm', square: true })).toContain('w-8');
   });
 });

@@ -17,6 +17,7 @@ export interface SegmentedControlProps<V extends string = string> {
   'aria-label': string;
   size?: 'sm' | 'md';
   tone?: 'default' | 'onBrand';
+  disabled?: boolean;
   className?: string;
 }
 
@@ -27,6 +28,7 @@ export function SegmentedControl<V extends string = string>({
   'aria-label': ariaLabel,
   size = 'md',
   tone = 'default',
+  disabled,
   className,
 }: SegmentedControlProps<V>) {
   const values = options.map((o) => o.value);
@@ -50,12 +52,14 @@ export function SegmentedControl<V extends string = string>({
             type="button"
             role="radio"
             aria-checked={checked}
+            disabled={disabled}
             tabIndex={checked || (!hasSelection && i === 0) ? 0 : -1}
             onClick={() => onChange(o.value)}
             className={cx(
               'rounded-[7px] px-3.5 text-[13px] font-semibold transition-colors',
               size === 'sm' ? 'h-7' : 'h-8',
               'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-0',
+              'disabled:cursor-not-allowed disabled:opacity-[.45]',
               tone === 'onBrand' ? 'focus-visible:ring-white' : 'focus-visible:ring-brand',
               checked
                 ? 'bg-white text-ink shadow-[0_1px_3px_rgba(20,33,61,.18)]'

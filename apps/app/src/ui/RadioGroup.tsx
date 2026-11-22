@@ -14,7 +14,7 @@ export interface RadioGroupProps<V extends string = string> {
   name: string;
   label?: ReactNode;
   options: RadioOption<V>[];
-  value: V;
+  value: V | null;
   onChange: (value: V) => void;
   'aria-invalid'?: boolean;
   className?: string;

@@ -4,7 +4,7 @@
 import { render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { useState } from 'react';
-import { describe, expect, it } from 'vitest';
+import { describe, expect, it, vi } from 'vitest';
 import { SegmentedControl, type SegmentedControlProps } from './SegmentedControl';
 
 const options = [
@@ -63,5 +63,14 @@ describe('SegmentedControl', () => {
   it('uses a white focus ring on brand tone', () => {
     render(<Controlled tone="onBrand" />);
     expect(screen.getByRole('radio', { name: 'Day' })).toHaveClass('focus-visible:ring-white');
+  });
+
+  it('disables every radio when disabled', async () => {
+    const onChange = vi.fn();
+    render(<SegmentedControl aria-label="Range" options={options} value="day" onChange={onChange} disabled />);
+    const week = screen.getByRole('radio', { name: 'Week' });
+    expect(week).toBeDisabled();
+    await userEvent.click(week);
+    expect(onChange).not.toHaveBeenCalled();
   });
 });

@@ -71,4 +71,9 @@ describe('RadioGroup', () => {
     expect(visual('Beta')).toHaveClass('bg-surface-2');
     expect(visual('Beta')).not.toHaveClass('bg-white');
   });
+
+  it('leaves every radio unchecked when value is null', () => {
+    render(<RadioGroup name="letters" label="Letters" options={options} value={null} onChange={() => {}} />);
+    expect(screen.getAllByRole('radio').filter((r) => (r as HTMLInputElement).checked)).toHaveLength(0);
+  });
 });
