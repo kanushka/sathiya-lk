@@ -5,12 +5,11 @@ import { useTranslation } from 'react-i18next';
 import { Link } from 'react-router-dom';
 import { Button } from '../../ui/Button';
 import { Field, inputClass } from '../../ui/Field';
+import { passwordLongEnough } from '../../lib/password';
 import { actionErrorKey, type ActionErrorKey } from './actionErrors';
 import { ActionErrorView, ActionShell } from './ActionShell';
 import { confirmNewPassword, getResetEmail } from './api';
 import { useActionCode } from './useActionCode';
-
-const MIN_LENGTH = 6;
 
 export function ResetPasswordView({ code }: { code: string }) {
   const { t } = useTranslation('auth');
@@ -28,7 +27,7 @@ export function ResetPasswordView({ code }: { code: string }) {
     e.preventDefault();
     setFieldError(null);
     setConfirmError(null);
-    if (password.length < MIN_LENGTH) {
+    if (!passwordLongEnough(password)) {
       setFieldError(t('action.errors.weak'));
       return;
     }

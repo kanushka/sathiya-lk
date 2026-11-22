@@ -6,6 +6,7 @@ import { Checkbox } from '../../ui/Checkbox';
 import { webUrl } from '../../lib/urls';
 import { Field, inputClass } from '../../ui/Field';
 import { FormError } from '../../ui/FormError';
+import { passwordLongEnough } from '../../lib/password';
 import type { AccountDraft } from './model';
 
 export function legalUrl(page: 'terms' | 'privacy', lang: string): string {
@@ -14,7 +15,7 @@ export function legalUrl(page: 'terms' | 'privacy', lang: string): string {
 
 export function accountOk(a: AccountDraft, signedIn: boolean): boolean {
   if (!a.terms || a.adminName.trim() === '') return false;
-  return signedIn || (/^\S+@\S+\.\S+$/.test(a.email.trim()) && a.password.length >= 6);
+  return signedIn || (/^\S+@\S+\.\S+$/.test(a.email.trim()) && passwordLongEnough(a.password));
 }
 
 export interface StepAccountProps {

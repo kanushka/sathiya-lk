@@ -4,7 +4,7 @@
 import { screen } from '@testing-library/react';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { renderWithI18n, testI18n } from '../../test/render';
-import { StepAccount, legalUrl } from './StepAccount';
+import { StepAccount, accountOk, legalUrl } from './StepAccount';
 
 const draft = { adminName: '', email: '', password: '', terms: false };
 
@@ -42,5 +42,17 @@ describe('StepAccount links', () => {
     await testI18n.changeLanguage('si');
     renderStep();
     expect(screen.getAllByRole('link').map((a) => a.getAttribute('href'))).toContain('https://sathiya.kanushka.com/si/terms/');
+  });
+});
+
+describe('accountOk', () => {
+  const filled = { adminName: 'Principal', email: 'p@example.com', password: '', terms: true };
+
+  it('rejects a password shorter than 8 characters', () => {
+    expect(accountOk({ ...filled, password: 'abcdefg' }, false)).toBe(false);
+  });
+
+  it('accepts an 8-character password', () => {
+    expect(accountOk({ ...filled, password: 'abcdefgh' }, false)).toBe(true);
   });
 });

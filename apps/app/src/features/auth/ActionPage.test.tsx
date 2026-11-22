@@ -74,24 +74,24 @@ describe('resetPassword', () => {
   it('shows the account email and resets the password', async () => {
     const user = userEvent.setup();
     at('mode=resetPassword&oobCode=xyz');
-    await fill(user, 'secret1', 'secret1');
+    await fill(user, 'secret12', 'secret12');
     expect(await screen.findByRole('heading', { name: 'Password changed' })).toBeInTheDocument();
-    expect(api.confirmNewPassword).toHaveBeenCalledWith('xyz', 'secret1');
+    expect(api.confirmNewPassword).toHaveBeenCalledWith('xyz', 'secret12');
     expect(screen.getByRole('link', { name: 'Go to login' })).toHaveAttribute('href', '/login');
   });
 
   it('rejects a short password', async () => {
     const user = userEvent.setup();
     at('mode=resetPassword&oobCode=xyz');
-    await fill(user, 'abc', 'abc');
-    expect(await screen.findByText('Use at least 6 characters')).toBeInTheDocument();
+    await fill(user, 'abcdefg', 'abcdefg');
+    expect(await screen.findByText('Use at least 8 characters')).toBeInTheDocument();
     expect(api.confirmNewPassword).not.toHaveBeenCalled();
   });
 
   it('rejects a mismatched confirmation', async () => {
     const user = userEvent.setup();
     at('mode=resetPassword&oobCode=xyz');
-    await fill(user, 'secret1', 'secret2');
+    await fill(user, 'secret12', 'secret22');
     expect(await screen.findByText("Passwords don't match")).toBeInTheDocument();
     expect(api.confirmNewPassword).not.toHaveBeenCalled();
   });
@@ -107,7 +107,7 @@ describe('resetPassword', () => {
     const user = userEvent.setup();
     vi.mocked(api.confirmNewPassword).mockRejectedValue(authError('auth/invalid-action-code'));
     at('mode=resetPassword&oobCode=xyz');
-    await fill(user, 'secret1', 'secret1');
+    await fill(user, 'secret12', 'secret12');
     expect(await screen.findByRole('alert')).toHaveTextContent('already been used or is not valid');
   });
 
@@ -115,8 +115,16 @@ describe('resetPassword', () => {
     const user = userEvent.setup();
     vi.mocked(api.confirmNewPassword).mockRejectedValue(authError('auth/weak-password'));
     at('mode=resetPassword&oobCode=xyz');
-    await fill(user, 'secret1', 'secret1');
-    await waitFor(() => expect(screen.getByText('Use at least 6 characters')).toBeInTheDocument());
+    await fill(user, 'secret12', 'secret12');
+    await waitFor(() => expect(screen.getByText('Use at least 8 characters')).toBeInTheDocument());
+  });
+
+  it('surfaces a password-policy rejection from Firebase', async () => {
+    const user = userEvent.setup();
+    vi.mocked(api.confirmNewPassword).mockRejectedValue(authError('auth/password-does-not-meet-requirements'));
+    at('mode=resetPassword&oobCode=xyz');
+    await fill(user, 'secret12', 'secret12');
+    await waitFor(() => expect(screen.getByText('Use at least 8 characters')).toBeInTheDocument());
   });
 });
 

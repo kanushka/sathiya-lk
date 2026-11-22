@@ -70,14 +70,14 @@
     "name": "Your name",
     "email": "Email",
     "password": "Password",
-    "passwordHint": "At least 6 characters",
+    "passwordHint": "At least 8 characters",
     "terms": "I agree to the <terms>Terms & Conditions</terms> and <privacy>Privacy Policy</privacy>, and I'm authorised to register this school.",
     "submit": "Create school",
     "submitting": "Creating…"
   },
   "errors": {
     "emailInUse": "That email already has an account. Log in instead.",
-    "weakPassword": "Password must be at least 6 characters",
+    "weakPassword": "Password must be at least 8 characters",
     "invalidEmail": "Enter a valid email address",
     "required": "Required",
     "generic": "Could not register the school. Please try again.",

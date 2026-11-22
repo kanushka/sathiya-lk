@@ -108,7 +108,7 @@ Not fixed. Full detail in the final review (M6–M12) and the phase notes.
 
 | # | What | Suggested |
 |---|---|---|
-| 1 | Teachers can change their generated 8-character password to any 6 characters, which reopens the guessing risk for that account. | Require 8 or more in `ChangePasswordModal`, and set the Auth password policy in the console. |
+| 1 | Teachers can change their generated 8-character password to any 6 characters, which reopens the guessing risk for that account. | Fixed: the app requires 8 or more; the Auth password policy console step is in `docs/deploy.md`. |
 | 2 | The founding admin can be linked to a teacher record only by inviting their own email, then signing out and in. Nothing in the UI says so. | Add a "Link my account to a teacher" action on Members. |
 | 3 | A disabled school's admin UI shows no banner; writes just fail. | Add a banner and read-only mode. |
 | 4 | Rules allow client-side grade delete with no usage check. `deleteSetupItem` is not transactional with `saveEntry`. | Drop grade `delete` from the rules. |
