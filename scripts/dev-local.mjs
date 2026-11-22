@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
 // Copyright (C) 2026 Kanushka Gayan
 import { spawn } from 'node:child_process';
-import { existsSync, rmSync, writeFileSync } from 'node:fs';
+import { existsSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
 
 const APP_PORT = 5173;
 const WEB_PORT = 4321;
@@ -11,9 +11,11 @@ const children = [];
 let stopping = false;
 
 // The emulator reads functions/.env.local over functions/.env, so mail links point at the local app and website.
+// A file starting with the marker is ours, possibly left behind by a crash, so it is safe to overwrite.
 const ENV_LOCAL = new URL('../functions/.env.local', import.meta.url);
-const wroteEnvLocal = !existsSync(ENV_LOCAL);
-if (wroteEnvLocal) writeFileSync(ENV_LOCAL, `APP_URL=${APP_URL}\nWEB_URL=${WEB_URL}\n`);
+const MARKER = '# dev-local';
+const wroteEnvLocal = !existsSync(ENV_LOCAL) || readFileSync(ENV_LOCAL, 'utf8').startsWith(MARKER);
+if (wroteEnvLocal) writeFileSync(ENV_LOCAL, `${MARKER}\nAPP_URL=${APP_URL}\nWEB_URL=${WEB_URL}\n`);
 else console.warn('functions/.env.local already exists; mail links use its values');
 
 function run(name, args, { env = {}, onLine } = {}) {
