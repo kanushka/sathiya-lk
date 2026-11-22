@@ -83,7 +83,7 @@ export function LogoUpload({ value, currentUrl, onChange, onPreview }: LogoUploa
         </div>
       </div>
       {error && (
-        <FormError>{error}</FormError>
+        <FormError size="field">{error}</FormError>
       )}
     </div>
   );

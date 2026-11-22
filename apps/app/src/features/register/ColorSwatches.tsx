@@ -76,7 +76,7 @@ export function ColorSwatches({ label, swatches, value, onChange, hint }: ColorS
           className={cx(inputBareClass, 'h-9 w-32 font-mono')}
         />
         {customInvalid && (
-          <FormError>{t('brand.customError')}</FormError>
+          <FormError size="field">{t('brand.customError')}</FormError>
         )}
       </div>
       {hint && <p className="m-0 text-xs text-ink-muted">{hint}</p>}

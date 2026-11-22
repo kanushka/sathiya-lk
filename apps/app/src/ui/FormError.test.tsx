@@ -11,6 +11,14 @@ describe('FormError', () => {
     expect(screen.getByRole('alert')).toHaveTextContent('Bad');
   });
 
+  it('uses text-sm by default and text-xs for field size', () => {
+    const { rerender } = render(<FormError>Bad</FormError>);
+    expect(screen.getByRole('alert')).toHaveClass('text-sm');
+    rerender(<FormError size="field">Bad</FormError>);
+    expect(screen.getByRole('alert')).toHaveClass('text-xs');
+    expect(screen.getByRole('alert')).not.toHaveClass('text-sm');
+  });
+
   it('renders nothing when empty', () => {
     const { container, rerender } = render(<FormError>{null}</FormError>);
     expect(container).toBeEmptyDOMElement();

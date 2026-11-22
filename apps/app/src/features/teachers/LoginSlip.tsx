@@ -91,7 +91,7 @@ export function LoginSlip({ slip, hasStaffId, onReset, resetting, resetError, fo
         </div>
       )}
       {resetError && (
-        <FormError>{t('slip.resetFailed')}</FormError>
+        <FormError size="field">{t('slip.resetFailed')}</FormError>
       )}
     </section>
   );

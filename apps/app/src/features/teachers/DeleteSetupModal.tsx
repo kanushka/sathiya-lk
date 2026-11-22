@@ -41,7 +41,7 @@ export function DeleteSetupModal({ schoolId, kind, id, name, onClose, onDeleted 
         <>
           <Button onClick={onClose}>{blocked ? t('deleteGuard.close') : t('deleteGuard.cancel')}</Button>
           {!blocked && (
-            <Button variant="danger" onClick={confirm} disabled={del.pending}>
+            <Button variant="dangerSolid" onClick={confirm} disabled={del.pending}>
               {t('deleteGuard.confirm')}
             </Button>
           )}

@@ -229,7 +229,7 @@ export function TeacherModal({ teacher, onClose }: TeacherModalProps) {
                   </ToggleChip>
                 ))}
               </div>
-              <FormError className="mt-1">{show('grades')}</FormError>
+              <FormError size="field" className="mt-1">{show('grades')}</FormError>
             </div>
             <div className="grid grid-cols-3 gap-3">
               <Field label={t('modal.maxPerDay')} error={show('maxPerDay')}>
