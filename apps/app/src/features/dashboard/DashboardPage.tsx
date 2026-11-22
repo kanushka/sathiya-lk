@@ -9,7 +9,7 @@ import { useReadOnly } from '../../ui/AdminLayout';
 import { Button } from '../../ui/Button';
 import { cx } from '../../ui/cx';
 import { EmptyState } from '../../ui/EmptyState';
-import { Select } from '../../ui/Select';
+import { NativeSelect } from '../../ui/NativeSelect';
 import { colomboNow, greetingKey } from '../teacher/colomboNow';
 import * as api from './api';
 import { attentionItems, classChips, dashboardStats, type ChipStatus } from './model';
@@ -72,13 +72,13 @@ export function DashboardPage() {
         </div>
         <div className="flex flex-wrap items-center gap-2.5">
           {years.length > 0 && (
-            <Select aria-label={t('year.select')} value={yearId} onChange={(e) => setYearId(e.target.value)} className="w-[200px]">
+            <NativeSelect aria-label={t('year.select')} value={yearId} onChange={(e) => setYearId(e.target.value)} className="w-[200px]">
               {years.map((y) => (
                 <option key={y.id} value={y.id}>
                   {y.label} · {t(y.status === 'published' ? 'year.published' : 'year.draft')}
                 </option>
               ))}
-            </Select>
+            </NativeSelect>
           )}
           {newYear}
           {firstClass && (

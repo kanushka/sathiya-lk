@@ -4,7 +4,7 @@ import { pickName, type Lang, type PlanItem, type Subject } from '@sathiya/core'
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Button } from '../../ui/Button';
-import { Select } from '../../ui/Select';
+import { NativeSelect } from '../../ui/NativeSelect';
 import { GroupModal } from './GroupModal';
 import { newGroupKey, planFit, planTotal, type PlanCapacity, type PlanFit } from './planModel';
 
@@ -121,7 +121,7 @@ export function PlanEditor({ plan, capacity, subjects, readOnly, onChange }: Pla
                         </span>
                       ))}
                       {!readOnly && subjects.some((s) => !p.optionSubjectIds.includes(s.id)) && (
-                        <Select
+                        <NativeSelect
                           className="w-40"
                           aria-label={t('plan.addOption', { group: name })}
                           value=""
@@ -135,7 +135,7 @@ export function PlanEditor({ plan, capacity, subjects, readOnly, onChange }: Pla
                                 {pickName(s, lang)}
                               </option>
                             ))}
-                        </Select>
+                        </NativeSelect>
                       )}
                     </div>
                   </>
@@ -166,7 +166,7 @@ export function PlanEditor({ plan, capacity, subjects, readOnly, onChange }: Pla
         {!readOnly && (
           <div className="flex flex-wrap items-center gap-4 bg-[#FAFAFB] px-3.5 py-3">
             {unused.length > 0 && (
-              <Select
+              <NativeSelect
                 className="w-56"
                 aria-label={t('plan.addSubject')}
                 value=""
@@ -178,7 +178,7 @@ export function PlanEditor({ plan, capacity, subjects, readOnly, onChange }: Pla
                     {pickName(s, lang)}
                   </option>
                 ))}
-              </Select>
+              </NativeSelect>
             )}
             <button type="button" className={linkBtn} onClick={() => setDialog({ index: null })}>
               {t('plan.addGroup')}

@@ -8,7 +8,7 @@ import { Button } from '../../ui/Button';
 import { cx } from '../../ui/cx';
 import { Field, inputClass } from '../../ui/Field';
 import { Modal } from '../../ui/Modal';
-import { Select } from '../../ui/Select';
+import { NativeSelect } from '../../ui/NativeSelect';
 import { useToast } from '../../ui/Toast';
 import { useSchool } from '../../app/SchoolProvider';
 import * as api from './api';
@@ -183,14 +183,14 @@ export function TeacherModal({ teacher, onClose }: TeacherModalProps) {
                 />
               </Field>
               <Field label={t('modal.title')}>
-                <Select value={form.title} onChange={(e) => set('title', e.target.value as Form['title'])}>
+                <NativeSelect value={form.title} onChange={(e) => set('title', e.target.value as Form['title'])}>
                   <option value="">{t('modal.noTitle')}</option>
                   {TEACHER_TITLES.map((x) => (
                     <option key={x} value={x}>
                       {TEACHER_TITLE_LABELS[lang === 'si' ? 'si' : 'en'][x]}
                     </option>
                   ))}
-                </Select>
+                </NativeSelect>
               </Field>
               <Field label={t('modal.name')} error={show('name')}>
                 <input className={inputClass} value={form.name} onChange={(e) => set('name', e.target.value)} />

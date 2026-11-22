@@ -6,7 +6,7 @@ import { useTranslation } from 'react-i18next';
 import { Button } from '../../ui/Button';
 import { Field, inputClass } from '../../ui/Field';
 import { Modal } from '../../ui/Modal';
-import { Select } from '../../ui/Select';
+import { NativeSelect } from '../../ui/NativeSelect';
 
 type Group = Extract<PlanItem, { kind: 'group' }>;
 
@@ -99,7 +99,7 @@ export function GroupModal({ initial, subjects, newKey, onSave, onClose }: Group
             })}
           </div>
           {available.length > 0 && (
-            <Select
+            <NativeSelect
               className="mt-2 w-60"
               aria-label={t('group.addOption')}
               value=""
@@ -111,7 +111,7 @@ export function GroupModal({ initial, subjects, newKey, onSave, onClose }: Group
                   {pickName(s, lang)}
                 </option>
               ))}
-            </Select>
+            </NativeSelect>
           )}
           {submitted && optionsError && (
             <p role="alert" className="mt-1 text-xs font-medium text-danger">

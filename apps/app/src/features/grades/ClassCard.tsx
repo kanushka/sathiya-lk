@@ -4,7 +4,7 @@ import { teacherDisplayName, weekCapacity, type PeriodTemplate, type SchoolClass
 import { useTranslation } from 'react-i18next';
 import { useLang } from '../../app/LangProvider';
 import { Button } from '../../ui/Button';
-import { Select } from '../../ui/Select';
+import { NativeSelect } from '../../ui/NativeSelect';
 
 export interface ClassCardProps {
   cls: SchoolClass;
@@ -33,7 +33,7 @@ export function ClassCard({ cls, teachers, templates, readOnly, onTeacher, onTem
       </div>
       <label className={label}>
         {t('classes.teacher')}
-        <Select
+        <NativeSelect
           className="mt-1 font-normal"
           disabled={readOnly}
           value={cls.classTeacherId ?? ''}
@@ -45,17 +45,17 @@ export function ClassCard({ cls, teachers, templates, readOnly, onTeacher, onTem
               {teacherDisplayName(x, lang)}
             </option>
           ))}
-        </Select>
+        </NativeSelect>
       </label>
       <label className={label}>
         {t('classes.template')}
-        <Select className="mt-1 font-normal" disabled={readOnly} value={cls.templateId} onChange={(e) => onTemplate(e.target.value)}>
+        <NativeSelect className="mt-1 font-normal" disabled={readOnly} value={cls.templateId} onChange={(e) => onTemplate(e.target.value)}>
           {templates.map((x) => (
             <option key={x.id} value={x.id}>
               {t('classes.templateOption', { name: x.name, count: weekCapacity(x) })}
             </option>
           ))}
-        </Select>
+        </NativeSelect>
       </label>
       <div className="mt-3 flex items-center gap-2">
         {!readOnly && (

@@ -8,7 +8,7 @@ import { useLang } from '../../app/LangProvider';
 import { useCollection, type CollectionState } from '../../lib/firestore';
 import { EmptyState } from '../../ui/EmptyState';
 import { LoadingState } from '../../ui/LoadingState';
-import { Select } from '../../ui/Select';
+import { NativeSelect } from '../../ui/NativeSelect';
 import { Table, TBody, Td, Th, THead, Tr } from '../../ui/Table';
 import { StatusButton, StatusPill } from './StatusControl';
 import { useUsageCounts, type CountState } from './source';
@@ -75,19 +75,19 @@ export function SchoolsPage({ schools: injected, setStatus = defaultSetStatus }:
           onChange={(e) => setSearch(e.target.value)}
           className="h-10 min-w-[280px] flex-1 rounded-lg border border-line-strong bg-white px-3 text-sm focus:border-teal focus:outline-none focus:ring-2 focus:ring-teal/30"
         />
-        <Select aria-label={t('schools.statusLabel')} value={status} onChange={(e) => setStatusFilter(e.target.value as typeof status)}>
+        <NativeSelect aria-label={t('schools.statusLabel')} value={status} onChange={(e) => setStatusFilter(e.target.value as typeof status)}>
           <option value="all">{t('schools.allStatuses')}</option>
           <option value="active">{t('status.active')}</option>
           <option value="disabled">{t('status.disabled')}</option>
-        </Select>
-        <Select aria-label={t('schools.districtLabel')} value={district} onChange={(e) => setDistrict(e.target.value)}>
+        </NativeSelect>
+        <NativeSelect aria-label={t('schools.districtLabel')} value={district} onChange={(e) => setDistrict(e.target.value)}>
           <option value="all">{t('schools.allDistricts')}</option>
           {districts.map((d) => (
             <option key={d} value={d}>
               {d}
             </option>
           ))}
-        </Select>
+        </NativeSelect>
       </div>
       {state.loading ? (
         <LoadingState />

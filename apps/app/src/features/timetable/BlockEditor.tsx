@@ -23,7 +23,7 @@ import { useReadOnly } from '../../ui/AdminLayout';
 import { Button } from '../../ui/Button';
 import { cx } from '../../ui/cx';
 import { Modal } from '../../ui/Modal';
-import { Select } from '../../ui/Select';
+import { NativeSelect } from '../../ui/NativeSelect';
 import { limitWarning, teacherReason, teachesAtAll } from './labels';
 
 export interface BlockEditorProps {
@@ -221,7 +221,7 @@ function BlockEditorBody({ onClose, baseClassId, day, period, mode, entry, entri
               <label htmlFor={selectId} className="mb-1.5 block text-sm font-bold text-ink">
                 {subjectName(id)}
               </label>
-              <Select id={selectId} disabled={readOnly} value={teachers[id] ?? ''} onChange={(e) => setTeachers((m) => ({ ...m, [id]: e.target.value || null }))}>
+              <NativeSelect id={selectId} disabled={readOnly} value={teachers[id] ?? ''} onChange={(e) => setTeachers((m) => ({ ...m, [id]: e.target.value || null }))}>
                 <option value="">{t('block.teacherPlaceholder')}</option>
                 {s && s.available.length > 0 && (
                   <optgroup label={t('block.available')}>
@@ -241,7 +241,7 @@ function BlockEditorBody({ onClose, baseClassId, day, period, mode, entry, entri
                     ))}
                   </optgroup>
                 )}
-              </Select>
+              </NativeSelect>
               <div className="mt-1.5 flex flex-col gap-1">{note}</div>
             </div>
           );

@@ -5,7 +5,7 @@ import { useTranslation } from 'react-i18next';
 import { Button } from '../../ui/Button';
 import { Field } from '../../ui/Field';
 import { Modal } from '../../ui/Modal';
-import { Select } from '../../ui/Select';
+import { NativeSelect } from '../../ui/NativeSelect';
 
 export interface AddGradeModalProps {
   choices: number[];
@@ -43,13 +43,13 @@ export function AddGradeModal({ choices, onAdd, onClose }: AddGradeModalProps) {
     >
       <form id="grade-form" onSubmit={submit}>
         <Field label={t('addGrade.number')}>
-          <Select value={value} onChange={(e) => setValue(Number(e.target.value))}>
+          <NativeSelect value={value} onChange={(e) => setValue(Number(e.target.value))}>
             {choices.map((n) => (
               <option key={n} value={n}>
                 {t('rail.grade', { n })}
               </option>
             ))}
-          </Select>
+          </NativeSelect>
         </Field>
       </form>
     </Modal>

@@ -27,7 +27,7 @@ import { EmptyState } from '../../ui/EmptyState';
 import { Icon } from '../../ui/Icon';
 import { LoadingState } from '../../ui/LoadingState';
 import { Modal } from '../../ui/Modal';
-import { Select } from '../../ui/Select';
+import { NativeSelect } from '../../ui/NativeSelect';
 import { cx } from '../../ui/cx';
 import { AssignPicker } from './AssignPicker';
 import { BlockEditor } from './BlockEditor';
@@ -282,7 +282,7 @@ function ClassView({ cls, classes }: { cls: SchoolClass; classes: SchoolClass[] 
           <button type="button" aria-label={t('classView.prev')} className={navBtn} disabled={index <= 0} onClick={() => go(classes[index - 1])}>
             <Icon name="chevronLeft" size={16} />
           </button>
-          <Select
+          <NativeSelect
             aria-label={t('classView.classLabel')}
             value={cls.id}
             onChange={(e) => go(classes.find((c) => c.id === e.target.value))}
@@ -293,7 +293,7 @@ function ClassView({ cls, classes }: { cls: SchoolClass; classes: SchoolClass[] 
                 {t('classView.classOption', { grade: gradeNumber(c), name: c.name })}
               </option>
             ))}
-          </Select>
+          </NativeSelect>
           <button type="button" aria-label={t('classView.next')} className={navBtn} disabled={index >= classes.length - 1} onClick={() => go(classes[index + 1])}>
             <Icon name="chevronRight" size={16} />
           </button>

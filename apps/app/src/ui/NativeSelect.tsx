@@ -5,7 +5,7 @@ import { forwardRef, type SelectHTMLAttributes } from 'react';
 import { cx } from './cx';
 import { Icon } from './Icon';
 
-export const Select = forwardRef<HTMLSelectElement, SelectHTMLAttributes<HTMLSelectElement>>(function Select(
+export const NativeSelect = forwardRef<HTMLSelectElement, SelectHTMLAttributes<HTMLSelectElement>>(function NativeSelect(
   { className, children, ...rest },
   ref,
 ) {
