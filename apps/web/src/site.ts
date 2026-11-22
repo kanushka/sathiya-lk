@@ -3,7 +3,8 @@
 
 const fromEnv = (name: string, fallback: string): string => (process.env[name]?.trim() || fallback).replace(/\/+$/, '');
 
-export const SITE_URL = fromEnv('PUBLIC_SITE_URL', 'https://sathiya.kanushka.com');
+export const PRODUCTION_SITE_URL = 'https://sathiya.kanushka.com';
+export const SITE_URL = fromEnv('PUBLIC_SITE_URL', PRODUCTION_SITE_URL);
 export const APP_URL = fromEnv('PUBLIC_APP_URL', 'https://app.sathiya.kanushka.com');
 export const CONTACT_EMAIL = 'sathiya@kanushka.com';
 

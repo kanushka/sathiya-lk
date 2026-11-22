@@ -6,6 +6,7 @@ import { join, relative } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { describe, expect, it } from 'vitest';
 import { APP_URL, CONTACT_EMAIL, SITE_URL } from '../src/site';
+import { robotsTxt, sitemapXml } from '../src/lib/seo';
 
 const dist = fileURLToPath(new URL('../dist/', import.meta.url));
 const APP = APP_URL;
@@ -165,5 +166,60 @@ describe('built site', () => {
     const js = walk(dist).filter((f) => f.endsWith('.js'));
     const total = js.reduce((n, f) => n + statSync(f).size, 0);
     expect(total, js.map((f) => relative(dist, f)).join(', ')).toBeLessThan(150 * 1024);
+  });
+});
+
+describe('robots and sitemap', () => {
+  const site = SITE_URL;
+  const publicPaths = walk(dist)
+    .map((f) => relative(dist, f).split('\\').join('/'))
+    .filter((f) => f.endsWith('.html') && f !== '404.html')
+    .map((p) => '/' + p.replace(/index\.html$/, ''));
+
+  it('emits robots.txt that allows all and points at the sitemap', () => {
+    const robots = read('robots.txt');
+    expect(robots).toMatch(/^User-agent: \*$/m);
+    expect(robots).toMatch(/^Allow: \/$/m);
+    expect(robots).not.toMatch(/^Disallow: \/\S*/m);
+    expect(robots).toContain(`Sitemap: ${site}/sitemap.xml`);
+  });
+
+  it('emits a sitemap file referenced by robots.txt', () => {
+    const files = readdirSync(dist).filter((f) => /^sitemap.*\.xml$/.test(f));
+    expect(files).toContain('sitemap.xml');
+  });
+
+  it('lists every public page in both languages and nothing else', () => {
+    const xml = read('sitemap.xml');
+    const locs = [...xml.matchAll(/<loc>([^<]+)<\/loc>/g)].map((m) => m[1]!);
+    expect(locs.sort()).toEqual(publicPaths.map((p) => `${site}${p}`).sort());
+    expect(locs.filter((l) => /\/404(\.html|\/)?$/.test(l))).toEqual([]);
+  });
+
+  it.each(publicPaths)('sitemap entry %s has en, si and x-default alternates', (path) => {
+    const xml = read('sitemap.xml');
+    const entry = xml.match(new RegExp(`<url>\\s*<loc>${(site + path).replace(/[.?]/g, '\\$&')}</loc>[\\s\\S]*?</url>`))?.[0] ?? '';
+    const en = path.replace(/^\/si\//, '/');
+    const si = en === '/' ? '/si/' : `/si${en}`;
+    expect(entry).toContain(`hreflang="en" href="${site}${en}"`);
+    expect(entry).toContain(`hreflang="si" href="${site}${si}"`);
+    expect(entry).toContain(`hreflang="x-default" href="${site}${en}"`);
+  });
+});
+
+describe('sitemap and robots follow the site URL', () => {
+  it('keeps non-production sites out of search engines', () => {
+    expect(robotsTxt('https://staging.example.com')).toBe('User-agent: *\nDisallow: /\n');
+  });
+
+  it('escapes the site URL in the sitemap', () => {
+    expect(sitemapXml('https://example.com/?a=1&b=2')).not.toMatch(/&(?!amp;)/);
+  });
+
+  it('uses the given origin', () => {
+    const other = 'https://staging.example.com';
+    const xml = sitemapXml(`${other}/`);
+    expect(xml).toContain(`<loc>${other}/si/terms/</loc>`);
+    expect(xml).not.toContain(SITE_URL);
   });
 });
