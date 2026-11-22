@@ -96,7 +96,7 @@ export function ResetPasswordView({ code }: { code: string }) {
             onChange={(e) => setConfirm(e.target.value)}
           />
         </Field>
-        <Button type="submit" size="lg" className="w-full !bg-navy !text-white" disabled={busy}>
+        <Button type="submit" size="lg" className="w-full !bg-navy !text-white" loading={busy}>
           {t('action.reset.submit')}
         </Button>
       </form>

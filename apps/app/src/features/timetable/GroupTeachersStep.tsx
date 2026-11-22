@@ -45,7 +45,7 @@ export interface GroupTeachersStepProps {
   onBack?(): void;
   back?: { text: string; label: string };
   onConfirm(spec: PinSpec, placeNow: boolean): void | Promise<unknown>;
-  children?(parts: { body: ReactNode; footer: ReactNode }): ReactNode;
+  children?(parts: { body: ReactNode; footer: ReactNode; busy: boolean }): ReactNode;
 }
 
 interface Candidate {
@@ -444,13 +444,13 @@ export function GroupTeachersStep(props: GroupTeachersStepProps) {
   const footer = (
     <>
       <span className={cx('flex-1 text-xs font-semibold', tone === 'ok' ? 'text-success' : tone === 'need' ? 'text-warning' : 'text-danger')}>{note}</span>
-      <Button variant="primary" disabled={disabled} onClick={() => void confirm()}>
+      <Button variant="primary" loading={pending} disabled={!spec || dupIds.size > 0} onClick={() => void confirm()}>
         {label}
       </Button>
     </>
   );
 
-  if (children) return <>{children({ body, footer })}</>;
+  if (children) return <>{children({ body, footer, busy: pending })}</>;
   return (
     <>
       {body}

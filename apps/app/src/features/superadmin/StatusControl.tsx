@@ -46,7 +46,8 @@ export function StatusButton({ school, setStatus }: { school: School; setStatus:
       <Button
         size="sm"
         variant={disabling ? 'danger' : 'secondary'}
-        disabled={busy}
+        loading={busy && !confirming}
+        disabled={busy && confirming}
         onClick={() => (disabling ? setConfirming(true) : void apply())}
       >
         {t(disabling ? 'schools.disable' : 'schools.enable')}
@@ -56,10 +57,11 @@ export function StatusButton({ school, setStatus }: { school: School; setStatus:
         title={t('confirmDisable.title', { name })}
         width={460}
         onClose={() => setConfirming(false)}
+        busy={busy}
         footer={
           <>
-            <Button onClick={() => setConfirming(false)}>{t('buttons.cancel', { ns: 'common' })}</Button>
-            <Button variant="dangerSolid" disabled={busy} onClick={() => void apply()}>
+            <Button onClick={() => setConfirming(false)} disabled={busy}>{t('buttons.cancel', { ns: 'common' })}</Button>
+            <Button variant="dangerSolid" loading={busy} onClick={() => void apply()}>
               {t('confirmDisable.confirm')}
             </Button>
           </>

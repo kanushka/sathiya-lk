@@ -149,8 +149,8 @@ export function ProfilePage() {
         <div className="flex flex-[1_1_260px] flex-col gap-4">
           <BrandPreview name={draft.nameEn} nameSi={draft.nameSi} primary={draft.primary} second={draft.second} logoUrl={logoUrl} />
           {!readOnly && (
-            <Button variant="primary" size="lg" type="submit" disabled={!canSave}>
-              {saving ? t('page.saving') : t('page.save')}
+            <Button variant="primary" size="lg" type="submit" loading={saving} loadingLabel={t('page.saving')} disabled={!canSave}>
+              {t('page.save')}
             </Button>
           )}
         </div>

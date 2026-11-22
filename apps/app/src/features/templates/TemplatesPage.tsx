@@ -119,20 +119,25 @@ function TemplateDetail({ template, readOnly, dialog, setDialog }: DetailProps) 
   const toast = useToast();
   const [draft, setDraft] = useState<TemplateDraft>(() => toDraft(template));
   const [errors, setErrors] = useState<ValidationError[]>([]);
+  const [pending, setPending] = useState<'save' | 'default' | null>(null);
   const sid = school.school.id;
   const classes = usageCount('template', template.id, school, entries);
 
-  async function guard(fn: () => Promise<void>, ok?: string) {
+  async function guard(kind: 'save' | 'default', fn: () => Promise<void>, ok?: string) {
+    setPending(kind);
     try {
       await fn();
       if (ok) toast.show(ok, 'success');
     } catch {
       toast.show(t('page.saveFailed'), 'error');
+    } finally {
+      setPending(null);
     }
   }
 
   const persist = () =>
     guard(
+      'save',
       () => api.saveTemplate(sid, template.id, { name: draft.name, mode: draft.mode, rows: draftToTemplate(template, draft).rows, ...(draft.mode === 'perDay' && draft.days ? { days: draft.days } : {}) }),
       t('page.saved'),
     );
@@ -171,10 +176,14 @@ function TemplateDetail({ template, readOnly, dialog, setDialog }: DetailProps) 
           <div className="flex gap-2">
             {!template.isDefault && (
               <>
-                <Button onClick={() => void guard(() => api.setDefaultTemplate(sid, template.id, school.templates.filter((x) => x.isDefault).map((x) => x.id)))}>
+                <Button
+                  loading={pending === 'default'}
+                  disabled={pending === 'save'}
+                  onClick={() => void guard('default', () => api.setDefaultTemplate(sid, template.id, school.templates.filter((x) => x.isDefault).map((x) => x.id)))}
+                >
                   {t('editor.setDefault')}
                 </Button>
-                <Button variant="danger" onClick={() => setDialog({ kind: 'delete' })}>
+                <Button variant="danger" disabled={pending !== null} onClick={() => setDialog({ kind: 'delete' })}>
                   {t('editor.delete')}
                 </Button>
               </>
@@ -195,7 +204,7 @@ function TemplateDetail({ template, readOnly, dialog, setDialog }: DetailProps) 
 
       {!readOnly && (
         <div className="mt-5 flex justify-end border-t border-line-soft pt-[18px]">
-          <Button variant="primary" size="lg" onClick={save}>
+          <Button variant="primary" size="lg" loading={pending === 'save'} loadingLabel={t('busy.saving', { ns: 'common' })} disabled={pending === 'default'} onClick={save}>
             {t('editor.save')}
           </Button>
         </div>

@@ -128,10 +128,17 @@ export function TermsPage({ versions: injectedVersions, config: injectedConfig, 
         title={t('terms.newTitle')}
         width={640}
         onClose={() => setOpen(false)}
+        busy={busy}
         footer={
           <>
-            <Button onClick={() => setOpen(false)}>{t('buttons.cancel', { ns: 'common' })}</Button>
-            <Button variant="primary" disabled={busy || versionsState.loading || !!versionsState.error} onClick={() => void publish()}>
+            <Button onClick={() => setOpen(false)} disabled={busy}>{t('buttons.cancel', { ns: 'common' })}</Button>
+            <Button
+              variant="primary"
+              loading={busy}
+              loadingLabel={t('busy.publishing', { ns: 'common' })}
+              disabled={versionsState.loading || !!versionsState.error}
+              onClick={() => void publish()}
+            >
               {t('terms.publish')}
             </Button>
           </>

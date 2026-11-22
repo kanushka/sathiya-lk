@@ -144,6 +144,7 @@ export function TeacherModal({ teacher, onClose }: TeacherModalProps) {
       title={teacher ? t('modal.titleEdit') : t('modal.titleAdd')}
       subtitle={teacher ? `${teacherDisplayName(teacher, lang)} · ${teacher.staffId}` : undefined}
       onClose={onClose}
+      busy={saving}
       footer={
         savedId ? (
           <Button variant="primary" onClick={onClose}>
@@ -154,10 +155,10 @@ export function TeacherModal({ teacher, onClose }: TeacherModalProps) {
             {saveError && (
               <FormError className="mr-auto">{t('modal.saveFailed')}</FormError>
             )}
-            <Button onClick={onClose}>{t('modal.cancel')}</Button>
+            <Button onClick={onClose} disabled={saving}>{t('modal.cancel')}</Button>
             {!readOnly && (
-              <Button variant="primary" type="submit" form="teacher-form" disabled={saving}>
-                {saving ? t('modal.saving') : t('modal.save')}
+              <Button variant="primary" type="submit" form="teacher-form" loading={saving} loadingLabel={t('modal.saving')}>
+                {t('modal.save')}
               </Button>
             )}
           </>

@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
 // Copyright (C) 2026 Kanushka Gayan
 import { ctx, entries } from '@sathiya/core/fixtures';
-import { screen, within } from '@testing-library/react';
+import { screen, waitFor, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { call } from '../../lib/callable';
@@ -45,6 +45,22 @@ describe('subjects page', () => {
       short: 'Agri',
       color: '#E2EEE0',
     });
+  });
+
+  it('save shows the loading state while pending, then closes', async () => {
+    let resolve!: () => void;
+    vi.mocked(api.addSubject).mockReturnValue(new Promise<void>((r) => { resolve = r; }));
+    const user = userEvent.setup();
+    render();
+    await user.click(screen.getByRole('button', { name: '+ Add subject' }));
+    const dialog = screen.getByRole('dialog');
+    await user.type(within(dialog).getByLabelText('Name in English'), 'Agriculture');
+    await user.click(within(dialog).getByRole('button', { name: 'Add subject' }));
+    const saving = await within(dialog).findByRole('button', { name: 'Saving…' });
+    expect(saving).toHaveAttribute('aria-busy', 'true');
+    expect(saving).toBeDisabled();
+    resolve();
+    await waitFor(() => expect(screen.queryByRole('dialog')).not.toBeInTheDocument());
   });
 
   it('suggests a unique short name from the English name until the user edits it', async () => {

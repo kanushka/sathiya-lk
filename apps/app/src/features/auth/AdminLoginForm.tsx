@@ -44,21 +44,21 @@ export function AdminLoginForm({ autoFocus }: { autoFocus?: boolean }) {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState<string | null>(null);
-  const [busy, setBusy] = useState(false);
+  const [busy, setBusy] = useState<'google' | 'password' | null>(null);
   const emailRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
     if (autoFocus) emailRef.current?.focus();
   }, [autoFocus]);
 
-  async function run(signIn: () => Promise<void>) {
-    setBusy(true);
+  async function run(kind: 'google' | 'password', signIn: () => Promise<void>) {
+    setBusy(kind);
     setError(null);
     try {
       await signIn();
     } catch (err) {
       setError(authErrorMessage(err, t, 'errors.adminCredentials'));
-      setBusy(false);
+      setBusy(null);
       return;
     }
     try {
@@ -76,7 +76,7 @@ export function AdminLoginForm({ autoFocus }: { autoFocus?: boolean }) {
 
   function submit(e: FormEvent) {
     e.preventDefault();
-    void run(() => signInWithPassword(email.trim(), password));
+    void run('password', () => signInWithPassword(email.trim(), password));
   }
 
   async function reset() {
@@ -102,8 +102,9 @@ export function AdminLoginForm({ autoFocus }: { autoFocus?: boolean }) {
       <Button
         size="lg"
         className="w-full"
-        disabled={busy}
-        onClick={() => void run(signInWithGoogle)}
+        loading={busy === 'google'}
+        disabled={busy === 'password'}
+        onClick={() => void run('google', signInWithGoogle)}
       >
         <GoogleLogo />
         {t('admin.google')}
@@ -141,7 +142,8 @@ export function AdminLoginForm({ autoFocus }: { autoFocus?: boolean }) {
         type="submit"
         size="lg"
         className="w-full !bg-navy !text-white"
-        disabled={busy || !email || !password}
+        loading={busy === 'password'}
+        disabled={busy === 'google' || !email || !password}
       >
         {t('admin.submit')}
       </Button>

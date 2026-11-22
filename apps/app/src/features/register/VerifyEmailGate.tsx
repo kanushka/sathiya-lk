@@ -17,11 +17,11 @@ export interface VerifyEmailGateProps {
 export function VerifyEmailGate({ email, onConfirmed }: VerifyEmailGateProps) {
   const { t } = useTranslation('register');
   const { lang } = useLang();
-  const [busy, setBusy] = useState(false);
+  const [busy, setBusy] = useState<'confirm' | 'resend' | null>(null);
   const [message, setMessage] = useState<{ kind: 'info' | 'error'; text: string } | null>(null);
 
   async function confirm() {
-    setBusy(true);
+    setBusy('confirm');
     setMessage(null);
     try {
       if (await api.confirmVerified()) {
@@ -32,12 +32,12 @@ export function VerifyEmailGate({ email, onConfirmed }: VerifyEmailGateProps) {
     } catch {
       setMessage({ kind: 'error', text: t('errors.generic') });
     } finally {
-      setBusy(false);
+      setBusy(null);
     }
   }
 
   async function resend() {
-    setBusy(true);
+    setBusy('resend');
     setMessage(null);
     try {
       await sendAuthEmail({ kind: 'verify', lang });
@@ -45,7 +45,7 @@ export function VerifyEmailGate({ email, onConfirmed }: VerifyEmailGateProps) {
     } catch (err) {
       setMessage({ kind: 'error', text: t(detailCode(err) === 'rate-limited' ? 'errors.rateLimited' : 'verify.sendFailed') });
     } finally {
-      setBusy(false);
+      setBusy(null);
     }
   }
 
@@ -59,10 +59,10 @@ export function VerifyEmailGate({ email, onConfirmed }: VerifyEmailGateProps) {
         <Trans t={t} i18nKey="verify.body" values={{ email: email ?? '' }} components={{ b: <b className="text-ink" /> }} />
       </p>
       <div className="flex flex-wrap justify-center gap-3">
-        <Button variant="primary" size="lg" disabled={busy} onClick={() => void confirm()}>
+        <Button variant="primary" size="lg" loading={busy === 'confirm'} disabled={busy === 'resend'} onClick={() => void confirm()}>
           {t('verify.confirmed')}
         </Button>
-        <Button size="lg" disabled={busy} onClick={() => void resend()}>
+        <Button size="lg" loading={busy === 'resend'} disabled={busy === 'confirm'} onClick={() => void resend()}>
           {t('verify.resend')}
         </Button>
       </div>

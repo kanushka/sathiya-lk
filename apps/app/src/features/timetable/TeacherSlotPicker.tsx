@@ -64,7 +64,7 @@ function TeacherSlotPickerBody({ onClose, teacherId, day, period, entries, editi
   const { lang } = useLang();
   const ctx = useSchool();
   const [subjectId, setSubjectId] = useState<string | null>(() => editing?.lessons.find((l) => l.teacherId === teacherId)?.subjectId ?? null);
-  const [busy, setBusy] = useState(false);
+  const [busy, setBusy] = useState<'assign' | 'clear' | null>(null);
 
   const teacher = ctx.teachers.find((x) => x.id === teacherId);
   const defaultTemplate = ctx.templates.find((x) => x.isDefault);
@@ -99,7 +99,7 @@ function TeacherSlotPickerBody({ onClose, teacherId, day, period, entries, editi
       onGroup({ classId: o.cls.id, period: o.period, subjectId, item });
       return;
     }
-    setBusy(true);
+    setBusy('assign');
     const draft: EntryDraft = {
       id: editing.id,
       day,
@@ -108,14 +108,14 @@ function TeacherSlotPickerBody({ onClose, teacherId, day, period, entries, editi
       lessons: [{ subjectId, teacherId }],
     };
     const ok = await onSave(draft);
-    setBusy(false);
+    setBusy(null);
     if (ok) onClose();
   }
 
   async function clear() {
-    setBusy(true);
+    setBusy('clear');
     const ok = await onClear(editing.id);
-    setBusy(false);
+    setBusy(null);
     if (ok) onClose();
   }
 
@@ -135,7 +135,7 @@ function TeacherSlotPickerBody({ onClose, teacherId, day, period, entries, editi
       <li key={o.cls.id}>
         <button
           type="button"
-          disabled={busy || !o.free}
+          disabled={busy !== null || !o.free}
           onClick={() => assign(o)}
           className={
             o.free
@@ -159,8 +159,9 @@ function TeacherSlotPickerBody({ onClose, teacherId, day, period, entries, editi
       title={subjectId ? t('teacherPicker.titleClass') : t('picker.titleSubject')}
       subtitle={t('picker.slot', { day: tc(`days.long.${day}`), n: period, time: `${time.start}–${time.end}` })}
       width={520}
+      busy={busy !== null}
       footer={
-        <Button variant="danger" className="mr-auto" disabled={busy} onClick={clear}>
+        <Button variant="danger" className="mr-auto" loading={busy === 'clear'} loadingLabel={t('busy.deleting', { ns: 'common' })} disabled={busy === 'assign'} onClick={clear}>
           {t('picker.clear')}
         </Button>
       }

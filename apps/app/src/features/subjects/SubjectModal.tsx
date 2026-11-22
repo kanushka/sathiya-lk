@@ -60,13 +60,14 @@ export function SubjectModal({ onClose }: { onClose: () => void }) {
       title={t('modal.title')}
       subtitle={t('modal.subtitle')}
       onClose={onClose}
+      busy={saving}
       footer={
         <>
           {saveError && (
             <FormError className="mr-auto">{t('modal.saveFailed')}</FormError>
           )}
-          <Button onClick={onClose}>{t('modal.cancel')}</Button>
-          <Button variant="primary" type="submit" form="subject-form" disabled={saving}>
+          <Button onClick={onClose} disabled={saving}>{t('modal.cancel')}</Button>
+          <Button variant="primary" type="submit" form="subject-form" loading={saving} loadingLabel={t('busy.saving', { ns: 'common' })}>
             {t('modal.save')}
           </Button>
         </>

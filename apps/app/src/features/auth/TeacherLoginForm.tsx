@@ -109,7 +109,7 @@ export function TeacherLoginForm({ autoFocus }: { autoFocus?: boolean }) {
           onChange={(e) => setPassword(e.target.value)}
         />
       </Field>
-      <Button type="submit" variant="primary" size="lg" className="w-full" disabled={busy || !staffId || !password}>
+      <Button type="submit" variant="primary" size="lg" className="w-full" loading={busy} disabled={!staffId || !password}>
         {t('teacher.submit')}
       </Button>
       <p className="mb-0 mt-[18px] rounded-lg bg-surface-2 px-3.5 py-3 text-sm leading-normal text-ink-soft">

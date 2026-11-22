@@ -24,9 +24,10 @@ function errorCode(e: unknown): string | undefined {
 }
 
 export function ChangePasswordModal({ open, onClose, changePassword = changePasswordWithFirebase }: ChangePasswordModalProps) {
+  const [busy, setBusy] = useState(false);
   return (
-    <Modal open={open} onClose={onClose} title={useTitle()} width={420}>
-      <PasswordForm onClose={onClose} changePassword={changePassword} />
+    <Modal open={open} onClose={onClose} title={useTitle()} width={420} busy={busy}>
+      <PasswordForm onClose={onClose} changePassword={changePassword} busy={busy} setBusy={setBusy} />
     </Modal>
   );
 }
@@ -36,14 +37,23 @@ function useTitle(): string {
   return t('cp.title');
 }
 
-function PasswordForm({ onClose, changePassword }: { onClose: () => void; changePassword: ChangePasswordFn }) {
+function PasswordForm({
+  onClose,
+  changePassword,
+  busy,
+  setBusy,
+}: {
+  onClose: () => void;
+  changePassword: ChangePasswordFn;
+  busy: boolean;
+  setBusy: (b: boolean) => void;
+}) {
   const { t } = useTranslation('teacher');
   const toast = useToast();
   const [current, setCurrent] = useState('');
   const [next, setNext] = useState('');
   const [confirm, setConfirm] = useState('');
   const [errors, setErrors] = useState<{ current?: string; next?: string; confirm?: string; form?: string }>({});
-  const [busy, setBusy] = useState(false);
 
   async function submit(e: FormEvent) {
     e.preventDefault();
@@ -80,7 +90,7 @@ function PasswordForm({ onClose, changePassword }: { onClose: () => void; change
       {errors.form && (
         <FormError>{errors.form}</FormError>
       )}
-      <Button type="submit" variant="primary" size="lg" disabled={busy}>
+      <Button type="submit" variant="primary" size="lg" loading={busy}>
         {t('cp.submit')}
       </Button>
     </form>

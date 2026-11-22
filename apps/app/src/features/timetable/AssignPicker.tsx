@@ -268,7 +268,7 @@ function AssignPickerBody({ classId, slot, subjectId: initialSubject, groupKey, 
           {t('picker.combine')}
         </Button>
       )}
-      <Button variant="primary" disabled={busy || !selected} onClick={() => void confirm()}>
+      <Button variant="primary" loading={busy} disabled={!selected} onClick={() => void confirm()}>
         {slot ? t('picker.assign') : t('assign.start')}
       </Button>
     </>
@@ -328,8 +328,8 @@ function AssignPickerBody({ classId, slot, subjectId: initialSubject, groupKey, 
   if (group) {
     return (
       <GroupTeachersStep key={group.key} classId={classId} item={group} slot={slot} entries={entries} onBack={back} onConfirm={confirmGroup}>
-        {({ body, footer: groupFooter }) => (
-          <Modal open onClose={onClose} title={t('assign.groupTitle', { group: pickName(group, lang) })} subtitle={subtitle} width={560} footer={groupFooter}>
+        {({ body, footer: groupFooter, busy: groupBusy }) => (
+          <Modal open onClose={onClose} busy={groupBusy} title={t('assign.groupTitle', { group: pickName(group, lang) })} subtitle={subtitle} width={560} footer={groupFooter}>
             {body}
           </Modal>
         )}
@@ -344,6 +344,7 @@ function AssignPickerBody({ classId, slot, subjectId: initialSubject, groupKey, 
       title={subjectId ? t('picker.titleTeacher') : t('picker.titleSubject')}
       subtitle={subtitle}
       width={520}
+      busy={busy}
       footer={footer}
     >
       {!subjectId ? (

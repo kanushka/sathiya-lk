@@ -38,10 +38,11 @@ export function NewYearModal({ onCreate, onClose }: NewYearModalProps) {
       width={440}
       title={t('year.newTitle')}
       onClose={onClose}
+      busy={saving}
       footer={
         <>
-          <Button onClick={onClose}>{t('year.cancel')}</Button>
-          <Button variant="primary" type="submit" form="year-form" disabled={saving || label.trim() === ''}>
+          <Button onClick={onClose} disabled={saving}>{t('year.cancel')}</Button>
+          <Button variant="primary" type="submit" form="year-form" loading={saving} disabled={label.trim() === ''}>
             {t('year.create')}
           </Button>
         </>

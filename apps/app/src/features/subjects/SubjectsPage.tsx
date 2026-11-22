@@ -67,7 +67,7 @@ export function SubjectsPage() {
         actions={
           !readOnly && (
             <>
-              <Button onClick={() => void loadStandard()} disabled={loading}>
+              <Button onClick={() => void loadStandard()} loading={loading}>
                 {t('page.loadStandard')}
               </Button>
               {add}

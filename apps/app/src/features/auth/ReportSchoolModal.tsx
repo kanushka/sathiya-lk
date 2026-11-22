@@ -74,13 +74,14 @@ export function ReportSchoolModal({ open, onClose, initialSchoolId }: ReportScho
       title={t('report.title')}
       subtitle={t('report.subtitle')}
       onClose={onClose}
+      busy={busy}
       width={520}
       footer={
         <>
           <Button onClick={onClose} disabled={busy}>
             {t('report.cancel')}
           </Button>
-          <Button variant="primary" disabled={busy || !school || !reason} onClick={() => void send()}>
+          <Button variant="primary" loading={busy} disabled={!school || !reason} onClick={() => void send()}>
             {busy ? t('report.sending') : t('report.send')}
           </Button>
         </>

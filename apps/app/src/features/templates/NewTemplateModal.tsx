@@ -38,13 +38,14 @@ export function NewTemplateModal({ onCreate, onClose }: NewTemplateModalProps) {
       width={440}
       title={t('new.title')}
       onClose={onClose}
+      busy={saving}
       footer={
         <>
           {failed && (
             <FormError className="mr-auto">{t('page.saveFailed')}</FormError>
           )}
-          <Button onClick={onClose}>{t('new.cancel')}</Button>
-          <Button variant="primary" type="submit" form="template-form" disabled={saving || name.trim() === ''}>
+          <Button onClick={onClose} disabled={saving}>{t('new.cancel')}</Button>
+          <Button variant="primary" type="submit" form="template-form" loading={saving} disabled={name.trim() === ''}>
             {t('new.create')}
           </Button>
         </>
