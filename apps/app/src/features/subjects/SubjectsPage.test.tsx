@@ -37,9 +37,41 @@ describe('subjects page', () => {
     expect(api.addSubject).toHaveBeenCalledWith('siripura', {
       nameEn: 'Agriculture',
       nameSi: '',
-      short: 'Agricultur',
+      short: 'Agri',
       color: '#E2EEE0',
     });
+  });
+
+  it('suggests a unique short name from the English name until the user edits it', async () => {
+    const user = userEvent.setup();
+    render();
+    await user.click(screen.getByRole('button', { name: '+ Add subject' }));
+    const dialog = screen.getByRole('dialog');
+    const short = within(dialog).getByLabelText('Short name');
+    await user.type(within(dialog).getByLabelText('Name in English'), 'Information & Communication Technology');
+    expect(short).toHaveValue('ICT');
+    await user.clear(within(dialog).getByLabelText('Name in English'));
+    await user.type(within(dialog).getByLabelText('Name in English'), 'English Literature');
+    expect(short).toHaveValue('ELit');
+    await user.clear(short);
+    await user.type(short, 'EngLit');
+    await user.type(within(dialog).getByLabelText('Name in English'), ' A');
+    expect(short).toHaveValue('EngLit');
+  });
+
+  it('makes the suggestion unique and flags a short name that already exists', async () => {
+    const user = userEvent.setup();
+    render();
+    await user.click(screen.getByRole('button', { name: '+ Add subject' }));
+    const dialog = screen.getByRole('dialog');
+    const short = within(dialog).getByLabelText('Short name');
+    await user.type(within(dialog).getByLabelText('Name in English'), 'Bud');
+    expect(short).toHaveValue('Bud2');
+    await user.clear(short);
+    await user.type(short, 'maths');
+    expect(within(dialog).getByText('Another subject already uses this short name')).toBeInTheDocument();
+    await user.click(within(dialog).getByRole('button', { name: 'Add subject' }));
+    expect(api.addSubject).not.toHaveBeenCalled();
   });
 
   it('load standard skips subjects already present and reports the count', async () => {
