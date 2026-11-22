@@ -32,6 +32,6 @@ export interface Lesson { subjectId: string; teacherId: string | null }
 export interface Entry { id: string; day: DayIndex; period: number; classIds: string[]; lessons: Lesson[]; teacherIds: string[]; groupKey?: string }
 export type EntryDraft = Omit<Entry, 'id' | 'teacherIds'> & { id?: string };
 export interface Year { id: string; label: string; status: 'draft' | 'published'; publishedAt?: number }
-export interface Member { uid: string; role: 'admin' | 'teacher'; teacherId?: string; email?: string }
+export interface Member { uid: string; role: 'admin' | 'teacher'; teacherId?: string; email?: string; name?: string }
 export interface Claims { sid?: string; role?: 'admin' | 'teacher'; tid?: string; super?: boolean }
 export interface SchoolContext { school: School; teachers: Teacher[]; subjects: Subject[]; templates: PeriodTemplate[]; grades: Grade[]; classes: SchoolClass[] }
