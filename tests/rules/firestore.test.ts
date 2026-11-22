@@ -223,6 +223,12 @@ describe('teachers', () => {
       await assertSucceeds(update('admin', t2, { title: 'Ven.' }));
       await assertFails(update('admin', t1, { title: 'King' }));
       await assertFails(update('admin', t1, { title: 3 }));
+      await assertFails(update('admin', t1, { title: 'Thero' }));
+    });
+
+    it('leaves lastLoginAt to the recordSignIn callable', async () => {
+      await assertFails(update('admin', t1, { lastLoginAt: 1 }));
+      await assertFails(update('teacher', t1, { lastLoginAt: 1 }));
     });
     deny(
       [['teacher', t1], ['super', t1], ['otherAdmin', t1], ['anon', t1], ['disabledAdmin', `${paths.teachers('sd')}/td`]],

@@ -68,12 +68,12 @@ export function TeacherLoginForm({ autoFocus }: { autoFocus?: boolean }) {
       setBusy(false);
       return;
     }
-    recordSignIn();
     try {
       await refreshClaims();
     } catch {
       // Signed in; HomeRedirect decides from whatever claims are loaded.
     }
+    recordSignIn();
     navigate('/', { replace: true });
   }
 

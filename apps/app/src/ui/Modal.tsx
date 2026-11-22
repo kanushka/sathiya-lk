@@ -86,6 +86,12 @@ function ModalPanel({ title, subtitle, onClose, footer, width = 560, zoom, busy 
     };
   }, []);
 
+  // A loading button is disabled, which drops focus to <body>; keep it in the dialog.
+  useEffect(() => {
+    const panel = panelRef.current;
+    if (busy && panel && !panel.contains(document.activeElement)) panel.focus();
+  }, [busy]);
+
   const onBackdropDown = (e: MouseEvent) => {
     pressedOnBackdrop.current = e.target === e.currentTarget;
   };

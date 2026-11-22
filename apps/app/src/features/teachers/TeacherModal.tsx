@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
 // Copyright (C) 2026 Kanushka Gayan
-import { formatStaffId, isValidStaffId, nextStaffNumber, pickName, splitTitle, TEACHER_TITLE_LABELS, TEACHER_TITLES, teacherDisplayName, type Lang, type Teacher, type TeacherTitle } from '@sathiya/core';
+import { formatStaffId, isValidStaffId, nextStaffNumber, normalizeTeacher, pickName, splitTitle, TEACHER_TITLE_LABELS, TEACHER_TITLES, teacherDisplayName, type Lang, type Teacher, type TeacherTitle } from '@sathiya/core';
 import { useState, type FormEvent } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useReadOnly } from '../../ui/AdminLayout';
@@ -36,8 +36,9 @@ interface Form {
   email: string;
 }
 
-function initialName(teacher: Teacher | undefined): { title: TeacherTitle | ''; name: string } {
-  if (!teacher) return { title: '', name: '' };
+function initialName(raw: Teacher | undefined): { title: TeacherTitle | ''; name: string } {
+  if (!raw) return { title: '', name: '' };
+  const teacher = normalizeTeacher(raw);
   const split = splitTitle(teacher.name);
   if (teacher.title) return { title: teacher.title, name: split.title === teacher.title ? split.name : teacher.name };
   return { title: split.title ?? '', name: split.name };

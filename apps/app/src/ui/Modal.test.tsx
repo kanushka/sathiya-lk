@@ -5,6 +5,8 @@ import { screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { describe, expect, it, vi } from 'vitest';
 import { renderWithI18n } from '../test/render';
+import { useState } from 'react';
+import { Button } from './Button';
 import { Modal } from './Modal';
 
 function setup() {
@@ -59,6 +61,25 @@ describe('Modal', () => {
     await user.click(screen.getByTestId('modal-backdrop'));
     expect(screen.getByRole('button', { name: 'Close' })).toBeDisabled();
     expect(onClose).not.toHaveBeenCalled();
+  });
+
+  it('keeps focus inside the dialog when the clicked button starts loading', async () => {
+    function Busy() {
+      const [busy, setBusy] = useState(false);
+      return (
+        <Modal open busy={busy} title="Edit teacher" onClose={() => undefined} footer={<Button loading={busy} onClick={() => setBusy(true)}>Save</Button>}>
+          <p>Body</p>
+        </Modal>
+      );
+    }
+    renderWithI18n(<Busy />);
+    const save = screen.getByRole('button', { name: 'Save' });
+    save.focus();
+    // Browsers drop focus from a button once it is disabled; jsdom does not, so simulate it.
+    save.addEventListener('click', () => save.blur());
+    await userEvent.setup().click(save);
+    expect(document.activeElement).not.toBe(document.body);
+    expect(screen.getByRole('dialog').contains(document.activeElement)).toBe(true);
   });
 
   it('closes from the close button', async () => {

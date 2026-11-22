@@ -14,8 +14,10 @@ function recorded(mark = false): boolean {
 }
 
 export function recordSignIn(): void {
-  recorded(true);
-  void call('recordSignIn', {}).catch(() => undefined);
+  void call('recordSignIn', {}).then(
+    () => recorded(true),
+    () => undefined,
+  );
 }
 
 export function recordSignInOnce(): void {

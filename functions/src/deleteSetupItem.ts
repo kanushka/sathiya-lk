@@ -38,6 +38,8 @@ async function latestYearEntries(sid: string): Promise<Entry[]> {
   return latest ? loadEntries(sid, latest.id) : [];
 }
 
+const IN_LIMIT = 30;
+
 // A grade goes with its classes, so any year's entries for those classes block it.
 async function deleteGrade(sid: string, id: string): Promise<DeleteSetupItemRes> {
   return db.runTransaction(async (tx) => {
@@ -48,14 +50,13 @@ async function deleteGrade(sid: string, id: string): Promise<DeleteSetupItemRes>
       tx.get(db.collection(paths.years(sid))),
     ]);
     if (!grade.exists) fail('not-found', 'invalid', 'Unknown grade');
-    const classIds = new Set(classes.docs.map((c) => c.id));
-    let usedIn = 0;
-    if (classIds.size > 0) {
-      const perYear = await Promise.all(years.docs.map((y) => tx.get(db.collection(paths.entries(sid, y.id)))));
-      for (const snap of perYear) {
-        for (const e of snap.docs) if ((e.get('classIds') as string[] | undefined)?.some((c) => classIds.has(c))) usedIn++;
-      }
-    }
+    const classIds = classes.docs.map((c) => c.id);
+    const chunks: string[][] = [];
+    for (let i = 0; i < classIds.length; i += IN_LIMIT) chunks.push(classIds.slice(i, i + IN_LIMIT));
+    const snaps = await Promise.all(
+      years.docs.flatMap((y) => chunks.map((ids) => tx.get(db.collection(paths.entries(sid, y.id)).where('classIds', 'array-contains-any', ids)))),
+    );
+    const usedIn = new Set(snaps.flatMap((s) => s.docs.map((d) => d.ref.path))).size;
     if (usedIn > 0) return { deleted: false, usedIn };
     tx.delete(gradeRef);
     for (const c of classes.docs) tx.delete(c.ref);
