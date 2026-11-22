@@ -4,6 +4,7 @@
 import {
   blockMates,
   classPlacement,
+  classRemaining,
   latestGroupSpec,
   pickName,
   pinSlots,
@@ -425,6 +426,14 @@ export function GroupTeachersStep(props: GroupTeachersStepProps) {
             </span>
             {mates.map((m) => {
               const on = classIds.includes(m.id);
+              const room = classRemaining({ ctx, entries, classId: m.id, item: { groupKey: item.key } });
+              if (!on && room.left === 0) {
+                return (
+                  <ToggleChip key={m.id} pressed={false} disabled onToggle={() => {}}>
+                    {t('pin.classFull', { class: m.name, placed: room.placed, needed: room.needed })}
+                  </ToggleChip>
+                );
+              }
               const busy = !!slot && entries.some((e) => e.day === slot.day && e.period === slot.period && e.classIds.includes(m.id));
               return (
                 <ToggleChip key={m.id} pressed={on} onToggle={() => toggleMate(m.id)}>

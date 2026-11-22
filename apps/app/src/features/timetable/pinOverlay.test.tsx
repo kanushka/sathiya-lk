@@ -13,7 +13,7 @@ const t = testI18n.getFixedT('en', 'timetable');
 const tc = testI18n.getFixedT('en', 'common');
 const names = { subject: 'Science', teacher: 'Mrs. S. Gunasekara', classes: '6B', base: '6B' };
 
-function overlay(cell: TeacherPinCell, extra: { suggested?: boolean; left?: number; classNote?: string; teacherView?: boolean; classes?: string } = {}) {
+function overlay(cell: TeacherPinCell, extra: { suggested?: boolean; left?: number; full?: boolean; classNote?: string; teacherView?: boolean; classes?: string } = {}) {
   return pinOverlayCell({
     cell,
     day: 2,
@@ -24,7 +24,7 @@ function overlay(cell: TeacherPinCell, extra: { suggested?: boolean; left?: numb
     t,
     tc,
     names: extra.classes ? { ...names, classes: extra.classes } : names,
-    progress: { placed: 3, needed: 5, left: extra.left ?? 2, over: 0 },
+    progress: { placed: 3, needed: 5, left: extra.left ?? 2, over: 0, full: extra.full ? [{ classId: C.c6a, placed: 5, needed: 5, left: 0 }] : [] },
     suggested: extra.suggested ?? false,
     ...(extra.classNote ? { classNote: extra.classNote } : {}),
     ...(extra.teacherView ? { teacherView: true } : {}),
@@ -35,6 +35,20 @@ function overlay(cell: TeacherPinCell, extra: { suggested?: boolean; left?: numb
 const teaching = (classIds: string[], entryId: string): BusyDetail => ({ kind: 'teacher', classIds, subjectId: S.science, teacherId: T.gunasekara, entryId }) as BusyDetail;
 
 describe('pinOverlayCell', () => {
+  const free = { kind: 'free', load: 1, max: 6, limit: false, teacherId: T.gunasekara, subjectThatDay: false } as const;
+
+  it('marks a free cell over plan but still clickable when only the base class is complete', () => {
+    const o = overlay(free, { left: 0 });
+    expect(o.label).toContain('over plan');
+    expect(o.disabled).toBeFalsy();
+  });
+
+  it('disables a free cell when a joined class has its target', () => {
+    const o = overlay(free, { left: 0, full: true });
+    expect(o.label).toContain('over plan');
+    expect(o.disabled).toBe(true);
+  });
+
   it('keeps a single blocker label unchanged and shows no more-count', () => {
     const b = teaching([C.c6a], 'x');
     const o = overlay({ kind: 'busy', busy: b, blockers: [b] });

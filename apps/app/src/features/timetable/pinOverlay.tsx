@@ -94,7 +94,12 @@ export function pinOverlayCell(a: PinOverlayInput): GridOverlay | null {
       : t('pin.cellPin', { ...where, subject: names.subject, teacher: names.teacher });
   const label = classNote ? `${base}, ${classNote}` : base;
   if (progress && progress.left === 0) {
-    return { label: `${label}, ${t('pin.noteOver')}`, className: pinOver, content: <PinGlyph sub={t('pin.overPlan')} note={classNote} /> };
+    return {
+      label: `${label}, ${t('pin.noteOver')}`,
+      className: pinOver,
+      content: <PinGlyph sub={t('pin.overPlan')} note={classNote} />,
+      ...(progress.full.length > 0 ? { disabled: true } : {}),
+    };
   }
   if (suggested) {
     return {

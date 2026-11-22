@@ -17,7 +17,9 @@ export type PinCell =
   | { kind: 'busy'; busy: BusyDetail; blockers: BusyDetail[] }
   | { kind: 'free'; load: number; max: number; limit: boolean; teacherId: string; subjectThatDay: boolean };
 export interface PinSlot { day: DayIndex; period: number; cell: PinCell }
-export interface PinProgress { placed: number; needed: number; left: number; over: number }
+export interface ClassRemaining { classId: string; placed: number; needed: number; left: number }
+export interface PinProgress { placed: number; needed: number; left: number; over: number; full: ClassRemaining[] }
+export type PlanTarget = { groupKey: string } | { subjectId: string };
 export type TeacherPinCell = PinCell | { kind: 'none' };
 export interface TeacherPinSlot { day: DayIndex; row: number; period: number | null; cell: TeacherPinCell }
 
@@ -142,18 +144,34 @@ export function suggestPins(args: PinArgs & { count: number; teacherId?: string 
   return picks;
 }
 
-export function pinProgress(args: PinArgs): PinProgress {
-  const { ctx, entries, spec } = args;
-  const baseId = spec.classIds[0];
-  const cls = baseId === undefined ? undefined : findClass(ctx, baseId);
+export function classRemaining(args: { ctx: SchoolContext; entries: Entry[]; classId: string; item: PlanTarget }): ClassRemaining {
+  const { ctx, entries, classId, item } = args;
+  const cls = findClass(ctx, classId);
   const row = cls && classPlacement(cls, entries, ctx).rows.find((r) =>
-    spec.groupKey !== undefined
-      ? r.item.kind === 'group' && r.item.key === spec.groupKey
-      : r.item.kind === 'subject' && r.item.subjectId === spec.lessons[0]?.subjectId,
+    'groupKey' in item ? r.item.kind === 'group' && r.item.key === item.groupKey : r.item.kind === 'subject' && r.item.subjectId === item.subjectId,
   );
   const placed = row?.placed ?? 0;
   const needed = row?.needed ?? 0;
-  return { placed, needed, left: Math.max(0, needed - placed), over: Math.max(0, placed - needed) };
+  return { classId, placed, needed, left: Math.max(0, needed - placed) };
+}
+
+function specTarget(spec: PinSpec): PlanTarget {
+  return spec.groupKey !== undefined ? { groupKey: spec.groupKey } : { subjectId: spec.lessons[0]?.subjectId ?? '' };
+}
+
+export function pinProgress(args: PinArgs): PinProgress {
+  const { ctx, entries, spec } = args;
+  const [baseId, ...joinedIds] = spec.classIds;
+  const item = specTarget(spec);
+  const base = classRemaining({ ctx, entries, classId: baseId ?? '', item });
+  const joined = joinedIds.map((classId) => classRemaining({ ctx, entries, classId, item }));
+  return {
+    placed: base.placed,
+    needed: base.needed,
+    left: Math.min(base.left, ...joined.map((j) => j.left)),
+    over: Math.max(0, base.placed - base.needed),
+    full: joined.filter((j) => j.left === 0),
+  };
 }
 
 export function teacherPinSlots(args: PinArgs & { teacherId: string }): TeacherPinSlot[] {

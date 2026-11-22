@@ -3,6 +3,7 @@
 
 import {
   blockMates,
+  classRemaining,
   periodsFor,
   pickName,
   pinProgress,
@@ -468,6 +469,14 @@ function TeacherAssignPickerBody({ teacherId, slot, entries, onClose, onSave, on
                 </span>
                 {mateClasses.map((m) => {
                   const on = mates.includes(m.id);
+                  const room = classRemaining({ ctx, entries, classId: m.id, item: { subjectId: selected.option.subjectId } });
+                  if (!on && room.left === 0) {
+                    return (
+                      <ToggleChip key={m.id} pressed={false} disabled onToggle={() => {}}>
+                        {t('pin.classFull', { class: m.name, placed: room.placed, needed: room.needed })}
+                      </ToggleChip>
+                    );
+                  }
                   return (
                     <ToggleChip key={m.id} pressed={on} onToggle={() => setMates((cur) => (on ? cur.filter((x) => x !== m.id) : [...cur, m.id]))}>
                       {`${on ? '✓' : '+'} ${m.name}`}

@@ -203,6 +203,7 @@
     "progress": "{{needed}} න් {{placed}}ක් තබා ඇත",
     "toGo": "තව {{count}}",
     "complete": "සම්පූර්ණයි",
+    "classFull": "{{class}} පන්තියට දැනටමත් {{placed}}/{{needed}} ඇත",
     "over": "+{{count}} වැඩිය",
     "progressLabel": "සතිපතා සැලැස්මේ ප්‍රගතිය",
     "suggest_one": "කාලච්ඡේද {{count}}ක් යෝජනා කරන්න",

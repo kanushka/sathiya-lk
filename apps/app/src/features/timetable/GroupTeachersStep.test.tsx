@@ -86,6 +86,22 @@ describe('GroupTeachersStep', () => {
     expect(screen.getByRole('button', { name: /6A/ })).toHaveAttribute('aria-pressed', 'false');
   });
 
+  it('disables a mate that already has the group’s target, with the reason', async () => {
+    const aesthetic = ctx.grades.find((g) => g.id === G.g6)!.plan.find((p): p is GroupItem => p.kind === 'group' && p.key === 'aesthetic')!;
+    setup({ classId: C.c6a, item: aesthetic, slot: null });
+    const mate = screen.getByRole('button', { name: '6B already has 3/3' });
+    expect(mate).toBeDisabled();
+    expect(mate).toHaveAttribute('aria-pressed', 'false');
+  });
+
+  it('keeps a mate already in the latest lesson removable even when at target', async () => {
+    setup();
+    const mate = screen.getByRole('button', { name: /6A/ });
+    expect(mate).toBeEnabled();
+    await userEvent.click(mate);
+    expect(mate).toHaveAttribute('aria-pressed', 'false');
+  });
+
   it('flags a mate busy at the slot', () => {
     setup({}, entries);
     expect(screen.getByRole('button', { name: /6A/ })).toHaveTextContent('✓ 6A · busy Wed P4');

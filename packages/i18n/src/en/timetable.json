@@ -203,6 +203,7 @@
     "progress": "{{placed}} of {{needed}} placed",
     "toGo": "{{count}} to go",
     "complete": "complete",
+    "classFull": "{{class}} already has {{placed}}/{{needed}}",
     "over": "+{{count}} over",
     "progressLabel": "Weekly plan progress",
     "suggest_one": "Suggest {{count}} slot",
