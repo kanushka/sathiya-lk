@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
 // Copyright (C) 2026 Kanushka Gayan
-import { shortTaken, suggestSubjectShort } from '@sathiya/core';
+import { nameTaken, shortTaken, suggestSubjectShort } from '@sathiya/core';
 import { useState, type FormEvent } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useSchool } from '../../app/SchoolProvider';
@@ -17,6 +17,8 @@ export function SubjectModal({ onClose }: { onClose: () => void }) {
   const { t } = useTranslation('subjects');
   const { school, subjects } = useSchool();
   const existingShorts = subjects.map((s) => s.short);
+  const existingNamesEn = subjects.map((s) => s.nameEn);
+  const existingNamesSi = subjects.map((s) => s.nameSi);
   const toast = useToast();
   const [nameEn, setNameEn] = useState('');
   const [nameSi, setNameSi] = useState('');
@@ -27,7 +29,12 @@ export function SubjectModal({ onClose }: { onClose: () => void }) {
   const [saving, setSaving] = useState(false);
   const [saveError, setSaveError] = useState(false);
 
-  const nameError = nameEn.trim() ? null : t('modal.errors.name');
+  const nameError = !nameEn.trim()
+    ? t('modal.errors.name')
+    : nameTaken(nameEn, existingNamesEn)
+      ? t('modal.errors.nameTaken', { name: nameEn.trim() })
+      : null;
+  const nameSiError = nameTaken(nameSi, existingNamesSi) ? t('modal.errors.nameTaken', { name: nameSi.trim() }) : null;
   const suggestion = suggestSubjectShort(nameEn, existingShorts).slice(0, SHORT_MAX);
   const shortValue = short.trim() || suggestion;
   const shortError = shortTaken(shortValue, existingShorts) ? t('modal.errors.shortTaken') : !shortValue && submitted ? t('modal.errors.short') : null;
@@ -40,7 +47,7 @@ export function SubjectModal({ onClose }: { onClose: () => void }) {
   async function save(e: FormEvent) {
     e.preventDefault();
     setSubmitted(true);
-    if (nameError || shortError || !shortValue || saving) return;
+    if (nameError || nameSiError || shortError || !shortValue || saving) return;
     setSaving(true);
     setSaveError(false);
     try {
@@ -74,10 +81,10 @@ export function SubjectModal({ onClose }: { onClose: () => void }) {
       }
     >
       <form id="subject-form" onSubmit={save} noValidate className="flex flex-col gap-4">
-        <Field label={t('modal.nameEn')} error={submitted ? nameError : null}>
+        <Field label={t('modal.nameEn')} error={nameError && (submitted || nameTaken(nameEn, existingNamesEn)) ? nameError : null}>
           <input className={inputClass} value={nameEn} placeholder={t('modal.nameEnPlaceholder')} onChange={(e) => changeName(e.target.value)} />
         </Field>
-        <Field label={t('modal.nameSi')} hint={t('modal.nameSiHint')}>
+        <Field label={t('modal.nameSi')} hint={t('modal.nameSiHint')} error={nameSiError}>
           <input className={inputClass} value={nameSi} placeholder={t('modal.nameSiPlaceholder')} onChange={(e) => setNameSi(e.target.value)} />
         </Field>
         <div className="flex flex-wrap gap-4">
