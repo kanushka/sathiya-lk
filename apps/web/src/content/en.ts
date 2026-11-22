@@ -109,7 +109,7 @@ export const en = {
       },
       {
         q: 'Does it work on phones?',
-        a: 'Yes. Sathiya works in any modern browser on phones, tablets and computers. There is nothing to install.',
+        a: 'Teachers can check their timetable and today\'s periods on any phone. Building the timetable and other admin work is made for a laptop or desktop, and tablets work too. Sathiya runs in a modern browser, so there is nothing to install.',
       },
       {
         q: 'Can we use it in Sinhala?',

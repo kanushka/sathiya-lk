@@ -22,6 +22,7 @@ School admins register their school, build class and teacher timetables, print t
 - **Super admin.** Moderate school registrations, handle reports of fake or duplicate schools, post announcements, maintain the default subject list and the published terms and privacy policy, and see usage per school.
 - **Email.** Admin invites, school registration, verification and password reset emails (Trigger Email extension + Resend). Teachers never need an email address.
 - **Bilingual.** Every screen and printout in Sinhala and English; each person picks their own language.
+- **Devices.** Admin and super admin screens are made for a laptop or desktop, and tablets work too. Teachers' own timetable, the today view and sign-in work on phones.
 
 ## Screenshots
 
