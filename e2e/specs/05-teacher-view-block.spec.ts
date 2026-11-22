@@ -19,7 +19,7 @@ test('teacher view: build a religion block through the assign popup', async ({ p
   await subjects.getByRole('listbox', { name: 'Subjects' }).getByRole('option', { name: /^Buddhism/ }).click();
 
   const classes = page.getByRole('dialog', { name: 'Choose a class' }).getByRole('listbox', { name: 'Classes' });
-  await expect(classes.getByRole('option', { name: /^6B · Religion \(Buddhism\)/ })).toContainText('6B has another lesson then');
+  await expect(classes.getByRole('option', { name: /^6B · Religion \(Buddhism\)/ })).toContainText('Busy · 6B · Mathematics · Mrs. N. Perera');
   await classes.getByRole('option', { name: /^6C · Religion \(Buddhism\)/ }).click();
 
   const group = page.getByRole('dialog', { name: 'Set teachers for Religion' });
@@ -38,7 +38,7 @@ test('teacher view: build a religion block through the assign popup', async ({ p
   const bar = page.getByRole('region', { name: 'Pin mode' });
   await expect(bar).toContainText('Religion · 6C');
   await expect(page.getByRole('button', { name: /^Tuesday, period 2, 08:30–09:10: Religion 6C, pinned, click to unpin$/ })).toBeVisible();
-  await shot(page, 'teacher-pin-mode');
+  await shot(page, 'teacher-group-pin-mode');
   await bar.getByRole('button', { name: 'Done' }).click();
   await expect(bar).toBeHidden();
 
