@@ -10,3 +10,6 @@ allowBuilds:
   protobufjs: true
   re2: true
   sharp: false
+
+overrides:
+  pkce-challenge: 5.0.1
