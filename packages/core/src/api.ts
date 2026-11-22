@@ -1,11 +1,13 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
 // Copyright (C) 2026 Kanushka Gayan
 
-import type { AuthEmailKind, EntryDraft, Lang, ReportReason, School, Teacher } from './types';
+import type { ImportRow, SubjectColumn, TeacherColumn } from './importSheet';
+import type { AuthEmailKind, EntryDraft, Lang, ReportReason, School, Teacher, TeacherTitle } from './types';
 
 export const callables = {
   registerSchool: 'registerSchool',
   createTeacher: 'createTeacher',
+  importSetup: 'importSetup',
   resetTeacherPassword: 'resetTeacherPassword',
   inviteAdmin: 'inviteAdmin',
   claimInvites: 'claimInvites',
@@ -25,6 +27,8 @@ export interface RegisterSchoolReq { school: Omit<School, 'id' | 'status' | 'cre
 export interface RegisterSchoolRes { schoolId: string }
 export interface CreateTeacherReq { schoolId: string; teacher: Omit<Teacher, 'id' | 'uid' | 'lastLoginAt'> }
 export interface CreateTeacherRes { teacherId: string; password: string }
+export interface ImportSetupReq { schoolId: string; subjects: ImportRow<SubjectColumn>[]; teachers: ImportRow<TeacherColumn>[] }
+export interface ImportSetupRes { subjectIds: string[]; teachers: { teacherId: string; staffId: string; name: string; title?: TeacherTitle; password: string }[]; notCreated: string[] }
 export interface ResetTeacherPasswordReq { schoolId: string; teacherId: string }
 export interface ResetTeacherPasswordRes { password: string }
 export interface InviteAdminReq { schoolId: string; email: string; teacherId?: string }
@@ -54,6 +58,7 @@ export interface CheckCensusNoRes { available: boolean }
 interface CallableMap {
   registerSchool: { req: RegisterSchoolReq; res: RegisterSchoolRes };
   createTeacher: { req: CreateTeacherReq; res: CreateTeacherRes };
+  importSetup: { req: ImportSetupReq; res: ImportSetupRes };
   resetTeacherPassword: { req: ResetTeacherPasswordReq; res: ResetTeacherPasswordRes };
   inviteAdmin: { req: InviteAdminReq; res: InviteAdminRes };
   claimInvites: { req: ClaimInvitesReq; res: ClaimInvitesRes };

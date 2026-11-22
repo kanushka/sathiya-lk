@@ -111,3 +111,13 @@ describe('readSheets', () => {
     expect(readSheets([]).errors).toHaveLength(1);
   });
 });
+
+describe('readSheets header matching', () => {
+  it('ignores ZWJ/ZWNJ in headers', () => {
+    const si = 'නම (ඉංග්‍රීසි)';
+    const noZwj = si.replace(/\u200d/g, '');
+    const r = readSheets([{ name: 'x', rows: [[noZwj, 'කෙටි නම'], ['Maths', 'Math']] }]);
+    expect(r.errors).toEqual([]);
+    expect(r.subjects[0]?.cells).toEqual({ nameEn: 'Maths', short: 'Math' });
+  });
+});

@@ -26,3 +26,4 @@ export * from './publish';
 export * from './now';
 export * from './pin';
 export * from './importSheet';
+export * from './importValidate';

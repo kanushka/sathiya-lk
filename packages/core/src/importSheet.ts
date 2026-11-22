@@ -151,6 +151,7 @@ export function parseCsv(text: string): string[][] {
 const normHeader = (h: string) =>
   h
     .normalize('NFC')
+    .replace(/[\u200c\u200d]/g, '')
     .toLowerCase()
     .trim()
     .replace(/\s*\*+$/, '')

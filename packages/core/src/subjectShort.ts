@@ -2,6 +2,9 @@
 // Copyright (C) 2026 Kanushka Gayan
 import { STANDARD_SUBJECTS } from './standardSubjects';
 
+export const SUBJECT_SWATCHES = ['#D4ECEA', '#DCE7FA', '#F2E2E7', '#E3E9D2', '#EFE3D3', '#E2EEE0', '#FBEAC9', '#EBDDF2', '#DDEFF2', '#F0E6DA', '#E9E9E9'];
+export const SHORT_MAX = 10;
+
 const STOP = new Set(['and', 'of', 'the', 'for', 'in']);
 
 const normalize = (name: string) => name.toLowerCase().replace(/&/g, ' and ').replace(/\s+/g, ' ').trim();
