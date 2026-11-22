@@ -26,4 +26,9 @@ describe('IconButton', () => {
     rerender(<IconButton icon="close" label="x" />);
     expect(screen.getByRole('button')).toHaveClass('w-10', 'h-10');
   });
+
+  it('has no horizontal padding class', () => {
+    render(<IconButton icon="close" label="x" />);
+    expect(screen.getByRole('button').className).not.toMatch(/(^|\s)px-/);
+  });
 });

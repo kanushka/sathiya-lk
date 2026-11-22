@@ -9,7 +9,7 @@ import { Icon, type IconName } from './Icon';
 export interface IconButtonProps extends Omit<ButtonHTMLAttributes<HTMLButtonElement>, 'children'> {
   icon: IconName;
   label: string;
-  variant?: 'ghost' | 'secondary' | 'onBrand' | 'danger';
+  variant?: 'ghost' | 'secondary' | 'onBrand' | 'danger' | 'subtle';
   size?: 'sm' | 'md';
   pressed?: boolean;
 }
@@ -25,8 +25,9 @@ export const IconButton = forwardRef<HTMLButtonElement, IconButtonProps>(functio
       size={size}
       aria-label={label}
       title={label}
+      square
       aria-pressed={pressed}
-      className={cx('shrink-0 px-0', size === 'sm' ? 'w-8' : 'w-10', className)}
+      className={cx('shrink-0', className)}
       {...rest}
     >
       <Icon name={icon} size={size === 'sm' ? 16 : 18} />

@@ -118,8 +118,8 @@ function ModalPanel({ title, subtitle, onClose, footer, width = 560, children }:
           <IconButton
             icon="close"
             label={t('modal.close')}
+            variant="subtle"
             onClick={onClose}
-            className="bg-surface-3 hover:bg-line"
           />
         </header>
         <div ref={bodyRef} className="min-h-0 flex-1 overflow-y-auto px-7 py-6">
