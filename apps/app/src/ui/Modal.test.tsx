@@ -47,6 +47,20 @@ describe('Modal', () => {
     expect(onClose).toHaveBeenCalledTimes(1);
   });
 
+  it('ignores Escape, backdrop and the close button while busy', async () => {
+    const onClose = vi.fn();
+    renderWithI18n(
+      <Modal open busy title="Edit teacher" onClose={onClose}>
+        <input aria-label="Name" />
+      </Modal>,
+    );
+    const user = userEvent.setup();
+    await user.keyboard('{Escape}');
+    await user.click(screen.getByTestId('modal-backdrop'));
+    expect(screen.getByRole('button', { name: 'Close' })).toBeDisabled();
+    expect(onClose).not.toHaveBeenCalled();
+  });
+
   it('closes from the close button', async () => {
     const { onClose, user } = setup();
     await user.click(screen.getByRole('button', { name: 'Close' }));

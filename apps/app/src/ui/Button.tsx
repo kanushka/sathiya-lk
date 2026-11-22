@@ -1,7 +1,8 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
 // Copyright (C) 2026 Kanushka Gayan
 
-import { forwardRef, type ButtonHTMLAttributes } from 'react';
+import { forwardRef, useEffect, useState, type ButtonHTMLAttributes, type ReactNode } from 'react';
+import { useTranslation } from 'react-i18next';
 import { cx } from './cx';
 
 export const focusRingClass =
@@ -14,6 +15,37 @@ export interface ButtonProps extends ButtonHTMLAttributes<HTMLButtonElement> {
   variant?: ButtonVariant;
   size?: ButtonSize;
   square?: boolean;
+  loading?: boolean;
+  loadingLabel?: ReactNode;
+}
+
+const SLOW_MS = 5000;
+
+export function Spinner({ className }: { className?: string }) {
+  return (
+    <svg
+      data-spinner
+      aria-hidden="true"
+      viewBox="0 0 24 24"
+      width="16"
+      height="16"
+      className={cx('shrink-0 motion-safe:animate-spin motion-reduce:hidden', className)}
+    >
+      <circle cx="12" cy="12" r="9" fill="none" stroke="currentColor" strokeWidth="3" opacity=".25" />
+      <path d="M21 12a9 9 0 0 0-9-9" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" />
+    </svg>
+  );
+}
+
+function useSlow(loading: boolean): boolean {
+  const [slow, setSlow] = useState(false);
+  useEffect(() => {
+    setSlow(false);
+    if (!loading) return;
+    const id = setTimeout(() => setSlow(true), SLOW_MS);
+    return () => clearTimeout(id);
+  }, [loading]);
+  return slow;
 }
 
 const variants: Record<ButtonVariant, string> = {
@@ -54,15 +86,33 @@ export function buttonClass({
 }
 
 export const Button = forwardRef<HTMLButtonElement, ButtonProps>(function Button(
-  { variant = 'secondary', size = 'md', square = false, className, type = 'button', ...rest },
+  { variant = 'secondary', size = 'md', square = false, className, type = 'button', loading = false, loadingLabel, disabled, children, ...rest },
   ref,
 ) {
+  const { t } = useTranslation('common');
+  const slow = useSlow(loading);
   return (
     <button
       ref={ref}
       type={type}
       className={cx(buttonClass({ variant, size, square }), className)}
+      disabled={disabled || loading}
+      aria-busy={loading || undefined}
       {...rest}
-    />
+    >
+      {loading ? (
+        <span className="grid">
+          <span aria-hidden="true" className="invisible col-start-1 row-start-1 inline-flex items-center justify-center gap-2">
+            {children}
+          </span>
+          <span className="col-start-1 row-start-1 inline-flex items-center justify-center gap-2">
+            <Spinner />
+            {slow ? t('busy.stillWorking') : (loadingLabel ?? children)}
+          </span>
+        </span>
+      ) : (
+        children
+      )}
+    </button>
   );
 });
