@@ -3,6 +3,7 @@
 
 import { forwardRef, type HTMLAttributes, type InputHTMLAttributes, type ReactNode } from 'react';
 import { createPortal } from 'react-dom';
+import { CheckboxBox } from '../CheckboxBox';
 import { cx } from '../cx';
 import { fieldFocusClass } from '../Field';
 import { Icon } from '../Icon';
@@ -68,17 +69,7 @@ export function MenuOption({ id, active, selected, disabled, multi, onPick, onHo
         selected && 'font-semibold',
       )}
     >
-      {multi && (
-        <span
-          aria-hidden="true"
-          className={cx(
-            'flex h-[18px] w-[18px] shrink-0 items-center justify-center rounded border',
-            selected ? 'border-brand bg-brand text-on-brand' : 'border-line-strong bg-white',
-          )}
-        >
-          {selected && <Icon name="check" size={12} strokeWidth={3} />}
-        </span>
-      )}
+      {multi && <CheckboxBox checked={selected} />}
       <span className="flex min-w-0 flex-1 items-center gap-2.5">{children}</span>
       {selected && !multi && <Icon name="check" size={16} className="shrink-0 text-brand" />}
     </div>

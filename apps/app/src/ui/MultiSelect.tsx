@@ -5,6 +5,7 @@ import { useEffect, useId, useMemo, useRef, useState, type KeyboardEvent } from 
 import { useTranslation } from 'react-i18next';
 import { Button } from './Button';
 import { isComposing } from './composing';
+import { Chip } from './Chip';
 import { cx } from './cx';
 import { fieldBoxClass, fieldFocusWithinClass } from './Field';
 import { Icon } from './Icon';
@@ -211,28 +212,16 @@ export function MultiSelect<V extends string = string>({
         )}
       >
         {chips.map((o) => (
-          <span
+          <Chip
             key={o.value}
-            className={cx(
-              'inline-flex h-7 min-w-0 max-w-[10rem] items-center gap-0.5 rounded-md bg-surface-3 pl-2 pr-0.5 text-[13px] font-medium',
-              disabled ? 'text-ink-muted' : 'text-ink',
-            )}
+            disabled={disabled}
+            removeTabIndex={-1}
+            removeLabel={t('multi.remove', { label: o.label })}
+            onRemove={() => remove(o.value)}
+            className="min-w-0 max-w-[10rem]"
           >
-            <span className="truncate">{o.label}</span>
-            <button
-              type="button"
-              tabIndex={-1}
-              aria-label={t('multi.remove', { label: o.label })}
-              disabled={disabled}
-              onClick={(e) => {
-                e.stopPropagation();
-                remove(o.value);
-              }}
-              className="flex h-6 w-6 shrink-0 items-center justify-center rounded text-ink-muted hover:bg-line hover:text-ink disabled:cursor-not-allowed disabled:hover:bg-transparent"
-            >
-              <Icon name="close" size={12} strokeWidth={2.4} />
-            </button>
-          </span>
+            {o.label}
+          </Chip>
         ))}
         {overflow > 0 && (
           <span
