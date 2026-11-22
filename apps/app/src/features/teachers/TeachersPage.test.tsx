@@ -262,6 +262,26 @@ describe('teachers page', () => {
     expect(vi.mocked(printSlips).mock.calls[0]![0]).toHaveLength(ctx.teachers.length - 1);
   });
 
+  it('print all after a reset leaves out a failed teacher even with an earlier password', async () => {
+    const user = userEvent.setup();
+    const bad = ctx.teachers[0]!;
+    setSessionPassword('test-user:siripura', bad.id, 'oldpass1');
+    vi.mocked(api.resetTeacherPassword).mockImplementation(async (_s, id) => {
+      if (id === bad.id) throw new Error('no login');
+      return `pw-${id}`;
+    });
+    render();
+    await user.click(screen.getByRole('button', { name: 'Print all login slips' }));
+    await user.click(within(screen.getByRole('dialog')).getByRole('button', { name: 'Reset all passwords and print' }));
+    await user.click(within(screen.getByRole('dialog', { name: "Reset every teacher's password?" })).getByRole('button', { name: 'Reset all and print' }));
+    const done = await screen.findByRole('dialog', { name: 'Passwords reset' });
+    await user.click(within(done).getByRole('button', { name: `Print ${ctx.teachers.length - 1} slips` }));
+    await waitFor(() => expect(printSlips).toHaveBeenCalled());
+    const printed = vi.mocked(printSlips).mock.calls[0]![0];
+    expect(printed).toHaveLength(ctx.teachers.length - 1);
+    expect(printed.map((x) => x.staffId)).not.toContain(bad.staffId);
+  });
+
   it('print all moves focus into the confirmation step', async () => {
     const user = userEvent.setup();
     render();

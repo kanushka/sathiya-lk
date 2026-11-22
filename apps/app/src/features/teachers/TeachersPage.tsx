@@ -66,10 +66,14 @@ export function TeachersPage() {
 
   const known = sorted.filter((x) => passwords[x.id]);
 
-  async function resetAll(): Promise<{ failed: number } | null> {
+  const [resetBatch, setResetBatch] = useState<Readonly<Record<string, string>>>({});
+
+  async function resetAll(): Promise<{ reset: number; failed: number } | null> {
     const { passwords: fresh, failed } = await resetPasswords(school.id, sorted.map((x) => x.id));
     for (const [id, pw] of Object.entries(fresh)) setSessionPassword(id, pw);
-    return Object.keys(fresh).length === 0 ? null : { failed };
+    setResetBatch(fresh);
+    const reset = Object.keys(fresh).length;
+    return reset === 0 ? null : { reset, failed };
   }
 
   const add = (
@@ -174,6 +178,10 @@ export function TeachersPage() {
           }}
           readOnly={readOnly}
           onResetAll={resetAll}
+          onPrintReset={() => {
+            setDialog(null);
+            void printTeachers(sorted.filter((x) => resetBatch[x.id]), resetBatch);
+          }}
           onClose={() => setDialog(null)}
         />
       )}

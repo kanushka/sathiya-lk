@@ -11,13 +11,14 @@ export interface PrintAllModalProps {
   known: number;
   readOnly: boolean;
   onPrintKnown: () => void;
-  onResetAll: () => Promise<{ failed: number } | null>;
+  onResetAll: () => Promise<{ reset: number; failed: number } | null>;
+  onPrintReset: () => void;
   onClose: () => void;
 }
 
-type View = { kind: 'options' } | { kind: 'confirm' } | { kind: 'done'; failed: number };
+type View = { kind: 'options' } | { kind: 'confirm' } | { kind: 'done'; reset: number; failed: number };
 
-export function PrintAllModal({ total, known, readOnly, onPrintKnown, onResetAll, onClose }: PrintAllModalProps) {
+export function PrintAllModal({ total, known, readOnly, onPrintKnown, onResetAll, onPrintReset, onClose }: PrintAllModalProps) {
   const { t } = useTranslation('teachers');
   const [view, setView] = useState<View>({ kind: 'options' });
   const [busy, setBusy] = useState(false);
@@ -28,7 +29,7 @@ export function PrintAllModal({ total, known, readOnly, onPrintKnown, onResetAll
     setFailed(false);
     const result = await onResetAll();
     setBusy(false);
-    if (result) setView({ kind: 'done', failed: result.failed });
+    if (result) setView({ kind: 'done', reset: result.reset, failed: result.failed });
     else setFailed(true);
   }
 
@@ -43,8 +44,8 @@ export function PrintAllModal({ total, known, readOnly, onPrintKnown, onResetAll
         footer={
           <>
             <Button onClick={onClose}>{t('printAll.close')}</Button>
-            <Button variant="primary" onClick={onPrintKnown}>
-              {t('printAll.printReset', { count: known })}
+            <Button variant="primary" onClick={onPrintReset}>
+              {t('printAll.printReset', { count: view.reset })}
             </Button>
           </>
         }
