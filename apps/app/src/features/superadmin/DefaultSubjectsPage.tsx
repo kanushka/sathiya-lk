@@ -146,10 +146,11 @@ export function DefaultSubjectsPage({ doc: injected, writer = firestorePlatformW
         title={editing?.index === null ? t('subjects.addTitle') : t('subjects.editTitle')}
         width={480}
         onClose={() => setEditing(null)}
+        busy={busy}
         footer={
           <>
-            <Button onClick={() => setEditing(null)}>{t('buttons.cancel', { ns: 'common' })}</Button>
-            <Button variant="primary" disabled={busy} onClick={() => void saveEdit()}>
+            <Button onClick={() => setEditing(null)} disabled={busy}>{t('buttons.cancel', { ns: 'common' })}</Button>
+            <Button variant="primary" loading={busy} loadingLabel={t('busy.saving', { ns: 'common' })} onClick={() => void saveEdit()}>
               {t('buttons.save', { ns: 'common' })}
             </Button>
           </>
@@ -187,10 +188,11 @@ export function DefaultSubjectsPage({ doc: injected, writer = firestorePlatformW
         title={t('subjects.confirmDelete.title', { name: deletingName })}
         width={460}
         onClose={() => setDeleting(null)}
+        busy={busy}
         footer={
           <>
-            <Button onClick={() => setDeleting(null)}>{t('buttons.cancel', { ns: 'common' })}</Button>
-            <Button variant="dangerSolid" disabled={busy} onClick={() => void confirmDelete()}>
+            <Button onClick={() => setDeleting(null)} disabled={busy}>{t('buttons.cancel', { ns: 'common' })}</Button>
+            <Button variant="dangerSolid" loading={busy} loadingLabel={t('busy.deleting', { ns: 'common' })} onClick={() => void confirmDelete()}>
               {t('subjects.confirmDelete.confirm')}
             </Button>
           </>

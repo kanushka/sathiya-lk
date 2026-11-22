@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
 // Copyright (C) 2026 Kanushka Gayan
 import { paths, pickName, type TeacherSnapshot } from '@sathiya/core';
-import { useState, type ReactNode } from 'react';
+import { useEffect, useState, type ReactNode } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Link } from 'react-router-dom';
 import { useAuth } from '../../app/AuthProvider';
@@ -13,6 +13,7 @@ import { EmptyState } from '../../ui/EmptyState';
 import { LoadingState } from '../../ui/LoadingState';
 import { cx } from '../../ui/cx';
 import { ChangePasswordModal } from './ChangePasswordModal';
+import { recordSignInOnce } from './signIn';
 import type { ChangePasswordFn } from './firebasePassword';
 import { colomboNow, greetingKey } from './colomboNow';
 import { useNow, type NowFn } from './useNow';
@@ -38,6 +39,9 @@ export function TeacherFrame({ view, now: nowFn, snapshot, changePassword, child
 
   const yearId = school.activeYearId;
   const tid = claims.tid;
+  useEffect(() => {
+    if (tid) recordSignInOnce();
+  }, [tid]);
   const path = !snapshot && yearId && tid ? paths.publishedTeacher(school.id, yearId, tid) : null;
   const live = useDoc<TeacherSnapshot>(path);
   const state = snapshot ?? live;
@@ -72,12 +76,8 @@ export function TeacherFrame({ view, now: nowFn, snapshot, changePassword, child
     <div className="mx-auto flex min-h-screen w-full max-w-[560px] flex-col overflow-x-hidden bg-[#F6F6F4] text-ink">
       <header className="bg-brand px-[18px] pb-14 pt-5 text-on-brand">
         <div className="flex items-center gap-2.5">
-          {school.logoUrl ? (
-            <img src={school.logoUrl} alt="" className="h-[34px] w-[34px] rounded-lg bg-white object-contain" />
-          ) : (
-            <span aria-hidden="true" className="flex h-[34px] w-[34px] items-center justify-center rounded-lg bg-white text-xs font-extrabold text-brand">
-              {school.staffPrefix}
-            </span>
+          {school.logoUrl && (
+            <img data-testid="school-logo" src={school.logoUrl} alt="" className="h-[34px] w-[34px] rounded-lg bg-white object-contain" />
           )}
           <div className="min-w-0 flex-1">
             <strong className="block truncate text-sm">{schoolName}</strong>

@@ -9,15 +9,22 @@ export function pickName(x: Bilingual, lang: Lang): string {
 }
 
 export const TEACHER_TITLE_LABELS: Record<Lang, Record<TeacherTitle, string>> = {
-  en: { Mr: 'Mr.', Mrs: 'Mrs.', Miss: 'Miss', Ms: 'Ms.', Dr: 'Dr.', Rev: 'Rev.', 'Ven.': 'Ven.', Thero: 'Thero' },
-  si: { Mr: 'මහතා', Mrs: 'මහත්මිය', Miss: 'මෙනවිය', Ms: 'මිය', Dr: 'ආචාර්ය', Rev: 'පූජ්‍ය', 'Ven.': 'පූජ්‍ය', Thero: 'හිමි' },
+  en: { Mr: 'Mr.', Mrs: 'Mrs.', Miss: 'Miss', Ms: 'Ms.', Dr: 'Dr.', Rev: 'Rev.', 'Ven.': 'Ven.' },
+  si: { Mr: 'මහතා', Mrs: 'මහත්මිය', Miss: 'මෙනවිය', Ms: 'මිය', Dr: 'ආචාර්ය', Rev: 'පූජ්‍ය', 'Ven.': 'පූජ්‍ය' },
 };
 
 // Sinhala honorifics for laypeople follow the name; clergy and doctoral titles precede it.
 const TITLE_AFTER: Record<Lang, ReadonlySet<TeacherTitle>> = {
-  en: new Set<TeacherTitle>(['Thero']),
-  si: new Set<TeacherTitle>(['Mr', 'Mrs', 'Miss', 'Ms', 'Thero']),
+  en: new Set<TeacherTitle>(),
+  si: new Set<TeacherTitle>(['Mr', 'Mrs', 'Miss', 'Ms']),
 };
+
+// Records saved with the retired "Thero" title read as "Ven. <name> Thero" and are rewritten on next save.
+export function normalizeTeacher<T extends { name: string; title?: string }>(teacher: T): T {
+  if (teacher.title !== 'Thero') return teacher;
+  const name = teacher.name.trim();
+  return { ...teacher, title: 'Ven.', name: /\bthero$/i.test(name) ? name : `${name} Thero` };
+}
 
 const PREFIX = /^(mrs|mr|miss|ms|dr|rev|ven)\.?\s+(\S.*)$/i;
 const PREFIX_TITLE: Record<string, TeacherTitle> = { mrs: 'Mrs', mr: 'Mr', miss: 'Miss', ms: 'Ms', dr: 'Dr', rev: 'Rev', ven: 'Ven.' };
@@ -28,7 +35,8 @@ export function splitTitle(name: string): { title?: TeacherTitle; name: string }
   return m?.[2] && title ? { title, name: m[2] } : { name };
 }
 
-export function teacherDisplayName(teacher: Pick<Teacher, 'name' | 'title'>, lang: Lang = 'en'): string {
+export function teacherDisplayName(raw: Pick<Teacher, 'name' | 'title'>, lang: Lang = 'en'): string {
+  const teacher = normalizeTeacher(raw);
   const split = splitTitle(teacher.name);
   const title = teacher.title ?? split.title;
   const name = split.title === undefined || split.title === title ? split.name : teacher.name.trim();

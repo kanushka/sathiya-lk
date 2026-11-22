@@ -20,17 +20,9 @@ export interface SchoolsPageProps {
   setStatus?: SetStatusFn;
 }
 
-export function SchoolSwatch({ school, lang }: { school: School; lang: 'en' | 'si' }) {
-  const name = pickName(school, lang);
-  return (
-    <span
-      aria-hidden="true"
-      style={{ background: school.colors.primary }}
-      className="flex h-7 w-7 shrink-0 items-center justify-center rounded-lg text-[11px] font-extrabold text-white"
-    >
-      {school.staffPrefix.slice(0, 3) || name.slice(0, 2)}
-    </span>
-  );
+export function SchoolSwatch({ school }: { school: School }) {
+  if (!school.logoUrl) return null;
+  return <img src={school.logoUrl} alt="" className="h-7 w-7 shrink-0 rounded-lg object-contain" />;
 }
 
 export function countCell(state: CountState | undefined, pick: (c: Extract<CountState, { status: 'ready' }>['counts']) => string): string {
@@ -117,7 +109,7 @@ export function SchoolsPage({ schools: injected, setStatus = defaultSetStatus }:
               <Tr key={s.id}>
                 <Td>
                   <div className="flex items-center gap-2.5">
-                    <SchoolSwatch school={s} lang={lang} />
+                    <SchoolSwatch school={s} />
                     <div className="min-w-0">
                       <strong className="block">{pickName(s, lang)}</strong>
                       {s.city && <span className="block text-xs text-ink-muted">{s.city}</span>}

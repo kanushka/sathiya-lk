@@ -35,6 +35,12 @@ describe('PrintClassPage', () => {
     expect(screen.getByText(/^Interval · 10:30 – 10:50$/)).toBeInTheDocument();
   });
 
+  it('shows no generated badge without an uploaded logo', () => {
+    setup();
+    expect(screen.queryByTestId('school-logo')).toBeNull();
+    expect(document.querySelector('.print-sheet header svg')).toBeNull();
+  });
+
   it('shows the printed date and made-with footer', () => {
     vi.useFakeTimers({ toFake: ['Date'] });
     vi.setSystemTime(new Date('2026-11-21T09:00:00'));

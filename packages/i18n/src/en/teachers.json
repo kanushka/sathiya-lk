@@ -77,12 +77,15 @@
     "deleted": "{{name}} deleted",
     "failed": "Could not delete. Try again.",
     "body": {
+      "grade": "This removes the grade and its classes: {{classes}}. It cannot be undone.",
+      "gradeEmpty": "This removes the grade. It has no classes. It cannot be undone.",
       "teacher": "This removes the teacher and their login. It cannot be undone.",
       "subject": "This removes the subject. It cannot be undone.",
       "class": "This removes the class. It cannot be undone.",
       "template": "This removes the period template. It cannot be undone."
     },
     "inUse": {
+      "grade": "Its classes are used in {{count}} slots. Remove them from the timetable first.",
       "teacher": "Used in {{count}} slots. Remove them from the timetable first.",
       "subject": "Used in {{count}} slots. Remove them from the timetable first.",
       "class": "Used in {{count}} slots. Remove them from the timetable first.",

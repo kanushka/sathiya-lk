@@ -4,10 +4,12 @@ import { screen, waitFor, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import * as api from './api';
+import { recordSignIn } from '../teacher/signIn';
 import { LoginPage } from './LoginPage';
 import { renderAuth } from './testHarness';
 
 vi.mock('./api');
+vi.mock('../teacher/signIn');
 
 const siripura = { id: 'siripura', nameEn: 'Siripura Central College', district: 'Kandy', city: 'Peradeniya', status: 'active' as const };
 
@@ -87,6 +89,7 @@ describe('teacher login', () => {
       expect(api.signInWithPassword).toHaveBeenCalledWith('scc024@siripura.teachers.sathiya.lk', 'k7m4x9pq'),
     );
     expect(await screen.findByTestId('where')).toHaveTextContent('/me');
+    expect(recordSignIn).toHaveBeenCalledTimes(1);
   });
 
   it('shows the wrong-credentials message', async () => {

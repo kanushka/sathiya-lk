@@ -77,7 +77,7 @@ function AnnouncementForm({ initial, writer }: { initial: PlatformConfig['announ
           </div>
         </div>
         <div>
-          <Button variant="primary" disabled={busy} onClick={() => void save()}>
+          <Button variant="primary" loading={busy} loadingLabel={t('busy.saving', { ns: 'common' })} onClick={() => void save()}>
             {t('buttons.save', { ns: 'common' })}
           </Button>
         </div>

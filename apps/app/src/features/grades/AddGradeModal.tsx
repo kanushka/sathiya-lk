@@ -32,10 +32,11 @@ export function AddGradeModal({ choices, onAdd, onClose }: AddGradeModalProps) {
       width={420}
       title={t('addGrade.title')}
       onClose={onClose}
+      busy={saving}
       footer={
         <>
-          <Button onClick={onClose}>{t('addGrade.cancel')}</Button>
-          <Button variant="primary" type="submit" form="grade-form" disabled={saving}>
+          <Button onClick={onClose} disabled={saving}>{t('addGrade.cancel')}</Button>
+          <Button variant="primary" type="submit" form="grade-form" loading={saving}>
             {t('addGrade.add')}
           </Button>
         </>

@@ -109,7 +109,12 @@ describe('SlotPicker', () => {
     const existing = entries6B.find((e) => e.id === 'e-6b-0-1')!;
     const h = setup({ day: 0, period: 1, editing: existing });
     expect(screen.getByRole('button', { name: 'Subject' })).toHaveTextContent('Mathematics');
-    expect(screen.getByRole('button', { name: /Mrs. N. Perera/ })).toHaveTextContent('Current');
+    const current = screen.getByRole('button', { name: /Mrs. N. Perera/ });
+    expect(current).toHaveTextContent('Current');
+    expect(current).not.toHaveTextContent('Assign');
+    expect(current).toBeDisabled();
+    await userEvent.click(current);
+    expect(h.onSave).not.toHaveBeenCalled();
     await userEvent.click(screen.getByRole('button', { name: /Mr. P. Bandara/ }));
     expect(h.onSave).toHaveBeenCalledWith({ id: 'e-6b-0-1', day: 0, period: 1, classIds: [C.c6b], lessons: [{ subjectId: S.maths, teacherId: T.bandara }] });
     await userEvent.click(screen.getByRole('button', { name: 'Clear slot' }));

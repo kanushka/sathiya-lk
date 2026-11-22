@@ -28,6 +28,13 @@ beforeEach(() => {
 
 const render = () => renderWithSchool(<TeachersPage />, { ctx, entries });
 
+describe('teachers page from an empty-state link', () => {
+  it('opens Add teacher when the URL has ?new=1', () => {
+    renderWithSchool(<TeachersPage />, { ctx, entries, route: '/admin/teachers?new=1' });
+    expect(screen.getByRole('dialog')).toBeInTheDocument();
+  });
+});
+
 async function openAdd(user: ReturnType<typeof userEvent.setup>) {
   await user.click(screen.getByRole('button', { name: '+ Add teacher' }));
   return screen.getByRole('dialog');
@@ -194,6 +201,14 @@ describe('teachers page', () => {
     await waitFor(() => expect(api.updateTeacher).toHaveBeenCalled());
   });
 
+  it('shows a legacy Thero teacher as Ven. and saves it that way', async () => {
+    const user = userEvent.setup();
+    vi.mocked(api.updateTeacher).mockResolvedValue(undefined);
+    const legacy = { ...ctx.teachers[0]!, title: 'Thero' as never, name: 'Sumana' };
+    renderWithSchool(<TeachersPage />, { ctx: { ...ctx, teachers: [legacy, ...ctx.teachers.slice(1)] }, entries });
+    expect(screen.getByText('Ven. Sumana Thero')).toBeInTheDocument();
+  });
+
   it('creates a teacher with a title kept apart from the name', async () => {
     const user = userEvent.setup();
     vi.mocked(api.createTeacher).mockResolvedValue({ teacherId: 'tNew', password: 'k7m4x9pq' });
@@ -201,14 +216,15 @@ describe('teachers page', () => {
     const dialog = await openAdd(user);
     const title = within(dialog).getByRole('combobox', { name: /^Title/ });
     await user.click(title);
-    expect(screen.getAllByRole('option').map((o) => o.textContent)).toEqual(['—', 'Mr.', 'Mrs.', 'Miss', 'Ms.', 'Dr.', 'Rev.', 'Ven.', 'Thero']);
-    await user.click(screen.getByRole('option', { name: 'Thero' }));
-    await user.type(within(dialog).getByLabelText('Name'), 'Ananda');
+    expect(screen.getAllByRole('option').map((o) => o.textContent)).toEqual(['—', 'Mr.', 'Mrs.', 'Miss', 'Ms.', 'Dr.', 'Rev.', 'Ven.']);
+    expect(screen.queryByRole('combobox', { name: 'Search' })).toBeNull();
+    await user.click(screen.getByRole('option', { name: 'Ven.' }));
+    await user.type(within(dialog).getByLabelText('Name'), 'Ananda Thero');
     await pickOption(user, within(dialog).getByRole('combobox', { name: 'Subjects' }), 'Mathematics');
     await user.click(within(dialog).getByRole('button', { name: '6', pressed: false }));
     await user.click(within(dialog).getByRole('button', { name: 'Save teacher' }));
     await waitFor(() => expect(api.createTeacher).toHaveBeenCalled());
-    expect(api.createTeacher).toHaveBeenCalledWith('siripura', expect.objectContaining({ title: 'Thero', name: 'Ananda' }));
+    expect(api.createTeacher).toHaveBeenCalledWith('siripura', expect.objectContaining({ title: 'Ven.', name: 'Ananda Thero' }));
   });
 
   it('moves a legacy name prefix into the title when editing', async () => {

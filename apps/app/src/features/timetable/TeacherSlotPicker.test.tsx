@@ -70,6 +70,17 @@ describe('TeacherSlotPicker', () => {
     expect(row).toHaveTextContent('Teaching 6A · Science');
   });
 
+  it('marks the class already in the slot as current with no Assign action', async () => {
+    const h = setup();
+    await chooseSubject('Pali');
+    const current = screen.getByRole('button', { name: /^12A/ });
+    expect(current).toHaveTextContent('Current');
+    expect(current).not.toHaveTextContent('Assign');
+    expect(current).toBeDisabled();
+    await userEvent.click(current);
+    expect(h.onSave).not.toHaveBeenCalled();
+  });
+
   it('assigns a plain subject with a one-class draft', async () => {
     const h = setup();
     await chooseSubject('Buddhism');

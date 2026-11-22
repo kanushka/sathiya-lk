@@ -7,6 +7,7 @@ import { useSchool, useYear } from '../../app/SchoolProvider';
 import { useReadOnly } from '../../ui/AdminLayout';
 import { Button } from '../../ui/Button';
 import { EmptyState } from '../../ui/EmptyState';
+import { PageHeader } from '../../ui/PageHeader';
 import { Table, TBody, Td, Th, THead, Tr } from '../../ui/Table';
 import { useToast } from '../../ui/Toast';
 import { DeleteSetupModal } from '../teachers/DeleteSetupModal';
@@ -60,18 +61,20 @@ export function SubjectsPage() {
 
   return (
     <div>
-      <div className="mb-1.5 flex flex-wrap items-end justify-between gap-3">
-        <h1 className="m-0 text-2xl font-bold text-ink">{t('page.title')}</h1>
-        {!readOnly && (
-          <div className="flex gap-2.5">
-            <Button onClick={() => void loadStandard()} disabled={loading}>
-              {t('page.loadStandard')}
-            </Button>
-            {add}
-          </div>
-        )}
-      </div>
-      <p className="mb-5 text-sm text-ink-soft">{t('page.intro')}</p>
+      <PageHeader
+        title={t('page.title')}
+        subtitle={t('page.intro')}
+        actions={
+          !readOnly && (
+            <>
+              <Button onClick={() => void loadStandard()} loading={loading}>
+                {t('page.loadStandard')}
+              </Button>
+              {add}
+            </>
+          )
+        }
+      />
 
       {subjects.length === 0 ? (
         <EmptyState icon="subjects" title={t('page.empty')} body={t('page.emptyBody')} action={readOnly ? undefined : add} />

@@ -7,6 +7,7 @@ import { useNavigate, useSearchParams } from 'react-router-dom';
 import { useAuth } from '../../app/AuthProvider';
 import { Button } from '../../ui/Button';
 import { Field, inputClass } from '../../ui/Field';
+import { recordSignIn } from '../teacher/signIn';
 import { SchoolSearch } from './SchoolSearch';
 import { getDirectorySchool, signInWithPassword, type DirectorySchool } from './api';
 import { authErrorMessage } from './errors';
@@ -72,6 +73,7 @@ export function TeacherLoginForm({ autoFocus }: { autoFocus?: boolean }) {
     } catch {
       // Signed in; HomeRedirect decides from whatever claims are loaded.
     }
+    recordSignIn();
     navigate('/', { replace: true });
   }
 
@@ -109,7 +111,7 @@ export function TeacherLoginForm({ autoFocus }: { autoFocus?: boolean }) {
           onChange={(e) => setPassword(e.target.value)}
         />
       </Field>
-      <Button type="submit" variant="primary" size="lg" className="w-full" disabled={busy || !staffId || !password}>
+      <Button type="submit" variant="primary" size="lg" className="w-full" loading={busy} disabled={!staffId || !password}>
         {t('teacher.submit')}
       </Button>
       <p className="mb-0 mt-[18px] rounded-lg bg-surface-2 px-3.5 py-3 text-sm leading-normal text-ink-soft">

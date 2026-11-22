@@ -7,6 +7,9 @@ import { useSchool } from '../../app/SchoolProvider';
 import { useReadOnly } from '../../ui/AdminLayout';
 import { Button } from '../../ui/Button';
 import { EmptyState } from '../../ui/EmptyState';
+import { LinkButton } from '../../ui/LinkButton';
+import { PageHeader } from '../../ui/PageHeader';
+import { useAdminBase } from '../timetable/paths';
 import { useToast } from '../../ui/Toast';
 import { DeleteSetupModal } from '../teachers/DeleteSetupModal';
 import * as api from './api';
@@ -16,12 +19,13 @@ import { ClassPlanModal } from './ClassPlanModal';
 import { nextClassName, planCapacity } from './planModel';
 import { PlanEditor } from './PlanEditor';
 
-type Dialog = { kind: 'addGrade' } | { kind: 'plan'; cls: SchoolClass } | { kind: 'delete'; cls: SchoolClass } | null;
+type Dialog = { kind: 'addGrade' } | { kind: 'deleteGrade' } | { kind: 'plan'; cls: SchoolClass } | { kind: 'delete'; cls: SchoolClass } | null;
 
 export function GradesPage() {
   const { t } = useTranslation('grades');
   const school = useSchool();
   const readOnly = useReadOnly();
+  const base = useAdminBase();
   const toast = useToast();
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [dialog, setDialog] = useState<Dialog>(null);
@@ -55,13 +59,15 @@ export function GradesPage() {
   };
 
   const addGradeButton = !readOnly && choices.length > 0 && (
-    <Button variant="link" className="mx-2 mt-2.5" onClick={() => setDialog({ kind: 'addGrade' })}>
+    <Button variant="primary" onClick={() => setDialog({ kind: 'addGrade' })}>
       {t('rail.addGrade')}
     </Button>
   );
 
   return (
-    <div className="flex min-h-[600px] gap-6">
+    <div>
+      <PageHeader title={t('page.heading')} actions={addGradeButton || undefined} />
+      <div className="flex min-h-[600px] gap-6">
       <nav aria-label={t('rail.title')} className="w-[150px] shrink-0 border-r border-line-soft pr-2.5">
         <p className="mx-2 mb-2.5 text-[11px] font-bold uppercase tracking-widest text-ink-muted">{t('rail.title')}</p>
         {grades.map((g) => (
@@ -78,25 +84,39 @@ export function GradesPage() {
             <span className="text-xs font-medium text-ink-muted">{school.classes.filter((c) => c.gradeId === g.id).length}</span>
           </button>
         ))}
-        {addGradeButton}
       </nav>
 
       <div className="min-w-0 flex-1">
         {!grade ? (
-          <EmptyState icon="grades" title={t('page.empty')} body={t('page.emptyBody')} />
+          <EmptyState icon="grades" title={t('page.empty')} body={t('page.emptyBody')} action={addGradeButton || undefined} />
         ) : (
           <>
-            <h1 className="mb-5 mt-0 text-2xl font-bold text-ink">{t('page.title', { n: grade.number })}</h1>
+            <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
+              <h2 className="m-0 text-xl font-bold text-ink">{t('page.title', { n: grade.number })}</h2>
+              {!readOnly && (
+                <Button variant="danger" size="sm" onClick={() => setDialog({ kind: 'deleteGrade' })}>
+                  {t('page.deleteGrade')}
+                </Button>
+              )}
+            </div>
 
             <section className="mb-5 rounded-[14px] border border-line-soft bg-white p-5">
               <div className="mb-3.5 flex items-center justify-between">
-                <h2 className="m-0 text-[17px] font-bold">{t('classes.title')}</h2>
+                <h3 className="m-0 text-[17px] font-bold">{t('classes.title')}</h3>
                 {!readOnly && defaultTemplate && (
                   <Button onClick={() => void addClass()}>
                     {t('classes.add', { name: nextClassName(grade.number, gradeClasses.map((c) => c.name)) })}
                   </Button>
                 )}
               </div>
+              {!readOnly && !defaultTemplate && (
+                <p className="mb-3 flex flex-wrap items-center gap-3 text-sm text-ink-muted">
+                  {t('classes.noTemplate')}
+                  <LinkButton variant="primary" size="sm" to={`${base}/templates`}>
+                    {t('classes.goTemplates')}
+                  </LinkButton>
+                </p>
+              )}
               {gradeClasses.length === 0 ? (
                 <p className="text-sm text-ink-muted">{t('classes.empty')}</p>
               ) : (
@@ -129,6 +149,7 @@ export function GradesPage() {
             </section>
           </>
         )}
+        </div>
       </div>
 
       {dialog?.kind === 'addGrade' && (
@@ -141,6 +162,21 @@ export function GradesPage() {
           grade={grade}
           template={school.templates.find((x) => x.id === dialog.cls.templateId) ?? defaultTemplate!}
           subjects={school.subjects}
+          onClose={() => setDialog(null)}
+        />
+      )}
+      {dialog?.kind === 'deleteGrade' && grade && (
+        <DeleteSetupModal
+          schoolId={sid}
+          kind="grade"
+          id={grade.id}
+          name={t('rail.grade', { n: grade.number })}
+          body={
+            gradeClasses.length > 0
+              ? t('deleteGuard.body.grade', { ns: 'teachers', classes: gradeClasses.map((c) => c.name).join(', ') })
+              : t('deleteGuard.body.gradeEmpty', { ns: 'teachers' })
+          }
+          onDeleted={() => setSelectedId(null)}
           onClose={() => setDialog(null)}
         />
       )}

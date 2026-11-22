@@ -1,0 +1,63 @@
+// SPDX-License-Identifier: AGPL-3.0-or-later
+// Copyright (C) 2026 Kanushka Gayan
+
+import { describe, expect, it } from 'vitest';
+import { shortTaken, suggestSubjectShort } from './subjectShort';
+import { STANDARD_SUBJECTS } from './standardSubjects';
+
+describe('suggestSubjectShort', () => {
+  it.each([
+    ['English', 'Eng'],
+    ['Mathematics', 'Math'],
+    ['Information & Communication Technology', 'ICT'],
+    ['information and communication technology', 'ICT'],
+    ['Health & Physical Education', 'HPE'],
+    ['Agriculture', 'Agri'],
+    ['Drama', 'Dra'],
+    ['Art', 'Art'],
+    ['Pali', 'Pali'],
+    ['Home Science', 'HS'],
+    ['  oriental   music ', 'OM'],
+  ])('%s → %s', (name, short) => {
+    expect(suggestSubjectShort(name, [])).toBe(short);
+  });
+
+  it('gives nothing without Latin letters', () => {
+    expect(suggestSubjectShort('ගණිතය', [])).toBe('');
+    expect(suggestSubjectShort('  ', [])).toBe('');
+  });
+
+  it('is unique among existing short names, ignoring case', () => {
+    expect(suggestSubjectShort('English', ['eng'])).toBe('Engl');
+    expect(suggestSubjectShort('English', ['Eng', 'ENGL'])).toBe('Eng2');
+    expect(suggestSubjectShort('English', ['Eng', 'Engl', 'eng2'])).toBe('Eng3');
+    expect(suggestSubjectShort('Home Science', ['HS'])).toBe('HS2');
+    expect(suggestSubjectShort('Mathematics', ['math'])).toBe('Math2');
+  });
+
+  it('knows every standard subject', () => {
+    for (const s of STANDARD_SUBJECTS) expect(suggestSubjectShort(s.nameEn, [])).toBe(s.short);
+  });
+});
+
+describe('shortTaken', () => {
+  it('compares trimmed and case-insensitive', () => {
+    expect(shortTaken(' eng ', ['Eng'])).toBe(true);
+    expect(shortTaken('Engl', ['Eng'])).toBe(false);
+    expect(shortTaken('', [''])).toBe(false);
+  });
+});
+
+describe('STANDARD_SUBJECTS', () => {
+  it('has unique names and short names that fit a cell', () => {
+    const names = STANDARD_SUBJECTS.map((s) => s.nameEn.toLowerCase());
+    const shorts = STANDARD_SUBJECTS.map((s) => s.short.toLowerCase());
+    expect(new Set(names).size).toBe(names.length);
+    expect(new Set(shorts).size).toBe(shorts.length);
+    for (const s of STANDARD_SUBJECTS) {
+      expect(s.short.length).toBeLessThanOrEqual(4);
+      expect(s.nameSi).not.toBe('');
+      expect(s.color).toMatch(/^#[0-9A-F]{6}$/);
+    }
+  });
+});

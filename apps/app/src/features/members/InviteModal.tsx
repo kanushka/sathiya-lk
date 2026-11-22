@@ -48,10 +48,11 @@ export function InviteModal({ teachers, onInvite, onClose }: InviteModalProps) {
       width={460}
       title={t('invite.title')}
       onClose={onClose}
+      busy={saving}
       footer={
         <>
-          <Button onClick={onClose}>{t('invite.cancel')}</Button>
-          <Button variant="primary" type="submit" form="invite-form" disabled={saving || !valid}>
+          <Button onClick={onClose} disabled={saving}>{t('invite.cancel')}</Button>
+          <Button variant="primary" type="submit" form="invite-form" loading={saving} disabled={!valid}>
             {t('invite.send')}
           </Button>
         </>

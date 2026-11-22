@@ -127,7 +127,7 @@ function CloseButton({ report, writer }: { report: SchoolReport; writer: ReportW
     }
   }
   return (
-    <Button size="sm" disabled={busy} onClick={() => void close()}>
+    <Button size="sm" loading={busy} onClick={() => void close()}>
       {t('reports.close')}
     </Button>
   );
@@ -164,10 +164,11 @@ function SuspendButton({ school, setStatus }: { school: School; setStatus: SetSt
         title={t('confirmDisable.title', { name })}
         width={460}
         onClose={() => setConfirming(false)}
+        busy={busy}
         footer={
           <>
-            <Button onClick={() => setConfirming(false)}>{t('buttons.cancel', { ns: 'common' })}</Button>
-            <Button variant="dangerSolid" disabled={busy} onClick={() => void apply()}>
+            <Button onClick={() => setConfirming(false)} disabled={busy}>{t('buttons.cancel', { ns: 'common' })}</Button>
+            <Button variant="dangerSolid" loading={busy} onClick={() => void apply()}>
               {t('confirmDisable.confirm')}
             </Button>
           </>

@@ -5,6 +5,7 @@ import { screen, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { pickOption } from '../../test/pickOption';
+import { call } from '../../lib/callable';
 import { renderWithSchool } from '../../test/renderWithSchool';
 import * as api from './api';
 import { GradesPage } from './GradesPage';
@@ -28,6 +29,8 @@ async function openGrade6() {
   await user.click(screen.getByRole('button', { name: /^Grade 6\b/ }));
   return user;
 }
+
+const headerActions = () => within(screen.getByTestId('page-header')).getAllByRole('button').map((b) => b.textContent);
 
 describe('grades page', () => {
   it('grade 1 plan is measured against its classes\' Primary template', async () => {
@@ -161,11 +164,48 @@ describe('grades page', () => {
     expect(saved.find((p) => p.kind === 'group' && p.key === 'aesthetic')).toMatchObject({ optionSubjectIds: [S.music, S.dancing, S.art, S.pali] });
   });
 
+  it('has the page title and a primary + Add grade at the top right', async () => {
+    await openGrade6();
+    expect(screen.getByRole('heading', { level: 1, name: 'Grades & classes' })).toBeInTheDocument();
+    expect(headerActions().at(-1)).toBe('+ Add grade');
+    expect(screen.getByRole('heading', { level: 2, name: 'Grade 6 settings' })).toBeInTheDocument();
+  });
+
+  it('deletes a grade through the server after confirming, naming its classes', async () => {
+    vi.mocked(call).mockResolvedValue({ deleted: true, usedIn: 0 });
+    const user = await openGrade6();
+    await user.click(screen.getByRole('button', { name: 'Delete grade' }));
+    const dialog = screen.getByRole('dialog', { name: 'Delete Grade 6?' });
+    const names = ctx.classes.filter((c) => c.gradeId === G.g6).map((c) => c.name).sort().join(', ');
+    expect(within(dialog).getByText(new RegExp(names))).toBeInTheDocument();
+    await user.click(within(dialog).getByRole('button', { name: 'Delete' }));
+    expect(call).toHaveBeenCalledWith('deleteSetupItem', { schoolId: 'siripura', kind: 'grade', id: G.g6 });
+    expect(await screen.findByText('Grade 6 deleted')).toBeInTheDocument();
+  });
+
+  it('shows the slot count when the grade is in use', async () => {
+    vi.mocked(call).mockResolvedValue({ deleted: false, usedIn: 4 });
+    const user = await openGrade6();
+    await user.click(screen.getByRole('button', { name: 'Delete grade' }));
+    const dialog = screen.getByRole('dialog');
+    await user.click(within(dialog).getByRole('button', { name: 'Delete' }));
+    expect(await within(dialog).findByText(/used in 4 slots/)).toBeInTheDocument();
+  });
+
+  it('links to Subjects and Period templates when they are missing', async () => {
+    const user = userEvent.setup();
+    renderWithSchool(<GradesPage />, { ctx: { ...ctx, subjects: [], templates: [] }, entries: [] });
+    await user.click(screen.getByRole('button', { name: /^Grade 6\b/ }));
+    expect(screen.getByRole('link', { name: 'Go to subjects' })).toHaveAttribute('href', '/admin/subjects');
+    expect(screen.getByRole('link', { name: 'Go to period templates' })).toHaveAttribute('href', '/admin/templates');
+  });
+
   it('read-only hides every write control', async () => {
     flags.readOnly = true;
     const user = await openGrade6();
     expect(screen.queryByRole('button', { name: /Add class/ })).toBeNull();
     expect(screen.queryByRole('button', { name: /Add grade/ })).toBeNull();
+    expect(screen.queryByRole('button', { name: 'Delete grade' })).toBeNull();
     expect(screen.queryByRole('button', { name: /Add subject|Add group/ })).toBeNull();
     expect(screen.queryByRole('button', { name: 'Remove' })).toBeNull();
     expect(screen.queryByRole('button', { name: 'Custom plan' })).toBeNull();

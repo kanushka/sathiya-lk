@@ -36,10 +36,11 @@ export function PublishModal({ yearLabel, clashes, onPublish, onClose }: Publish
       width={460}
       title={t('publish.title', { year: yearLabel })}
       onClose={onClose}
+      busy={saving}
       footer={
         <>
-          <Button onClick={onClose}>{t('publish.cancel')}</Button>
-          <Button variant="primary" onClick={() => void confirm()} disabled={saving}>
+          <Button onClick={onClose} disabled={saving}>{t('publish.cancel')}</Button>
+          <Button variant="primary" onClick={() => void confirm()} loading={saving} loadingLabel={t('busy.publishing', { ns: 'common' })}>
             {t('publish.confirm')}
           </Button>
         </>

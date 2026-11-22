@@ -94,8 +94,15 @@ export function StepAccount({ value, onChange, signedIn, signedInEmail, busy, er
         <Button size="lg" onClick={onBack} disabled={busy}>
           {t('back')}
         </Button>
-        <Button variant="primary" size="lg" disabled={busy || !accountOk(value, signedIn)} onClick={onSubmit}>
-          {busy ? t('account.submitting') : t('account.submit')}
+        <Button
+          variant="primary"
+          size="lg"
+          loading={busy}
+          loadingLabel={t('account.submitting')}
+          disabled={!accountOk(value, signedIn)}
+          onClick={onSubmit}
+        >
+          {t('account.submit')}
         </Button>
       </div>
     </section>
