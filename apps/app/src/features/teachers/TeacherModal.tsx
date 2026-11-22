@@ -14,6 +14,7 @@ import { MultiSelect } from '../../ui/MultiSelect';
 import { Select } from '../../ui/Select';
 import { useToast } from '../../ui/Toast';
 import { useSchool } from '../../app/SchoolProvider';
+import { isSchoolDisabled } from '../../lib/callable';
 import * as api from './api';
 import { LoginSlip } from './LoginSlip';
 import { useSessionPasswords } from './sessionPasswords';
@@ -66,7 +67,7 @@ export function TeacherModal({ teacher, onClose }: TeacherModalProps) {
   const [savedId, setSavedId] = useState<string | null>(null);
   const [submitted, setSubmitted] = useState(false);
   const [saving, setSaving] = useState(false);
-  const [saveError, setSaveError] = useState(false);
+  const [saveError, setSaveError] = useState<string | null>(null);
   const [resetting, setResetting] = useState(false);
   const [resetError, setResetError] = useState(false);
 
@@ -107,7 +108,7 @@ export function TeacherModal({ teacher, onClose }: TeacherModalProps) {
       ...(form.email.trim() ? { email: form.email.trim() } : {}),
     };
     setSaving(true);
-    setSaveError(false);
+    setSaveError(null);
     try {
       if (teacher) {
         await api.updateTeacher(school.id, teacher.id, input);
@@ -118,8 +119,8 @@ export function TeacherModal({ teacher, onClose }: TeacherModalProps) {
         setSessionPassword(res.teacherId, res.password);
         setSavedId(res.teacherId);
       }
-    } catch {
-      setSaveError(true);
+    } catch (err) {
+      setSaveError(t(isSchoolDisabled(err) ? 'shell:suspended.writeBlocked' : 'modal.saveFailed'));
     } finally {
       setSaving(false);
     }
@@ -154,7 +155,7 @@ export function TeacherModal({ teacher, onClose }: TeacherModalProps) {
         ) : (
           <>
             {saveError && (
-              <FormError className="mr-auto">{t('modal.saveFailed')}</FormError>
+              <FormError className="mr-auto">{saveError}</FormError>
             )}
             <Button onClick={onClose} disabled={saving}>{t('modal.cancel')}</Button>
             {!readOnly && (

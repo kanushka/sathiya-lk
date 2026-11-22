@@ -95,6 +95,18 @@ describe('teachers page', () => {
     );
   });
 
+  it('says the school is suspended when creating a teacher is refused for that reason', async () => {
+    const user = userEvent.setup();
+    vi.mocked(api.createTeacher).mockRejectedValue(new ApiError('school-disabled', 'School is suspended'));
+    render();
+    const dialog = await openAdd(user);
+    await user.type(within(dialog).getByLabelText('Name'), 'Mr. New Teacher');
+    await pickOption(user, within(dialog).getByRole('combobox', { name: 'Subjects' }), 'Mathematics');
+    await user.click(within(dialog).getByRole('button', { name: '6', pressed: false }));
+    await user.click(within(dialog).getByRole('button', { name: 'Save teacher' }));
+    expect(await within(dialog).findByText("This school is suspended, so changes can't be saved.")).toBeInTheDocument();
+  });
+
   it('shows only the login slip after creating a teacher', async () => {
     const user = userEvent.setup();
     vi.mocked(api.createTeacher).mockResolvedValue({ teacherId: 'tNew', password: 'k7m4x9pq' });

@@ -33,7 +33,7 @@ describe('toApiError', () => {
   });
 
   it('maps registration and report error codes from details', () => {
-    for (const code of ['census-taken', 'email-unverified', 'already-has-school', 'rate-limited'] as const) {
+    for (const code of ['census-taken', 'email-unverified', 'already-has-school', 'rate-limited', 'school-disabled'] as const) {
       expect(toApiError(fnError('failed-precondition', code, { code })).code).toBe(code);
     }
   });

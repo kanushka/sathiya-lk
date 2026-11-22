@@ -36,6 +36,8 @@ export function toApiError(err: unknown): ApiError {
   return new ApiError('invalid', message, e.details);
 }
 
+export const isSchoolDisabled = (err: unknown): boolean => toApiError(err).code === 'school-disabled';
+
 export function call<K extends CallableName>(name: K, req: CallableTypes[K]['req']): Promise<CallableTypes[K]['res']>;
 // NoInfer + never defaults keep this overload for explicit call<Req, Res>() only, so untyped calls get CallableTypes.
 export function call<Req = never, Res = never>(name: CallableName, req: NoInfer<Req>): Promise<Res>;

@@ -64,6 +64,13 @@
     "missingTitle": "School not found",
     "missingBody": "This school does not exist or you no longer have access to it."
   },
+  "suspended": {
+    "title": "This school is suspended",
+    "body": "A Sathiya super admin has suspended this school, so its timetables and settings can't be opened right now. If you think this is a mistake, contact the Sathiya team.",
+    "contact": "Contact the Sathiya team",
+    "report": "Report a problem",
+    "writeBlocked": "This school is suspended, so changes can't be saved."
+  },
   "phoneNotice": {
     "title": "Best on a bigger screen",
     "body": "Sathiya's admin screens work best on a laptop, desktop or tablet. You can continue, but some screens may be hard to use on a phone.",
