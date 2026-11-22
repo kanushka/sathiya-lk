@@ -74,14 +74,22 @@ describe('TimetableGrid', () => {
     expect(onClear).toHaveBeenCalledWith(0, 1);
   });
 
-  it('click selects; click on selected activates', () => {
+  it('a single click selects and activates an empty or filled slot', () => {
     const onActivate = vi.fn();
-    const { onSelect } = setup({ onActivate });
-    fireEvent.click(screen.getByRole('button', { name: /Tuesday, period 2, .*empty/ }));
+    const { onSelect } = setup({ onActivate, selected: undefined });
+    fireEvent.click(screen.getByRole('button', { name: /Tuesday, period 2, .*Add lesson/ }));
     expect(onSelect).toHaveBeenCalledWith(1, 2);
-    expect(onActivate).not.toHaveBeenCalled();
+    expect(onActivate).toHaveBeenCalledWith(1, 2);
     fireEvent.click(screen.getByRole('button', { name: /Monday, period 1, .*Maths/ }));
     expect(onActivate).toHaveBeenCalledWith(0, 1);
+  });
+
+  it('Enter activates an empty slot', () => {
+    const onActivate = vi.fn();
+    setup({ onActivate });
+    const btn = screen.getByRole('button', { name: /Tuesday, period 2, .*Add lesson/ });
+    fireEvent.keyDown(btn, { key: 'Enter' });
+    expect(onActivate).toHaveBeenCalledWith(1, 2);
   });
 
   it('renders stacked cells in one slot', () => {
@@ -146,9 +154,9 @@ describe('TimetableGrid', () => {
       expect(screen.getByRole('button', { name: 'Wed pin' })).not.toHaveAttribute('aria-disabled');
     });
 
-    it('activates on a single click when activateOnClick is set, but not a disabled slot', () => {
+    it('does not activate a disabled slot', () => {
       const onActivate = vi.fn();
-      setup({ overlay, activateOnClick: true, onActivate });
+      setup({ overlay, onActivate });
       fireEvent.click(screen.getByRole('button', { name: 'Wed pin' }));
       expect(onActivate).toHaveBeenCalledWith(2, 1);
       fireEvent.click(screen.getByRole('button', { name: 'Tue busy' }));
@@ -157,7 +165,7 @@ describe('TimetableGrid', () => {
     });
 
     it('keeps arrow-key navigation through a disabled slot', () => {
-      const { onSelect } = setup({ overlay, activateOnClick: true });
+      const { onSelect } = setup({ overlay });
       fireEvent.keyDown(screen.getByRole('button', { name: 'Tue busy' }), { key: 'ArrowRight' });
       expect(onSelect).toHaveBeenLastCalledWith(2, 1);
     });

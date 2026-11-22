@@ -41,7 +41,6 @@ test('class view: pin a two-option religion group past a busy teacher', async ({
 
   const plus = page.getByRole('button', { name: 'Wednesday, period 5, 10:50–11:30: empty, Add lesson' });
   await plus.click();
-  await plus.press('Enter');
   await page.getByRole('dialog', { name: 'Choose a subject' }).getByRole('option', { name: /^Religion/ }).click();
 
   const group = page.getByRole('dialog', { name: 'Set teachers for Religion' });

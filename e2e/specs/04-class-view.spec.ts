@@ -7,7 +7,6 @@ import { loginAdmin, pick, shot } from '../helpers';
 async function openSlot(page: Page, label: string) {
   const slot = page.getByRole('button', { name: label });
   await slot.click();
-  await slot.press('Enter');
 }
 
 async function chooseSubject(page: Page, name: RegExp) {
@@ -51,4 +50,14 @@ test('class view: fill a slot, then a busy teacher cannot be picked for an overl
   const clash = page.getByRole('dialog', { name: 'Choose a teacher' });
   await expect(clash.getByRole('listitem').filter({ hasText: 'Mrs. S. Gunasekara' })).toContainText('Teaching 6B · Science');
   await expect(clash.getByRole('option', { name: /Mrs\. S\. Gunasekara/ })).toHaveCount(0);
+});
+
+test('class view: a single click on + opens the subject picker', async ({ page }) => {
+  await loginAdmin(page, ADMIN.email, ADMIN.password);
+  await page.getByRole('link', { name: 'By class' }).click();
+  await pick(page, 'Class', 'Grade 6 · 6A');
+  await expect(page).toHaveURL(/\/admin\/timetable\/class\/c-6a$/);
+
+  await page.getByRole('button', { name: 'Monday, period 2, 08:30–09:10: empty, Add lesson' }).click();
+  await expect(page.getByRole('dialog', { name: 'Choose a subject' })).toBeVisible();
 });

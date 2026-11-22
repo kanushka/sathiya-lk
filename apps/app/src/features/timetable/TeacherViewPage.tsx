@@ -369,7 +369,6 @@ function TeacherView({ teacher, teachers, template }: { teacher: Teacher; teache
           readOnly={readOnly}
           headerExtra={loadBar}
           overlay={pinTarget ? pinOverlay : undefined}
-          activateOnClick={!!pinTarget}
         />
       </PinSection>
 

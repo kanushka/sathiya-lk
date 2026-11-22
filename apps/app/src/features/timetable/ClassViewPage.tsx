@@ -266,7 +266,6 @@ function ClassView({ cls, classes }: { cls: SchoolClass; classes: SchoolClass[] 
             onClear={onClear}
             readOnly={readOnly}
             overlay={pinTarget ? pinOverlay : undefined}
-            activateOnClick={!!pinTarget}
           />
         </PinSection>
         <div className="flex min-w-[280px] max-w-[360px] flex-[1_1_300px] flex-col gap-4">
