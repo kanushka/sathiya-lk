@@ -62,6 +62,17 @@ beforeEach(() => {
 });
 
 describe('TeacherViewPage', () => {
+  it('links an empty teacher list to Add teacher', () => {
+    setup(T.ananda, { ctx: { ...ctx, teachers: [] }, route: '/admin/timetable/teacher' });
+    expect(screen.getByText('No teachers yet')).toBeInTheDocument();
+    expect(screen.getByRole('link', { name: '+ Add teacher' })).toHaveAttribute('href', '/admin/teachers?new=1');
+  });
+
+  it('links a missing default template to Period templates', () => {
+    setup(T.ananda, { ctx: { ...ctx, templates: [] } });
+    expect(screen.getByRole('link', { name: 'Go to period templates' })).toHaveAttribute('href', '/admin/templates');
+  });
+
   it('shows the teacher header and their lessons on default-template rows', () => {
     setup();
     expect(teacherButton()).toHaveTextContent('Ven. Ananda Thero · SCC042');

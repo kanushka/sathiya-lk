@@ -28,6 +28,13 @@ beforeEach(() => {
 
 const render = () => renderWithSchool(<TeachersPage />, { ctx, entries });
 
+describe('teachers page from an empty-state link', () => {
+  it('opens Add teacher when the URL has ?new=1', () => {
+    renderWithSchool(<TeachersPage />, { ctx, entries, route: '/admin/teachers?new=1' });
+    expect(screen.getByRole('dialog')).toBeInTheDocument();
+  });
+});
+
 async function openAdd(user: ReturnType<typeof userEvent.setup>) {
   await user.click(screen.getByRole('button', { name: '+ Add teacher' }));
   return screen.getByRole('dialog');

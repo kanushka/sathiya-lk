@@ -5,6 +5,8 @@ import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Badge } from '../../ui/Badge';
 import { cx } from '../../ui/cx';
+import { LinkButton } from '../../ui/LinkButton';
+import { useAdminBase } from '../timetable/paths';
 import { Button } from '../../ui/Button';
 import { Chip } from '../../ui/Chip';
 import { inputBareCompactClass } from '../../ui/Field';
@@ -62,6 +64,7 @@ const fitColor: Record<PlanFit, string> = {
 };
 
 export function PlanEditor({ plan, capacity, subjects, readOnly, onChange }: PlanEditorProps) {
+  const base = useAdminBase();
   const { t, i18n } = useTranslation('grades');
   const lang = i18n.language as Lang;
   const [dialog, setDialog] = useState<{ index: number | null } | null>(null);
@@ -153,6 +156,14 @@ export function PlanEditor({ plan, capacity, subjects, readOnly, onChange }: Pla
             </div>
           );
         })}
+        {!readOnly && subjects.length === 0 && (
+          <p className="flex flex-wrap items-center gap-3 px-3.5 py-3 text-sm text-ink-muted">
+            {t('plan.noSubjects')}
+            <LinkButton variant="primary" size="sm" to={`${base}/subjects`}>
+              {t('plan.goSubjects')}
+            </LinkButton>
+          </p>
+        )}
         {!readOnly && (
           <div className="flex flex-wrap items-center gap-4 bg-surface px-3.5 py-3">
             {unused.length > 0 && (

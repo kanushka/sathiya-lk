@@ -192,6 +192,14 @@ describe('grades page', () => {
     expect(await within(dialog).findByText(/used in 4 slots/)).toBeInTheDocument();
   });
 
+  it('links to Subjects and Period templates when they are missing', async () => {
+    const user = userEvent.setup();
+    renderWithSchool(<GradesPage />, { ctx: { ...ctx, subjects: [], templates: [] }, entries: [] });
+    await user.click(screen.getByRole('button', { name: /^Grade 6\b/ }));
+    expect(screen.getByRole('link', { name: 'Go to subjects' })).toHaveAttribute('href', '/admin/subjects');
+    expect(screen.getByRole('link', { name: 'Go to period templates' })).toHaveAttribute('href', '/admin/templates');
+  });
+
   it('read-only hides every write control', async () => {
     flags.readOnly = true;
     const user = await openGrade6();

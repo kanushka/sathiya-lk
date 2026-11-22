@@ -1,7 +1,8 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
 // Copyright (C) 2026 Kanushka Gayan
 import { pickName, teacherDisplayName, type Lang, type Teacher } from '@sathiya/core';
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
+import { useSearchParams } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { useSchool } from '../../app/SchoolProvider';
 import { useReadOnly } from '../../ui/AdminLayout';
@@ -34,7 +35,11 @@ export function TeachersPage() {
   const { passwords } = useSessionPasswords();
   const printLabels = usePrintLabels();
   const [search, setSearch] = useState('');
-  const [dialog, setDialog] = useState<Dialog>(null);
+  const [params, setParams] = useSearchParams();
+  const [dialog, setDialog] = useState<Dialog>(() => (params.get('new') === '1' && !readOnly ? { kind: 'edit' } : null));
+  useEffect(() => {
+    if (params.has('new')) setParams((p) => (p.delete('new'), p), { replace: true });
+  }, [params, setParams]);
 
   const subjectName = useMemo(() => new Map(subjects.map((s) => [s.id, pickName(s, lang)])), [subjects, lang]);
   const sorted = useMemo(() => [...teachers].sort((a, b) => a.staffId.localeCompare(b.staffId)), [teachers]);

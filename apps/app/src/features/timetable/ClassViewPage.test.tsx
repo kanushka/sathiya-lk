@@ -216,6 +216,19 @@ describe('ClassViewPage', () => {
       { ctx: { ...ctx, classes: [] }, route: '/admin/timetable/class' },
     );
     expect(screen.getByText('No classes yet')).toBeInTheDocument();
+    expect(screen.getByRole('link', { name: 'Set up grades & classes' })).toHaveAttribute('href', '/admin/grades');
+  });
+
+  it('shows no setup link in read-only view', () => {
+    ro.value = true;
+    renderWithSchool(
+      <Routes>
+        <Route path="/admin/timetable/class" element={<ClassIndexRedirect />} />
+      </Routes>,
+      { ctx: { ...ctx, classes: [] }, route: '/admin/timetable/class' },
+    );
+    expect(screen.getByText('No classes yet')).toBeInTheDocument();
+    expect(screen.queryByRole('link', { name: 'Set up grades & classes' })).toBeNull();
   });
 
   describe('pin mode', () => {

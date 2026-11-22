@@ -19,6 +19,8 @@
     "cancel": "Cancel"
   },
   "classes": {
+    "noTemplate": "Add a period template before adding classes.",
+    "goTemplates": "Go to period templates",
     "title": "Classes",
     "add": "+ Add class {{name}}",
     "empty": "No classes in this grade yet.",
@@ -31,6 +33,8 @@
     "ownPlan": "Own plan"
   },
   "plan": {
+    "noSubjects": "The school has no subjects yet.",
+    "goSubjects": "Go to subjects",
     "title": "Subjects & periods per week",
     "periodsInWeek": "periods in the week",
     "intro": "A group runs its options at the same time. Students split, and each option has its own teacher.",

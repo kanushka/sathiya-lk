@@ -27,6 +27,7 @@ import { useSchool, useYear } from '../../app/SchoolProvider';
 import { useReadOnly } from '../../ui/AdminLayout';
 import { Button } from '../../ui/Button';
 import { EmptyState } from '../../ui/EmptyState';
+import { LinkButton } from '../../ui/LinkButton';
 import { Icon } from '../../ui/Icon';
 import { IconButton } from '../../ui/IconButton';
 import { LoadingState } from '../../ui/LoadingState';
@@ -55,7 +56,14 @@ export function sortedClasses(ctx: SchoolContext): SchoolClass[] {
 
 function NoClasses() {
   const { t } = useTranslation('timetable');
-  return <EmptyState icon="classView" title={t('classView.noClassesTitle')} body={t('classView.noClassesBody')} />;
+  const readOnly = useReadOnly();
+  const base = useAdminBase();
+  const action = readOnly ? undefined : (
+    <LinkButton variant="primary" to={`${base}/grades`}>
+      {t('classView.setupGrades')}
+    </LinkButton>
+  );
+  return <EmptyState icon="classView" title={t('classView.noClassesTitle')} body={t('classView.noClassesBody')} action={action} />;
 }
 
 export function ClassIndexRedirect() {

@@ -28,6 +28,7 @@ import { Button } from '../../ui/Button';
 import { Combobox } from '../../ui/Combobox';
 import { cx } from '../../ui/cx';
 import { EmptyState } from '../../ui/EmptyState';
+import { LinkButton } from '../../ui/LinkButton';
 import { Icon } from '../../ui/Icon';
 import { IconButton } from '../../ui/IconButton';
 import { LoadingState } from '../../ui/LoadingState';
@@ -54,7 +55,14 @@ export function sortedTeachers(ctx: SchoolContext): Teacher[] {
 
 function NoTeachers() {
   const { t } = useTranslation('timetable');
-  return <EmptyState icon="teacherView" title={t('teacherView.noTeachersTitle')} body={t('teacherView.noTeachersBody')} />;
+  const readOnly = useReadOnly();
+  const base = useAdminBase();
+  const action = readOnly ? undefined : (
+    <LinkButton variant="primary" to={`${base}/teachers?new=1`}>
+      {t('teacherView.addTeacher')}
+    </LinkButton>
+  );
+  return <EmptyState icon="teacherView" title={t('teacherView.noTeachersTitle')} body={t('teacherView.noTeachersBody')} action={action} />;
 }
 
 export function TeacherIndexRedirect() {
@@ -69,6 +77,8 @@ export function TeacherIndexRedirect() {
 export function TeacherViewPage() {
   const { t } = useTranslation('timetable');
   const { teacherId } = useParams();
+  const readOnly = useReadOnly();
+  const base = useAdminBase();
   const ctx = useSchool();
   const year = useYear();
   const teachers = useMemo(() => sortedTeachers(ctx), [ctx]);
@@ -77,7 +87,14 @@ export function TeacherViewPage() {
   const teacher = teachers.find((x) => x.id === teacherId);
   if (!teacher) return <EmptyState icon="teacherView" title={t('teacherView.notFoundTitle')} body={t('teacherView.notFoundBody')} />;
   const template = ctx.templates.find((x) => x.isDefault);
-  if (!template) return <EmptyState icon="teacherView" title={t('teacherView.noDefaultTitle')} body={t('teacherView.noDefaultBody')} />;
+  if (!template) {
+    const action = readOnly ? undefined : (
+      <LinkButton variant="primary" to={`${base}/templates`}>
+        {t('teacherView.goTemplates')}
+      </LinkButton>
+    );
+    return <EmptyState icon="teacherView" title={t('teacherView.noDefaultTitle')} body={t('teacherView.noDefaultBody')} action={action} />;
+  }
   return <TeacherView key={teacher.id} teacher={teacher} teachers={teachers} template={template} />;
 }
 

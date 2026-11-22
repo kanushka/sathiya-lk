@@ -7,7 +7,9 @@ import { useSchool } from '../../app/SchoolProvider';
 import { useReadOnly } from '../../ui/AdminLayout';
 import { Button } from '../../ui/Button';
 import { EmptyState } from '../../ui/EmptyState';
+import { LinkButton } from '../../ui/LinkButton';
 import { PageHeader } from '../../ui/PageHeader';
+import { useAdminBase } from '../timetable/paths';
 import { useToast } from '../../ui/Toast';
 import { DeleteSetupModal } from '../teachers/DeleteSetupModal';
 import * as api from './api';
@@ -23,6 +25,7 @@ export function GradesPage() {
   const { t } = useTranslation('grades');
   const school = useSchool();
   const readOnly = useReadOnly();
+  const base = useAdminBase();
   const toast = useToast();
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [dialog, setDialog] = useState<Dialog>(null);
@@ -106,6 +109,14 @@ export function GradesPage() {
                   </Button>
                 )}
               </div>
+              {!readOnly && !defaultTemplate && (
+                <p className="mb-3 flex flex-wrap items-center gap-3 text-sm text-ink-muted">
+                  {t('classes.noTemplate')}
+                  <LinkButton variant="primary" size="sm" to={`${base}/templates`}>
+                    {t('classes.goTemplates')}
+                  </LinkButton>
+                </p>
+              )}
               {gradeClasses.length === 0 ? (
                 <p className="text-sm text-ink-muted">{t('classes.empty')}</p>
               ) : (
