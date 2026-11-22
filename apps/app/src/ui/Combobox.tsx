@@ -2,11 +2,12 @@
 // Copyright (C) 2026 Kanushka Gayan
 
 import { useEffect, useId, useMemo, useRef, useState, type KeyboardEvent, type ReactNode } from 'react';
-import { createPortal } from 'react-dom';
 import { useTranslation } from 'react-i18next';
 import { isComposing } from './composing';
 import { cx } from './cx';
+import { fieldBaseClass, fieldFocusClass } from './Field';
 import { Icon } from './Icon';
+import { MenuEmpty, MenuGroup, MenuOption, MenuPanel, MenuSearch } from './listbox/MenuPanel';
 import { usePopover } from './listbox/usePopover';
 
 export interface ComboboxProps<T> {
@@ -20,6 +21,11 @@ export interface ComboboxProps<T> {
   placeholder: string;
   searchPlaceholder: string;
   id?: string;
+  disabled?: boolean;
+  'aria-invalid'?: boolean;
+  'aria-describedby'?: string;
+  'aria-labelledby'?: string;
+  className?: string;
 }
 
 interface Group<T> {
@@ -38,6 +44,11 @@ export function Combobox<T>({
   placeholder,
   searchPlaceholder,
   id,
+  disabled,
+  'aria-invalid': ariaInvalid,
+  'aria-describedby': ariaDescribedBy,
+  'aria-labelledby': ariaLabelledBy,
+  className,
 }: ComboboxProps<T>) {
   const { t } = useTranslation('shell');
   const autoId = useId();
@@ -79,6 +90,7 @@ export function Combobox<T>({
   }, [active]);
 
   function openList() {
+    if (disabled) return;
     setQuery('');
     setActive(0);
     setOpen(true);
@@ -120,7 +132,7 @@ export function Combobox<T>({
   let index = -1;
 
   return (
-    <div className="relative">
+    <div className={cx('relative', className)}>
       <button
         ref={triggerRef}
         id={baseId}
@@ -128,65 +140,49 @@ export function Combobox<T>({
         aria-haspopup="listbox"
         aria-expanded={open}
         aria-controls={open ? listId : undefined}
+        aria-invalid={ariaInvalid}
+        aria-describedby={ariaDescribedBy}
+        aria-labelledby={ariaLabelledBy}
+        disabled={disabled}
         onClick={() => (open ? close() : openList())}
-        className={cx(
-          'flex h-11 w-full items-center gap-2.5 rounded-[10px] border-[1.5px] bg-white px-3 text-left text-sm',
-          'focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-1 focus-visible:outline-brand',
-          open ? 'border-brand' : 'border-line-strong',
-        )}
+        className={cx(fieldBaseClass, fieldFocusClass, 'flex h-10 items-center gap-2 text-left')}
       >
-        <span className={cx('min-w-0 flex-1 truncate', value === undefined ? 'text-ink-muted' : 'font-semibold text-ink')}>
+        <span className={cx('min-w-0 flex-1 truncate', value === undefined && 'text-ink-muted')}>
           {value === undefined ? placeholder : getLabel(value)}
         </span>
         <Icon name="chevronDown" size={16} className="shrink-0 text-ink-muted" />
       </button>
-      {open &&
-        createPortal(
-        <div
+      {open && (
+        <MenuPanel
           ref={popRef}
+          pos={pos}
           data-combobox-popover=""
           onMouseDown={(e) => {
             if (e.target !== searchRef.current) e.preventDefault();
           }}
-          style={{
-            position: 'fixed',
-            top: pos?.top ?? 0,
-            left: pos?.left ?? 0,
-            width: pos?.width,
-            opacity: pos ? 1 : 0,
-          }}
-          className="z-[60] flex flex-col rounded-xl border border-line-strong bg-white p-2 shadow-[0_14px_30px_-18px_rgba(20,33,61,.4)]"
         >
-          <div className="relative">
-            <Icon name="search" size={16} className="pointer-events-none absolute left-2.5 top-1/2 -translate-y-1/2 text-ink-muted" />
-            <input
-              ref={searchRef}
-              type="text"
-              role="combobox"
-              aria-expanded="true"
-              aria-controls={listId}
-              aria-autocomplete="list"
-              aria-activedescendant={activeItem === undefined ? undefined : optionId(getKey(activeItem))}
-              aria-label={searchPlaceholder}
-              placeholder={searchPlaceholder}
-              value={query}
-              onChange={(e) => {
-                setQuery(e.target.value);
-                setActive(0);
-              }}
-              onKeyDown={onKeyDown}
-              className="h-[38px] w-full rounded-lg border border-line-strong pl-8 pr-2.5 text-sm focus:border-brand focus:outline-none focus:ring-2 focus:ring-brand/30"
-            />
-          </div>
+          <MenuSearch
+            ref={searchRef}
+            label={searchPlaceholder}
+            listId={listId}
+            activeId={activeItem === undefined ? undefined : optionId(getKey(activeItem))}
+            value={query}
+            onChange={(e) => {
+              setQuery(e.target.value);
+              setActive(0);
+            }}
+            onKeyDown={onKeyDown}
+          />
           <div
             ref={listRef}
             id={listId}
             role="listbox"
-            aria-label={placeholder}
+            aria-label={ariaLabelledBy ? undefined : placeholder}
+            aria-labelledby={ariaLabelledBy}
             style={{ maxHeight: listMax }}
-            className="mt-1 overflow-y-auto"
+            className="overflow-y-auto"
           >
-            {flat.length === 0 && <p className="px-2 py-3 text-sm text-ink-muted">{t('noMatches')}</p>}
+            {flat.length === 0 && <MenuEmpty>{t('noMatches')}</MenuEmpty>}
             {groups.map((g) => {
               if (g.items.length === 0) return null;
               const options = g.items.map((item) => {
@@ -196,42 +192,28 @@ export function Combobox<T>({
                 const isActive = i === active;
                 const selected = key === selectedKey;
                 return (
-                  <div
+                  <MenuOption
                     key={key}
                     id={optionId(key)}
-                    role="option"
-                    aria-selected={selected}
-                    data-active={isActive}
-                    onMouseDown={(e) => e.preventDefault()}
-                    onMouseEnter={() => setActive(i)}
-                    onClick={() => pick(item)}
-                    className={cx(
-                      'flex cursor-pointer items-center gap-2.5 rounded-lg px-2 py-2 text-sm',
-                      isActive && 'bg-[color-mix(in_srgb,var(--brand)_10%,white)]',
-                      selected && 'font-semibold',
-                    )}
+                    active={isActive}
+                    selected={selected}
+                    onHover={() => setActive(i)}
+                    onPick={() => pick(item)}
                   >
                     {renderItem ? renderItem(item, { active: isActive, selected }) : getLabel(item)}
-                  </div>
+                  </MenuOption>
                 );
               });
               if (!groupBy) return options;
               return (
-                <div key={g.name} role="group" aria-label={g.name}>
-                  <p
-                    aria-hidden="true"
-                    className="mx-1.5 mb-1 mt-2.5 text-[11px] font-bold uppercase tracking-[.06em] text-ink-muted"
-                  >
-                    {g.name}
-                  </p>
+                <MenuGroup key={g.name} label={g.name}>
                   {options}
-                </div>
+                </MenuGroup>
               );
             })}
           </div>
-        </div>,
-        document.body,
-        )}
+        </MenuPanel>
+      )}
     </div>
   );
 }

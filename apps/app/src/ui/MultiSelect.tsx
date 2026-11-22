@@ -327,7 +327,7 @@ export function MultiSelect<V extends string = string>({
                     onHover={() => setActive(i)}
                     onPick={() => toggle(o)}
                   >
-                    <span className="flex items-baseline gap-2">
+                    <span className="flex min-w-0 items-baseline gap-2">
                       <span className="min-w-0 truncate">{o.label}</span>
                       {o.hint && <span className="shrink-0 text-xs font-normal text-ink-muted">{o.hint}</span>}
                     </span>

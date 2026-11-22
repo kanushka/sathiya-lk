@@ -189,4 +189,51 @@ describe('Combobox', () => {
     await user.keyboard('{ArrowDown}');
     expect(input).toHaveAttribute('aria-activedescendant');
   });
+
+  it('never opens when disabled', async () => {
+    const user = userEvent.setup();
+    renderWithI18n(
+      <Combobox
+        items={items}
+        getKey={(s) => s.id}
+        getLabel={(s) => s.name}
+        onChange={vi.fn()}
+        placeholder="Pick"
+        searchPlaceholder="Search subject…"
+        disabled
+      />,
+    );
+    const trigger = screen.getByRole('button', { name: 'Pick' });
+    expect(trigger).toBeDisabled();
+    await user.click(trigger);
+    expect(screen.queryByRole('listbox')).not.toBeInTheDocument();
+  });
+
+  it('passes aria-invalid, aria-describedby and aria-labelledby to the trigger and className to the root', async () => {
+    const user = userEvent.setup();
+    const { container } = renderWithI18n(
+      <>
+        <span id="subj-label">Subject</span>
+        <p id="subj-err">Pick a subject</p>
+        <Combobox
+          items={items}
+          getKey={(s) => s.id}
+          getLabel={(s) => s.name}
+          onChange={vi.fn()}
+          placeholder="Pick"
+          searchPlaceholder="Search subject…"
+          aria-invalid
+          aria-describedby="subj-err"
+          aria-labelledby="subj-label"
+          className="w-64"
+        />
+      </>,
+    );
+    const trigger = screen.getByRole('button', { name: 'Subject' });
+    expect(trigger).toHaveAttribute('aria-invalid', 'true');
+    expect(trigger).toHaveAccessibleDescription('Pick a subject');
+    expect(container.querySelector('.w-64')).toContainElement(trigger);
+    await user.click(trigger);
+    expect(screen.getByRole('listbox', { name: 'Subject' })).toHaveAttribute('aria-labelledby', 'subj-label');
+  });
 });

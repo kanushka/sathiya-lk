@@ -79,7 +79,7 @@ export function MenuOption({ id, active, selected, disabled, multi, onPick, onHo
           {selected && <Icon name="check" size={12} strokeWidth={3} />}
         </span>
       )}
-      <span className="min-w-0 flex-1">{children}</span>
+      <span className="flex min-w-0 flex-1 items-center gap-2.5">{children}</span>
       {selected && !multi && <Icon name="check" size={16} className="shrink-0 text-brand" />}
     </div>
   );
