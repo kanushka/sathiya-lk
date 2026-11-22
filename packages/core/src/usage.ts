@@ -5,7 +5,7 @@ import { teacherDayLoad } from './availability';
 import { entryWindow } from './clash';
 import { DAYS, gradeOf } from './lookup';
 import { effectivePlan } from './plan';
-import { classProgress } from './progress';
+import { classPlacement } from './progress';
 import type { DayIndex, Entry, PlanItem, SchoolContext } from './types';
 
 export interface Warning { kind: 'over-limit' | 'over-target' | 'group-no-teacher' | 'orphaned'; refId: string; day?: DayIndex; detail: string; planKey?: string }
@@ -43,9 +43,7 @@ export function warnings(entries: Entry[], ctx: SchoolContext): Warning[] {
     }
   }
   for (const cls of ctx.classes) {
-    const grade = gradeOf(ctx, cls);
-    if (!grade) continue;
-    for (const row of classProgress(cls.id, entries, effectivePlan(cls, grade))) {
+    for (const row of classPlacement(cls, entries, ctx).rows) {
       if (row.placed <= row.needed) continue;
       out.push({ kind: 'over-target', refId: cls.id, detail: `${itemName(row.item, ctx)} ${row.placed}/${row.needed}`, planKey: row.key });
     }

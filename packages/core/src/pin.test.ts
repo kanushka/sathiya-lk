@@ -111,6 +111,11 @@ describe('pinProgress', () => {
     expect(pinProgress({ ctx, entries: extra, spec: singleSpec(C.c6b, S.sinhala, T.ranasinghe) })).toEqual({ placed: 7, needed: 5, left: 0, over: 2 });
     expect(pinProgress({ ctx, entries: [], spec: singleSpec(C.c6b, S.science, T.gunasekara) })).toEqual({ placed: 0, needed: 5, left: 5, over: 0 });
   });
+
+  it('does not count a lesson outside the class template', () => {
+    const orphan = entry('o', 4, 8, [C.c6c], [[S.science, T.gunasekara]]);
+    expect(pinProgress({ ctx, entries: [orphan], spec: singleSpec(C.c6c, S.science, T.gunasekara) })).toEqual({ placed: 0, needed: 5, left: 5, over: 0 });
+  });
 });
 
 const groupSpec: PinSpec = {

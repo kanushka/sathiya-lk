@@ -4,8 +4,7 @@
 import { teacherDayLoad } from './availability';
 import { findConflicts, withTeacherIds } from './clash';
 import { DAYS, findClass, gradeOf, templateOf } from './lookup';
-import { effectivePlan } from './plan';
-import { classProgress } from './progress';
+import { classPlacement } from './progress';
 import { periodsFor } from './time';
 import type { Entry, EntryDraft, SchoolContext } from './types';
 
@@ -17,7 +16,7 @@ export function fillWithClassTeacher(args: { ctx: SchoolContext; entries: Entry[
   const grade = cls && gradeOf(ctx, cls);
   const template = cls && templateOf(ctx, cls);
   if (!cls || !teacherId || !teacher || !grade || !template) return [];
-  const remaining = classProgress(classId, args.entries, effectivePlan(cls, grade)).flatMap((r) =>
+  const remaining = classPlacement(cls, args.entries, ctx).rows.flatMap((r) =>
     r.item.kind === 'subject' ? [{ subjectId: r.item.subjectId, need: r.needed - r.placed }] : [],
   );
   const all: Entry[] = [...args.entries];

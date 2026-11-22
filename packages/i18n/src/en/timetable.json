@@ -293,5 +293,15 @@
     "setTeachers": "Set teachers",
     "back": "‹ Back to classes",
     "backLabel": "Back to classes"
+  },
+  "outsideTemplate": {
+    "title": "Outside the period template",
+    "hint": "These lessons fall outside this class's period template, so the grid doesn't show them and they don't count as placed. Delete them, then add the lesson again in a free period.",
+    "slot": "{{day}} P{{period}}",
+    "item": "{{slot}} · {{classes}} · {{subjects}} · {{teachers}}",
+    "noTeacher": "No teacher",
+    "delete": "Delete {{slot}} {{subjects}}",
+    "confirmTitle": "Delete this entry?",
+    "confirmBody": "{{slot}} · {{classes}} · {{subjects}} will be removed from the timetable. This can't be undone."
   }
 }

@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
 // Copyright (C) 2026 Kanushka Gayan
 import {
-  classProgress,
+  classPlacement,
   effectivePlan,
   findConflicts,
   pickName,
@@ -9,6 +9,7 @@ import {
   teacherDayLoad,
   warnings,
   weekCapacity,
+  windowOf,
   type DayIndex,
   type Entry,
   type Lang,
@@ -16,6 +17,7 @@ import {
   type SchoolContext,
   type Warning,
 } from '@sathiya/core';
+import { OUTSIDE_TEMPLATE_ID } from '../timetable/paths';
 
 const gradeOf = (ctx: SchoolContext, cls: SchoolClass) => ctx.grades.find((g) => g.id === cls.gradeId);
 const templateOf = (ctx: SchoolContext, cls: SchoolClass) => ctx.templates.find((t) => t.id === cls.templateId);
@@ -59,9 +61,7 @@ export function classChips(ctx: SchoolContext, entries: Entry[]): GradeGroup[] {
     const classes: ClassChip[] = ctx.classes
       .filter((c) => c.gradeId === grade.id)
       .map((cls) => {
-        const rows = classProgress(cls.id, entries, effectivePlan(cls, grade));
-        const needed = rows.reduce((n, r) => n + r.needed, 0);
-        const placed = rows.reduce((n, r) => n + Math.min(r.placed, r.needed), 0);
+        const { placed, needed } = classPlacement(cls, entries, ctx);
         const status: ChipStatus = placed === 0 ? 'empty' : placed >= needed ? 'complete' : 'partial';
         return { id: cls.id, name: cls.name, placed, needed, status };
       });
@@ -77,7 +77,7 @@ export function dashboardStats(ctx: SchoolContext, entries: Entry[]): DashboardS
   for (const cls of ctx.classes) {
     const template = templateOf(ctx, cls);
     if (!template) continue;
-    const used = entries.filter((e) => e.classIds.includes(cls.id)).length;
+    const used = entries.filter((e) => e.classIds.includes(cls.id) && windowOf(template, e.day, e.period) !== null).length;
     emptySlots += Math.max(0, weekCapacity(template) - used);
   }
 
@@ -98,6 +98,7 @@ export function dashboardStats(ctx: SchoolContext, entries: Entry[]): DashboardS
 }
 
 const classLink = (id: string) => `/timetable/class?c=${encodeURIComponent(id)}`;
+const orphanLink = (id: string) => `/timetable/class/${encodeURIComponent(id)}#${OUTSIDE_TEMPLATE_ID}`;
 
 export function attentionItems(ctx: SchoolContext, entries: Entry[], lang: Lang): AttentionItem[] {
   const out: AttentionItem[] = [];
@@ -115,9 +116,8 @@ export function attentionItems(ctx: SchoolContext, entries: Entry[], lang: Lang)
       });
     } else if (w.kind === 'over-target') {
       const cls = ctx.classes.find((c) => c.id === w.refId);
-      const grade = cls && gradeOf(ctx, cls);
-      if (!cls || !grade) continue;
-      const row = classProgress(cls.id, entries, effectivePlan(cls, grade)).find((r) => r.key === w.planKey);
+      if (!cls) continue;
+      const row = classPlacement(cls, entries, ctx).rows.find((r) => r.key === w.planKey);
       if (!row) continue;
       const item = row.item;
       const subject =
@@ -142,7 +142,7 @@ export function attentionItems(ctx: SchoolContext, entries: Entry[], lang: Lang)
         key: `${w.kind}:${w.refId}`,
         kind: w.kind,
         severity: w.kind === 'orphaned' ? 'high' : 'medium',
-        to: classLink(cls.id),
+        to: w.kind === 'orphaned' ? orphanLink(cls.id) : classLink(cls.id),
         day: e.day,
         params: { class: cls.name, group: groupName, period: e.period, day: e.day },
       });

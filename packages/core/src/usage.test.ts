@@ -2,7 +2,7 @@
 // Copyright (C) 2026 Kanushka Gayan
 
 import { describe, expect, it } from 'vitest';
-import { C, ctx, defaultTemplate, entries, entry, S, T, TPL } from './fixtures';
+import { C, ctx, defaultTemplate, entries, entries6B, entry, S, T, TPL } from './fixtures';
 import { orphanedEntries, usageCount, warnings } from './usage';
 import type { SchoolContext } from './types';
 
@@ -50,6 +50,11 @@ describe('warnings', () => {
       { kind: 'over-limit', refId: T.perera, day: 0, detail: '8 periods on Mon, limit 7' },
       { kind: 'over-target', refId: C.c6b, detail: 'Mathematics 8/6', planKey: `subject:${S.maths}` },
     ]);
+  });
+
+  it('does not count orphaned entries toward over-target', () => {
+    const orphan = entry('o', 2, 8, [C.c6b], [[S.maths, T.perera]]);
+    expect(warnings([...entries6B, orphan], shrunk).filter((w) => w.kind === 'over-target')).toEqual([]);
   });
 
   it('reports group entries missing a teacher and orphans', () => {

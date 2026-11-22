@@ -21,7 +21,7 @@ import {
 } from '@sathiya/core';
 import { useEffect, useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { Navigate, useNavigate, useParams, useSearchParams } from 'react-router-dom';
+import { Navigate, useLocation, useNavigate, useParams, useSearchParams } from 'react-router-dom';
 import { useLang } from '../../app/LangProvider';
 import { useSchool, useYear } from '../../app/SchoolProvider';
 import { useReadOnly } from '../../ui/AdminLayout';
@@ -37,7 +37,8 @@ import { AssignPicker } from './AssignPicker';
 import { BlockEditor } from './BlockEditor';
 import { blockKey, blockStateFor, isBlock, type BlockState } from './blockState';
 import { classCellView } from './labels';
-import { pickInitial, rememberLast, useAdminBase } from './paths';
+import { OutsideTemplateList } from './OutsideTemplateList';
+import { OUTSIDE_TEMPLATE_ID, pickInitial, rememberLast, useAdminBase } from './paths';
 import { PinHeader, PinSection } from './PinPanel';
 import { pinOverlayCell } from './pinOverlay';
 import { SlotPicker } from './SlotPicker';
@@ -121,6 +122,14 @@ function ClassView({ cls, classes }: { cls: SchoolClass; classes: SchoolClass[] 
     return m;
   }, [entries, cls.id]);
   const entryAt = (day: DayIndex, period: number) => bySlot.get(`${day}-${period}`);
+  const outside = useMemo(
+    () => entries.filter((e) => e.classIds.includes(cls.id) && windowOf(template, e.day, e.period) === null).sort((a, b) => a.day - b.day || a.period - b.period),
+    [entries, cls.id, template],
+  );
+  const { hash } = useLocation();
+  useEffect(() => {
+    if (hash === `#${OUTSIDE_TEMPLATE_ID}`) document.getElementById(OUTSIDE_TEMPLATE_ID)?.scrollIntoView?.({ block: 'start' });
+  }, [hash]);
   const fillDrafts = useMemo(() => fillWithClassTeacher({ ctx, entries, classId: cls.id }), [ctx, entries, cls.id]);
 
   const index = classes.findIndex((c) => c.id === cls.id);
@@ -251,6 +260,8 @@ function ClassView({ cls, classes }: { cls: SchoolClass; classes: SchoolClass[] 
       </div>
 
       <PinHeader pin={pin} hint={t('pin.hint')} readOnly={readOnly} />
+
+      <OutsideTemplateList entries={outside} onDelete={remove} readOnly={readOnly} />
 
       <div className="flex flex-wrap items-start gap-5">
         <PinSection pin={pin} teacher={pin.names?.teacher ?? ''} className="flex-[999_1_620px]">

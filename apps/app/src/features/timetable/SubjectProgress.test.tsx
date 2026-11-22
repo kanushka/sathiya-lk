@@ -65,5 +65,14 @@ describe('SubjectProgress', () => {
     renderWithSchool(<SubjectProgress cls={cls6B} entries={extra} />, { ctx, entries: extra });
     expect(row('Sinhala')).toHaveTextContent('6/5');
     expect(within(row('Sinhala')).getByText('6/5')).toHaveAttribute('data-over', 'true');
+    expect(screen.getByText('36')).toBeInTheDocument();
+  });
+
+  it('leaves entries outside the class template out of every count', () => {
+    const cls6C = ctx.classes.find((c) => c.id === C.c6c)!;
+    const list = [entry('in', 0, 1, [C.c6c], [[S.science, T.gunasekara]]), entry('out', 4, 8, [C.c6c], [[S.science, T.gunasekara]])];
+    renderWithSchool(<SubjectProgress cls={cls6C} entries={list} />, { ctx, entries: list });
+    expect(row('Science')).toHaveTextContent('1/5');
+    expect(screen.getByText('1')).toBeInTheDocument();
   });
 });

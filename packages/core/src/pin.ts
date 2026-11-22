@@ -5,7 +5,7 @@ import { busyDetail, teacherDayLoad, type BusyDetail } from './availability';
 import { entryWindow, findConflicts } from './clash';
 import { DAYS, findClass, gradeOf, templateOf } from './lookup';
 import { effectivePlan } from './plan';
-import { classProgress } from './progress';
+import { classPlacement } from './progress';
 import { bestOverlapPeriod, periodsFor, windowOf } from './time';
 import type { DayIndex, Entry, EntryDraft, SchoolContext } from './types';
 
@@ -146,9 +146,7 @@ export function pinProgress(args: PinArgs): PinProgress {
   const { ctx, entries, spec } = args;
   const baseId = spec.classIds[0];
   const cls = baseId === undefined ? undefined : findClass(ctx, baseId);
-  const grade = cls && gradeOf(ctx, cls);
-  const plan = cls && grade ? effectivePlan(cls, grade) : [];
-  const row = baseId === undefined ? undefined : classProgress(baseId, entries, plan).find((r) =>
+  const row = cls && classPlacement(cls, entries, ctx).rows.find((r) =>
     spec.groupKey !== undefined
       ? r.item.kind === 'group' && r.item.key === spec.groupKey
       : r.item.kind === 'subject' && r.item.subjectId === spec.lessons[0]?.subjectId,

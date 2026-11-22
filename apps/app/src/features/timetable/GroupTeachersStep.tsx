@@ -3,8 +3,7 @@
 
 import {
   blockMates,
-  classProgress,
-  effectivePlan,
+  classPlacement,
   latestGroupSpec,
   pickName,
   pinSlots,
@@ -222,8 +221,7 @@ export function GroupTeachersStep(props: GroupTeachersStepProps) {
     setClassIds((cur) => (cur.includes(id) ? cur.filter((c) => c !== id) : [classId, ...mates.filter((m) => m.id === id || cur.includes(m.id)).map((m) => m.id)]));
   }
 
-  const plan = effectivePlan(cls, grade);
-  const progress = classProgress(classId, entries, plan).find((r) => r.key === planKey(item));
+  const progress = classPlacement(cls, entries, ctx).rows.find((r) => r.key === planKey(item));
   const need = progress
     ? progress.placed < progress.needed
       ? t('picker.needs', { count: progress.needed - progress.placed })

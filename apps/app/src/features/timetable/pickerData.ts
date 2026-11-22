@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
 // Copyright (C) 2026 Kanushka Gayan
 
-import { classProgress, effectivePlan, type Entry, type Lang, type PlanItem, type SchoolContext, type Subject, type Teacher } from '@sathiya/core';
+import { classPlacement, type Entry, type Lang, type PlanItem, type SchoolContext, type Subject, type Teacher } from '@sathiya/core';
 import { useMemo } from 'react';
 import { planItemName } from './labels';
 
@@ -18,9 +18,8 @@ export interface PickItem {
 export function usePickItems(ctx: SchoolContext, classId: string, entries: Entry[], lang: Lang): PickItem[] {
   return useMemo(() => {
     const cls = ctx.classes.find((c) => c.id === classId);
-    const grade = cls && ctx.grades.find((g) => g.id === cls.gradeId);
-    if (!cls || !grade) return [];
-    const rows = classProgress(classId, entries, effectivePlan(cls, grade)).map((r) => ({
+    if (!cls) return [];
+    const rows = classPlacement(cls, entries, ctx).rows.map((r) => ({
       item: r.item,
       key: r.key,
       name: planItemName(r.item, ctx, lang),
