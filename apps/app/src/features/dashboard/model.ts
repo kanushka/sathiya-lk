@@ -133,13 +133,13 @@ export function attentionItems(ctx: SchoolContext, entries: Entry[], lang: Lang)
       });
     } else {
       const e = entries.find((x) => x.id === w.refId);
-      const cls = e && ctx.classes.find((c) => c.id === e.classIds[0]);
+      const cls = e && ctx.classes.find((c) => c.id === (w.classId ?? e.classIds[0]));
       if (!e || !cls) continue;
       const grade = gradeOf(ctx, cls);
       const group = grade && effectivePlan(cls, grade).find((p) => p.kind === 'group' && p.key === e.groupKey);
       const groupName = group && group.kind === 'group' ? pickName(group, lang) : (e.groupKey ?? '');
       out.push({
-        key: `${w.kind}:${w.refId}`,
+        key: w.classId ? `${w.kind}:${w.refId}:${w.classId}` : `${w.kind}:${w.refId}`,
         kind: w.kind,
         severity: w.kind === 'orphaned' ? 'high' : 'medium',
         to: w.kind === 'orphaned' ? orphanLink(cls.id) : classLink(cls.id),

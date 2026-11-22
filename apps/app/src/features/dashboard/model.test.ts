@@ -83,6 +83,14 @@ describe('dashboard model', () => {
     expect(orphan.params).toMatchObject({ class: '6C', period: 7, day: 4 });
   });
 
+  it('raises a joined entry outside one class’s template on that class', () => {
+    const joint = entry('j', 4, 8, [C.c6b, C.c6c], [[S.maths, T.perera]]);
+    const orphans = attentionItems(ctx, [...entries, joint], 'en').filter((i) => i.kind === 'orphaned');
+    expect(orphans).toHaveLength(1);
+    expect(orphans[0]!.to).toBe('/timetable/class/c-6c#outside-template');
+    expect(publishProblems(ctx, [...entries, joint]).orphaned).toBe(1);
+  });
+
   it('does not count orphaned entries as filled slots', () => {
     expect(dashboardStats(shrunk, entries).emptySlots).toBe(dashboardStats(shrunk, entries.filter((e) => e.id !== 'e-6c-4-7')).emptySlots);
   });
