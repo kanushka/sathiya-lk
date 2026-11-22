@@ -5,7 +5,7 @@ import type { FirebaseOptions } from 'firebase/app';
 
 const shared = {
   apiKey: 'AIzaSyAAV1VrII8O9l5UKfpybQijC5CRTss_rUE',
-  authDomain: 'sathiya-lk.firebaseapp.com',
+  authDomain: 'app.sathiya.kanushka.com',
   projectId: 'sathiya-lk',
   storageBucket: 'sathiya-lk.firebasestorage.app',
   messagingSenderId: '591171596099',
