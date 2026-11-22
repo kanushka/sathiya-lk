@@ -6,6 +6,7 @@ import { Button } from '../../ui/Button';
 import { Field, inputClass } from '../../ui/Field';
 import { Modal } from '../../ui/Modal';
 import { useToast } from '../../ui/Toast';
+import { FormError } from '../../ui/FormError';
 import { changePasswordWithFirebase, type ChangePasswordFn } from './firebasePassword';
 
 export interface ChangePasswordModalProps {
@@ -74,9 +75,7 @@ function PasswordForm({ onClose, changePassword }: { onClose: () => void; change
         <input type="password" autoComplete="new-password" className={inputClass} value={confirm} onChange={(e) => setConfirm(e.target.value)} required />
       </Field>
       {errors.form && (
-        <p role="alert" className="text-sm font-medium text-danger">
-          {errors.form}
-        </p>
+        <FormError>{errors.form}</FormError>
       )}
       <Button type="submit" variant="primary" size="lg" disabled={busy}>
         {t('cp.submit')}

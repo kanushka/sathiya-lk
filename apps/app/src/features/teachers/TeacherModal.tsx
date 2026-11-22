@@ -5,9 +5,12 @@ import { useState, type FormEvent } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useReadOnly } from '../../ui/AdminLayout';
 import { Button } from '../../ui/Button';
-import { cx } from '../../ui/cx';
+import { Checkbox } from '../../ui/Checkbox';
+import { ToggleChip } from '../../ui/Chip';
 import { Field, inputClass } from '../../ui/Field';
+import { FormError } from '../../ui/FormError';
 import { Modal } from '../../ui/Modal';
+import { MultiSelect } from '../../ui/MultiSelect';
 import { Select } from '../../ui/Select';
 import { useToast } from '../../ui/Toast';
 import { useSchool } from '../../app/SchoolProvider';
@@ -134,12 +137,6 @@ export function TeacherModal({ teacher, onClose }: TeacherModalProps) {
     }
   }
 
-  const chip = (on: boolean) =>
-    cx(
-      'rounded-md border px-2.5 py-1 text-[13px] font-semibold disabled:cursor-not-allowed disabled:opacity-60',
-      on ? 'border-brand bg-brand text-on-brand' : 'border-line-strong bg-white text-ink-soft hover:bg-slate-50',
-    );
-
   return (
     <Modal
       open
@@ -155,9 +152,7 @@ export function TeacherModal({ teacher, onClose }: TeacherModalProps) {
         ) : (
           <>
             {saveError && (
-              <p role="alert" className="mr-auto text-sm font-medium text-danger">
-                {t('modal.saveFailed')}
-              </p>
+              <FormError className="mr-auto">{t('modal.saveFailed')}</FormError>
             )}
             <Button onClick={onClose}>{t('modal.cancel')}</Button>
             {!readOnly && (
@@ -183,51 +178,40 @@ export function TeacherModal({ teacher, onClose }: TeacherModalProps) {
                 />
               </Field>
               <Field label={t('modal.title')}>
-                <Select value={form.title} onChange={(e) => set('title', e.target.value as Form['title'])}>
-                  <option value="">{t('modal.noTitle')}</option>
-                  {TEACHER_TITLES.map((x) => (
-                    <option key={x} value={x}>
-                      {TEACHER_TITLE_LABELS[lang === 'si' ? 'si' : 'en'][x]}
-                    </option>
-                  ))}
-                </Select>
+                <Select
+                  value={form.title}
+                  onChange={(v) => set('title', v)}
+                  options={[
+                    { value: '', label: t('modal.noTitle') },
+                    ...TEACHER_TITLES.map((x) => ({ value: x, label: TEACHER_TITLE_LABELS[lang === 'si' ? 'si' : 'en'][x] })),
+                  ]}
+                />
               </Field>
               <Field label={t('modal.name')} error={show('name')}>
                 <input className={inputClass} value={form.name} onChange={(e) => set('name', e.target.value)} />
               </Field>
             </div>
-            <label className="flex cursor-pointer items-start gap-3 rounded-lg border border-line bg-[#FAFAFB] p-3">
-              <input
-                type="checkbox"
-                className="mt-0.5 h-4 w-4 accent-[var(--brand)]"
+            <div className="rounded-lg border border-line bg-surface p-3">
+              <Checkbox
                 checked={form.isPrimary}
-                onChange={(e) => set('isPrimary', e.target.checked)}
+                onChange={(v) => set('isPrimary', v)}
+                disabled={locked}
+                label={t('modal.primary')}
+                hint={t('modal.primaryHint')}
               />
-              <span>
-                <span className="block text-sm font-semibold text-ink">{t('modal.primary')}</span>
-                <span className="block text-xs text-ink-muted">{t('modal.primaryHint')}</span>
-              </span>
-            </label>
+            </div>
             {!form.isPrimary && (
-              <div role="group" aria-labelledby="teacher-subjects">
-                <p id="teacher-subjects" className="mb-1.5 text-[13px] font-semibold text-ink-soft">
-                  {t('modal.subjects')}
-                </p>
-                <div className="flex flex-wrap gap-1.5">
-                  {subjects.map((s) => (
-                    <button
-                      key={s.id}
-                      type="button"
-                      aria-pressed={form.subjectIds.includes(s.id)}
-                      className={chip(form.subjectIds.includes(s.id))}
-                      onClick={() => set('subjectIds', toggle(form.subjectIds, s.id))}
-                    >
-                      {pickName(s, lang)}
-                    </button>
-                  ))}
-                </div>
-                {show('subjects') && <p role="alert" className="mt-1 text-xs font-medium text-danger">{show('subjects')}</p>}
-              </div>
+              <Field label={t('modal.subjects')} error={show('subjects')}>
+                <MultiSelect
+                  value={form.subjectIds}
+                  onChange={(v) => set('subjectIds', v)}
+                  placeholder={t('modal.subjectsPlaceholder')}
+                  maxChips={Infinity}
+                  disabled={locked}
+                  wrap
+                  options={subjects.map((s) => ({ value: s.id, label: pickName(s, lang) }))}
+                />
+              </Field>
             )}
             <div role="group" aria-labelledby="teacher-grades">
               <p id="teacher-grades" className="mb-1.5 text-[13px] font-semibold text-ink-soft">
@@ -235,18 +219,17 @@ export function TeacherModal({ teacher, onClose }: TeacherModalProps) {
               </p>
               <div className="flex flex-wrap gap-1.5">
                 {[...school.grades].sort((a, b) => a - b).map((g) => (
-                  <button
+                  <ToggleChip
                     key={g}
-                    type="button"
-                    aria-pressed={form.grades.includes(g)}
-                    className={cx(chip(form.grades.includes(g)), 'min-w-9')}
-                    onClick={() => set('grades', toggle(form.grades, g))}
+                    pressed={form.grades.includes(g)}
+                    onToggle={() => set('grades', toggle(form.grades, g))}
+                    className="min-w-9"
                   >
                     {g}
-                  </button>
+                  </ToggleChip>
                 ))}
               </div>
-              {show('grades') && <p role="alert" className="mt-1 text-xs font-medium text-danger">{show('grades')}</p>}
+              <FormError size="field" className="mt-1">{show('grades')}</FormError>
             </div>
             <div className="grid grid-cols-3 gap-3">
               <Field label={t('modal.maxPerDay')} error={show('maxPerDay')}>

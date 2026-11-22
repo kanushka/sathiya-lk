@@ -11,6 +11,7 @@ import { useSchool, useYear } from '../app/SchoolProvider';
 import { SuperAdminLink } from '../features/superadmin/SuperAdminLink';
 import { cx } from './cx';
 import { Icon, type IconName } from './Icon';
+import { Select } from './Select';
 
 export type NavGroup = 'main' | 'timetable' | 'setup' | 'school';
 
@@ -147,7 +148,7 @@ export function Sidebar({ basePath = '/admin', readOnly = false }: SidebarProps)
             onClick={toggle}
             aria-label={toggleLabel}
             title={toggleLabel}
-            className="mb-2 mt-2.5 flex h-8 w-8 items-center justify-center rounded-lg border border-line bg-white text-ink-muted hover:bg-slate-50"
+            className="mb-2 mt-2.5 flex h-8 w-8 items-center justify-center rounded-lg border border-line bg-white text-ink-muted hover:bg-surface"
           >
             <Icon name="chevronRight" size={16} strokeWidth={2} />
           </button>
@@ -170,7 +171,7 @@ export function Sidebar({ basePath = '/admin', readOnly = false }: SidebarProps)
               onClick={toggle}
               aria-label={toggleLabel}
               title={toggleLabel}
-              className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg border border-line bg-white text-ink-muted hover:bg-slate-50"
+              className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg border border-line bg-white text-ink-muted hover:bg-surface"
             >
               <Icon name="chevronLeft" size={16} strokeWidth={2} />
             </button>
@@ -185,18 +186,16 @@ export function Sidebar({ basePath = '/admin', readOnly = false }: SidebarProps)
               <label htmlFor={yearSelectId} className={yearLabelClass}>
                 {t('sidebar.year')}
               </label>
-              <select
+              <Select
                 id={yearSelectId}
                 value={yearId}
-                onChange={(e) => setYearId(e.target.value)}
-                className="mx-1 h-[38px] w-[calc(100%-8px)] rounded-lg border border-line-strong bg-white px-2.5 text-sm text-ink focus:border-brand focus:outline-none focus:ring-2 focus:ring-brand/30"
-              >
-                {years.map((y) => (
-                  <option key={y.id} value={y.id}>
-                    {t('year.option', { label: y.label, status: t(`year.${y.status}`) })}
-                  </option>
-                ))}
-              </select>
+                onChange={setYearId}
+                className="mx-1 w-[calc(100%-8px)]"
+                options={years.map((y) => ({
+                  value: y.id,
+                  label: t('year.option', { label: y.label, status: t(`year.${y.status}`) }),
+                }))}
+              />
             </>
           )}
         </>

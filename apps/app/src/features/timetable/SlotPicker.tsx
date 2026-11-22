@@ -16,9 +16,11 @@ import { useEffect, useMemo, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useLang } from '../../app/LangProvider';
 import { useSchool } from '../../app/SchoolProvider';
+import { Badge } from '../../ui/Badge';
 import { useReadOnly } from '../../ui/AdminLayout';
 import { Button } from '../../ui/Button';
 import { Combobox } from '../../ui/Combobox';
+import { inputClass } from '../../ui/Field';
 import { Modal } from '../../ui/Modal';
 import { limitWarning, planItemColor, teacherReason, teachesAtAll } from './labels';
 import { initials, usePickItems, type GroupItem, type PickItem } from './pickerData';
@@ -95,9 +97,7 @@ function SlotPickerBody({ onClose, classId, day, period, entries, editing, onSav
   const pinned = notFree.find(isPreferred);
   const unavailable = notFree.filter((o) => !isPreferred(o));
   const preferredTag = subject && (
-    <span className="rounded-full bg-[#E4F2E7] px-2 py-0.5 text-xs font-semibold text-[#1F6B34]">
-      {t('picker.teaches', { class: cls.name, subject: pickName(subject, lang) })}
-    </span>
+    <Badge tone="success">{t('picker.teaches', { class: cls.name, subject: pickName(subject, lang) })}</Badge>
   );
   const currentTeacher = editing?.lessons[0]?.teacherId ?? null;
 
@@ -143,19 +143,19 @@ function SlotPickerBody({ onClose, classId, day, period, entries, editing, onSav
           type="button"
           disabled={busy}
           onClick={() => assign(o.teacher.id)}
-          className="flex w-full items-center gap-2.5 rounded-[10px] border border-[#F0DDB0] bg-[#FFF9EC] px-3 py-2 text-left hover:bg-[#FBF0D6] focus-visible:outline focus-visible:outline-2 focus-visible:outline-brand disabled:opacity-60"
+          className="flex w-full items-center gap-2.5 rounded-lg border border-warning-line bg-warning-soft/50 px-3 py-2 text-left hover:bg-warning-soft focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand focus-visible:ring-offset-2 disabled:opacity-60"
         >
           <span className="flex-1 text-[13px] font-semibold text-ink">{teacherDisplayName(o.teacher, lang)}</span>
           {isPreferred(o) && preferredTag}
-          <span className="text-xs font-semibold text-[#7A5A12]">{limitWarning(t, o.loadToday, o.teacher.maxPerDay)}</span>
+          <span className="text-xs font-semibold text-warning">{limitWarning(t, o.loadToday, o.teacher.maxPerDay)}</span>
           {o.teacher.id === currentTeacher && (
-            <span className="rounded-full bg-brand/10 px-2 py-0.5 text-xs font-semibold text-brand">{t('picker.current')}</span>
+            <Badge tone="brand">{t('picker.current')}</Badge>
           )}
           <span className="text-xs font-bold text-brand">{t('picker.assign')}</span>
         </button>
       </li>
     ) : (
-      <li key={o.teacher.id} className="flex items-center gap-2.5 rounded-[10px] bg-[#F6F7F9] px-3 py-2 text-ink-muted">
+      <li key={o.teacher.id} className="flex items-center gap-2.5 rounded-lg bg-surface-2 px-3 py-2 text-ink-muted">
         <span className="flex-1 text-[13px] font-semibold">{teacherDisplayName(o.teacher, lang)}</span>
         {isPreferred(o) && preferredTag}
         <span className="text-xs">{teacherReason(t, o, ctx, lang, grade.number)}</span>
@@ -203,11 +203,11 @@ function SlotPickerBody({ onClose, classId, day, period, entries, editing, onSav
           <>
             <span className="h-3 w-3 shrink-0 rounded-[3px]" style={{ background: planItemColor(p.item, ctx) }} />
             <span className="flex-1 font-semibold">{p.name}</span>
-            <span className={p.placed < p.needed ? 'text-xs font-bold text-[#7A5410]' : 'text-xs text-ink-muted'}>{need(p)}</span>
+            <span className={p.placed < p.needed ? 'text-xs font-bold text-warning' : 'text-xs text-ink-muted'}>{need(p)}</span>
           </>
         )}
       />
-      {chosen && <p className="mt-1.5 text-xs text-[#7A5410]">{need(chosen)}</p>}
+      {chosen && <p className="mt-1.5 text-xs text-warning">{need(chosen)}</p>}
 
       {subjectId && options && (
         <>
@@ -220,7 +220,7 @@ function SlotPickerBody({ onClose, classId, day, period, entries, editing, onSav
             value={query}
             onChange={(e) => setQuery(e.target.value)}
             placeholder={t('picker.teacherSearch')}
-            className="h-10 w-full rounded-[10px] border border-line-strong px-3 text-sm focus:border-brand focus:outline-none focus:ring-2 focus:ring-brand/30"
+            className={inputClass}
           />
           {q && available.length + unavailable.length === 0 && !pinned && (
             <p className="mx-0.5 mt-3 text-[13px] text-ink-muted">
@@ -228,7 +228,7 @@ function SlotPickerBody({ onClose, classId, day, period, entries, editing, onSav
             </p>
           )}
           {pinned && <ul className="m-0 mt-3 flex list-none flex-col gap-1 p-0">{unavailableRow(pinned)}</ul>}
-          <p className={`${sectionLabel} text-[#1F6B34]`}>{t('picker.available', { count: available.length })}</p>
+          <p className={`${sectionLabel} text-success`}>{t('picker.available', { count: available.length })}</p>
           <ul className="m-0 flex list-none flex-col gap-1.5 p-0">
             {available.map((o) => (
               <li key={o.teacher.id}>
@@ -237,9 +237,9 @@ function SlotPickerBody({ onClose, classId, day, period, entries, editing, onSav
                   type="button"
                   disabled={busy}
                   onClick={() => assign(o.teacher.id)}
-                  className="flex w-full items-center gap-2.5 rounded-[10px] border border-[#CFE6D4] bg-[#F5FBF6] px-3 py-2.5 text-left hover:bg-[#EAF6ED] focus-visible:outline focus-visible:outline-2 focus-visible:outline-brand disabled:opacity-60"
+                  className="flex w-full items-center gap-2.5 rounded-lg border border-success-line bg-success-soft/50 px-3 py-2.5 text-left hover:bg-success-soft focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand focus-visible:ring-offset-2 disabled:opacity-60"
                 >
-                  <span aria-hidden="true" className="flex h-[30px] w-[30px] shrink-0 items-center justify-center rounded-full bg-[#E4F2E7] text-xs font-extrabold text-[#1F6B34]">
+                  <span aria-hidden="true" className="flex h-[30px] w-[30px] shrink-0 items-center justify-center rounded-full bg-success-soft text-xs font-extrabold text-success">
                     {initials(o.teacher.name)}
                   </span>
                   <span className="min-w-0 flex-1">
@@ -250,14 +250,14 @@ function SlotPickerBody({ onClose, classId, day, period, entries, editing, onSav
                   </span>
                   {isPreferred(o) && preferredTag}
                   {o.teacher.id === currentTeacher && (
-                    <span className="rounded-full bg-brand/10 px-2 py-0.5 text-xs font-semibold text-brand">{t('picker.current')}</span>
+                    <Badge tone="brand">{t('picker.current')}</Badge>
                   )}
                   <span className="text-xs font-bold text-brand">{t('picker.assign')}</span>
                 </button>
               </li>
             ))}
           </ul>
-          <p className={`${sectionLabel} text-[#8A91A3]`}>{t('picker.unavailable', { count: unavailable.length })}</p>
+          <p className={`${sectionLabel} text-ink-muted`}>{t('picker.unavailable', { count: unavailable.length })}</p>
           <ul className="m-0 flex list-none flex-col gap-1 p-0">
             {unavailable.map(unavailableRow)}
           </ul>

@@ -6,6 +6,7 @@ import userEvent from '@testing-library/user-event';
 import { describe, expect, it, vi } from 'vitest';
 import { renderWithI18n } from '../test/render';
 import { Combobox } from './Combobox';
+import { Field } from './Field';
 import { Modal } from './Modal';
 
 interface Subj { id: string; name: string; group: string }
@@ -105,7 +106,7 @@ describe('Combobox', () => {
     expect(screen.getByRole('option', { name: 'Mathematics' })).toHaveAttribute('aria-selected', 'false');
   });
 
-  it('renders the listbox in document.body, outside a modal body, and keeps the modal open on pick and Escape', async () => {
+  it('renders the listbox inside the dialog and keeps the modal open on pick and Escape', async () => {
     const user = userEvent.setup();
     const onClose = vi.fn();
     const onChange = vi.fn();
@@ -123,8 +124,7 @@ describe('Combobox', () => {
     );
     await user.click(screen.getByRole('button', { name: /click to search/i }));
     const listbox = screen.getByRole('listbox');
-    expect(screen.getByRole('dialog').contains(listbox)).toBe(false);
-    expect(listbox.closest('[data-combobox-popover]')?.parentElement).toBe(document.body);
+    expect(screen.getByRole('dialog').contains(listbox)).toBe(true);
 
     await user.keyboard('{Escape}');
     expect(screen.queryByRole('listbox')).not.toBeInTheDocument();
@@ -188,5 +188,87 @@ describe('Combobox', () => {
     await user.clear(input);
     await user.keyboard('{ArrowDown}');
     expect(input).toHaveAttribute('aria-activedescendant');
+  });
+
+  it('never opens when disabled', async () => {
+    const user = userEvent.setup();
+    renderWithI18n(
+      <Combobox
+        items={items}
+        getKey={(s) => s.id}
+        getLabel={(s) => s.name}
+        onChange={vi.fn()}
+        placeholder="Pick"
+        searchPlaceholder="Search subject…"
+        disabled
+      />,
+    );
+    const trigger = screen.getByRole('button', { name: 'Pick' });
+    expect(trigger).toBeDisabled();
+    await user.click(trigger);
+    expect(screen.queryByRole('listbox')).not.toBeInTheDocument();
+  });
+
+  it('passes aria-invalid, aria-describedby and aria-labelledby to the trigger and className to the root', async () => {
+    const user = userEvent.setup();
+    const { container } = renderWithI18n(
+      <>
+        <span id="subj-label">Subject</span>
+        <p id="subj-err">Pick a subject</p>
+        <Combobox
+          items={items}
+          getKey={(s) => s.id}
+          getLabel={(s) => s.name}
+          onChange={vi.fn()}
+          placeholder="Pick"
+          searchPlaceholder="Search subject…"
+          aria-invalid
+          aria-describedby="subj-err"
+          aria-labelledby="subj-label"
+          className="w-64"
+        />
+      </>,
+    );
+    const trigger = screen.getByRole('button', { name: 'Subject' });
+    expect(trigger).toHaveAttribute('aria-invalid', 'true');
+    expect(trigger).toHaveAccessibleDescription('Pick a subject');
+    expect(container.querySelector('.w-64')).toContainElement(trigger);
+    await user.click(trigger);
+    expect(screen.getByRole('listbox', { name: 'Subject' })).toHaveAttribute('aria-labelledby', 'subj-label');
+  });
+
+  it('keeps the value in the trigger name with aria-labelledby and names the listbox from a field label', async () => {
+    const user = userEvent.setup();
+    const { unmount } = renderWithI18n(
+      <>
+        <span id="subj-label">Subject</span>
+        <Combobox
+          items={items}
+          getKey={(s) => s.id}
+          getLabel={(s) => s.name}
+          value={items[0]}
+          onChange={vi.fn()}
+          placeholder="Pick"
+          searchPlaceholder="Search subject…"
+          aria-labelledby="subj-label"
+        />
+      </>,
+    );
+    expect(screen.getByRole('button')).toHaveAccessibleName('Subject Mathematics');
+    unmount();
+    renderWithI18n(
+      <Field label="Subject">
+        <Combobox
+          items={items}
+          getKey={(s) => s.id}
+          getLabel={(s) => s.name}
+          onChange={vi.fn()}
+          placeholder="Pick"
+          searchPlaceholder="Search subject…"
+        />
+      </Field>,
+    );
+    await user.click(screen.getByRole('button', { name: 'Subject' }));
+    expect(screen.getByRole('listbox', { name: 'Subject' })).toBeInTheDocument();
   });
 });

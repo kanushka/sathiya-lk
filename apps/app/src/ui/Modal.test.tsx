@@ -18,6 +18,13 @@ function setup() {
 }
 
 describe('Modal', () => {
+  it('close button uses the subtle surface without a transparent override', () => {
+    setup();
+    const close = screen.getByRole('button', { name: /close/i });
+    expect(close).toHaveClass('bg-surface-3');
+    expect(close).not.toHaveClass('bg-transparent');
+  });
+
   it('renders a labelled modal dialog', () => {
     setup();
     const dialog = screen.getByRole('dialog', { name: 'Edit teacher' });

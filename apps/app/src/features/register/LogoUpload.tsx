@@ -3,6 +3,7 @@
 import { useEffect, useId, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Button } from '../../ui/Button';
+import { FormError } from '../../ui/FormError';
 
 export const MAX_LOGO_BYTES = 1024 * 1024;
 const ACCEPT = ['image/png', 'image/svg+xml'];
@@ -55,7 +56,7 @@ export function LogoUpload({ value, currentUrl, onChange, onPreview }: LogoUploa
         {t('brand.logo')}
       </span>
       <div className="flex items-center gap-3.5 rounded-xl border-[1.5px] border-dashed border-line-strong p-4">
-        <div className="flex h-14 w-14 shrink-0 items-center justify-center overflow-hidden rounded-xl bg-slate-50">
+        <div className="flex h-14 w-14 shrink-0 items-center justify-center overflow-hidden rounded-xl bg-surface">
           {shown ? <img src={shown} alt={t('logo.alt')} className="h-full w-full object-contain" /> : null}
         </div>
         <div className="flex flex-col items-start gap-1.5">
@@ -82,9 +83,7 @@ export function LogoUpload({ value, currentUrl, onChange, onPreview }: LogoUploa
         </div>
       </div>
       {error && (
-        <p role="alert" className="m-0 text-xs font-medium text-danger">
-          {error}
-        </p>
+        <FormError size="field">{error}</FormError>
       )}
     </div>
   );

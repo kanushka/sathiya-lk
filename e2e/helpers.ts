@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
 // Copyright (C) 2026 Kanushka Gayan
-import { expect, type Page } from '@playwright/test';
+import { expect, type Locator, type Page } from '@playwright/test';
 import { school } from '@sathiya/core/fixtures';
 import { admin, HOST, PORTS, PROJECT_ID, TERMS_VERSION } from '../scripts/seed';
 
@@ -29,6 +29,12 @@ export async function loginTeacher(page: Page, staffId: string, password: string
   await form.getByLabel('Password').fill(password);
   await form.getByRole('button', { name: 'Log in' }).click();
   await expect(page).toHaveURL(/\/me$/);
+}
+
+export async function pick(scope: Page | Locator, name: string | RegExp, option: string | RegExp): Promise<void> {
+  const page = 'page' in scope ? scope.page() : scope;
+  await scope.getByRole('combobox', { name }).click();
+  await page.getByRole('option', { name: option, exact: typeof option === 'string' }).click();
 }
 
 const authBase = `http://${HOST}:${PORTS.auth}`;

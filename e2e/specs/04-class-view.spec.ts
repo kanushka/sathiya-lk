@@ -2,7 +2,7 @@
 // Copyright (C) 2026 Kanushka Gayan
 import { expect, test, type Page } from '@playwright/test';
 import { ADMIN } from '../../scripts/seed';
-import { loginAdmin, shot } from '../helpers';
+import { loginAdmin, pick, shot } from '../helpers';
 
 async function openSlot(page: Page, label: string) {
   const slot = page.getByRole('button', { name: label });
@@ -17,7 +17,7 @@ async function chooseSubject(page: Page, name: RegExp) {
 test('class view: fill a slot, then a busy teacher cannot be picked for an overlapping slot', async ({ page }) => {
   await loginAdmin(page, ADMIN.email, ADMIN.password);
   await page.getByRole('link', { name: 'By class' }).click();
-  await page.getByRole('combobox', { name: 'Class' }).selectOption({ label: 'Grade 6 · 6B' });
+  await pick(page, 'Class', 'Grade 6 · 6B');
   await expect(page).toHaveURL(/\/admin\/timetable\/class\/c-6b$/);
   await expect(page.getByText('36 / 40 placed')).toBeVisible();
 
@@ -35,7 +35,7 @@ test('class view: fill a slot, then a busy teacher cannot be picked for an overl
   await expect(page.getByText('37 / 40 placed')).toBeVisible();
   await shot(page, 'class-view');
 
-  await page.getByRole('combobox', { name: 'Class' }).selectOption({ label: 'Grade 6 · 6C' });
+  await pick(page, 'Class', 'Grade 6 · 6C');
   await expect(page).toHaveURL(/\/admin\/timetable\/class\/c-6c$/);
   await openSlot(page, 'Wednesday, period 4, 09:50–10:30: empty, Add lesson');
   await chooseSubject(page, /^Science/);

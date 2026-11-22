@@ -62,14 +62,14 @@ export function InviteModal({ teachers, onInvite, onClose }: InviteModalProps) {
           <input type="email" className={inputClass} value={email} onChange={(e) => setEmail(e.target.value)} autoFocus />
         </Field>
         <Field label={t('invite.teacher')}>
-          <Select value={teacherId} onChange={(e) => setTeacherId(e.target.value)}>
-            <option value="">{t('invite.teacherNone')}</option>
-            {teachers.map((x) => (
-              <option key={x.id} value={x.id}>
-                {teacherDisplayName(x, lang)} ({x.staffId})
-              </option>
-            ))}
-          </Select>
+          <Select
+            value={teacherId}
+            onChange={setTeacherId}
+            options={[
+              { value: '', label: t('invite.teacherNone') },
+              ...teachers.map((x) => ({ value: x.id, label: `${teacherDisplayName(x, lang)} (${x.staffId})` })),
+            ]}
+          />
         </Field>
       </form>
     </Modal>

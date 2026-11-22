@@ -8,7 +8,7 @@ import { useAuth } from '../../app/AuthProvider';
 import { useLang } from '../../app/LangProvider';
 import { useSchool } from '../../app/SchoolProvider';
 import { useDoc, type DocState } from '../../lib/firestore';
-import { Button } from '../../ui/Button';
+import { Button, buttonClass } from '../../ui/Button';
 import { EmptyState } from '../../ui/EmptyState';
 import { LoadingState } from '../../ui/LoadingState';
 import { cx } from '../../ui/cx';
@@ -59,7 +59,8 @@ export function TeacherFrame({ view, now: nowFn, snapshot, changePassword, child
       to={to}
       aria-current={active ? 'page' : undefined}
       className={cx(
-        'flex h-9 flex-1 items-center justify-center rounded-lg text-sm font-bold',
+        'flex h-9 flex-1 items-center justify-center rounded-lg text-sm font-bold transition-colors',
+        'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white',
         active ? 'bg-white text-ink' : 'text-on-brand opacity-90',
       )}
     >
@@ -86,14 +87,14 @@ export function TeacherFrame({ view, now: nowFn, snapshot, changePassword, child
               </span>
             )}
           </div>
-          <button
-            type="button"
+          <Button
+            variant="onBrand"
+            size="sm"
             onClick={() => setLang(target)}
             aria-label={`${t('shell:sidebar.language')}: ${t(`common:languages.${target}`)}`}
-            className="h-8 rounded-lg border border-[color-mix(in_srgb,var(--on-brand)_40%,transparent)] bg-transparent px-2.5 text-[13px] font-semibold"
           >
             {t(`shell:sidebar.langShort.${target}`)}
-          </button>
+          </Button>
         </div>
         <p className="mt-4 text-[22px] font-extrabold leading-tight">
           {t(`teacher:greeting.${greetingKey(now.getHours())}`)}
@@ -115,10 +116,7 @@ export function TeacherFrame({ view, now: nowFn, snapshot, changePassword, child
           {t('teacher:changePassword')}
         </Button>
         {claims.role === 'admin' && (
-          <Link
-            to="/admin"
-            className="inline-flex h-8 items-center rounded-lg px-3 text-[13px] font-semibold text-ink-soft hover:bg-slate-100"
-          >
+          <Link to="/admin" className={buttonClass({ variant: 'ghost', size: 'sm' })}>
             {t('teacher:adminLink')}
           </Link>
         )}

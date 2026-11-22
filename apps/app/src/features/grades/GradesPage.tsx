@@ -55,9 +55,9 @@ export function GradesPage() {
   };
 
   const addGradeButton = !readOnly && choices.length > 0 && (
-    <button type="button" className="mx-2 mt-2.5 border-0 bg-transparent text-sm font-semibold text-brand" onClick={() => setDialog({ kind: 'addGrade' })}>
+    <Button variant="link" className="mx-2 mt-2.5" onClick={() => setDialog({ kind: 'addGrade' })}>
       {t('rail.addGrade')}
-    </button>
+    </Button>
   );
 
   return (
@@ -70,8 +70,8 @@ export function GradesPage() {
             type="button"
             aria-current={g.id === grade?.id ? 'page' : undefined}
             onClick={() => setSelectedId(g.id)}
-            className={`flex w-full items-center justify-between rounded-lg px-2.5 py-2 text-left text-sm ${
-              g.id === grade?.id ? 'bg-brand/10 font-bold text-brand' : 'text-ink-soft hover:bg-slate-50'
+            className={`flex w-full items-center justify-between rounded-lg px-2.5 py-2 text-left text-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand focus-visible:ring-offset-2 ${
+              g.id === grade?.id ? 'bg-brand/10 font-bold text-brand' : 'text-ink-soft hover:bg-surface'
             }`}
           >
             {t('rail.grade', { n: g.number })}

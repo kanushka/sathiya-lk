@@ -5,7 +5,7 @@ import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useLang } from '../../app/LangProvider';
 import { useDoc } from '../../lib/firestore';
-import { Icon } from '../../ui/Icon';
+import { IconButton } from '../../ui/IconButton';
 
 const storageKey = 'sathiya.announcement.dismissed';
 
@@ -23,15 +23,13 @@ export function BannerView({ text, onDismiss }: { text: string; onDismiss?: () =
     <div role="status" className="flex items-center bg-saffron text-navy">
       <p className="flex-1 px-4 py-2.5 text-sm font-semibold">{text}</p>
       {onDismiss && (
-        <button
-          type="button"
+        <IconButton
+          icon="close"
+          size="sm"
+          label={t('announcements.dismiss')}
           onClick={onDismiss}
-          aria-label={t('announcements.dismiss')}
-          title={t('announcements.dismiss')}
-          className="mr-2 flex h-8 w-8 items-center justify-center rounded-lg hover:bg-black/10"
-        >
-          <Icon name="close" size={16} />
-        </button>
+          className="mr-2"
+        />
       )}
     </div>
   );

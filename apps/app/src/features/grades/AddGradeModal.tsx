@@ -43,13 +43,11 @@ export function AddGradeModal({ choices, onAdd, onClose }: AddGradeModalProps) {
     >
       <form id="grade-form" onSubmit={submit}>
         <Field label={t('addGrade.number')}>
-          <Select value={value} onChange={(e) => setValue(Number(e.target.value))}>
-            {choices.map((n) => (
-              <option key={n} value={n}>
-                {t('rail.grade', { n })}
-              </option>
-            ))}
-          </Select>
+          <Select
+            value={String(value)}
+            onChange={(v) => setValue(Number(v))}
+            options={choices.map((n) => ({ value: String(n), label: t('rail.grade', { n }) }))}
+          />
         </Field>
       </form>
     </Modal>

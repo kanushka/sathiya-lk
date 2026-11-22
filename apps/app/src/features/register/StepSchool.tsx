@@ -4,12 +4,14 @@ import { SCHOOL_TYPES, type SchoolType } from '@sathiya/core';
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Button } from '../../ui/Button';
+import { Checkbox } from '../../ui/Checkbox';
 import { Field, inputClass } from '../../ui/Field';
+import { Select } from '../../ui/Select';
 import { Trans } from 'react-i18next';
 import { censusError, gradesOk, prefixOk, schoolOk, type SchoolDraft } from './model';
 
 
-const grades = Array.from({ length: 13 }, (_, i) => i + 1);
+const gradeOptions = Array.from({ length: 13 }, (_, i) => ({ value: String(i + 1), label: String(i + 1) }));
 
 export interface StepSchoolProps {
   value: SchoolDraft;
@@ -30,7 +32,7 @@ export function StepSchool({ value, onChange, onNext, censusTaken, onReport }: S
       i18nKey="school.censusTaken"
       components={{
         report: (
-          <button type="button" onClick={onReport} className="cursor-pointer border-0 bg-transparent p-0 font-semibold text-danger underline" />
+          <Button variant="link" onClick={onReport} className="underline" />
         ),
       }}
     />
@@ -47,20 +49,11 @@ export function StepSchool({ value, onChange, onNext, censusTaken, onReport }: S
       <div className="flex flex-col gap-3.5">
         <div className="flex gap-3">
           <Field label={t('school.type')} className="flex-1">
-            <select
-              className={inputClass}
+            <Select
               value={value.type}
-              onChange={(e) => {
-                const type = e.target.value as SchoolType;
-                onChange({ ...value, type, ...(type === 'government' ? { noCensus: false } : {}) });
-              }}
-            >
-              {SCHOOL_TYPES.map((k) => (
-                <option key={k} value={k}>
-                  {t(`school.types.${k}`)}
-                </option>
-              ))}
-            </select>
+              onChange={(type) => onChange({ ...value, type, ...(type === 'government' ? { noCensus: false } : {}) })}
+              options={SCHOOL_TYPES.map((k) => ({ value: k, label: t(`school.types.${k}`) }))}
+            />
           </Field>
           <Field label={t('school.census')} hint={t('school.censusHint')} error={censusMsg} required={!value.noCensus} className="flex-1">
             <input
@@ -73,16 +66,13 @@ export function StepSchool({ value, onChange, onNext, censusTaken, onReport }: S
             />
           </Field>
         </div>
-        <label className="-mt-1 flex items-center gap-2 text-[13px] text-ink-muted">
-          <input
-            type="checkbox"
-            className="h-4 w-4"
-            disabled={!privateLike}
-            checked={value.noCensus}
-            onChange={(e) => onChange({ ...value, noCensus: e.target.checked, censusNo: e.target.checked ? '' : value.censusNo })}
-          />
-          {t('school.noCensus')}
-        </label>
+        <Checkbox
+          className="-mt-1"
+          disabled={!privateLike}
+          checked={value.noCensus}
+          onChange={(checked) => onChange({ ...value, noCensus: checked, censusNo: checked ? '' : value.censusNo })}
+          label={t('school.noCensus')}
+        />
         <Field label={t('school.nameEn')}>
           <input className={inputClass} value={value.nameEn} onChange={(e) => set('nameEn', e.target.value)} />
         </Field>
@@ -127,30 +117,18 @@ export function StepSchool({ value, onChange, onNext, censusTaken, onReport }: S
             />
           </Field>
           <Field label={t('school.gradeFrom')} className="flex-1">
-            <select
-              className={inputClass}
-              value={value.gradeFrom}
-              onChange={(e) => set('gradeFrom', Number(e.target.value))}
-            >
-              {grades.map((g) => (
-                <option key={g} value={g}>
-                  {g}
-                </option>
-              ))}
-            </select>
+            <Select
+              value={String(value.gradeFrom)}
+              onChange={(g) => set('gradeFrom', Number(g))}
+              options={gradeOptions}
+            />
           </Field>
           <Field
             label={t('school.gradeTo')}
             className="flex-1"
             error={gradesOk(value) ? undefined : t('school.gradesError')}
           >
-            <select className={inputClass} value={value.gradeTo} onChange={(e) => set('gradeTo', Number(e.target.value))}>
-              {grades.map((g) => (
-                <option key={g} value={g}>
-                  {g}
-                </option>
-              ))}
-            </select>
+            <Select value={String(value.gradeTo)} onChange={(g) => set('gradeTo', Number(g))} options={gradeOptions} />
           </Field>
         </div>
         <Field

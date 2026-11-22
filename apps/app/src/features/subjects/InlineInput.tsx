@@ -1,8 +1,10 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
 // Copyright (C) 2026 Kanushka Gayan
 import { useState } from 'react';
-import { inputClass } from '../../ui/Field';
+import { fieldFocusClass } from '../../ui/Field';
 import { cx } from '../../ui/cx';
+
+const ghostClass = `h-9 w-full rounded-lg border border-transparent bg-transparent px-3 text-sm text-ink placeholder:text-ink-muted ${fieldFocusClass}`;
 
 export interface InlineInputProps {
   label: string;
@@ -28,7 +30,7 @@ export function InlineInput({ label, value, readOnly, required, maxLength, class
   return (
     <input
       aria-label={label}
-      className={cx(inputClass, 'h-9 border-transparent bg-transparent', !readOnly && 'hover:border-line-strong', className)}
+      className={cx(ghostClass, !readOnly && 'hover:border-line-strong', className)}
       value={draft ?? value}
       readOnly={readOnly}
       maxLength={maxLength}

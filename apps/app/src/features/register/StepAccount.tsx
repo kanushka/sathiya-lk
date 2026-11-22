@@ -2,8 +2,10 @@
 // Copyright (C) 2026 Kanushka Gayan
 import { Trans, useTranslation } from 'react-i18next';
 import { Button } from '../../ui/Button';
+import { Checkbox } from '../../ui/Checkbox';
 import { webUrl } from '../../lib/urls';
 import { Field, inputClass } from '../../ui/Field';
+import { FormError } from '../../ui/FormError';
 import type { AccountDraft } from './model';
 
 export function legalUrl(page: 'terms' | 'privacy', lang: string): string {
@@ -70,14 +72,10 @@ export function StepAccount({ value, onChange, signedIn, signedInEmail, busy, er
           </>
         )}
       </div>
-      <label className="flex items-start gap-2.5 text-sm leading-normal">
-        <input
-          type="checkbox"
-          className="mt-[3px] h-[18px] w-[18px]"
-          checked={value.terms}
-          onChange={(e) => set('terms', e.target.checked)}
-        />
-        <span>
+      <Checkbox
+        checked={value.terms}
+        onChange={(checked) => set('terms', checked)}
+        label={
           <Trans
             t={t}
             i18nKey="account.terms"
@@ -86,12 +84,10 @@ export function StepAccount({ value, onChange, signedIn, signedInEmail, busy, er
               privacy: <a href={legalUrl('privacy', i18n.language)} target="_blank" rel="noreferrer" />,
             }}
           />
-        </span>
-      </label>
+        }
+      />
       {error && error.field === null && (
-        <p role="alert" className="mb-0 mt-4 text-sm font-medium text-danger">
-          {error.message}
-        </p>
+        <FormError className="mb-0 mt-4">{error.message}</FormError>
       )}
       <div className="mt-7 flex justify-between border-t border-line-soft pt-5">
         <Button size="lg" onClick={onBack} disabled={busy}>

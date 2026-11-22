@@ -31,7 +31,7 @@ export function usePinExit(target: PinSpec | null, stop: () => void): MutableRef
     if (!target) return;
     function onKey(e: KeyboardEvent) {
       if (e.key !== 'Escape' || e.defaultPrevented || document.querySelector('[role="dialog"]')) return;
-      if (e.target instanceof HTMLElement && e.target.closest('input, select, textarea')) return;
+      if (e.target instanceof HTMLElement && e.target.closest('input, select, textarea, [role="combobox"]')) return;
       stop();
     }
     document.addEventListener('keydown', onKey);

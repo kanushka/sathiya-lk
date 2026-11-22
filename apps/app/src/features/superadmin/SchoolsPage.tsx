@@ -6,6 +6,7 @@ import { useTranslation } from 'react-i18next';
 import { Link } from 'react-router-dom';
 import { useLang } from '../../app/LangProvider';
 import { useCollection, type CollectionState } from '../../lib/firestore';
+import { buttonClass } from '../../ui/Button';
 import { EmptyState } from '../../ui/EmptyState';
 import { LoadingState } from '../../ui/LoadingState';
 import { Select } from '../../ui/Select';
@@ -38,8 +39,7 @@ export function countCell(state: CountState | undefined, pick: (c: Extract<Count
   return pick(state.counts);
 }
 
-const linkBtn =
-  'inline-flex h-8 items-center rounded-lg border border-line-strong bg-white px-3 text-[13px] font-semibold text-ink hover:bg-slate-50';
+const linkBtn = buttonClass({ variant: 'secondary', size: 'sm' });
 
 export function SchoolsPage({ schools: injected, setStatus = defaultSetStatus }: SchoolsPageProps) {
   const { t } = useTranslation('superadmin');
@@ -73,21 +73,26 @@ export function SchoolsPage({ schools: injected, setStatus = defaultSetStatus }:
           placeholder={t('schools.searchPlaceholder')}
           value={search}
           onChange={(e) => setSearch(e.target.value)}
-          className="h-10 min-w-[280px] flex-1 rounded-lg border border-line-strong bg-white px-3 text-sm focus:border-teal focus:outline-none focus:ring-2 focus:ring-teal/30"
+          className="h-10 min-w-[280px] flex-1 rounded-lg border border-line-strong bg-white px-3 text-sm focus:border-brand focus:outline-none focus:ring-[3px] focus:ring-brand/30"
         />
-        <Select aria-label={t('schools.statusLabel')} value={status} onChange={(e) => setStatusFilter(e.target.value as typeof status)}>
-          <option value="all">{t('schools.allStatuses')}</option>
-          <option value="active">{t('status.active')}</option>
-          <option value="disabled">{t('status.disabled')}</option>
-        </Select>
-        <Select aria-label={t('schools.districtLabel')} value={district} onChange={(e) => setDistrict(e.target.value)}>
-          <option value="all">{t('schools.allDistricts')}</option>
-          {districts.map((d) => (
-            <option key={d} value={d}>
-              {d}
-            </option>
-          ))}
-        </Select>
+        <Select
+          aria-label={t('schools.statusLabel')}
+          className="w-44"
+          value={status}
+          onChange={setStatusFilter}
+          options={[
+            { value: 'all', label: t('schools.allStatuses') },
+            { value: 'active', label: t('status.active') },
+            { value: 'disabled', label: t('status.disabled') },
+          ]}
+        />
+        <Select
+          aria-label={t('schools.districtLabel')}
+          className="w-52"
+          value={district}
+          onChange={setDistrict}
+          options={[{ value: 'all', label: t('schools.allDistricts') }, ...districts.map((d) => ({ value: d, label: d }))]}
+        />
       </div>
       {state.loading ? (
         <LoadingState />

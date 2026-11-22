@@ -2,7 +2,8 @@
 // Copyright (C) 2026 Kanushka Gayan
 import { useId, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { inputClass } from '../../ui/Field';
+import { inputBareClass } from '../../ui/Field';
+import { FormError } from '../../ui/FormError';
 import { cx } from '../../ui/cx';
 
 export const PRIMARY_SWATCHES = ['#7A1F3D', '#1D3E7A', '#0E6B6A', '#2F6B2A', '#5B2C83', '#14213D'];
@@ -51,8 +52,8 @@ export function ColorSwatches({ label, swatches, value, onChange, hint }: ColorS
               }}
               style={{ background: hex }}
               className={cx(
-                'h-9 w-9 cursor-pointer rounded-[10px]',
-                selected ? 'shadow-[0_0_0_2px_#fff,0_0_0_4px_#14213D]' : 'border border-black/10',
+                'h-9 w-9 cursor-pointer rounded-lg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand focus-visible:ring-offset-2',
+                selected ? 'shadow-[0_0_0_2px_#fff,0_0_0_4px_theme(colors.navy)]' : 'border border-black/10',
               )}
             />
           );
@@ -72,12 +73,10 @@ export function ColorSwatches({ label, swatches, value, onChange, hint }: ColorS
             setCustom(v);
             if (isHex(v)) onChange(v.toUpperCase());
           }}
-          className={cx(inputClass, 'h-9 w-32 font-mono')}
+          className={cx(inputBareClass, 'h-9 w-32 font-mono')}
         />
         {customInvalid && (
-          <span role="alert" className="text-xs font-medium text-danger">
-            {t('brand.customError')}
-          </span>
+          <FormError size="field">{t('brand.customError')}</FormError>
         )}
       </div>
       {hint && <p className="m-0 text-xs text-ink-muted">{hint}</p>}

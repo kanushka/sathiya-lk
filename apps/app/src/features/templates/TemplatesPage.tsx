@@ -4,7 +4,9 @@ import { orphanedEntries, usageCount, type PeriodTemplate } from '@sathiya/core'
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useSchool, useYear } from '../../app/SchoolProvider';
+import { Badge } from '../../ui/Badge';
 import { useReadOnly } from '../../ui/AdminLayout';
+import { Alert } from '../../ui/Alert';
 import { Button } from '../../ui/Button';
 import { cx } from '../../ui/cx';
 import { EmptyState } from '../../ui/EmptyState';
@@ -42,9 +44,9 @@ export function TemplatesPage() {
       <p className="mb-5 text-sm text-ink-soft">{t('page.subtitle')}</p>
 
       {orphans > 0 && (
-        <p role="status" className="mb-5 rounded-lg border border-[#E8C3C3] bg-[#FBEFEF] px-4 py-3 text-sm font-semibold text-danger">
+        <Alert tone="danger" role="status" className="mb-5">
           {t('page.orphans', { n: orphans })}
-        </p>
+        </Alert>
       )}
 
       <div className="flex flex-wrap items-start gap-5">
@@ -55,7 +57,7 @@ export function TemplatesPage() {
               type="button"
               aria-current={x.id === selected?.id ? 'true' : undefined}
               onClick={() => setSelectedId(x.id)}
-              className={cx('rounded-xl bg-white px-4 py-3.5 text-left', x.id === selected?.id ? 'border-2 border-brand' : 'border border-line-soft')}
+              className={cx('rounded-xl bg-white px-4 py-3.5 text-left focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand focus-visible:ring-offset-2', x.id === selected?.id ? 'border-2 border-brand' : 'border border-line-soft')}
             >
               <strong className="block text-[15px]">{x.name}</strong>
               <span className="text-[13px] text-ink-soft">
@@ -64,7 +66,7 @@ export function TemplatesPage() {
             </button>
           ))}
           {!readOnly && (
-            <button type="button" className="h-[42px] rounded-xl border-[1.5px] border-dashed border-line-strong bg-transparent font-semibold text-brand" onClick={() => setDialog({ kind: 'new' })}>
+            <button type="button" className="h-[42px] rounded-xl border-[1.5px] border-dashed border-line-strong bg-transparent font-semibold text-brand focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand focus-visible:ring-offset-2" onClick={() => setDialog({ kind: 'new' })}>
               {t('list.new')}
             </button>
           )}
@@ -152,12 +154,12 @@ function TemplateDetail({ template, readOnly, dialog, setDialog }: DetailProps) 
               aria-label={t('editor.templateName')}
               aria-invalid={nameError || undefined}
               size={Math.max(draft.name.length, 4)}
-              className="h-9 rounded-lg border border-transparent bg-transparent px-1 text-lg font-bold [field-sizing:content] hover:border-line-strong focus:border-brand focus:outline-none"
+              className="h-9 rounded-lg border border-transparent bg-transparent px-1 text-lg font-bold [field-sizing:content] hover:border-line-hover focus:border-brand focus:outline-none focus:ring-[3px] focus:ring-brand/30 aria-[invalid=true]:border-danger"
               value={draft.name}
               onChange={(e) => setDraft({ ...draft, name: e.target.value })}
             />
           )}
-          {template.isDefault && <span className="ml-2 rounded-full bg-[#E4F2E7] px-2 py-0.5 text-xs font-bold text-[#1F6B34]">{t('editor.default')}</span>}
+          {template.isDefault && <Badge tone="success" className="ml-2">{t('editor.default')}</Badge>}
           <p className="mb-0 mt-1 text-[13px] text-ink-soft">{t('editor.usedBy', { count: classes })}</p>
         </div>
         {!readOnly && (
@@ -179,7 +181,7 @@ function TemplateDetail({ template, readOnly, dialog, setDialog }: DetailProps) 
       <TemplateEditor draft={draft} errors={errors} readOnly={readOnly} onChange={setDraft} />
 
       {errors.length > 0 && (
-        <ul role="alert" className="mb-0 mt-4 list-none p-0 text-sm font-semibold text-danger">
+        <ul role="alert" className="mb-0 mt-4 list-none p-0 text-sm font-medium text-danger">
           {errors.map((e, i) => (
             <li key={i}>{(e.day === null ? '' : t(`common:days.short.${e.day}`) + ': ') + t(`errors.${e.code}`, { row: (e.row ?? 0) + 1 })}</li>
           ))}

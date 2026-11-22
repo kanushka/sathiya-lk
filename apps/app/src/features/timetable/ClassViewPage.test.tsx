@@ -50,7 +50,7 @@ beforeEach(() => {
 describe('ClassViewPage', () => {
   it('shows the class header, class teacher and grid cells', () => {
     setup();
-    expect(screen.getByRole('combobox', { name: 'Class' })).toHaveValue(C.c6b);
+    expect(screen.getByRole('combobox', { name: /^Class/ })).toHaveTextContent('Grade 6 · 6B');
     expect(screen.getByText(/^Class teacher:/)).toHaveTextContent('Class teacher: Mrs. N. Perera · School default');
     expect(slot('Monday', 1)).toHaveTextContent('Maths');
     expect(slot('Monday', 1)).toHaveTextContent('Mrs. N. Perera');
@@ -75,10 +75,10 @@ describe('ClassViewPage', () => {
   it('moves between classes with prev/next', async () => {
     setup();
     await userEvent.click(screen.getByRole('button', { name: 'Next class' }));
-    expect(screen.getByRole('combobox', { name: 'Class' })).toHaveValue(C.c6c);
+    expect(screen.getByRole('combobox', { name: /^Class/ })).toHaveTextContent('Grade 6 · 6C');
     await userEvent.click(screen.getByRole('button', { name: 'Previous class' }));
     await userEvent.click(screen.getByRole('button', { name: 'Previous class' }));
-    expect(screen.getByRole('combobox', { name: 'Class' })).toHaveValue(C.c6a);
+    expect(screen.getByRole('combobox', { name: /^Class/ })).toHaveTextContent('Grade 6 · 6A');
   });
 
   it('assigns a lesson to an empty slot through the two-step popup', async () => {
@@ -180,7 +180,7 @@ describe('ClassViewPage', () => {
     await userEvent.click(screen.getByRole('button', { name: 'Print' }));
     expect(open).toHaveBeenCalledWith(`/s/siripura/print/class/${C.c6b}?year=y-2026&auto=1`, '_blank', 'noopener');
     await userEvent.click(screen.getByRole('button', { name: 'Next class' }));
-    expect(screen.getByRole('combobox', { name: 'Class' })).toHaveValue(C.c6c);
+    expect(screen.getByRole('combobox', { name: /^Class/ })).toHaveTextContent('Grade 6 · 6C');
     open.mockRestore();
   });
 
@@ -205,7 +205,7 @@ describe('ClassViewPage', () => {
 
   it('redirects the index route to the first class', () => {
     setup(C.c6b, makeApi(), '/admin/timetable/class');
-    expect(screen.getByRole('combobox', { name: 'Class' })).toHaveValue(C.c1a);
+    expect(screen.getByRole('combobox', { name: /^Class/ })).toHaveTextContent('Grade 1 · 1A');
   });
 
   it('shows an empty state when there are no classes', () => {
@@ -244,7 +244,7 @@ describe('ClassViewPage', () => {
       expect(pinBar()).toHaveTextContent('Science · Mrs. S. Gunasekara');
       expect(pinBar()).toHaveTextContent('4 of 5 placed · 1 to go');
       expect(grid().closest('section')).toHaveAttribute('data-pin-mode', 'true');
-      expect(screen.getByRole('button', { name: 'Stop pinning Science' }).closest('li')).toHaveAttribute('data-active', 'true');
+      expect(screen.getByRole('button', { name: 'Done pinning Science' }).closest('li')).toHaveAttribute('data-active', 'true');
       await waitFor(() => expect(slot('Wednesday', 4)).toHaveFocus());
     });
 
@@ -298,6 +298,13 @@ describe('ClassViewPage', () => {
       expect(within(pinBar()).getByText('+1 over')).toBeInTheDocument();
     });
 
+    it('uses the fill-over orange for over-plan cells', async () => {
+      await assignScience();
+      await userEvent.click(cellNamed(/^Thursday, period 7, .*: pin Science/));
+      const over = await screen.findByRole('button', { name: /^Friday, period 5, .*: pin Science.*over plan$/ });
+      expect(over).toHaveClass('border-fill-over');
+    });
+
     it('rolls back a clashing pin and shows the conflict', async () => {
       const api = makeApi();
       vi.mocked(api.saveEntry)
@@ -321,7 +328,7 @@ describe('ClassViewPage', () => {
     it.each([
       ['Done', async () => userEvent.click(within(pinBar()).getByRole('button', { name: 'Done' }))],
       ['Escape', async () => userEvent.keyboard('{Escape}')],
-      ['the active subject row', async () => userEvent.click(screen.getByRole('button', { name: 'Stop pinning Science' }))],
+      ['the active subject row', async () => userEvent.click(screen.getByRole('button', { name: 'Done pinning Science' }))],
     ])('exits with %s, keeping the pins', async (_, exit) => {
       const api = await assignScience();
       await exit();
@@ -354,7 +361,16 @@ describe('ClassViewPage', () => {
 
     it('does not exit when Escape is pressed in a form control', async () => {
       await assignScience();
-      fireEvent.keyDown(screen.getByRole('combobox', { name: 'Class' }), { key: 'Escape' });
+      fireEvent.keyDown(screen.getByRole('combobox', { name: /^Class/ }), { key: 'Escape' });
+      expect(pinBar()).toBeInTheDocument();
+    });
+
+    it('closes the open class menu on Escape without exiting', async () => {
+      await assignScience();
+      await userEvent.click(screen.getByRole('combobox', { name: /^Class/ }));
+      expect(screen.getByRole('listbox', { name: 'Class' })).toBeInTheDocument();
+      await userEvent.keyboard('{Escape}');
+      expect(screen.queryByRole('listbox')).not.toBeInTheDocument();
       expect(pinBar()).toBeInTheDocument();
     });
 
@@ -419,7 +435,7 @@ describe('ClassViewPage', () => {
         expect(screen.getByLabelText('Pin mode legend')).toHaveTextContent('Free for all 3 teachers and 6A+6B');
         expect(cellNamed(/^Wednesday, period 4, 09:50–10:30: Religion 6A\+6B, pinned, click to unpin$/)).toBeInTheDocument();
         expect(cellNamed(/^Thursday, period 7, 12:10–12:50: pin Religion for 6A\+6B, over plan$/)).toBeInTheDocument();
-        expect(screen.getByRole('button', { name: 'Stop pinning Religion' }).closest('li')).toHaveAttribute('data-active', 'true');
+        expect(screen.getByRole('button', { name: 'Done pinning Religion' }).closest('li')).toHaveAttribute('data-active', 'true');
       });
 
       it('starts group pin mode from the list with the latest lesson’s teachers and classes', async () => {

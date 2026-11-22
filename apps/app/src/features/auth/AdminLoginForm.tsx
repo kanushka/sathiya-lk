@@ -94,7 +94,7 @@ export function AdminLoginForm() {
         <GoogleMark />
         {t('admin.google')}
       </Button>
-      <div className="my-5 flex items-center gap-3 text-[13px] text-[#8A91A3]">
+      <div className="my-5 flex items-center gap-3 text-[13px] text-ink-muted">
         <span className="h-px flex-1 bg-line" />
         {t('admin.or')}
         <span className="h-px flex-1 bg-line" />
@@ -118,9 +118,9 @@ export function AdminLoginForm() {
         />
       </Field>
       <p className="mb-6 mt-2 text-right text-sm">
-        <button type="button" onClick={() => void reset()} className="cursor-pointer border-0 bg-transparent p-0 text-brand underline">
+        <Button variant="link" onClick={() => void reset()} className="underline">
           {t('admin.forgot')}
-        </button>
+        </Button>
       </p>
       <Button
         type="submit"

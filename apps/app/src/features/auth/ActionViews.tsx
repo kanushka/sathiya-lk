@@ -8,7 +8,7 @@ import { applyEmailCode, getRecoveredEmail } from './api';
 import { useActionCode } from './useActionCode';
 
 const linkButton =
-  'inline-flex h-11 w-full items-center justify-center rounded-[10px] bg-navy px-5 text-[15px] font-semibold text-white no-underline';
+  'inline-flex h-11 w-full items-center justify-center rounded-lg bg-navy px-5 text-[15px] font-semibold text-white no-underline';
 
 export function InvalidLinkView() {
   const { t } = useTranslation('auth');

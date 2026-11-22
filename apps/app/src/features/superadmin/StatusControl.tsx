@@ -4,6 +4,7 @@ import { pickName, type School } from '@sathiya/core';
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useLang } from '../../app/LangProvider';
+import { Badge } from '../../ui/Badge';
 import { Button } from '../../ui/Button';
 import { Modal } from '../../ui/Modal';
 import { useToast } from '../../ui/Toast';
@@ -13,15 +14,7 @@ import type { SetStatusFn } from './status';
 export function StatusPill({ status }: { status: School['status'] }) {
   const { t } = useTranslation('superadmin');
   return (
-    <span
-      className={
-        status === 'active'
-          ? 'rounded-full bg-[#E4F2E7] px-2.5 py-0.5 text-xs font-bold text-[#1F6B34]'
-          : 'rounded-full bg-[#F6E3E3] px-2.5 py-0.5 text-xs font-bold text-danger'
-      }
-    >
-      {t(`status.${status}`)}
-    </span>
+    <Badge tone={status === 'active' ? 'success' : 'danger'}>{t(`status.${status}`)}</Badge>
   );
 }
 
@@ -66,7 +59,7 @@ export function StatusButton({ school, setStatus }: { school: School; setStatus:
         footer={
           <>
             <Button onClick={() => setConfirming(false)}>{t('buttons.cancel', { ns: 'common' })}</Button>
-            <Button variant="danger" disabled={busy} onClick={() => void apply()}>
+            <Button variant="dangerSolid" disabled={busy} onClick={() => void apply()}>
               {t('confirmDisable.confirm')}
             </Button>
           </>

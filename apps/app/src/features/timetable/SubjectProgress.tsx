@@ -4,7 +4,7 @@
 import { classProgress, effectivePlan, weekCapacity, windowOf, type Entry, type PlanItem, type SchoolClass } from '@sathiya/core';
 import { useTranslation } from 'react-i18next';
 import { cx } from '../../ui/cx';
-import { Icon } from '../../ui/Icon';
+import { IconButton } from '../../ui/IconButton';
 import { useLang } from '../../app/LangProvider';
 import { useSchool } from '../../app/SchoolProvider';
 import { planItemColor, planItemName } from './labels';
@@ -48,31 +48,26 @@ export function SubjectProgress({ cls, entries, onPin, onStop, activeKey }: Subj
             <li
               key={r.key}
               data-active={active || undefined}
-              className={cx('-mx-2 flex items-center gap-2.5 rounded-[10px] px-2 py-[5px]', active && 'bg-brand/10 shadow-[inset_0_0_0_1.5px_var(--brand)]')}
+              className={cx('-mx-2 flex items-center gap-2.5 rounded-lg px-2 py-[5px]', active && 'bg-brand/10 shadow-[inset_0_0_0_1.5px_var(--brand)]')}
             >
               <span className="h-2.5 w-2.5 shrink-0 rounded-[3px]" style={{ background: planItemColor(r.item, ctx) }} />
               <span className="flex-1 text-[13px]">{name}</span>
-              <span className="h-1.5 w-[70px] overflow-hidden rounded-full bg-[#EEF0F3]" aria-hidden="true">
-                <span data-bar className="block h-1.5" style={{ width: `${pct}%`, background: over ? '#B3261E' : done ? '#2E8B4A' : '#D9A441' }} />
+              <span className="h-1.5 w-[70px] overflow-hidden rounded-full bg-surface-3" aria-hidden="true">
+                <span data-bar className={cx('block h-1.5', over ? 'bg-danger' : done ? 'bg-fill-success' : 'bg-fill-warning')} style={{ width: `${pct}%` }} />
               </span>
-              <b data-over={over || undefined} className="w-9 text-right text-[13px]" style={{ color: over ? '#B3261E' : done ? '#1F6B34' : '#7A5410' }}>
+              <b data-over={over || undefined} className={cx('w-9 text-right text-[13px]', over ? 'text-danger' : done ? 'text-success' : 'text-warning')}>
                 {t('progress.count', { placed: r.placed, needed: r.needed })}
               </b>
               {onPin && (
                 <span className="flex w-9 shrink-0 justify-end">
-                  <button
-                    type="button"
+                  <IconButton
                     data-pin-key={r.key}
-                    aria-label={active ? t('pin.listStop', { subject: name }) : t('pin.listPin', { subject: name })}
-                    title={active ? t('pin.listStop', { subject: name }) : t('pin.listPin', { subject: name })}
+                    icon={active ? 'check' : 'pin'}
+                    label={active ? t('pin.listStop', { subject: name }) : t('pin.listPin', { subject: name })}
+                    variant={active ? 'primary' : 'secondary'}
+                    size="sm"
                     onClick={() => (active ? onStop?.() : onPin(r.item))}
-                    className={cx(
-                      'flex h-8 w-9 items-center justify-center rounded-lg focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-1 focus-visible:outline-brand',
-                      active ? 'border-0 bg-danger text-white hover:brightness-110' : 'border border-line-strong bg-white text-brand hover:bg-brand/5',
-                    )}
-                  >
-                    <Icon name={active ? 'stop' : 'pin'} size={active ? 14 : 16} strokeWidth={2} />
-                  </button>
+                  />
                 </span>
               )}
             </li>

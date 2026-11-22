@@ -4,6 +4,7 @@ import { C, ctx, entries, G, S } from '@sathiya/core/fixtures';
 import { screen, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { pickOption } from '../../test/pickOption';
 import { renderWithSchool } from '../../test/renderWithSchool';
 import * as api from './api';
 import { GradesPage } from './GradesPage';
@@ -69,7 +70,7 @@ describe('grades page', () => {
     expect(aesthetic).toMatchObject({ optionSubjectIds: [S.dancing, S.art] });
     expect(vi.mocked(api.saveGradePlan).mock.calls[0]![1]).toBe(G.g6);
 
-    await user.selectOptions(screen.getByLabelText('Add option to Aesthetic'), 'Pali');
+    await pickOption(user, screen.getByRole('combobox', { name: /^Add option to Aesthetic/ }), 'Pali');
     const afterAdd = vi.mocked(api.saveGradePlan).mock.calls[1]![2];
     expect(afterAdd.find((p) => p.kind === 'group' && p.key === 'aesthetic')).toMatchObject({
       optionSubjectIds: [S.music, S.dancing, S.art, S.pali],
@@ -126,6 +127,40 @@ describe('grades page', () => {
     expect(english).toHaveValue(Number((grade6.plan.find((p) => p.kind === 'subject' && p.subjectId === S.english) as { perWeek: number }).perWeek));
   });
 
+  it('read-only lists every option subject of a group in stored order, with no picker', async () => {
+    flags.readOnly = true;
+    const ids = [S.music, S.dancing, S.art, S.pali, S.tamil, 's-gone'];
+    const wide = {
+      ...ctx,
+      grades: ctx.grades.map((g) =>
+        g.id === G.g6 ? { ...g, plan: g.plan.map((p) => (p.kind === 'group' && p.key === 'aesthetic' ? { ...p, optionSubjectIds: ids } : p)) } : g,
+      ),
+    };
+    const user = userEvent.setup();
+    renderWithSchool(<GradesPage />, { ctx: wide, entries });
+    await user.click(screen.getByRole('button', { name: /^Grade 6\b/ }));
+    expect(screen.queryByRole('combobox', { name: /Add option/ })).toBeNull();
+    const chips = screen.getAllByText(/^(Music|Dancing|Art|Pali|Tamil \(2nd language\)|s-gone)$/, { selector: 'span.truncate' });
+    expect(chips.map((c) => c.textContent)).toEqual(['Music', 'Dancing', 'Art', 'Pali', 'Tamil (2nd language)', 's-gone']);
+  });
+
+  it('shows all option chips and keeps unknown subject ids removable when editable', async () => {
+    const ids = [S.music, S.dancing, S.art, S.pali, 's-gone'];
+    const wide = {
+      ...ctx,
+      grades: ctx.grades.map((g) =>
+        g.id === G.g6 ? { ...g, plan: g.plan.map((p) => (p.kind === 'group' && p.key === 'aesthetic' ? { ...p, optionSubjectIds: ids } : p)) } : g,
+      ),
+    };
+    const user = userEvent.setup();
+    renderWithSchool(<GradesPage />, { ctx: wide, entries });
+    await user.click(screen.getByRole('button', { name: /^Grade 6\b/ }));
+    expect(screen.queryByText(/^\+\d+$/)).toBeNull();
+    await user.click(screen.getByRole('button', { name: 'Remove s-gone from Aesthetic' }));
+    const saved = vi.mocked(api.saveGradePlan).mock.calls[0]![2];
+    expect(saved.find((p) => p.kind === 'group' && p.key === 'aesthetic')).toMatchObject({ optionSubjectIds: [S.music, S.dancing, S.art, S.pali] });
+  });
+
   it('read-only hides every write control', async () => {
     flags.readOnly = true;
     const user = await openGrade6();
@@ -134,7 +169,9 @@ describe('grades page', () => {
     expect(screen.queryByRole('button', { name: /Add subject|Add group/ })).toBeNull();
     expect(screen.queryByRole('button', { name: 'Remove' })).toBeNull();
     expect(screen.queryByRole('button', { name: 'Custom plan' })).toBeNull();
-    expect(screen.queryByLabelText('Add option to Aesthetic')).toBeNull();
+    expect(screen.queryByRole('combobox', { name: /^Add option to Aesthetic/ })).toBeNull();
+    expect(screen.queryByRole('button', { name: /^Remove .* from Aesthetic/ })).toBeNull();
+    ['Music', 'Dancing', 'Art'].forEach((n) => expect(screen.getByText(n, { selector: 'span.truncate' })).toBeInTheDocument());
     expect(screen.getByLabelText('Periods per week for Mathematics')).toBeDisabled();
     await user.click(screen.getByRole('button', { name: /^Grade 1\b/ }));
     expect(api.saveGradePlan).not.toHaveBeenCalled();

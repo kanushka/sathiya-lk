@@ -186,7 +186,7 @@ describe('TeacherViewPage', () => {
     expect(screen.getByRole('dialog', { name: 'Choose a class' })).toHaveTextContent('Now: 12A · Buddhism');
     await userEvent.click(screen.getByRole('button', { name: /^6A/ }));
     const dialog = await screen.findByRole('dialog', { name: 'Religion' });
-    expect(within(dialog).getByLabelText(/Buddhism/)).toHaveValue(T.ananda);
+    expect(within(dialog).getByRole('combobox', { name: /^Buddhism/ })).toHaveTextContent(/Ananda/);
     expect(within(dialog).getByRole('button', { name: 'Save' })).toBeEnabled();
     await userEvent.click(within(dialog).getByRole('button', { name: 'Save' }));
     await waitFor(() => expect(api.deleteEntry).toHaveBeenCalledWith(expect.objectContaining({ entryId: 'old' })));

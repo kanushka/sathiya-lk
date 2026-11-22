@@ -29,6 +29,7 @@ import { Combobox } from '../../ui/Combobox';
 import { cx } from '../../ui/cx';
 import { EmptyState } from '../../ui/EmptyState';
 import { Icon } from '../../ui/Icon';
+import { IconButton } from '../../ui/IconButton';
 import { LoadingState } from '../../ui/LoadingState';
 import { Modal } from '../../ui/Modal';
 import { BlockEditor } from './BlockEditor';
@@ -244,13 +245,13 @@ function TeacherView({ teacher, teachers, template }: { teacher: Teacher; teache
         data-over={String(over)}
         className="mt-1.5 flex w-[70%] flex-col items-center gap-0.5"
       >
-        <span className="block h-[5px] w-full overflow-hidden rounded-full bg-[#EEF0F3]">
+        <span className="block h-[5px] w-full overflow-hidden rounded-full bg-surface-3">
           <span
             className="block h-[5px]"
-            style={{ width: `${max > 0 ? Math.min(100, Math.round((load / max) * 100)) : 100}%`, background: over ? '#B4441C' : 'var(--brand)' }}
+            style={{ width: `${max > 0 ? Math.min(100, Math.round((load / max) * 100)) : 100}%`, background: over ? 'var(--danger)' : 'var(--brand)' }}
           />
         </span>
-        <span className={cx('text-[11px] font-bold', over ? 'text-[#B4441C]' : 'text-ink-muted')}>{value}</span>
+        <span className={cx('text-[11px] font-bold', over ? 'text-danger' : 'text-ink-muted')}>{value}</span>
       </div>
     );
   }
@@ -268,7 +269,6 @@ function TeacherView({ teacher, teachers, template }: { teacher: Teacher; teache
     .join(' · ');
 
   const teacherLabel = (x: Teacher) => t('teacherView.teacherOption', { name: teacherDisplayName(x, lang), staffId: x.staffId });
-  const navBtn = 'flex h-10 w-10 items-center justify-center rounded-lg border border-line-strong bg-white text-ink-soft hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-40';
   const describe = (e: Entry) => {
     const time = entryTime(e, ctx);
     return t('teacherView.outsideItem', {
@@ -283,9 +283,7 @@ function TeacherView({ teacher, teachers, template }: { teacher: Teacher; teache
     <div>
       <div className="mb-[18px] flex flex-wrap items-center justify-between gap-3">
         <div className="flex flex-wrap items-center gap-2.5">
-          <button type="button" aria-label={t('teacherView.prev')} className={navBtn} disabled={index <= 0} onClick={() => go(teachers[index - 1])}>
-            <Icon name="chevronLeft" size={16} />
-          </button>
+          <IconButton icon="chevronLeft" variant="secondary" label={t('teacherView.prev')} disabled={index <= 0} onClick={() => go(teachers[index - 1])} />
           <label htmlFor="teacher-view-select" className="sr-only">
             {t('teacherView.teacherLabel')}
           </label>
@@ -301,15 +299,13 @@ function TeacherView({ teacher, teachers, template }: { teacher: Teacher; teache
               searchPlaceholder={t('teacherView.teacherSearch')}
             />
           </div>
-          <button
-            type="button"
-            aria-label={t('teacherView.next')}
-            className={navBtn}
+          <IconButton
+            icon="chevronRight"
+            variant="secondary"
+            label={t('teacherView.next')}
             disabled={index >= teachers.length - 1}
             onClick={() => go(teachers[index + 1])}
-          >
-            <Icon name="chevronRight" size={16} />
-          </button>
+          />
           <span className="ml-1.5 text-sm text-ink-muted">{summary}</span>
         </div>
         <Button onClick={print}>
@@ -417,7 +413,7 @@ function TeacherView({ teacher, teachers, template }: { teacher: Teacher; teache
                       setChooser(null);
                       openEntry({ entry: e, row: chooser.period });
                     }}
-                    className="flex w-full flex-col items-start gap-0.5 rounded-[10px] border border-line-strong px-3 py-2 text-left hover:bg-slate-50 focus-visible:outline focus-visible:outline-2 focus-visible:outline-brand"
+                    className="flex w-full flex-col items-start gap-0.5 rounded-lg border border-line-strong px-3 py-2 text-left hover:bg-surface focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand focus-visible:ring-offset-2"
                     style={{ background: v.color }}
                   >
                     <strong className="text-sm">{v.title}</strong>

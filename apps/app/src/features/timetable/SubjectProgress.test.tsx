@@ -48,15 +48,15 @@ describe('SubjectProgress', () => {
   it('marks a group row active by its plan key', () => {
     renderWithSchool(<SubjectProgress cls={cls6B} entries={entries6B} onPin={vi.fn()} onStop={vi.fn()} activeKey="group:religion" />, { ctx, entries: entries6B });
     expect(row('Religion')).toHaveAttribute('data-active', 'true');
-    expect(within(row('Religion')).getByRole('button', { name: 'Stop pinning Religion' })).toBeInTheDocument();
+    expect(within(row('Religion')).getByRole('button', { name: 'Done pinning Religion' })).toBeInTheDocument();
   });
 
-  it('tints the row being pinned and turns its button into stop', async () => {
+  it('tints the row being pinned and swaps its button to Done pinning', async () => {
     const onStop = vi.fn();
     renderWithSchool(<SubjectProgress cls={cls6B} entries={entries6B} onPin={vi.fn()} onStop={onStop} activeKey={`subject:${S.sinhala}`} />, { ctx, entries: entries6B });
     expect(row('Sinhala')).toHaveAttribute('data-active', 'true');
     expect(row('Science')).not.toHaveAttribute('data-active');
-    await userEvent.click(within(row('Sinhala')).getByRole('button', { name: 'Stop pinning Sinhala' }));
+    await userEvent.click(within(row('Sinhala')).getByRole('button', { name: 'Done pinning Sinhala' }));
     expect(onStop).toHaveBeenCalled();
   });
 

@@ -4,6 +4,7 @@ import { pickName, teacherDisplayName, type Lang, type Teacher } from '@sathiya/
 import { useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useSchool } from '../../app/SchoolProvider';
+import { Badge } from '../../ui/Badge';
 import { useReadOnly } from '../../ui/AdminLayout';
 import { Button } from '../../ui/Button';
 import { EmptyState } from '../../ui/EmptyState';
@@ -61,7 +62,7 @@ export function TeachersPage() {
     <div>
       <div className="mb-5 flex flex-wrap items-center gap-3">
         <h1 className="m-0 text-2xl font-bold text-ink">{t('page.title')}</h1>
-        <span className="rounded-full bg-[#F1F2F5] px-2.5 py-0.5 text-sm font-semibold text-ink-soft">{teachers.length}</span>
+        <Badge>{teachers.length}</Badge>
         <div className="ml-auto flex flex-wrap items-center gap-2">
           <div className="w-[220px]">
             <input
@@ -105,22 +106,22 @@ export function TeachersPage() {
                 <Td className="font-semibold">{teacherDisplayName(x, lang)}</Td>
                 <Td>
                   {x.isPrimary ? (
-                    <span className="inline-block rounded-md bg-[#FBF1DC] px-2 py-0.5 text-xs font-semibold text-[#7A5410]">
-                      {t('page.primaryTeacher')}
-                    </span>
+                    <Badge tone="warning">{t('page.primaryTeacher')}</Badge>
                   ) : (
                     x.subjectIds.map((id) => (
-                      <span key={id} className="mb-1 mr-1 inline-block rounded-md bg-[#F1F2F5] px-2 py-0.5 text-xs font-semibold">
+                      <Badge key={id} className="mb-1 mr-1">
                         {subjectName.get(id) ?? id}
-                      </span>
+                      </Badge>
                     ))
                   )}
                 </Td>
                 <Td>{[...x.grades].sort((a, b) => a - b).join(', ')}</Td>
                 <Td>{x.maxPerDay}</Td>
                 <Td>{classes.filter((c) => c.classTeacherId === x.id).map((c) => c.name).join(', ')}</Td>
-                <Td className={x.lastLoginAt ? 'text-ink-soft' : 'text-[#B4441C]'}>
-                  {formatLogin(x.lastLoginAt, lang, t('page.neverLoggedIn'))}
+                <Td>
+                  <span className={x.lastLoginAt ? 'text-ink-soft' : 'text-danger'}>
+                    {formatLogin(x.lastLoginAt, lang, t('page.neverLoggedIn'))}
+                  </span>
                 </Td>
                 {!readOnly && (
                   <Td>

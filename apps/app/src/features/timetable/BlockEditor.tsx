@@ -19,11 +19,12 @@ import { useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useLang } from '../../app/LangProvider';
 import { useSchool } from '../../app/SchoolProvider';
+import { Badge } from '../../ui/Badge';
 import { useReadOnly } from '../../ui/AdminLayout';
 import { Button } from '../../ui/Button';
-import { cx } from '../../ui/cx';
+import { ToggleChip } from '../../ui/Chip';
 import { Modal } from '../../ui/Modal';
-import { Select } from '../../ui/Select';
+import { Select, type SelectOption } from '../../ui/Select';
 import { limitWarning, teacherReason, teachesAtAll } from './labels';
 
 export interface BlockEditorProps {
@@ -174,26 +175,16 @@ function BlockEditorBody({ onClose, baseClassId, day, period, mode, entry, entri
       <div className="mt-2 flex flex-wrap gap-2">
         <span
           aria-label={t('block.baseClass', { name: base.name })}
-          className="inline-flex h-8 items-center rounded-full bg-brand px-3 text-[13px] font-semibold text-on-brand"
+          className="inline-flex h-8 items-center rounded-lg bg-brand px-3 text-[13px] font-semibold text-on-brand"
         >
           {base.name}
         </span>
         {chipClasses.map((c) => {
           const on = classIds.includes(c.id);
           return (
-            <button
-              key={c.id}
-              type="button"
-              aria-pressed={on}
-              disabled={readOnly}
-              onClick={() => toggle(c.id)}
-              className={cx(
-                'inline-flex h-8 items-center rounded-full border px-3 text-[13px] font-semibold disabled:cursor-not-allowed',
-                on ? 'border-brand bg-brand/10 text-brand' : 'border-line-strong bg-white text-ink-soft hover:bg-slate-50',
-              )}
-            >
+            <ToggleChip key={c.id} pressed={on} disabled={readOnly} onToggle={() => toggle(c.id)}>
               {c.name}
-            </button>
+            </ToggleChip>
           );
         })}
       </div>
@@ -206,13 +197,23 @@ function BlockEditorBody({ onClose, baseClassId, day, period, mode, entry, entri
           const unavailable = (s?.unavailable ?? []).filter((o) => teachesAtAll(o, id) || o.teacher.id === teachers[id]);
           const p = problems[i];
           const selectId = `block-teacher-${id}`;
+          const teacherOptions: SelectOption[] = [
+            { value: '', label: t('block.teacherPlaceholder') },
+            ...(s?.available ?? []).map((o) => ({ value: o.teacher.id, label: optionLabel(o), group: t('block.available') })),
+            ...unavailable.map((o) => ({
+              value: o.teacher.id,
+              label: optionLabel(o),
+              group: t('block.unavailable'),
+              disabled: o.reason !== 'limit',
+            })),
+          ];
           const note =
             p && 'missing' in p ? (
-              <span className="inline-flex rounded-full bg-[#FBEAC9] px-2 py-0.5 text-xs font-semibold text-[#7A5A12]">{t('block.noTeacher')}</span>
+              <Badge tone="warning">{t('block.noTeacher')}</Badge>
             ) : (
               <>
                 {p?.hard && <p className="text-xs font-semibold text-danger">{reasonText(p.hard)}</p>}
-                {p?.limit && <p className="text-xs font-semibold text-[#7A5A12]">{limitWarning(t, p.limit.loadToday, p.limit.teacher.maxPerDay)}</p>}
+                {p?.limit && <p className="text-xs font-semibold text-warning">{limitWarning(t, p.limit.loadToday, p.limit.teacher.maxPerDay)}</p>}
                 {p?.duplicate && <p className="text-xs font-semibold text-danger">{t('block.duplicate')}</p>}
               </>
             );
@@ -221,27 +222,13 @@ function BlockEditorBody({ onClose, baseClassId, day, period, mode, entry, entri
               <label htmlFor={selectId} className="mb-1.5 block text-sm font-bold text-ink">
                 {subjectName(id)}
               </label>
-              <Select id={selectId} disabled={readOnly} value={teachers[id] ?? ''} onChange={(e) => setTeachers((m) => ({ ...m, [id]: e.target.value || null }))}>
-                <option value="">{t('block.teacherPlaceholder')}</option>
-                {s && s.available.length > 0 && (
-                  <optgroup label={t('block.available')}>
-                    {s.available.map((o) => (
-                      <option key={o.teacher.id} value={o.teacher.id}>
-                        {optionLabel(o)}
-                      </option>
-                    ))}
-                  </optgroup>
-                )}
-                {unavailable.length > 0 && (
-                  <optgroup label={t('block.unavailable')}>
-                    {unavailable.map((o) => (
-                      <option key={o.teacher.id} value={o.teacher.id} disabled={o.reason !== 'limit'}>
-                        {optionLabel(o)}
-                      </option>
-                    ))}
-                  </optgroup>
-                )}
-              </Select>
+              <Select
+                id={selectId}
+                disabled={readOnly}
+                value={teachers[id] ?? ''}
+                onChange={(v) => setTeachers((m) => ({ ...m, [id]: v || null }))}
+                options={teacherOptions}
+              />
               <div className="mt-1.5 flex flex-col gap-1">{note}</div>
             </div>
           );

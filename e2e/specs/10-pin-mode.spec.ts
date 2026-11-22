@@ -3,7 +3,7 @@
 import { expect, test, type Page } from '@playwright/test';
 import { S, T } from '@sathiya/core/fixtures';
 import { ADMIN, SID, YEAR_ID } from '../../scripts/seed';
-import { callAs, idToken, loginAdmin, shot } from '../helpers';
+import { callAs, idToken, loginAdmin, pick, shot } from '../helpers';
 
 const pinCell = (page: Page, day: string, n: number) => page.getByRole('button', { name: new RegExp(`^${day}, period ${n}, [0-9:–]+: pin History with Mr\\. R\\. Silva`) });
 const pinnedCell = (page: Page, day: string, n: number) => page.getByRole('button', { name: new RegExp(`^${day}, period ${n}, [0-9:–]+: History Mr\\. R\\. Silva, pinned, click to unpin$`) });
@@ -11,7 +11,7 @@ const pinnedCell = (page: Page, day: string, n: number) => page.getByRole('butto
 test('class view: assign once, then pin, unpin, go over plan and exit pin mode', async ({ page }) => {
   await loginAdmin(page, ADMIN.email, ADMIN.password);
   await page.getByRole('link', { name: 'By class' }).click();
-  await page.getByRole('combobox', { name: 'Class' }).selectOption({ label: 'Grade 6 · 6A' });
+  await pick(page, 'Class', 'Grade 6 · 6A');
   await expect(page).toHaveURL(/\/admin\/timetable\/class\/c-6a$/);
 
   const plus = page.getByRole('button', { name: 'Monday, period 2, 08:30–09:10: empty, Add lesson' });

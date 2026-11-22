@@ -2,7 +2,7 @@
 // Copyright (C) 2026 Kanushka Gayan
 import { expect, test } from '@playwright/test';
 import { ADMIN } from '../../scripts/seed';
-import { loginAdmin, loginTeacher, shot, SHOTS } from '../helpers';
+import { loginAdmin, loginTeacher, pick, shot, SHOTS } from '../helpers';
 
 type Printed = Window & { printed?: number };
 
@@ -16,9 +16,10 @@ test('admin adds a teacher, sees the 8-character password and prints the login s
 
   const modal = page.getByRole('dialog', { name: 'Add teacher' });
   await expect(modal.getByLabel('Staff ID')).toHaveValue('SCC059');
-  await modal.getByLabel('Title').selectOption('Mrs');
+  await pick(modal, 'Title', 'Mrs.');
   await modal.getByLabel('Name').fill('E. Tester');
-  await modal.getByRole('button', { name: 'Mathematics' }).click();
+  await pick(modal, 'Subjects', 'Mathematics');
+  await page.keyboard.press('Escape');
   await modal.getByRole('group', { name: 'Grades' }).getByRole('button', { name: '6', exact: true }).click();
   await modal.getByRole('button', { name: 'Save teacher' }).click();
 

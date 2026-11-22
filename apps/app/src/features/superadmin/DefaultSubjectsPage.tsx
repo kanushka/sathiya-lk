@@ -190,7 +190,7 @@ export function DefaultSubjectsPage({ doc: injected, writer = firestorePlatformW
         footer={
           <>
             <Button onClick={() => setDeleting(null)}>{t('buttons.cancel', { ns: 'common' })}</Button>
-            <Button variant="danger" disabled={busy} onClick={() => void confirmDelete()}>
+            <Button variant="dangerSolid" disabled={busy} onClick={() => void confirmDelete()}>
               {t('subjects.confirmDelete.confirm')}
             </Button>
           </>

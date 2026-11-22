@@ -1,10 +1,11 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
 // Copyright (C) 2026 Kanushka Gayan
 import { ctx, entries } from '@sathiya/core/fixtures';
-import { screen, waitFor, within } from '@testing-library/react';
+import { fireEvent, screen, waitFor, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { ApiError, call } from '../../lib/callable';
+import { pickOption } from '../../test/pickOption';
 import { renderWithSchool } from '../../test/renderWithSchool';
 import * as api from './api';
 import { printSlips } from './printSlips';
@@ -42,6 +43,13 @@ describe('teachers page', () => {
     expect(screen.queryByText('Mrs. N. Perera')).not.toBeInTheDocument();
   });
 
+  it('colours the never-logged-in cell red', () => {
+    render();
+    const reds = document.querySelectorAll('td span.text-danger');
+    expect(reds.length).toBeGreaterThan(0);
+    expect(reds[0]!.closest('td')).not.toHaveClass('text-danger');
+  });
+
   it('hides the subject picker for a primary teacher', async () => {
     const user = userEvent.setup();
     render();
@@ -64,8 +72,8 @@ describe('teachers page', () => {
     render();
     const dialog = await openAdd(user);
     await user.type(within(dialog).getByLabelText('Name'), 'Mr. New Teacher');
-    await user.click(within(dialog).getByRole('button', { name: 'Mathematics' }));
-    await user.click(within(dialog).getByRole('button', { name: '6' }));
+    await pickOption(user, within(dialog).getByRole('combobox', { name: 'Subjects' }), 'Mathematics');
+    await user.click(within(dialog).getByRole('button', { name: '6', pressed: false }));
     await user.click(within(dialog).getByRole('button', { name: 'Save teacher' }));
 
     expect(await within(dialog).findByText('k7m4x9pq')).toBeInTheDocument();
@@ -86,8 +94,8 @@ describe('teachers page', () => {
     render();
     const dialog = await openAdd(user);
     await user.type(within(dialog).getByLabelText('Name'), 'New Teacher');
-    await user.click(within(dialog).getByRole('button', { name: 'Mathematics' }));
-    await user.click(within(dialog).getByRole('button', { name: '6' }));
+    await pickOption(user, within(dialog).getByRole('combobox', { name: 'Subjects' }), 'Mathematics');
+    await user.click(within(dialog).getByRole('button', { name: '6', pressed: false }));
     await user.click(within(dialog).getByRole('button', { name: 'Save teacher' }));
 
     expect(await within(dialog).findByText('k7m4x9pq')).toBeInTheDocument();
@@ -104,8 +112,8 @@ describe('teachers page', () => {
     render();
     const dialog = await openAdd(user);
     await user.type(within(dialog).getByLabelText('Name'), 'New Teacher');
-    await user.click(within(dialog).getByRole('button', { name: 'Mathematics' }));
-    await user.click(within(dialog).getByRole('button', { name: '6' }));
+    await pickOption(user, within(dialog).getByRole('combobox', { name: 'Subjects' }), 'Mathematics');
+    await user.click(within(dialog).getByRole('button', { name: '6', pressed: false }));
     await user.click(within(dialog).getByRole('button', { name: 'Save teacher' }));
 
     expect(await within(dialog).findByText('k7m4x9pq')).toBeInTheDocument();
@@ -191,12 +199,13 @@ describe('teachers page', () => {
     vi.mocked(api.createTeacher).mockResolvedValue({ teacherId: 'tNew', password: 'k7m4x9pq' });
     render();
     const dialog = await openAdd(user);
-    const title = within(dialog).getByLabelText('Title');
-    expect(within(title).getAllByRole('option').map((o) => o.textContent)).toEqual(['—', 'Mr.', 'Mrs.', 'Miss', 'Ms.', 'Dr.', 'Rev.', 'Ven.', 'Thero']);
-    await user.selectOptions(title, 'Thero');
+    const title = within(dialog).getByRole('combobox', { name: /^Title/ });
+    await user.click(title);
+    expect(screen.getAllByRole('option').map((o) => o.textContent)).toEqual(['—', 'Mr.', 'Mrs.', 'Miss', 'Ms.', 'Dr.', 'Rev.', 'Ven.', 'Thero']);
+    await user.click(screen.getByRole('option', { name: 'Thero' }));
     await user.type(within(dialog).getByLabelText('Name'), 'Ananda');
-    await user.click(within(dialog).getByRole('button', { name: 'Mathematics' }));
-    await user.click(within(dialog).getByRole('button', { name: '6' }));
+    await pickOption(user, within(dialog).getByRole('combobox', { name: 'Subjects' }), 'Mathematics');
+    await user.click(within(dialog).getByRole('button', { name: '6', pressed: false }));
     await user.click(within(dialog).getByRole('button', { name: 'Save teacher' }));
     await waitFor(() => expect(api.createTeacher).toHaveBeenCalled());
     expect(api.createTeacher).toHaveBeenCalledWith('siripura', expect.objectContaining({ title: 'Thero', name: 'Ananda' }));
@@ -211,7 +220,7 @@ describe('teachers page', () => {
     const row = screen.getByText('Mrs. N. Perera').closest('tr')!;
     await user.click(within(row).getByRole('button', { name: 'Edit' }));
     const dialog = screen.getByRole('dialog');
-    expect(within(dialog).getByLabelText('Title')).toHaveValue('Mrs');
+    expect(within(dialog).getByRole('combobox', { name: /^Title/ })).toHaveTextContent('Mrs.');
     expect(within(dialog).getByLabelText('Name')).toHaveValue('N. Perera');
     await user.click(within(dialog).getByRole('button', { name: 'Save teacher' }));
     await waitFor(() => expect(api.updateTeacher).toHaveBeenCalled());
@@ -225,7 +234,7 @@ describe('teachers page', () => {
     const row = screen.getByText('Mrs. N. Perera').closest('tr')!;
     await user.click(within(row).getByRole('button', { name: 'Edit' }));
     const dialog = screen.getByRole('dialog');
-    await user.selectOptions(within(dialog).getByLabelText('Title'), '—');
+    await pickOption(user, within(dialog).getByRole('combobox', { name: /^Title/ }), '—');
     await user.click(within(dialog).getByRole('button', { name: 'Save teacher' }));
     await waitFor(() => expect(api.updateTeacher).toHaveBeenCalled());
     expect(vi.mocked(api.updateTeacher).mock.calls[0]![2]).not.toHaveProperty('title');
@@ -237,5 +246,19 @@ describe('teachers page', () => {
     for (const name of ['+ Add teacher', 'Edit', 'Delete']) {
       expect(screen.queryByRole('button', { name })).not.toBeInTheDocument();
     }
+  });
+
+  it('locked modal cannot open the subjects menu', async () => {
+    const user = userEvent.setup();
+    render();
+    const row = screen.getByText('Mrs. N. Perera').closest('tr')!;
+    await user.click(within(row).getByRole('button', { name: 'Edit' }));
+    const dialog = screen.getByRole('dialog');
+    flags.readOnly = true;
+    fireEvent.change(within(dialog).getByRole('textbox', { name: /^Name/ }), { target: { value: 'Mrs. N. Perera ' } });
+    const subjects = within(dialog).getByRole('combobox', { name: /^Subjects/ });
+    expect(subjects).toBeDisabled();
+    await user.click(subjects);
+    expect(screen.queryByRole('listbox')).not.toBeInTheDocument();
   });
 });

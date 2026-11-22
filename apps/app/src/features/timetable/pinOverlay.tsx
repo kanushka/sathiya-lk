@@ -11,12 +11,12 @@ import { blockerText, busyLabel } from './conflictLabel';
 import type { GridOverlay } from './TimetableGrid';
 
 const pinCell = 'box-border border-[1.5px] border-dashed items-center px-2.5 text-center';
-const pinFree = `${pinCell} border-[#2E8B4A] bg-[#F5FBF6] text-[#1F6B34]`;
-const pinWarn = `${pinCell} border-[#B7831F] bg-[#FFF6E2] text-[#6B4A0E]`;
-const pinOver = `${pinCell} border-[#C2410C] bg-[#FDECEA] text-[#9A3412]`;
-const pinSuggested = 'items-center border-[1.5px] border-solid border-[#2E8B4A] bg-[#E4F2E7] px-2.5 text-center text-[#1F6B34]';
-const pinBusy = 'border-line bg-[repeating-linear-gradient(135deg,#F1F2F5_0_6px,#E4E6EC_6px_12px)] px-2.5 text-ink-muted';
-const pinNone = 'border-line bg-[#F6F7F9] px-2.5 text-ink-muted';
+const pinFree = `${pinCell} border-fill-success bg-success-soft/50 text-success`;
+const pinWarn = `${pinCell} border-fill-warning-strong bg-warning-soft text-warning`;
+const pinOver = `${pinCell} border-fill-over bg-danger-soft text-danger`;
+const pinSuggested = 'items-center border-[1.5px] border-solid border-fill-success bg-success-soft px-2.5 text-center text-success';
+const pinBusy = 'border-line bg-[repeating-linear-gradient(135deg,theme(colors.surface.3)_0_6px,theme(colors.line.DEFAULT)_6px_12px)] px-2.5 text-ink-muted';
+const pinNone = 'border-line bg-surface-2 px-2.5 text-ink-muted';
 
 function PinGlyph({ sub, note }: { sub: string; note?: string | undefined }) {
   return (
@@ -143,12 +143,12 @@ export function PinLegend({ teacher, group, teacherRows }: PinLegendProps) {
       : t('pin.legendFree', { teacher });
   return (
     <div aria-label={t('pin.legendLabel')} className="mb-3 ml-1 flex flex-wrap gap-3.5">
-      <Swatch className="border-[1.5px] border-dashed border-[#2E8B4A] bg-[#F5FBF6]">{free}</Swatch>
-      <Swatch className="border-[1.5px] border-dashed border-[#B7831F] bg-[#FFF6E2]">{t('pin.legendSubjectDay')}</Swatch>
-      <Swatch className="border-[1.5px] border-dashed border-[#C2410C] bg-[#FDECEA]">{t('pin.legendOver')}</Swatch>
-      <Swatch className="border-[1.5px] border-[#2E8B4A] bg-[#E4F2E7]">{t('pin.legendSuggested')}</Swatch>
-      <Swatch className="bg-[repeating-linear-gradient(135deg,#EEF0F3_0_4px,#DADDE4_4px_8px)]">{t('pin.legendBusy')}</Swatch>
-      {teacherRows && <Swatch className="border border-line bg-[#F6F7F9]">{t('pin.legendNone', { class: teacherRows.base })}</Swatch>}
+      <Swatch className="border-[1.5px] border-dashed border-fill-success bg-success-soft/50">{free}</Swatch>
+      <Swatch className="border-[1.5px] border-dashed border-fill-warning-strong bg-warning-soft">{t('pin.legendSubjectDay')}</Swatch>
+      <Swatch className="border-[1.5px] border-dashed border-fill-over bg-danger-soft">{t('pin.legendOver')}</Swatch>
+      <Swatch className="border-[1.5px] border-fill-success bg-success-soft">{t('pin.legendSuggested')}</Swatch>
+      <Swatch className="bg-[repeating-linear-gradient(135deg,theme(colors.surface.3)_0_4px,theme(colors.line.DEFAULT)_4px_8px)]">{t('pin.legendBusy')}</Swatch>
+      {teacherRows && <Swatch className="border border-line bg-surface-2">{t('pin.legendNone', { class: teacherRows.base })}</Swatch>}
     </div>
   );
 }

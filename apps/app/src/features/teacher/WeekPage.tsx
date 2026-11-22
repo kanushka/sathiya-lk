@@ -34,7 +34,7 @@ function WeekBody({ snap, todayWeekday }: { snap: TeacherSnapshot; todayWeekday:
         ))}
         {slots.map((slot, i) =>
           slot.kind === 'interval' ? (
-            <div key={i} className="col-span-6 bg-[#FBF7EC] py-0.5 text-center text-[10px] font-bold tracking-widest text-[#7A5410]">
+            <div key={i} className="col-span-6 bg-warning-soft/60 py-0.5 text-center text-[10px] font-bold tracking-widest text-warning">
               {t('teacher:interval')}
               {slot.start && slot.end ? ` · ${clock(slot.start)} – ${clock(slot.end)}` : ''}
             </div>
@@ -53,26 +53,26 @@ function WeekRow({ n, start, snap, lang }: { n: number; start?: string; snap: Te
     <>
       <div className="bg-white px-1 py-2 text-center">
         <b className="block text-[11px]">{t('periods.periodN', { n })}</b>
-        {start && <span className="text-[10px] text-[#6B7385]">{clock(start)}</span>}
+        {start && <span className="text-[10px] text-ink-muted">{clock(start)}</span>}
       </div>
       {weekdays.map((d) => {
         const cells = cellsAt(snap, d, n);
         return (
           <div key={d} data-testid={`week-cell-${d}-${n}`} className="flex min-h-[52px] flex-col gap-1 bg-white p-1">
             {cells.length === 0 ? (
-              <div className="h-full min-h-[44px] rounded-md border border-dashed border-[#D3D6DD]" />
+              <div className="h-full min-h-[44px] rounded-md border border-dashed border-line-strong" />
             ) : (
               cells.map((cell, k) => {
                 const text = cellText(cell, lang);
                 return (
                   <div
                     key={k}
-                    className="rounded-md border-l-4 bg-[#F6F6F4] px-1.5 py-1"
+                    className="rounded-md border-l-4 bg-surface-2 px-1.5 py-1"
                     style={{ borderLeftColor: cell.color || 'var(--brand)' }}
                   >
                     <b className="block truncate text-xs">{text.title}</b>
                     <span className="block truncate text-[10px] text-ink-muted">{text.sub}</span>
-                    {!start && <span className="block text-[10px] text-[#6B7385]">{clock(cell.start)}</span>}
+                    {!start && <span className="block text-[10px] text-ink-muted">{clock(cell.start)}</span>}
                   </div>
                 );
               })

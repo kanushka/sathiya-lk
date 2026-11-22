@@ -81,7 +81,7 @@ export function TeacherLoginForm({ focus }: { focus?: boolean }) {
       noValidate
       className="w-full max-w-[460px] flex-1 basis-[400px] rounded-2xl border border-line bg-white p-5 sm:p-8"
     >
-      <p className="m-0 text-[13px] font-bold uppercase tracking-[.06em] text-[#8A5300]">{t('teacher.eyebrow')}</p>
+      <p className="m-0 text-[13px] font-bold uppercase tracking-[.06em] text-warning">{t('teacher.eyebrow')}</p>
       <h1 className="mb-1 mt-1.5 text-[26px] font-bold">{t('teacher.title')}</h1>
       <p lang="si" className="mb-6 text-ink-muted font-[family-name:'Noto_Sans_Sinhala',Inter,sans-serif]">
         {t('teacher.titleSi')}
@@ -117,7 +117,7 @@ export function TeacherLoginForm({ focus }: { focus?: boolean }) {
       <Button type="submit" variant="primary" size="lg" className="w-full" disabled={busy || !staffId || !password}>
         {t('teacher.submit')}
       </Button>
-      <p className="mb-0 mt-[18px] rounded-[10px] bg-[#F6F7F9] px-3.5 py-3 text-sm leading-normal text-ink-soft">
+      <p className="mb-0 mt-[18px] rounded-lg bg-surface-2 px-3.5 py-3 text-sm leading-normal text-ink-soft">
         {t('teacher.forgot')}
       </p>
     </form>

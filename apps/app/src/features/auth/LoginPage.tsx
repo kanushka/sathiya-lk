@@ -3,6 +3,7 @@
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useSearchParams } from 'react-router-dom';
+import { Button } from '../../ui/Button';
 import { AdminLoginForm } from './AdminLoginForm';
 import { BrandMark, LanguageToggle } from './AuthChrome';
 import { ReportSchoolModal } from './ReportSchoolModal';
@@ -30,9 +31,9 @@ export function LoginPage() {
       </div>
       <p className="mb-0 mt-4 text-[13px] text-ink-muted">
         {t('report.prompt')}{' '}
-        <button type="button" onClick={() => setReporting(true)} className="cursor-pointer border-0 bg-transparent p-0 text-brand underline">
+        <Button variant="link" onClick={() => setReporting(true)} className="underline">
           {t('report.link')}
-        </button>
+        </Button>
       </p>
       <ReportSchoolModal open={reporting} onClose={() => setReporting(false)} />
     </div>

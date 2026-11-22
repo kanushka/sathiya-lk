@@ -3,6 +3,7 @@
 import { useEffect, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Button } from '../../ui/Button';
+import { FormError } from '../../ui/FormError';
 import { printSlips, type PrintLabels } from './printSlips';
 import { qrSvgDataUri } from './qr';
 import { slipText, whatsappUrl, type SlipData } from './slip';
@@ -50,7 +51,7 @@ export function LoginSlip({ slip, hasStaffId, onReset, resetting, resetError, fo
   return (
     <section aria-label={t('slip.title')} className="flex flex-col gap-4">
       <h3 className="text-[13px] font-bold uppercase tracking-[.04em] text-ink-muted">{t('slip.title')}</h3>
-      <div className="rounded-xl border border-dashed border-line-strong bg-[#FAFAFB] p-4 text-sm">
+      <div className="rounded-xl border border-dashed border-line-strong bg-surface p-4 text-sm">
         <p className="font-bold text-ink">{slip.schoolName}</p>
         <p className="mt-1 text-ink-soft">
           {t('slip.staffId')} <b className="text-ink">{slip.staffId || '—'}</b>
@@ -78,7 +79,7 @@ export function LoginSlip({ slip, hasStaffId, onReset, resetting, resetError, fo
             href={whatsappUrl(slipText(slip, labels))}
             target="_blank"
             rel="noreferrer"
-            className="inline-flex h-8 items-center rounded-lg border border-line-strong bg-white px-3 text-[13px] font-semibold text-ink hover:bg-slate-50"
+            className="inline-flex h-8 items-center rounded-lg border border-line-strong bg-white px-3 text-[13px] font-semibold text-ink hover:bg-surface"
           >
             {t('slip.whatsapp')}
           </a>
@@ -90,9 +91,7 @@ export function LoginSlip({ slip, hasStaffId, onReset, resetting, resetError, fo
         </div>
       )}
       {resetError && (
-        <p role="alert" className="text-xs font-medium text-danger">
-          {t('slip.resetFailed')}
-        </p>
+        <FormError size="field">{t('slip.resetFailed')}</FormError>
       )}
     </section>
   );

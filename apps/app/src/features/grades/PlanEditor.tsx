@@ -3,7 +3,13 @@
 import { pickName, type Lang, type PlanItem, type Subject } from '@sathiya/core';
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
+import { Badge } from '../../ui/Badge';
+import { cx } from '../../ui/cx';
 import { Button } from '../../ui/Button';
+import { Chip } from '../../ui/Chip';
+import { inputBareCompactClass } from '../../ui/Field';
+import { IconButton } from '../../ui/IconButton';
+import { MultiSelect } from '../../ui/MultiSelect';
 import { Select } from '../../ui/Select';
 import { GroupModal } from './GroupModal';
 import { newGroupKey, planFit, planTotal, type PlanCapacity, type PlanFit } from './planModel';
@@ -37,7 +43,7 @@ function PerWeekInput({ label, value, disabled, onCommit }: { label: string; val
       aria-label={label}
       value={draft ?? value}
       disabled={disabled}
-      className="h-9 w-14 rounded-lg border border-line-strong text-center text-[15px] font-bold disabled:bg-slate-50"
+      className={cx(inputBareCompactClass, 'h-9 w-14 text-center font-bold')}
       onChange={(e) => setDraft(e.target.value)}
       onBlur={commit}
       onKeyDown={(e) => {
@@ -49,13 +55,11 @@ function PerWeekInput({ label, value, disabled, onCommit }: { label: string; val
 }
 
 const fitColor: Record<PlanFit, string> = {
-  exact: 'text-[#1F6B34]',
-  under: 'text-[#7A5410]',
-  mixed: 'text-[#7A5410]',
+  exact: 'text-success',
+  under: 'text-warning',
+  mixed: 'text-warning',
   over: 'text-danger',
 };
-
-const linkBtn = 'border-0 bg-transparent text-sm font-semibold text-brand hover:underline';
 
 export function PlanEditor({ plan, capacity, subjects, readOnly, onChange }: PlanEditorProps) {
   const { t, i18n } = useTranslation('grades');
@@ -94,50 +98,38 @@ export function PlanEditor({ plan, capacity, subjects, readOnly, onChange }: Pla
           return (
             <div
               key={p.kind === 'group' ? `g:${p.key}` : `s:${p.subjectId}`}
-              className={`flex items-center gap-3.5 border-b border-line-soft px-3.5 py-2.5 ${p.kind === 'group' ? 'bg-[#FFFCF5]' : ''}`}
+              className={`flex items-center gap-3.5 border-b border-line-soft px-3.5 py-2.5 ${p.kind === 'group' ? 'bg-warning-soft/40' : ''}`}
             >
               <span className="h-3.5 w-3.5 shrink-0 rounded" style={{ background: subject?.color ?? '#FBEAC9' }} />
               <div className="min-w-0 flex-1">
                 <strong className="text-sm">{name}</strong>
                 {p.kind === 'group' && (
                   <>
-                    <span className="ml-2 rounded-full bg-[#FBF1DC] px-2 py-0.5 text-[11px] font-bold uppercase tracking-wide text-[#7A5410]">
+                    <Badge tone="warning" className="ml-2 uppercase tracking-wide">
                       {t('plan.group')}
-                    </span>
-                    <div className="mt-2 flex flex-wrap items-center gap-1.5">
-                      {p.optionSubjectIds.map((id) => (
-                        <span key={id} className="inline-flex items-center gap-1.5 rounded-full border border-line-soft bg-white px-2.5 py-1 text-[13px]">
-                          {subjectName(id)}
-                          {!readOnly && (
-                            <button
-                              type="button"
-                              aria-label={t('plan.removeOption', { name: subjectName(id), group: name })}
-                              className="text-ink-muted hover:text-ink"
-                              onClick={() => setGroupOptions(i, p, p.optionSubjectIds.filter((o) => o !== id))}
-                            >
-                              ×
-                            </button>
-                          )}
-                        </span>
-                      ))}
-                      {!readOnly && subjects.some((s) => !p.optionSubjectIds.includes(s.id)) && (
-                        <Select
-                          className="w-40"
-                          aria-label={t('plan.addOption', { group: name })}
-                          value=""
-                          onChange={(e) => e.target.value && setGroupOptions(i, p, [...p.optionSubjectIds, e.target.value])}
-                        >
-                          <option value="">{t('plan.optionPlaceholder')}</option>
-                          {subjects
-                            .filter((s) => !p.optionSubjectIds.includes(s.id))
-                            .map((s) => (
-                              <option key={s.id} value={s.id}>
-                                {pickName(s, lang)}
-                              </option>
-                            ))}
-                        </Select>
-                      )}
-                    </div>
+                    </Badge>
+                    {readOnly ? (
+                      <div className="mt-2 flex flex-wrap items-center gap-1.5">
+                        {p.optionSubjectIds.map((id) => (
+                          <Chip key={id}>{subjectName(id)}</Chip>
+                        ))}
+                      </div>
+                    ) : (
+                      <MultiSelect
+                        className="mt-2 max-w-md"
+                        aria-label={t('plan.addOption', { group: name })}
+                        value={p.optionSubjectIds}
+                        onChange={(ids) => setGroupOptions(i, p, ids)}
+                        placeholder={t('plan.optionPlaceholder')}
+                        maxChips={Infinity}
+                        wrap
+                        getRemoveLabel={(o) => t('plan.removeOption', { name: o.label, group: name })}
+                        options={[
+                          ...subjects.map((s) => ({ value: s.id, label: pickName(s, lang) })),
+                          ...p.optionSubjectIds.filter((id) => !byId.has(id)).map((id) => ({ value: id, label: id })),
+                        ]}
+                      />
+                    )}
                   </>
                 )}
               </div>
@@ -155,34 +147,27 @@ export function PlanEditor({ plan, capacity, subjects, readOnly, onChange }: Pla
                       {t('plan.editGroup')}
                     </Button>
                   )}
-                  <Button size="sm" variant="ghost" aria-label={t('plan.removeItem', { name })} onClick={() => remove(i)}>
-                    ×
-                  </Button>
+                  <IconButton icon="close" size="sm" label={t('plan.removeItem', { name })} onClick={() => remove(i)} />
                 </div>
               )}
             </div>
           );
         })}
         {!readOnly && (
-          <div className="flex flex-wrap items-center gap-4 bg-[#FAFAFB] px-3.5 py-3">
+          <div className="flex flex-wrap items-center gap-4 bg-surface px-3.5 py-3">
             {unused.length > 0 && (
               <Select
                 className="w-56"
                 aria-label={t('plan.addSubject')}
                 value=""
-                onChange={(e) => e.target.value && onChange([...plan, { kind: 'subject', subjectId: e.target.value, perWeek: 1 }])}
-              >
-                <option value="">{t('plan.addSubject')}</option>
-                {unused.map((s) => (
-                  <option key={s.id} value={s.id}>
-                    {pickName(s, lang)}
-                  </option>
-                ))}
-              </Select>
+                placeholder={t('plan.addSubject')}
+                onChange={(subjectId) => onChange([...plan, { kind: 'subject', subjectId, perWeek: 1 }])}
+                options={unused.map((s) => ({ value: s.id, label: pickName(s, lang) }))}
+              />
             )}
-            <button type="button" className={linkBtn} onClick={() => setDialog({ index: null })}>
+            <Button variant="link" onClick={() => setDialog({ index: null })}>
               {t('plan.addGroup')}
-            </button>
+            </Button>
           </div>
         )}
       </div>

@@ -94,6 +94,7 @@ const shapes = {
   ),
   stop: <rect x="5" y="5" width="14" height="14" rx="2" fill="currentColor" />,
   check: <path d="M5 12.5l4.5 4.5L19 7.5" />,
+  minus: <path d="M5 12h14" />,
   logout: <path d="M15 4h3a2 2 0 0 1 2 2v12a2 2 0 0 1-2 2h-3M10 17l-5-5 5-5M5 12h11" />,
 } satisfies Record<string, ReactNode>;
 

@@ -120,7 +120,7 @@ export function TimetableGrid({ rows, cellsFor, selected, onSelect, onActivate, 
             return (
               <div
                 key={`i${i}`}
-                className="flex items-center gap-2.5 rounded-lg bg-[#FBF1DC] px-2.5 py-1 text-xs font-bold text-[#7A5410]"
+                className="flex items-center gap-2.5 rounded-lg bg-warning-soft px-2.5 py-1 text-xs font-bold text-warning"
                 style={{ gridColumn: '1 / -1' }}
               >
                 {t('grid.interval', { time: `${r.start}–${r.end}` })}
@@ -131,7 +131,7 @@ export function TimetableGrid({ rows, cellsFor, selected, onSelect, onActivate, 
           return [
             <div key={`l${i}`} className="flex flex-col justify-center pl-1">
               <b className="text-sm">{tc('periods.periodN', { n: r.n })}</b>
-              <span className="text-[11px] text-[#8A91A3]">{refTime ? `${refTime.start}–${refTime.end}` : ''}</span>
+              <span className="text-[11px] text-ink-muted">{refTime ? `${refTime.start}–${refTime.end}` : ''}</span>
             </div>,
             ...DAYS.map((d) => {
               const time = times[d].get(r.n);
@@ -160,11 +160,11 @@ export function TimetableGrid({ rows, cellsFor, selected, onSelect, onActivate, 
                   onClick={() => onClick(d, r.n)}
                   onKeyDown={(e) => onKeyDown(e, d, r.n)}
                   className={cx(
-                    'box-border flex min-h-[58px] flex-col justify-center rounded-[10px] border p-1 text-left',
+                    'box-border flex min-h-[58px] flex-col justify-center rounded-lg border p-1 text-left focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand',
                     ov
                       ? ov.className
                       : cells.length === 0
-                        ? 'border-[1.5px] border-dashed border-[#C9CDD6] bg-white text-[#8A91A3] px-2.5 items-center'
+                        ? 'border-[1.5px] border-dashed border-line-strong bg-white text-ink-muted px-2.5 items-center'
                         : 'border-transparent text-ink',
                     on && 'shadow-[0_0_0_2px_#fff,0_0_0_4px_var(--brand)]',
                     readOnly || ov?.disabled ? 'cursor-default' : 'cursor-pointer',

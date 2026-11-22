@@ -4,6 +4,7 @@ import { useTranslation } from 'react-i18next';
 import { Button } from '../../ui/Button';
 import { Modal } from '../../ui/Modal';
 import { useToast } from '../../ui/Toast';
+import { FormError } from '../../ui/FormError';
 import { useDeleteSetupItem, type SetupItemKind } from './useDeleteSetupItem';
 
 export interface DeleteSetupModalProps {
@@ -40,7 +41,7 @@ export function DeleteSetupModal({ schoolId, kind, id, name, onClose, onDeleted 
         <>
           <Button onClick={onClose}>{blocked ? t('deleteGuard.close') : t('deleteGuard.cancel')}</Button>
           {!blocked && (
-            <Button variant="danger" onClick={confirm} disabled={del.pending}>
+            <Button variant="dangerSolid" onClick={confirm} disabled={del.pending}>
               {t('deleteGuard.confirm')}
             </Button>
           )}
@@ -48,16 +49,12 @@ export function DeleteSetupModal({ schoolId, kind, id, name, onClose, onDeleted 
       }
     >
       {blocked ? (
-        <p role="alert" className="text-sm font-semibold text-danger">
-          {t(`deleteGuard.inUse.${kind}`, { count: del.usedIn ?? 0 })}
-        </p>
+        <FormError>{t(`deleteGuard.inUse.${kind}`, { count: del.usedIn ?? 0 })}</FormError>
       ) : (
         <p className="text-sm text-ink-soft">{t(`deleteGuard.body.${kind}`)}</p>
       )}
       {del.failed && (
-        <p role="alert" className="mt-3 text-sm font-semibold text-danger">
-          {t('deleteGuard.failed')}
-        </p>
+        <FormError className="mt-3">{t('deleteGuard.failed')}</FormError>
       )}
     </Modal>
   );

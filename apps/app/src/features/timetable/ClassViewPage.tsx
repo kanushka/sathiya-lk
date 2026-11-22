@@ -28,6 +28,7 @@ import { useReadOnly } from '../../ui/AdminLayout';
 import { Button } from '../../ui/Button';
 import { EmptyState } from '../../ui/EmptyState';
 import { Icon } from '../../ui/Icon';
+import { IconButton } from '../../ui/IconButton';
 import { LoadingState } from '../../ui/LoadingState';
 import { Modal } from '../../ui/Modal';
 import { Select } from '../../ui/Select';
@@ -199,30 +200,22 @@ function ClassView({ cls, classes }: { cls: SchoolClass; classes: SchoolClass[] 
     setFill(null);
   }
 
-  const navBtn = 'flex h-10 w-10 items-center justify-center rounded-lg border border-line-strong bg-white text-ink-soft hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-40';
-
   return (
     <div>
       <div className="mb-[18px] flex flex-wrap items-center justify-between gap-3">
         <div className="flex flex-wrap items-center gap-2.5">
-          <button type="button" aria-label={t('classView.prev')} className={navBtn} disabled={index <= 0} onClick={() => go(classes[index - 1])}>
-            <Icon name="chevronLeft" size={16} />
-          </button>
+          <IconButton icon="chevronLeft" variant="secondary" label={t('classView.prev')} disabled={index <= 0} onClick={() => go(classes[index - 1])} />
           <Select
             aria-label={t('classView.classLabel')}
             value={cls.id}
-            onChange={(e) => go(classes.find((c) => c.id === e.target.value))}
-            className="w-52 [&_select]:text-[15px] [&_select]:font-semibold"
-          >
-            {classes.map((c) => (
-              <option key={c.id} value={c.id}>
-                {t('classView.classOption', { grade: gradeNumber(c), name: c.name })}
-              </option>
-            ))}
-          </Select>
-          <button type="button" aria-label={t('classView.next')} className={navBtn} disabled={index >= classes.length - 1} onClick={() => go(classes[index + 1])}>
-            <Icon name="chevronRight" size={16} />
-          </button>
+            onChange={(id) => go(classes.find((c) => c.id === id))}
+            className="w-52"
+            options={classes.map((c) => ({
+              value: c.id,
+              label: t('classView.classOption', { grade: gradeNumber(c), name: c.name }),
+            }))}
+          />
+          <IconButton icon="chevronRight" variant="secondary" label={t('classView.next')} disabled={index >= classes.length - 1} onClick={() => go(classes[index + 1])} />
           <span className="ml-1.5 text-sm text-ink-muted">
             {classTeacher ? (
               <>

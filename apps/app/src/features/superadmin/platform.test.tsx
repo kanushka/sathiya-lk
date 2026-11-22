@@ -66,7 +66,7 @@ describe('AnnouncementsPage', () => {
     renderWithSchool(<AnnouncementsPage config={{ loading: false, data: config() }} writer={writer} />, opts);
     await userEvent.type(screen.getByLabelText('Message (English)'), 'Hello schools');
     await userEvent.type(screen.getByLabelText('Message (Sinhala)'), 'ආයුබෝවන්');
-    await userEvent.click(screen.getByRole('checkbox', { name: 'Show banner' }));
+    await userEvent.click(screen.getByRole('switch', { name: 'Show banner' }));
     expect(screen.getByTestId('banner-preview')).toHaveTextContent('Hello schools');
     await userEvent.click(screen.getByRole('button', { name: 'Save' }));
     await waitFor(() =>

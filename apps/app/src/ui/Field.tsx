@@ -14,8 +14,27 @@ export interface FieldProps {
   children: ReactElement<{ id?: string; 'aria-describedby'?: string; 'aria-invalid'?: boolean }>;
 }
 
-export const inputClass =
-  'h-10 w-full rounded-lg border border-line-strong bg-white px-3 text-sm text-ink placeholder:text-[#7A8194] focus:border-brand focus:outline-none focus:ring-2 focus:ring-brand/30 disabled:bg-slate-50 aria-[invalid=true]:border-danger';
+const fieldChromeClass =
+  'rounded-lg border border-line-strong bg-white text-sm text-ink placeholder:text-ink-muted hover:border-line-hover disabled:cursor-not-allowed disabled:border-line disabled:bg-surface-2 disabled:text-ink-muted disabled:hover:border-line aria-[invalid=true]:border-danger';
+
+export const fieldBaseClass = `w-full px-3 ${fieldChromeClass}`;
+
+export const fieldFocusClass =
+  'focus:border-brand focus:outline-none focus:ring-[3px] focus:ring-brand/30 aria-[invalid=true]:focus:ring-danger/20';
+
+export const fieldBoxClass =
+  'w-full rounded-lg border border-line-strong bg-white text-sm text-ink hover:border-line-hover data-[disabled=true]:cursor-not-allowed data-[disabled=true]:border-line data-[disabled=true]:bg-surface-2 data-[disabled=true]:text-ink-muted data-[disabled=true]:hover:border-line data-[invalid=true]:border-danger';
+
+export const fieldFocusWithinClass =
+  'focus-within:border-brand focus-within:ring-[3px] focus-within:ring-brand/30 data-[invalid=true]:focus-within:ring-danger/20';
+
+export const inputClass = `h-10 ${fieldBaseClass} ${fieldFocusClass}`;
+
+export const inputBareClass = `px-3 ${fieldChromeClass} ${fieldFocusClass}`;
+
+export const inputBareCompactClass = `px-1.5 ${fieldChromeClass} ${fieldFocusClass}`;
+
+export const textareaClass = `h-auto min-h-[88px] py-2.5 leading-relaxed resize-y ${fieldBaseClass} ${fieldFocusClass}`;
 
 export function Field({ label, hint, error, id, required, className, children }: FieldProps) {
   const autoId = useId();
