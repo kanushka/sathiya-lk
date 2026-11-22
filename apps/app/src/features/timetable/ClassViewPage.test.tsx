@@ -2,7 +2,7 @@
 // Copyright (C) 2026 Kanushka Gayan
 
 import { fillWithClassTeacher } from '@sathiya/core';
-import { C, ctx, entries6B, entry, S, T } from '@sathiya/core/fixtures';
+import { C, ctx, entries6B, entry, G, S, T } from '@sathiya/core/fixtures';
 import { fireEvent, screen, waitFor, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { Route, Routes } from 'react-router-dom';
@@ -390,14 +390,14 @@ describe('ClassViewPage', () => {
         { subjectId: S.islam, teacherId: T.rizan },
       ];
 
-      function setupWith(list: typeof entries6B, api: TimetableApi = makeApi()) {
+      function setupWith(list: typeof entries6B, api: TimetableApi = makeApi(), school = ctx) {
         renderWithSchool(
           <TimetableApiContext.Provider value={api}>
             <Routes>
               <Route path="/admin/timetable/class/:classId" element={<ClassViewPage />} />
             </Routes>
           </TimetableApiContext.Provider>,
-          { ctx, entries: list, route: `/admin/timetable/class/${C.c6b}` },
+          { ctx: school, entries: list, route: `/admin/timetable/class/${C.c6b}` },
         );
         return api;
       }
@@ -437,6 +437,21 @@ describe('ClassViewPage', () => {
         await userEvent.click(screen.getByRole('button', { name: 'Pin Religion' }));
         const popup = screen.getByRole('dialog', { name: 'Set teachers for Religion' });
         expect(popup).toHaveTextContent('Whole week');
+      });
+
+      it('opens the group step instead of a stale pin mode when a latest teacher is gone', async () => {
+        setupWith(entries6B, makeApi(), { ...ctx, teachers: ctx.teachers.filter((x) => x.id !== T.rizan) });
+        await userEvent.click(screen.getByRole('button', { name: 'Pin Religion' }));
+        expect(screen.getByRole('dialog', { name: 'Set teachers for Religion' })).toHaveTextContent('Whole week');
+        expect(screen.queryByRole('region', { name: 'Pin mode' })).not.toBeInTheDocument();
+      });
+
+      it('opens the group step when the latest lesson no longer matches the plan options', async () => {
+        const g6 = ctx.grades.find((g) => g.id === G.g6)!;
+        const plan = g6.plan.map((p) => (p.kind === 'group' && p.key === 'religion' ? { ...p, optionSubjectIds: [S.buddhism, S.catholicism] } : p));
+        setupWith(entries6B, makeApi(), { ...ctx, grades: ctx.grades.map((g) => (g.id === G.g6 ? { ...g, plan } : g)) });
+        await userEvent.click(screen.getByRole('button', { name: 'Pin Religion' }));
+        expect(screen.getByRole('dialog', { name: 'Set teachers for Religion' })).toHaveTextContent('Whole week');
       });
 
       it('labels free cells for the group', async () => {

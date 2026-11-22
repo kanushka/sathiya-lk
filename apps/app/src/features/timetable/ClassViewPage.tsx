@@ -4,6 +4,7 @@
 import {
   effectivePlan,
   fillWithClassTeacher,
+  groupSpecIsCurrent,
   latestGroupSpec,
   planKey,
   periodsFor,
@@ -167,7 +168,7 @@ function ClassView({ cls, classes }: { cls: SchoolClass; classes: SchoolClass[] 
     pinOrigin.current = { key: planKey(item) };
     if (item.kind === 'group') {
       const spec = latestGroupSpec({ ctx, entries, classId: cls.id, groupKey: item.key });
-      if (spec) {
+      if (spec && groupSpecIsCurrent({ ctx, classId: cls.id, spec })) {
         pin.start(spec);
         return;
       }
