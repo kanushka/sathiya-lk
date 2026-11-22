@@ -18,6 +18,7 @@ test('new school setup: subjects, grade plan and period templates', async ({ pag
   const add = page.getByRole('dialog', { name: 'Add subject' });
   await add.getByLabel('Name in English').fill('Agriculture');
   await add.getByLabel('Name in Sinhala').fill('කෘෂිකර්මය');
+  await expect(add.getByLabel('Short name')).toHaveValue('Agri');
   await add.getByRole('button', { name: 'Add subject' }).click();
   await expect(page.getByRole('textbox', { name: 'English name of Agriculture' })).toHaveValue('Agriculture');
   await expect(page.getByRole('textbox', { name: /^English name of / })).toHaveCount(subjects.length + 1);
