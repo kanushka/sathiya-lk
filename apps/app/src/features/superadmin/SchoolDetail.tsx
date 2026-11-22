@@ -20,7 +20,7 @@ export interface SchoolDetailProps {
 
 function Row({ label, children }: { label: string; children: ReactNode }) {
   return (
-    <div className="flex gap-4 border-b border-[#F0F1F4] py-3 text-sm">
+    <div className="flex gap-4 border-b border-line-soft py-3 text-sm">
       <dt className="w-56 shrink-0 text-ink-muted">{label}</dt>
       <dd className="m-0">{children}</dd>
     </div>
@@ -54,7 +54,7 @@ export function SchoolDetail({ school: injected, setStatus = defaultSetStatus }:
         <div className="flex gap-2">
           <Link
             to={`/s/${school.id}`}
-            className="inline-flex h-8 items-center rounded-lg border border-line-strong bg-white px-3 text-[13px] font-semibold hover:bg-slate-50"
+            className="inline-flex h-8 items-center rounded-lg border border-line-strong bg-white px-3 text-[13px] font-semibold hover:bg-surface"
           >
             {t('detail.openReadOnly')}
           </Link>

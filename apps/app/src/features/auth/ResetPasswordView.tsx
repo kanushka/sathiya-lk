@@ -59,7 +59,7 @@ export function ResetPasswordView({ code }: { code: string }) {
         <p className="mb-6 mt-0 text-ink-muted">{t('action.reset.doneBody')}</p>
         <Link
           to="/login"
-          className="inline-flex h-11 w-full items-center justify-center rounded-[10px] bg-navy px-5 text-[15px] font-semibold text-white no-underline"
+          className="inline-flex h-11 w-full items-center justify-center rounded-lg bg-navy px-5 text-[15px] font-semibold text-white no-underline"
         >
           {t('action.reset.toLogin')}
         </Link>

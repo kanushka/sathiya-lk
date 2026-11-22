@@ -39,7 +39,7 @@ export function SegmentedControl<V extends string = string>({
       aria-label={ariaLabel}
       onKeyDown={(e) => rovingKeyDown({ event: e, values, current: value, select: onChange, itemRole: 'radio', vertical: true })}
       className={cx(
-        'inline-flex gap-0.5 rounded-[10px] p-[3px]',
+        'inline-flex gap-0.5 rounded-lg p-[3px]',
         tone === 'onBrand' ? 'bg-black/15' : 'bg-surface-3',
         className,
       )}

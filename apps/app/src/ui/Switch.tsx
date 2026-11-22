@@ -34,7 +34,7 @@ export function Switch({ checked, onChange, label, disabled, id, className }: Sw
         aria-hidden="true"
         className={cx(
           'relative h-5 w-9 shrink-0 rounded-full transition-colors',
-          checked ? 'bg-brand' : 'bg-[#C9CDD6]',
+          checked ? 'bg-brand' : 'bg-line-strong',
         )}
       >
         <span

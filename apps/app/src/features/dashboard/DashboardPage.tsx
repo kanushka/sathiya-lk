@@ -17,9 +17,9 @@ import { NewYearModal } from './NewYearModal';
 import { PublishModal } from './PublishModal';
 
 const chipClass: Record<ChipStatus, string> = {
-  complete: 'bg-[#E4F2E7] text-[#1F6B34]',
-  partial: 'bg-[#FBF1DC] text-[#7A5410]',
-  empty: 'bg-[#F1F2F5] text-ink-soft',
+  complete: 'bg-success-soft text-success',
+  partial: 'bg-warning-soft text-warning',
+  empty: 'bg-surface-3 text-ink-soft',
 };
 
 function useBase(): string {
@@ -52,8 +52,8 @@ export function DashboardPage() {
   const statCards = [
     { label: t('stats.complete'), value: `${stats.classesComplete} / ${stats.classCount}`, sub: t('stats.completeSub'), tone: 'text-ink' },
     { label: t('stats.empty'), value: String(stats.emptySlots), sub: t('stats.emptySub'), tone: 'text-ink' },
-    { label: t('stats.clashes'), value: String(stats.clashes), sub: t('stats.clashesSub'), tone: stats.clashes === 0 ? 'text-[#1F6B34]' : 'text-danger' },
-    { label: t('stats.over'), value: String(stats.overLimit), sub: t('stats.overSub'), tone: stats.overLimit === 0 ? 'text-[#1F6B34]' : 'text-[#B4441C]' },
+    { label: t('stats.clashes'), value: String(stats.clashes), sub: t('stats.clashesSub'), tone: stats.clashes === 0 ? 'text-success' : 'text-danger' },
+    { label: t('stats.over'), value: String(stats.overLimit), sub: t('stats.overSub'), tone: stats.overLimit === 0 ? 'text-success' : 'text-danger' },
   ];
 
   return (
@@ -144,7 +144,7 @@ export function DashboardPage() {
                   <Link key={i.key} to={base + i.to} className="flex gap-3 border-t border-line-soft py-3 text-ink no-underline">
                     <span
                       aria-hidden="true"
-                      className={cx('mt-1.5 h-2 w-2 shrink-0 rounded-full', i.severity === 'high' ? 'bg-[#B4441C]' : 'bg-[#D9A441]')}
+                      className={cx('mt-1.5 h-2 w-2 shrink-0 rounded-full', i.severity === 'high' ? 'bg-danger' : 'bg-warning')}
                     />
                     <span>
                       <strong className="block text-sm">{t(`attention.${i.kind}.title`, params)}</strong>

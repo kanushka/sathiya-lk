@@ -74,7 +74,7 @@ export function TemplateEditor({ draft, errors, readOnly, onChange }: TemplateEd
             <div
               key={i}
               data-testid="template-row"
-              className={cx('flex items-center gap-3 rounded-[10px] px-3 py-2', r.type === 'interval' ? 'bg-[#FBF1DC]' : 'bg-[#FAFAFB]', rowErrors(i) && 'ring-2 ring-danger')}
+              className={cx('flex items-center gap-3 rounded-lg px-3 py-2', r.type === 'interval' ? 'bg-warning-soft' : 'bg-surface', rowErrors(i) && 'ring-2 ring-danger')}
             >
               <strong className="w-[110px] text-sm">{r.type === 'period' ? tc('periods.period') + ' ' + periodNo : tc('periods.interval')}</strong>
               <input

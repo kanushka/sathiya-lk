@@ -73,7 +73,7 @@ export function SchoolsPage({ schools: injected, setStatus = defaultSetStatus }:
           placeholder={t('schools.searchPlaceholder')}
           value={search}
           onChange={(e) => setSearch(e.target.value)}
-          className="h-10 min-w-[280px] flex-1 rounded-lg border border-line-strong bg-white px-3 text-sm focus:border-teal focus:outline-none focus:ring-2 focus:ring-teal/30"
+          className="h-10 min-w-[280px] flex-1 rounded-lg border border-line-strong bg-white px-3 text-sm focus:border-brand focus:outline-none focus:ring-[3px] focus:ring-brand/30"
         />
         <Select
           aria-label={t('schools.statusLabel')}

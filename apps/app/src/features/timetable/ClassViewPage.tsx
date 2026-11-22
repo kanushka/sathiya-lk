@@ -81,11 +81,11 @@ export function ClassViewPage() {
 }
 
 const pinCell = 'box-border border-[1.5px] border-dashed items-center px-2.5 text-center';
-const pinFree = `${pinCell} border-[#2E8B4A] bg-[#F5FBF6] text-[#1F6B34]`;
-const pinWarn = `${pinCell} border-[#B7831F] bg-[#FFF6E2] text-[#6B4A0E]`;
-const pinOver = `${pinCell} border-[#C2410C] bg-[#FDECEA] text-[#9A3412]`;
-const pinSuggested = 'items-center border-[1.5px] border-solid border-[#2E8B4A] bg-[#E4F2E7] px-2.5 text-center text-[#1F6B34]';
-const pinBusy = 'border-line bg-[repeating-linear-gradient(135deg,#F1F2F5_0_6px,#E4E6EC_6px_12px)] px-2.5 text-ink-muted';
+const pinFree = `${pinCell} border-success bg-success-soft/50 text-success`;
+const pinWarn = `${pinCell} border-warning bg-warning-soft text-warning`;
+const pinOver = `${pinCell} border-danger bg-danger-soft text-danger`;
+const pinSuggested = 'items-center border-[1.5px] border-solid border-success bg-success-soft px-2.5 text-center text-success';
+const pinBusy = 'border-line bg-[repeating-linear-gradient(135deg,theme(colors.surface.3)_0_6px,theme(colors.line.DEFAULT)_6px_12px)] px-2.5 text-ink-muted';
 
 function PinGlyph({ sub }: { sub: string }) {
   return (
@@ -326,7 +326,7 @@ function ClassView({ cls, classes }: { cls: SchoolClass; classes: SchoolClass[] 
           onDone={stopPin}
         />
       ) : (
-        !readOnly && <p className="mb-3.5 rounded-[10px] border border-line bg-white px-3.5 py-2.5 text-[13px] text-ink-soft">{t('pin.hint')}</p>
+        !readOnly && <p className="mb-3.5 rounded-lg border border-line bg-white px-3.5 py-2.5 text-[13px] text-ink-soft">{t('pin.hint')}</p>
       )}
 
       <div className="flex flex-wrap items-start gap-5">
@@ -339,11 +339,11 @@ function ClassView({ cls, classes }: { cls: SchoolClass; classes: SchoolClass[] 
         >
           {pinTarget && (
             <div aria-label={t('pin.legendLabel')} className="mb-3 ml-1 flex flex-wrap gap-3.5">
-              <Swatch className="border-[1.5px] border-dashed border-[#2E8B4A] bg-[#F5FBF6]">{t('pin.legendFree', { teacher: pinTeacherName })}</Swatch>
-              <Swatch className="border-[1.5px] border-dashed border-[#B7831F] bg-[#FFF6E2]">{t('pin.legendSubjectDay')}</Swatch>
-              <Swatch className="border-[1.5px] border-dashed border-[#C2410C] bg-[#FDECEA]">{t('pin.legendOver')}</Swatch>
-              <Swatch className="border-[1.5px] border-[#2E8B4A] bg-[#E4F2E7]">{t('pin.legendSuggested')}</Swatch>
-              <Swatch className="bg-[repeating-linear-gradient(135deg,#EEF0F3_0_4px,#DADDE4_4px_8px)]">{t('pin.legendBusy')}</Swatch>
+              <Swatch className="border-[1.5px] border-dashed border-success bg-success-soft/50">{t('pin.legendFree', { teacher: pinTeacherName })}</Swatch>
+              <Swatch className="border-[1.5px] border-dashed border-warning bg-warning-soft">{t('pin.legendSubjectDay')}</Swatch>
+              <Swatch className="border-[1.5px] border-dashed border-danger bg-danger-soft">{t('pin.legendOver')}</Swatch>
+              <Swatch className="border-[1.5px] border-success bg-success-soft">{t('pin.legendSuggested')}</Swatch>
+              <Swatch className="bg-[repeating-linear-gradient(135deg,theme(colors.surface.3)_0_4px,theme(colors.line.strong)_4px_8px)]">{t('pin.legendBusy')}</Swatch>
             </div>
           )}
           <TimetableGrid
@@ -360,7 +360,7 @@ function ClassView({ cls, classes }: { cls: SchoolClass; classes: SchoolClass[] 
             overlay={pinTarget ? pinOverlay : undefined}
             activateOnClick={!!pinTarget}
           />
-          <p role="status" className="mx-1 mb-0 mt-3 min-h-[1px] text-[13px] font-semibold text-[#1F6B34] empty:mt-0">
+          <p role="status" className="mx-1 mb-0 mt-3 min-h-[1px] text-[13px] font-semibold text-success empty:mt-0">
             {pin.message}
           </p>
         </section>

@@ -21,7 +21,7 @@ export function TBody(props: HTMLAttributes<HTMLTableSectionElement>) {
 }
 
 export function Tr({ className, ...rest }: HTMLAttributes<HTMLTableRowElement>) {
-  return <tr className={cx('hover:bg-[#FAFAFB]', className)} {...rest} />;
+  return <tr className={cx('hover:bg-surface', className)} {...rest} />;
 }
 
 export function Th({ className, scope = 'col', ...rest }: ThHTMLAttributes<HTMLTableCellElement>) {
@@ -29,7 +29,7 @@ export function Th({ className, scope = 'col', ...rest }: ThHTMLAttributes<HTMLT
     <th
       scope={scope}
       className={cx(
-        'border-b border-line bg-[#FAFAFB] px-3 py-2.5 text-xs font-bold uppercase tracking-[.04em] text-ink-muted',
+        'border-b border-line bg-surface px-3 py-2.5 text-xs font-bold uppercase tracking-[.04em] text-ink-muted',
         className,
       )}
       {...rest}
@@ -38,5 +38,5 @@ export function Th({ className, scope = 'col', ...rest }: ThHTMLAttributes<HTMLT
 }
 
 export function Td({ className, ...rest }: TdHTMLAttributes<HTMLTableCellElement>) {
-  return <td className={cx('border-b border-[#F0F1F4] px-3 py-3 align-top text-sm text-ink', className)} {...rest} />;
+  return <td className={cx('border-b border-line-soft px-3 py-3 align-top text-sm text-ink', className)} {...rest} />;
 }

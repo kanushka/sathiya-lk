@@ -79,7 +79,7 @@ export function SubjectModal({ onClose }: { onClose: () => void }) {
         </div>
         <div>
           <p className="mb-1.5 text-[13px] font-semibold text-ink-soft">{t('modal.preview')}</p>
-          <div className="flex flex-col gap-0.5 rounded-[10px] px-2.5 py-2" style={{ background: color, width: 130 }} data-testid="subject-preview">
+          <div className="flex flex-col gap-0.5 rounded-lg px-2.5 py-2" style={{ background: color, width: 130 }} data-testid="subject-preview">
             <span className="text-[13px] font-bold">{shortValue || t('modal.previewFallback')}</span>
             <span className="text-[11px] opacity-80">{t('modal.previewTeacher')}</span>
           </div>

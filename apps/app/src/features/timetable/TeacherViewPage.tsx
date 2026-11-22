@@ -194,13 +194,13 @@ function TeacherView({ teacher, teachers, template }: { teacher: Teacher; teache
         data-over={String(over)}
         className="mt-1.5 flex w-[70%] flex-col items-center gap-0.5"
       >
-        <span className="block h-[5px] w-full overflow-hidden rounded-full bg-[#EEF0F3]">
+        <span className="block h-[5px] w-full overflow-hidden rounded-full bg-surface-3">
           <span
             className="block h-[5px]"
-            style={{ width: `${max > 0 ? Math.min(100, Math.round((load / max) * 100)) : 100}%`, background: over ? '#B4441C' : 'var(--brand)' }}
+            style={{ width: `${max > 0 ? Math.min(100, Math.round((load / max) * 100)) : 100}%`, background: over ? 'var(--danger)' : 'var(--brand)' }}
           />
         </span>
-        <span className={cx('text-[11px] font-bold', over ? 'text-[#B4441C]' : 'text-ink-muted')}>{value}</span>
+        <span className={cx('text-[11px] font-bold', over ? 'text-danger' : 'text-ink-muted')}>{value}</span>
       </div>
     );
   }
@@ -346,7 +346,7 @@ function TeacherView({ teacher, teachers, template }: { teacher: Teacher; teache
                       setChooser(null);
                       openEntry({ entry: e, row: chooser.period });
                     }}
-                    className="flex w-full flex-col items-start gap-0.5 rounded-[10px] border border-line-strong px-3 py-2 text-left hover:bg-slate-50 focus-visible:outline focus-visible:outline-2 focus-visible:outline-brand"
+                    className="flex w-full flex-col items-start gap-0.5 rounded-lg border border-line-strong px-3 py-2 text-left hover:bg-surface focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand focus-visible:ring-offset-2"
                     style={{ background: v.color }}
                   >
                     <strong className="text-sm">{v.title}</strong>

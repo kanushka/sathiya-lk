@@ -148,7 +148,7 @@ export function Sidebar({ basePath = '/admin', readOnly = false }: SidebarProps)
             onClick={toggle}
             aria-label={toggleLabel}
             title={toggleLabel}
-            className="mb-2 mt-2.5 flex h-8 w-8 items-center justify-center rounded-lg border border-line bg-white text-ink-muted hover:bg-slate-50"
+            className="mb-2 mt-2.5 flex h-8 w-8 items-center justify-center rounded-lg border border-line bg-white text-ink-muted hover:bg-surface"
           >
             <Icon name="chevronRight" size={16} strokeWidth={2} />
           </button>
@@ -171,7 +171,7 @@ export function Sidebar({ basePath = '/admin', readOnly = false }: SidebarProps)
               onClick={toggle}
               aria-label={toggleLabel}
               title={toggleLabel}
-              className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg border border-line bg-white text-ink-muted hover:bg-slate-50"
+              className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg border border-line bg-white text-ink-muted hover:bg-surface"
             >
               <Icon name="chevronLeft" size={16} strokeWidth={2} />
             </button>
