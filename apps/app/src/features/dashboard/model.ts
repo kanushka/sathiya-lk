@@ -163,8 +163,8 @@ export interface PublishProblems {
 
 export function publishProblems(ctx: SchoolContext, entries: Entry[]): PublishProblems {
   const stats = dashboardStats(ctx, entries);
-  const items = attentionItems(ctx, entries, 'en');
-  const count = (kind: Warning['kind']) => items.filter((i) => i.kind === kind).length;
+  const all = warnings(entries, ctx);
+  const count = (kind: Warning['kind']) => all.filter((w) => w.kind === kind).length;
   const counts = {
     incomplete: stats.classCount - stats.classesComplete,
     clashes: stats.clashes,

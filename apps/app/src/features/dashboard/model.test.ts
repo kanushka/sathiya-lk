@@ -95,6 +95,11 @@ describe('dashboard model', () => {
     expect(dashboardStats(shrunk, entries).emptySlots).toBe(dashboardStats(shrunk, entries.filter((e) => e.id !== 'e-6c-4-7')).emptySlots);
   });
 
+  it('counts an entry whose class was deleted as orphaned in the publish summary', () => {
+    const stray = entry('stray', 0, 1, ['c-gone'], [[S.maths, T.perera]]);
+    expect(publishProblems(ctx, [...entries, stray]).orphaned).toBe(1);
+  });
+
   it('counts open problems by kind for the publish summary', () => {
     expect(publishProblems(ctx, entries)).toEqual({ incomplete: 5, clashes: 0, overLimit: 0, overTarget: 0, orphaned: 0, groupNoTeacher: 0, total: 5 });
     const over = Array.from({ length: 8 }, (_, i) => entry(`o${i}`, 0, i + 1, [C.c6a], [[S.sinhala, T.kumara]]));
