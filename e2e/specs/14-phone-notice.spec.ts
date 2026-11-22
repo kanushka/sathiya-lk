@@ -26,6 +26,7 @@ test('admin on a phone sees the bigger-screen notice once, then a banner', async
 
   const banner = page.getByText('Admin screens work best on a laptop, desktop or tablet.');
   await expect(banner).toBeVisible();
+  expect(await page.evaluate(() => document.documentElement.scrollWidth)).toBeLessThanOrEqual(375);
   await page.reload();
   await expect(banner).toBeVisible();
   await expect(dialog).toHaveCount(0);
