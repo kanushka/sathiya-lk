@@ -383,7 +383,7 @@ describe('years', () => {
     deny([['teacher', y3], ['super', y3], ['otherAdmin', y3], ['anon', y3]], (r, p) => set(r, p, { label: '2028', status: 'draft' }));
   });
   describe('update', () => {
-    allow([['admin', y2], ['admin', y1]], (r, p) => update(r, p, { label: 'renamed' }));
+    allow([['admin', y2], ['admin', y1]], (r, p) => update(r, p, { label: '2029' }));
     it('denies admin changing status or publishedAt', async () => {
       await assertFails(update('admin', y2, { status: 'published' }));
       await assertFails(update('admin', y1, { status: 'draft' }));
@@ -394,6 +394,11 @@ describe('years', () => {
       await assertFails(update('admin', y2, { label: ' ' }));
       await assertFails(update('admin', y2, { label: 7 }));
       await assertFails(set('admin', y2, { status: 'draft' }));
+    });
+    it('denies admin renaming a year to anything but a 4-digit year', async () => {
+      for (const label of ['renamed', '28', '1999', '2101', ' 2028']) {
+        await assertFails(update('admin', y2, { label }));
+      }
     });
     deny([['teacher', y2], ['super', y2]], (r, p) => update(r, p, { label: 'x' }));
   });
