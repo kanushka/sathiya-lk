@@ -100,8 +100,8 @@ function validateSubjects(rows: ImportRow<SubjectColumn>[], ctx: ImportContext, 
     const err = (column: SubjectColumn, code: ImportErrorCode, value?: string) =>
       errors.push({ sheet: 'subjects', row: r.row, column, code, ...(value !== undefined && { params: { value } }) });
     const bad = cellErrors<SubjectColumn>(r, 'subjects', ['nameEn', 'nameSi', 'short'], errors);
-    const nameEn = r.cells.nameEn ?? '';
-    const nameSi = r.cells.nameSi ?? '';
+    const nameEn = (r.cells.nameEn ?? '').trim();
+    const nameSi = (r.cells.nameSi ?? '').trim();
 
     for (const [column, name] of [['nameEn', nameEn], ['nameSi', nameSi]] as const) {
       if (bad.has(column)) continue;
@@ -198,7 +198,7 @@ function validateTeachers(
       if (!title) err('title', 'unknownTitle', { value: c.title });
     }
 
-    const name = c.name ?? '';
+    const name = (c.name ?? '').trim();
     if (name === '') {
       if (!bad.has('name')) err('name', 'required');
     } else if (name.length > NAME_MAX) err('name', 'tooLong', { max: NAME_MAX });

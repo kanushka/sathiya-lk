@@ -101,6 +101,15 @@ describe('validateImport subject errors', () => {
   });
 });
 
+describe('validateImport subject trimming', () => {
+  it('trims names and treats a whitespace-only English name as missing', () => {
+    const p = run([sub(2, { nameEn: '  Drama ', nameSi: ' නාට්‍ය  ' }), sub(3, { nameEn: '   ', nameSi: '  ', short: 'X' })], []);
+    expect(errs(p)).toEqual([{ sheet: 'subjects', row: 3, column: 'nameEn', code: 'required' }]);
+    expect(p.subjects[0]).toMatchObject({ nameEn: 'Drama', nameSi: 'නාට්‍ය', short: 'Dra' });
+    expect(p.subjects[1]).not.toHaveProperty('nameSi');
+  });
+});
+
 describe('validateImport subject lengths', () => {
   it('subject names over the name max are tooLong', () => {
     const p = run([sub(2, { nameEn: 'x'.repeat(201), nameSi: 'y'.repeat(201), short: 'X' })], []);
@@ -141,6 +150,10 @@ describe('validateImport teacher errors', () => {
     expect(p.teachers[0]?.teacher.staffId).toBe('SCC1000');
     expect(errs(p)).toEqual([e('staffId', 'staffIdFormat')]);
     expect(p.errors[0]?.params).toEqual({ example: 'SCC024' });
+  });
+  it('trims names and treats whitespace-only as missing', () => {
+    expect(only({ ...okTeacher, name: '   ' })).toEqual([e('name', 'required')]);
+    expect(one({ ...okTeacher, name: '  A B  ' }).teachers[0]?.teacher.name).toBe('A B');
   });
   it('staffIdTaken and staffIdDuplicate', () => {
     const p = run([], [tch(2, { ...okTeacher, staffId: 'scc001' }), tch(3, { ...okTeacher, staffId: 'SCC009' }), tch(4, { ...okTeacher, staffId: 'scc009' })]);
