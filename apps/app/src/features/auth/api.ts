@@ -50,9 +50,7 @@ export async function searchSchools(prefix: string): Promise<DirectorySchool[]> 
 
 export async function getDirectorySchool(id: string): Promise<DirectorySchool | null> {
   const snap = await getDoc(doc(db, paths.directory(id)));
-  if (!snap.exists()) return null;
-  const school = toDirectorySchool(snap.id, snap.data());
-  return school.status === 'active' ? school : null;
+  return snap.exists() ? toDirectorySchool(snap.id, snap.data()) : null;
 }
 
 export async function signInWithPassword(email: string, password: string): Promise<void> {

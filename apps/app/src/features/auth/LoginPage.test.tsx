@@ -120,6 +120,19 @@ describe('teacher login', () => {
     expect(api.getDirectorySchool).toHaveBeenCalledWith('siripura');
   });
 
+  it('explains a suspended school from ?school= instead of an empty picker', async () => {
+    const user = userEvent.setup();
+    vi.mocked(api.getDirectorySchool).mockResolvedValue({ ...siripura, status: 'disabled' });
+    renderAuth(<LoginPage />, { route: '/login?as=teacher&school=siripura' });
+    expect(await screen.findByText('This school is currently suspended. Contact your school admin.')).toBeInTheDocument();
+    expect(screen.getByLabelText('School')).toHaveValue('');
+    await user.type(screen.getByLabelText('Staff ID'), 'SCC024');
+    await user.type(within(teacherCard()).getByLabelText('Password'), 'k7m4x9pq');
+    await user.click(within(teacherCard()).getByRole('button', { name: 'Log in' }));
+    expect(api.signInWithPassword).not.toHaveBeenCalled();
+    expect(localStorage.getItem('sathiya.school')).toBeNull();
+  });
+
   it('requires a school before submitting', async () => {
     const user = userEvent.setup();
     renderAuth(<LoginPage />, { route: AS_TEACHER });
