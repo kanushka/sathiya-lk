@@ -10,6 +10,7 @@ import {
   type SchoolClass,
   type SchoolContext,
   type Subject,
+  normalizeTeacher,
   type Teacher,
   type Year,
 } from '@sathiya/core';
@@ -100,7 +101,7 @@ export function SchoolProvider({ sid: sidProp, scope = 'full', children }: Schoo
       school.data
         ? {
             school: school.data,
-            teachers: teachers.data,
+            teachers: teachers.data.map(normalizeTeacher),
             subjects: subjects.data,
             templates: templates.data,
             grades: grades.data,

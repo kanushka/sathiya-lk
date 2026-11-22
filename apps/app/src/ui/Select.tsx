@@ -46,7 +46,7 @@ export function Select<V extends string = string>({
   value,
   onChange,
   placeholder,
-  searchable = options.length > 8,
+  searchable = options.length > 10,
   searchPlaceholder,
   id,
   name,

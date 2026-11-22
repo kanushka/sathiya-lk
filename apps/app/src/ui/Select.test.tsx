@@ -17,7 +17,7 @@ const fruits: SelectOption[] = [
   { value: 'cherry', label: 'Cherry' },
 ];
 
-const many: SelectOption[] = ['Art', 'Biology', 'Chemistry', 'Drama', 'English', 'French', 'Geography', 'History', 'ICT'].map(
+const many: SelectOption[] = ['Art', 'Biology', 'Chemistry', 'Drama', 'English', 'French', 'Geography', 'History', 'ICT', 'Japanese', 'Korean'].map(
   (label) => ({ value: label.toLowerCase(), label }),
 );
 
@@ -229,7 +229,14 @@ describe('Select', () => {
     expect(onClose).not.toHaveBeenCalled();
   });
 
-  it('shows a search box above 8 options that filters, picks and reports no matches', async () => {
+  it('shows no search box for up to 10 options', async () => {
+    const user = userEvent.setup();
+    renderWithI18n(<Controlled options={many.slice(0, 10)} aria-label="Subject" />);
+    await user.click(screen.getByRole('combobox', { name: 'Subject' }));
+    expect(screen.queryByRole('combobox', { name: 'Search' })).toBeNull();
+  });
+
+  it('shows a search box above 10 options that filters, picks and reports no matches', async () => {
     const user = userEvent.setup();
     const onChange = vi.fn();
     renderWithI18n(<Controlled options={many} aria-label="Subject" onChange={onChange} />);
