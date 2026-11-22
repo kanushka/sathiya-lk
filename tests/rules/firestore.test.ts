@@ -50,6 +50,8 @@ const seed: Record<string, Record<string, unknown>> = {
   [`${paths.members('sd')}/u-dis`]: { uid: 'u-dis', role: 'admin', email: 'd@x.lk' },
   [`${paths.members('sd')}/u-dis-t`]: { uid: 'u-dis-t', role: 'teacher', teacherId: 'td' },
   [`${paths.invites('sd')}/e@x.lk`]: { email: 'e@x.lk', invitedBy: 'u-dis', createdAt: 1 },
+  [`${paths.templates('sd')}/p1`]: { name: 'Default', isDefault: true, mode: 'same', rows: [] },
+  [`${paths.grades('sd')}/g1`]: { number: 6, plan: [] },
   [`${paths.classes('sd')}/c1`]: { gradeId: 'g1', name: '6A', templateId: 'p1' },
   [`${paths.entries('sd', 'y1')}/e1`]: { day: 0, period: 1, classIds: ['c1'], lessons: [], teacherIds: ['td'] },
   [paths.publishedClass('sd', 'y1', 'c1')]: { cells: [] },
@@ -277,6 +279,8 @@ describe('disabled school', () => {
   const scoped = [
     `${paths.teachers('sd')}/td`,
     `${paths.subjects('sd')}/sub1`,
+    `${paths.templates('sd')}/p1`,
+    `${paths.grades('sd')}/g1`,
     `${paths.classes('sd')}/c1`,
     `${paths.members('sd')}/u-dis`,
     `${paths.members('sd')}/u-dis-t`,
@@ -286,7 +290,19 @@ describe('disabled school', () => {
     paths.publishedClass('sd', 'y1', 'c1'),
     paths.publishedTeacher('sd', 'y1', 'td'),
   ];
-  const lists = [paths.teachers('sd'), paths.subjects('sd'), paths.years('sd'), paths.members('sd'), paths.publishedClasses('sd', 'y1')];
+  const lists = [
+    paths.teachers('sd'),
+    paths.subjects('sd'),
+    paths.templates('sd'),
+    paths.grades('sd'),
+    paths.classes('sd'),
+    paths.members('sd'),
+    paths.invites('sd'),
+    paths.years('sd'),
+    paths.entries('sd', 'y1'),
+    paths.publishedClasses('sd', 'y1'),
+    paths.publishedTeachers('sd', 'y1'),
+  ];
 
   it('denies every admin write', async () => {
     await assertFails(update('disabledAdmin', `${paths.subjects('sd')}/sub1`, { short: 'X' }));
