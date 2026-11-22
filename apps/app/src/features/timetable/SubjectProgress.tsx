@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
 // Copyright (C) 2026 Kanushka Gayan
 
-import { classPlacement, weekCapacity, type Entry, type PlanItem, type SchoolClass } from '@sathiya/core';
+import { classPlacement, type Entry, type PlanItem, type SchoolClass } from '@sathiya/core';
 import { useTranslation } from 'react-i18next';
 import { cx } from '../../ui/cx';
 import { IconButton } from '../../ui/IconButton';
@@ -21,9 +21,7 @@ export function SubjectProgress({ cls, entries, onPin, onStop, activeKey }: Subj
   const { t } = useTranslation('timetable');
   const { lang } = useLang();
   const ctx = useSchool();
-  const template = ctx.templates.find((x) => x.id === cls.templateId);
-  const { rows, placed } = classPlacement(cls, entries, ctx);
-  const total = template ? weekCapacity(template) : 0;
+  const { rows, placed, needed: total } = classPlacement(cls, entries, ctx);
 
   return (
     <section className="rounded-[14px] border border-line bg-white p-4">

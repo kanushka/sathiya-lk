@@ -1,7 +1,8 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
 // Copyright (C) 2026 Kanushka Gayan
 
-import { C, ctx, entries6B, entry, S, T } from '@sathiya/core/fixtures';
+import type { SchoolContext } from '@sathiya/core';
+import { C, ctx, entries6B, entry, S, shortFridayTemplate, T, TPL } from '@sathiya/core/fixtures';
 import { screen, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { describe, expect, it, vi } from 'vitest';
@@ -74,5 +75,16 @@ describe('SubjectProgress', () => {
     renderWithSchool(<SubjectProgress cls={cls6C} entries={list} />, { ctx, entries: list });
     expect(row('Science')).toHaveTextContent('1/5');
     expect(screen.getByText('1')).toBeInTheDocument();
+  });
+
+  it('totals against the plan, not the template capacity, so it matches the dashboard', () => {
+    const rows = shortFridayTemplate.rows;
+    const shrunk: SchoolContext = {
+      ...ctx,
+      templates: ctx.templates.map((t) => (t.id === TPL.shortFriday ? { ...shortFridayTemplate, days: { 0: rows, 1: rows, 2: rows, 3: rows, 4: rows.slice(0, -3) } } : t)),
+    };
+    const cls6C = shrunk.classes.find((c) => c.id === C.c6c)!;
+    renderWithSchool(<SubjectProgress cls={cls6C} entries={[]} />, { ctx: shrunk });
+    expect(screen.getByText('/ 40 placed')).toBeInTheDocument();
   });
 });
