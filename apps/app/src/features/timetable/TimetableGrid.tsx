@@ -20,6 +20,7 @@ export interface GridOverlay {
   className: string;
   content: ReactNode;
   disabled?: boolean;
+  title?: string;
 }
 
 export interface TimetableGridProps {
@@ -154,6 +155,7 @@ export function TimetableGrid({ rows, cellsFor, selected, onSelect, onActivate, 
                   tabIndex={tabSlot && tabSlot.day === d && tabSlot.period === r.n ? 0 : -1}
                   aria-pressed={on}
                   aria-disabled={ov?.disabled || undefined}
+                  title={ov?.title}
                   aria-label={ov ? ov.label : cells.length ? t('grid.cell', label) : t(readOnly ? 'grid.cellEmpty' : 'grid.cellAdd', label)}
                   onClick={() => onClick(d, r.n)}
                   onKeyDown={(e) => onKeyDown(e, d, r.n)}

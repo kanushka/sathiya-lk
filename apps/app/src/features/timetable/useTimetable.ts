@@ -37,6 +37,9 @@ interface Overlay {
 
 const emptyOverlay = (): Overlay => ({ added: new Map(), removed: new Map() });
 
+const sameSlotKey = (e: Pick<Entry, 'day' | 'period' | 'classIds' | 'lessons' | 'groupKey'>) =>
+  JSON.stringify([e.day, e.period, [...e.classIds].sort(), e.lessons.map((l) => `${l.subjectId}:${l.teacherId ?? ''}`).sort(), e.groupKey ?? null]);
+
 function conflictsOf(err: ApiError): Conflict[] {
   const c = (err.details as { conflicts?: unknown } | undefined)?.conflicts;
   return Array.isArray(c) ? (c as Conflict[]) : [];
@@ -68,7 +71,12 @@ export function useTimetable(): UseTimetable {
 
   const entries = useMemo(() => {
     const base = serverEntries.filter((e) => !overlay.removed.has(e.id) && !overlay.added.has(e.id));
-    return [...base, ...[...overlay.added.values()].map((v) => v.entry)];
+    const ids = new Set(serverEntries.map((e) => e.id));
+    const slots = new Set(serverEntries.map(sameSlotKey));
+    const added = [...overlay.added.entries()].filter(([id, v]) =>
+      v.serverId ? !ids.has(v.serverId) : !id.startsWith('tmp-') || !slots.has(sameSlotKey(v.entry)),
+    );
+    return [...base, ...added.map(([, v]) => v.entry)];
   }, [serverEntries, overlay]);
 
   const reportError = useCallback(
@@ -119,7 +127,7 @@ export function useTimetable(): UseTimetable {
         setOverlay((o) => {
           if (o.added.get(id) !== rec) return o;
           const added = new Map(o.added);
-          if (alreadyOnServer) added.delete(id);
+          if (alreadyOnServer || o.removed.has(res.entryId)) added.delete(id);
           else added.set(id, { ...rec, settled: true, serverId: res.entryId });
           return { ...o, added };
         });
@@ -153,10 +161,13 @@ export function useTimetable(): UseTimetable {
         return true;
       }
       const targetId = pendingAdd?.serverId ?? id;
+      const server = serverRef.current.find((e) => e.id === targetId);
+      const twin = server && sameSlotKey(server);
       const rec: RemovedRec = { settled: false };
       setOverlay((o) => {
         const added = new Map(o.added);
         added.delete(id);
+        if (twin) for (const [k, v] of o.added) if (!v.settled && k.startsWith('tmp-') && sameSlotKey(v.entry) === twin) added.delete(k);
         return { added, removed: new Map(o.removed).set(targetId, rec) };
       });
       setInflight((n) => n + 1);

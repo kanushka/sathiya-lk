@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
 // Copyright (C) 2026 Kanushka Gayan
 
-import { classProgress, effectivePlan, weekCapacity, windowOf, type Entry, type SchoolClass } from '@sathiya/core';
+import { classProgress, effectivePlan, weekCapacity, windowOf, type Entry, type PlanItem, type SchoolClass } from '@sathiya/core';
 import { useTranslation } from 'react-i18next';
 import { cx } from '../../ui/cx';
 import { IconButton } from '../../ui/IconButton';
@@ -12,12 +12,12 @@ import { planItemColor, planItemName } from './labels';
 export interface SubjectProgressProps {
   cls: SchoolClass;
   entries: Entry[];
-  onPin?(subjectId: string): void;
+  onPin?(item: PlanItem): void;
   onStop?(): void;
-  activeSubjectId?: string;
+  activeKey?: string;
 }
 
-export function SubjectProgress({ cls, entries, onPin, onStop, activeSubjectId }: SubjectProgressProps) {
+export function SubjectProgress({ cls, entries, onPin, onStop, activeKey }: SubjectProgressProps) {
   const { t } = useTranslation('timetable');
   const { lang } = useLang();
   const ctx = useSchool();
@@ -42,8 +42,7 @@ export function SubjectProgress({ cls, entries, onPin, onStop, activeSubjectId }
           const done = r.placed >= r.needed;
           const over = r.placed > r.needed;
           const pct = r.needed > 0 ? Math.min(100, Math.round((r.placed / r.needed) * 100)) : 100;
-          const subjectId = r.item.kind === 'subject' ? r.item.subjectId : null;
-          const active = subjectId !== null && subjectId === activeSubjectId;
+          const active = r.key === activeKey;
           const name = planItemName(r.item, ctx, lang);
           return (
             <li
@@ -61,16 +60,14 @@ export function SubjectProgress({ cls, entries, onPin, onStop, activeSubjectId }
               </b>
               {onPin && (
                 <span className="flex w-9 shrink-0 justify-end">
-                  {subjectId !== null && (
-                    <IconButton
-                      data-pin-subject={subjectId}
-                      icon={active ? 'check' : 'pin'}
-                      label={active ? t('pin.listStop', { subject: name }) : t('pin.listPin', { subject: name })}
-                      variant={active ? 'primary' : 'secondary'}
-                      size="sm"
-                      onClick={() => (active ? onStop?.() : onPin(subjectId))}
-                    />
-                  )}
+                  <IconButton
+                    data-pin-key={r.key}
+                    icon={active ? 'check' : 'pin'}
+                    label={active ? t('pin.listStop', { subject: name }) : t('pin.listPin', { subject: name })}
+                    variant={active ? 'primary' : 'secondary'}
+                    size="sm"
+                    onClick={() => (active ? onStop?.() : onPin(r.item))}
+                  />
                 </span>
               )}
             </li>

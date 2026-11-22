@@ -147,6 +147,24 @@ describe('useTimetable', () => {
       expect(latest.entries.some((e) => e.id.startsWith('tmp-'))).toBe(false);
     });
 
+    it('no duplicate while the callable is still in flight after the snapshot', async () => {
+      const d = deferred<{ entryId: string }>();
+      const api: TimetableApi = { saveEntry: vi.fn(() => d.promise), deleteEntry: vi.fn() };
+      render(<Live api={api}><Probe /></Live>);
+      let p!: Promise<boolean>;
+      act(() => {
+        p = latest.save(draft);
+      });
+      act(() => setServer([...entries6B, serverCopy]));
+      expect(latest.entries).toHaveLength(entries6B.length + 1);
+      expect(latest.entries.some((e) => e.id === 'srv-1')).toBe(true);
+      await act(async () => {
+        d.resolve({ entryId: 'srv-1' });
+        await p;
+      });
+      expect(latest.entries).toHaveLength(entries6B.length + 1);
+    });
+
     it('no duplicate when callable resolves before the snapshot', async () => {
       const api: TimetableApi = { saveEntry: vi.fn().mockResolvedValue({ entryId: 'srv-1' }), deleteEntry: vi.fn() };
       render(<Live api={api}><Probe /></Live>);
@@ -185,6 +203,56 @@ describe('useTimetable', () => {
       });
       act(() => setServer(entries6B));
       expect(latest.entries).toHaveLength(entries6B.length);
+    });
+
+    it('removing the server copy while the save is in flight does not bring the lesson back', async () => {
+      const d = deferred<{ entryId: string }>();
+      const del = deferred<{ ok: true }>();
+      const api: TimetableApi = { saveEntry: vi.fn(() => d.promise), deleteEntry: vi.fn(() => del.promise) };
+      render(<Live api={api}><Probe /></Live>);
+      let p!: Promise<boolean>;
+      act(() => {
+        p = latest.save(draft);
+      });
+      act(() => setServer([...entries6B, serverCopy]));
+      act(() => {
+        void latest.remove('srv-1');
+      });
+      expect(latest.entries).toHaveLength(entries6B.length);
+      await act(async () => {
+        d.resolve({ entryId: 'srv-1' });
+        await p;
+      });
+      expect(latest.entries).toHaveLength(entries6B.length);
+      await act(async () => {
+        del.resolve({ ok: true });
+      });
+      act(() => setServer(entries6B));
+      expect(latest.entries).toHaveLength(entries6B.length);
+      expect(api.deleteEntry).toHaveBeenCalledTimes(1);
+    });
+
+    it('no ghost when the delete snapshot lands before the save callable returns', async () => {
+      const d = deferred<{ entryId: string }>();
+      const api: TimetableApi = { saveEntry: vi.fn(() => d.promise), deleteEntry: vi.fn().mockResolvedValue({ ok: true }) };
+      render(<Live api={api}><Probe /></Live>);
+      let p!: Promise<boolean>;
+      act(() => {
+        p = latest.save(draft);
+      });
+      act(() => setServer([...entries6B, serverCopy]));
+      await act(async () => {
+        await latest.remove('srv-1');
+      });
+      act(() => setServer(entries6B));
+      expect(latest.entries).toHaveLength(entries6B.length);
+      await act(async () => {
+        d.resolve({ entryId: 'srv-1' });
+        await p;
+      });
+      expect(latest.entries).toHaveLength(entries6B.length);
+      expect(latest.entries.some((e) => e.id.startsWith('tmp-') || e.id === 'srv-1')).toBe(false);
+      expect(api.deleteEntry).toHaveBeenCalledTimes(1);
     });
 
     it('no error toast when a save fails for an already removed temp entry', async () => {

@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
 // Copyright (C) 2026 Kanushka Gayan
 
-import type { Entry } from '@sathiya/core';
+import { singleSpec, type Entry } from '@sathiya/core';
 import { C, ctx, entries6B, entry, S, T } from '@sathiya/core/fixtures';
 import { fireEvent, screen, waitFor, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
@@ -14,7 +14,6 @@ function setup(props: Partial<AssignPickerProps> = {}, entries: Entry[] = entrie
     onClose: vi.fn(),
     onSave: vi.fn().mockResolvedValue(true),
     onPin: vi.fn(),
-    onGroup: vi.fn(),
     onCombine: vi.fn(),
   };
   renderWithSchool(<AssignPicker classId={C.c6b} slot={{ day: 2, period: 4 }} entries={entries} {...handlers} {...props} />, { ctx, entries });
@@ -66,7 +65,7 @@ describe('AssignPicker', () => {
     expect(teacherRow(/Mrs\. J\. Ranasinghe/)).toHaveAttribute('aria-selected', 'false');
     await userEvent.click(screen.getByRole('button', { name: 'Assign' }));
     expect(h.onSave).toHaveBeenCalledWith({ day: 2, period: 4, classIds: [C.c6b], lessons: [{ subjectId: S.sinhala, teacherId: T.rSilva }] });
-    await waitFor(() => expect(h.onPin).toHaveBeenCalledWith({ subjectId: S.sinhala, teacherId: T.rSilva }));
+    await waitFor(() => expect(h.onPin).toHaveBeenCalledWith(singleSpec(C.c6b, S.sinhala, T.rSilva)));
     expect(h.onClose).toHaveBeenCalled();
   });
 
@@ -99,7 +98,7 @@ describe('AssignPicker', () => {
     expect(silva).toHaveTextContent('SCC011 · Teaching 6A · Sinhala');
     expect(screen.getByRole('button', { name: 'Assign' })).toBeDisabled();
     await userEvent.click(within(silva).getByRole('button', { name: 'Use for other slots' }));
-    expect(h.onPin).toHaveBeenCalledWith({ subjectId: S.sinhala, teacherId: T.rSilva });
+    expect(h.onPin).toHaveBeenCalledWith(singleSpec(C.c6b, S.sinhala, T.rSilva));
     expect(h.onSave).not.toHaveBeenCalled();
   });
 
@@ -169,10 +168,85 @@ describe('AssignPicker', () => {
     await waitFor(() => expect(subjectSearch()).toHaveFocus());
   });
 
-  it('hands a group subject to the block editor', async () => {
-    const h = setup();
-    await pickSubject('Religion');
-    expect(h.onGroup).toHaveBeenCalledWith(expect.objectContaining({ kind: 'group', key: 'religion' }));
+  describe('group subjects', () => {
+    const noReligion = entries6B.filter((e) => e.groupKey !== 'religion');
+    const religionSpec = (classIds: string[]) => ({
+      classIds,
+      lessons: [
+        { subjectId: S.buddhism, teacherId: T.ananda },
+        { subjectId: S.catholicism, teacherId: T.mSilva },
+        { subjectId: S.islam, teacherId: T.rizan },
+      ],
+      groupKey: 'religion',
+    });
+
+    it('lists a group with its tag and option count and opens the group step', async () => {
+      setup();
+      expect(within(dialog()).getByRole('option', { name: /^Religion/ })).toHaveTextContent('Group lesson · 3 options');
+      await pickSubject('Religion');
+      expect(screen.getByRole('dialog', { name: 'Set teachers for Religion' })).toBeInTheDocument();
+      expect(screen.getByText('Wednesday · Period 4 · 09:50–10:30')).toBeInTheDocument();
+      await userEvent.click(screen.getByRole('button', { name: 'Back to subjects' }));
+      expect(screen.getByRole('dialog', { name: 'Choose a subject' })).toBeInTheDocument();
+    });
+
+    it('Assign saves one group entry at the slot, then starts pin mode and closes', async () => {
+      const h = setup();
+      await pickSubject('Religion');
+      await userEvent.click(screen.getByRole('button', { name: 'Assign' }));
+      expect(h.onSave).toHaveBeenCalledWith({ day: 2, period: 4, ...religionSpec([C.c6b, C.c6a]) });
+      await waitFor(() => expect(h.onPin).toHaveBeenCalledWith(religionSpec([C.c6b, C.c6a])));
+      expect(h.onClose).toHaveBeenCalled();
+    });
+
+    it('stays open when the group save fails', async () => {
+      const h = setup();
+      h.onSave.mockResolvedValue(false);
+      await pickSubject('Religion');
+      await userEvent.click(screen.getByRole('button', { name: 'Assign' }));
+      await waitFor(() => expect(h.onSave).toHaveBeenCalled());
+      expect(h.onPin).not.toHaveBeenCalled();
+      expect(h.onClose).not.toHaveBeenCalled();
+      await waitFor(() => expect(screen.getByRole('button', { name: 'Assign' })).toBeEnabled());
+    });
+
+    it('pins other slots without saving when the slot is busy', async () => {
+      const h = setup({}, [...entries6B, entry('x', 2, 4, [C.c12a], [[S.buddhism, T.ananda]])]);
+      await pickSubject('Religion');
+      expect(screen.getByText(/Ven\. Ananda Thero · Teaching 12A · Buddhism on Wed P4/)).toBeInTheDocument();
+      await userEvent.click(screen.getByRole('button', { name: 'Pin other slots' }));
+      expect(h.onSave).not.toHaveBeenCalled();
+      expect(h.onPin).toHaveBeenCalledWith(religionSpec([C.c6b, C.c6a]));
+      expect(h.onClose).toHaveBeenCalled();
+    });
+
+    it('whole week: lists groups and starts pinning without saving', async () => {
+      const h = setup({ slot: null });
+      expect(screen.getByText('Needed first · 11 subjects')).toBeInTheDocument();
+      await pickSubject('Religion');
+      expect(screen.getByRole('dialog', { name: 'Set teachers for Religion' })).toHaveTextContent('Whole week');
+      await userEvent.click(screen.getByRole('button', { name: 'Start pinning' }));
+      expect(h.onSave).not.toHaveBeenCalled();
+      expect(h.onPin).toHaveBeenCalledWith(religionSpec([C.c6b, C.c6a]));
+      expect(h.onClose).toHaveBeenCalled();
+    });
+
+    it('Escape in an option search closes the option, not the popup', async () => {
+      const h = setup();
+      await pickSubject('Religion');
+      const row = screen.getByRole('button', { name: /^Buddhism teacher:/ });
+      await userEvent.click(row);
+      await userEvent.type(screen.getByRole('combobox', { name: 'Search Buddhism teachers' }), '{Escape}');
+      expect(screen.queryByRole('listbox')).not.toBeInTheDocument();
+      expect(h.onClose).not.toHaveBeenCalled();
+      await waitFor(() => expect(row).toHaveFocus());
+    });
+
+    it('opens straight at the group step with groupKey', async () => {
+      setup({ slot: null, groupKey: 'religion' }, noReligion);
+      expect(screen.getByRole('dialog', { name: 'Set teachers for Religion' })).toBeInTheDocument();
+      expect(screen.getByRole('button', { name: 'Start pinning' })).toBeDisabled();
+    });
   });
 
   it('offers combining with other classes once a subject is chosen', async () => {
@@ -203,16 +277,16 @@ describe('AssignPicker', () => {
       expect(silva).toHaveAttribute('aria-selected', 'true');
       expect(screen.queryByRole('button', { name: 'Combine with other classes' })).not.toBeInTheDocument();
       await userEvent.click(screen.getByRole('button', { name: 'Start pinning' }));
-      expect(h.onPin).toHaveBeenCalledWith({ subjectId: S.sinhala, teacherId: T.rSilva });
+      expect(h.onPin).toHaveBeenCalledWith(singleSpec(C.c6b, S.sinhala, T.rSilva));
       expect(h.onSave).not.toHaveBeenCalled();
       expect(h.onClose).toHaveBeenCalled();
     });
 
-    it('hides group subjects after going back', async () => {
+    it('shows group subjects after going back', async () => {
       setup({ slot: null, subjectId: S.sinhala });
       await userEvent.click(screen.getByRole('button', { name: 'Back to subjects' }));
-      expect(within(dialog()).queryByRole('option', { name: /^Religion/ })).not.toBeInTheDocument();
-      expect(screen.getByText('Needed first · 9 subjects')).toBeInTheDocument();
+      expect(within(dialog()).getByRole('option', { name: /^Religion/ })).toBeInTheDocument();
+      expect(screen.getByText('Needed first · 11 subjects')).toBeInTheDocument();
     });
   });
 

@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
 // Copyright (C) 2026 Kanushka Gayan
 
-import { classProgress, effectivePlan, type Entry, type Lang, type PlanItem, type SchoolContext } from '@sathiya/core';
+import { classProgress, effectivePlan, type Entry, type Lang, type PlanItem, type SchoolContext, type Subject, type Teacher } from '@sathiya/core';
 import { useMemo } from 'react';
 import { planItemName } from './labels';
 
@@ -40,4 +40,16 @@ export function initials(name: string): string {
     .join('')
     .slice(0, 2)
     .toUpperCase();
+}
+
+export function teacherSubjects(teacher: Teacher, ctx: SchoolContext): Subject[] {
+  if (!teacher.isPrimary) return teacher.subjectIds.map((id) => ctx.subjects.find((s) => s.id === id)).filter((s): s is Subject => !!s);
+  const ids = new Set<string>();
+  const grades = ctx.grades.filter((g) => teacher.grades.includes(g.number));
+  const plans = grades.map((g) => g.plan).concat(ctx.classes.filter((c) => grades.some((g) => g.id === c.gradeId)).map((c) => c.planOverride ?? []));
+  for (const item of plans.flat()) {
+    if (item.kind === 'subject') ids.add(item.subjectId);
+    else item.optionSubjectIds.forEach((id) => ids.add(id));
+  }
+  return ctx.subjects.filter((s) => ids.has(s.id));
 }

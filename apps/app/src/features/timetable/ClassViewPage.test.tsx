@@ -2,7 +2,7 @@
 // Copyright (C) 2026 Kanushka Gayan
 
 import { fillWithClassTeacher } from '@sathiya/core';
-import { C, ctx, entries6B, entry, S, T } from '@sathiya/core/fixtures';
+import { C, ctx, entries6B, entry, G, S, T } from '@sathiya/core/fixtures';
 import { fireEvent, screen, waitFor, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { Route, Routes } from 'react-router-dom';
@@ -97,12 +97,11 @@ describe('ClassViewPage', () => {
     expect(slot('Wednesday', 4)).toHaveTextContent('Science');
   });
 
-  it('opens the block editor for a group subject', async () => {
+  it('opens the group teachers step for a group subject', async () => {
     setup();
     await activate('Wednesday', 4);
     await userEvent.click(within(screen.getByRole('dialog')).getByRole('option', { name: /^Religion/ }));
-    const dialog = await screen.findByRole('dialog', { name: 'Religion' });
-    expect(within(dialog).getByText('Classes')).toBeInTheDocument();
+    expect(screen.getByRole('dialog', { name: 'Set teachers for Religion' })).toBeInTheDocument();
   });
 
   it('opens the block editor with the entry for a group cell', async () => {
@@ -137,13 +136,12 @@ describe('ClassViewPage', () => {
 
   it('keeps a saved block visible after the block editor closes', async () => {
     const api = setup();
-    await activate('Wednesday', 4);
-    await userEvent.click(within(screen.getByRole('dialog')).getByRole('option', { name: /^Religion/ }));
+    await activate('Wednesday', 2);
     const dialog = await screen.findByRole('dialog', { name: 'Religion' });
     await userEvent.click(within(dialog).getByRole('button', { name: 'Save' }));
     await waitFor(() => expect(screen.queryByRole('dialog')).not.toBeInTheDocument());
     expect(api.saveEntry).toHaveBeenCalled();
-    expect(slot('Wednesday', 4)).toHaveTextContent('Religion');
+    expect(slot('Wednesday', 2)).toHaveTextContent('Religion');
   });
 
   it('fills empty periods with the class teacher after confirming, one at a time', async () => {
@@ -399,6 +397,85 @@ describe('ClassViewPage', () => {
       await userEvent.click(within(popup).getByRole('button', { name: 'Start pinning' }));
       expect(pinBar()).toHaveTextContent('Sinhala · Mr. R. Silva');
       expect(api.saveEntry).not.toHaveBeenCalled();
+    });
+
+    describe('group', () => {
+      const religionLessons = [
+        { subjectId: S.buddhism, teacherId: T.ananda },
+        { subjectId: S.catholicism, teacherId: T.mSilva },
+        { subjectId: S.islam, teacherId: T.rizan },
+      ];
+
+      function setupWith(list: typeof entries6B, api: TimetableApi = makeApi(), school = ctx) {
+        renderWithSchool(
+          <TimetableApiContext.Provider value={api}>
+            <Routes>
+              <Route path="/admin/timetable/class/:classId" element={<ClassViewPage />} />
+            </Routes>
+          </TimetableApiContext.Provider>,
+          { ctx: school, entries: list, route: `/admin/timetable/class/${C.c6b}` },
+        );
+        return api;
+      }
+
+      it('assigns a group at the slot and enters group pin mode', async () => {
+        const api = setup();
+        await activate('Wednesday', 4);
+        await userEvent.click(within(screen.getByRole('dialog')).getByRole('option', { name: /^Religion/ }));
+        await userEvent.click(within(screen.getByRole('dialog')).getByRole('button', { name: 'Assign' }));
+        await waitFor(() => expect(screen.queryByRole('dialog')).not.toBeInTheDocument());
+        expect(api.saveEntry).toHaveBeenCalledWith({
+          schoolId: ctx.school.id,
+          yearId: 'y-2026',
+          entry: { day: 2, period: 4, classIds: [C.c6b, C.c6a], lessons: religionLessons, groupKey: 'religion' },
+        });
+        expect(pinBar()).toHaveTextContent('Religion · 6A+6B');
+        expect(pinBar()).toHaveTextContent('Buddhism – Ven. Ananda Thero · Catholicism – Rev. Fr. M. Silva · Islam – Mr. A. Rizan');
+        expect(pinBar()).toHaveTextContent('4 of 3 placed');
+        expect(screen.getByLabelText('Pin mode legend')).toHaveTextContent('Free for all 3 teachers and 6A+6B');
+        expect(cellNamed(/^Wednesday, period 4, 09:50–10:30: Religion 6A\+6B, pinned, click to unpin$/)).toBeInTheDocument();
+        expect(cellNamed(/^Thursday, period 7, 12:10–12:50: pin Religion for 6A\+6B, over plan$/)).toBeInTheDocument();
+        expect(screen.getByRole('button', { name: 'Stop pinning Religion' }).closest('li')).toHaveAttribute('data-active', 'true');
+      });
+
+      it('starts group pin mode from the list with the latest lesson’s teachers and classes', async () => {
+        const api = setup();
+        await userEvent.click(screen.getByRole('button', { name: 'Pin Religion' }));
+        expect(screen.queryByRole('dialog')).not.toBeInTheDocument();
+        expect(pinBar()).toHaveTextContent('Religion · 6A+6B');
+        expect(api.saveEntry).not.toHaveBeenCalled();
+        await userEvent.click(within(pinBar()).getByRole('button', { name: 'Done' }));
+        await waitFor(() => expect(screen.getByRole('button', { name: 'Pin Religion' })).toHaveFocus());
+      });
+
+      it('opens the group step for the whole week from the list when there is no lesson yet', async () => {
+        setupWith(entries6B.filter((e) => e.groupKey !== 'religion'));
+        await userEvent.click(screen.getByRole('button', { name: 'Pin Religion' }));
+        const popup = screen.getByRole('dialog', { name: 'Set teachers for Religion' });
+        expect(popup).toHaveTextContent('Whole week');
+      });
+
+      it('opens the group step instead of a stale pin mode when a latest teacher is gone', async () => {
+        setupWith(entries6B, makeApi(), { ...ctx, teachers: ctx.teachers.filter((x) => x.id !== T.rizan) });
+        await userEvent.click(screen.getByRole('button', { name: 'Pin Religion' }));
+        expect(screen.getByRole('dialog', { name: 'Set teachers for Religion' })).toHaveTextContent('Whole week');
+        expect(screen.queryByRole('region', { name: 'Pin mode' })).not.toBeInTheDocument();
+      });
+
+      it('opens the group step when the latest lesson no longer matches the plan options', async () => {
+        const g6 = ctx.grades.find((g) => g.id === G.g6)!;
+        const plan = g6.plan.map((p) => (p.kind === 'group' && p.key === 'religion' ? { ...p, optionSubjectIds: [S.buddhism, S.catholicism] } : p));
+        setupWith(entries6B, makeApi(), { ...ctx, grades: ctx.grades.map((g) => (g.id === G.g6 ? { ...g, plan } : g)) });
+        await userEvent.click(screen.getByRole('button', { name: 'Pin Religion' }));
+        expect(screen.getByRole('dialog', { name: 'Set teachers for Religion' })).toHaveTextContent('Whole week');
+      });
+
+      it('labels free cells for the group', async () => {
+        setupWith(entries6B.filter((e) => !(e.groupKey === 'religion' && e.day === 3)));
+        await userEvent.click(screen.getByRole('button', { name: 'Pin Religion' }));
+        const free = cellNamed(/^Thursday, period 7, 12:10–12:50: pin Religion for 6A\+6B$/);
+        expect(free).toHaveTextContent('All free');
+      });
     });
 
     it('edits a filled cell as before when not pinning', async () => {

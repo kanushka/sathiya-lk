@@ -4,19 +4,22 @@
 import {
   effectivePlan,
   fillWithClassTeacher,
+  groupSpecIsCurrent,
+  latestGroupSpec,
+  planKey,
   periodsFor,
-  pickName,
   rowsFor,
   teacherDisplayName,
   windowOf,
   type DayIndex,
   type Entry,
   type EntryDraft,
+  type PlanItem,
   type SchoolClass,
   type SchoolContext,
   type TemplateRow,
 } from '@sathiya/core';
-import { useEffect, useMemo, useRef, useState, type ReactNode } from 'react';
+import { useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Navigate, useNavigate, useParams } from 'react-router-dom';
 import { useLang } from '../../app/LangProvider';
@@ -29,18 +32,17 @@ import { IconButton } from '../../ui/IconButton';
 import { LoadingState } from '../../ui/LoadingState';
 import { Modal } from '../../ui/Modal';
 import { Select } from '../../ui/Select';
-import { cx } from '../../ui/cx';
 import { AssignPicker } from './AssignPicker';
 import { BlockEditor } from './BlockEditor';
 import { blockKey, blockStateFor, isBlock, type BlockState } from './blockState';
-import { CellBody } from './Cell';
-import { busyLabel } from './conflictLabel';
 import { classCellView } from './labels';
 import { useAdminBase } from './paths';
-import { PinBar } from './PinBar';
+import { PinHeader, PinSection } from './PinPanel';
+import { pinOverlayCell } from './pinOverlay';
 import { SlotPicker } from './SlotPicker';
 import { SubjectProgress } from './SubjectProgress';
 import { TimetableGrid, type GridOverlay, type Slot } from './TimetableGrid';
+import { usePinExit } from './usePinExit';
 import { usePinMode } from './usePinMode';
 import { useTimetable } from './useTimetable';
 
@@ -80,31 +82,6 @@ export function ClassViewPage() {
   return <ClassView key={cls.id} cls={cls} classes={classes} />;
 }
 
-const pinCell = 'box-border border-[1.5px] border-dashed items-center px-2.5 text-center';
-const pinFree = `${pinCell} border-fill-success bg-success-soft/50 text-success`;
-const pinWarn = `${pinCell} border-fill-warning-strong bg-warning-soft text-warning`;
-const pinOver = `${pinCell} border-fill-over bg-danger-soft text-danger`;
-const pinSuggested = 'items-center border-[1.5px] border-solid border-fill-success bg-success-soft px-2.5 text-center text-success';
-const pinBusy = 'border-line bg-[repeating-linear-gradient(135deg,theme(colors.surface.3)_0_6px,theme(colors.line.DEFAULT)_6px_12px)] px-2.5 text-ink-muted';
-
-function PinGlyph({ sub }: { sub: string }) {
-  return (
-    <span className="flex flex-col items-center gap-0.5">
-      <Icon name="pin" size={18} strokeWidth={2} />
-      <span className="text-[11px] font-semibold">{sub}</span>
-    </span>
-  );
-}
-
-function Swatch({ className, children }: { className: string; children: ReactNode }) {
-  return (
-    <span className="inline-flex items-center gap-1.5 text-xs text-ink-soft">
-      <i aria-hidden="true" className={cx('inline-block h-3.5 w-3.5 rounded', className)} />
-      {children}
-    </span>
-  );
-}
-
 function ClassView({ cls, classes }: { cls: SchoolClass; classes: SchoolClass[] }) {
   const { t } = useTranslation('timetable');
   const { t: tc } = useTranslation('common');
@@ -121,11 +98,10 @@ function ClassView({ cls, classes }: { cls: SchoolClass; classes: SchoolClass[] 
 
   const [selected, setSelected] = useState<Slot | undefined>();
   const [picker, setPicker] = useState<{ day: DayIndex; period: number; editing: Entry } | null>(null);
-  const [assign, setAssign] = useState<{ slot: Slot | null; subjectId?: string } | null>(null);
-  const pin = usePinMode({ ctx, classId: cls.id, entries, save, remove });
+  const [assign, setAssign] = useState<{ slot: Slot | null; subjectId?: string; groupKey?: string } | null>(null);
+  const pin = usePinMode({ ctx, entries, save, remove, view: { kind: 'class' } });
   const { target: pinTarget, stop: stopPin } = pin;
-  const pinOrigin = useRef<{ day: DayIndex; period: number } | { subjectId: string } | null>(null);
-  const pinWasOn = useRef(false);
+  const pinOrigin = usePinExit(pinTarget, stopPin);
   const [block, setBlock] = useState<BlockState | null>(null);
   const [fill, setFill] = useState<{ drafts: EntryDraft[]; done: number; running: boolean } | null>(null);
 
@@ -141,34 +117,6 @@ function ClassView({ cls, classes }: { cls: SchoolClass; classes: SchoolClass[] 
   const index = classes.findIndex((c) => c.id === cls.id);
   const go = (c: SchoolClass | undefined) => c && navigate(`${base}/timetable/class/${c.id}`);
   const gradeNumber = (c: SchoolClass) => ctx.grades.find((g) => g.id === c.gradeId)?.number ?? '';
-
-  useEffect(() => {
-    if (pinTarget) {
-      pinWasOn.current = true;
-      return;
-    }
-    if (!pinWasOn.current) return;
-    pinWasOn.current = false;
-    const active = document.activeElement;
-    if (active && active !== document.body) return;
-    const origin = pinOrigin.current;
-    const el =
-      origin && 'subjectId' in origin
-        ? document.querySelector<HTMLElement>(`[data-pin-subject="${origin.subjectId}"]`)
-        : origin && document.querySelector<HTMLElement>(`[data-day="${origin.day}"][data-period="${origin.period}"]`);
-    el?.focus();
-  }, [pinTarget]);
-
-  useEffect(() => {
-    if (!pinTarget) return;
-    function onKey(e: KeyboardEvent) {
-      if (e.key !== 'Escape' || e.defaultPrevented || document.querySelector('[role="dialog"]')) return;
-      if (e.target instanceof HTMLElement && e.target.closest('input, select, textarea, [role="combobox"]')) return;
-      stopPin();
-    }
-    document.addEventListener('keydown', onKey);
-    return () => document.removeEventListener('keydown', onKey);
-  }, [pinTarget, stopPin]);
 
   function onActivate(day: DayIndex, period: number) {
     if (readOnly || windowOf(template, day, period) === null) return;
@@ -197,67 +145,45 @@ function ClassView({ cls, classes }: { cls: SchoolClass; classes: SchoolClass[] 
     else void remove(e.id);
   }
 
-  const pinSubject = pinTarget && ctx.subjects.find((x) => x.id === pinTarget.subjectId);
-  const pinTeacher = pinTarget && ctx.teachers.find((x) => x.id === pinTarget.teacherId);
-  const pinSubjectName = pinSubject ? pickName(pinSubject, lang) : (pinTarget?.subjectId ?? '');
-  const pinTeacherName = pinTeacher ? teacherDisplayName(pinTeacher, lang) : '';
-
   function pinOverlay(day: DayIndex, period: number): GridOverlay | null {
-    const c = pinTarget && pin.cellAt(day, period);
     const time = periodsFor(template, day).find((p) => p.period === period);
-    if (!c || !time) return null;
-    const where = { day: tc(`days.long.${day}`), n: period, time: `${time.start}–${time.end}` };
-    if (c.kind === 'taken') {
-      const view = classCellView(c.entry, ctx, lang, t, plan);
-      return { label: t('grid.cell', { ...where, title: `${view.title} ${view.sub}` }), className: 'border-transparent text-ink opacity-40', content: <CellBody cells={[view]} />, disabled: true };
-    }
-    if (c.kind === 'pinned') {
-      const view = classCellView(c.entry, ctx, lang, t, plan);
-      return {
-        label: t('pin.cellPinned', { ...where, subject: view.title, teacher: view.sub }),
-        className: 'border-transparent text-ink ring-2 ring-brand ring-offset-2',
-        content: <CellBody cells={[{ ...view, sub: t('pin.clickUnpin') }]} />,
-      };
-    }
-    if (c.kind === 'busy') {
-      const reason = busyLabel(t, c.busy, ctx, lang);
-      return {
-        label: t('pin.cellBusy', { ...where, reason }),
-        className: pinBusy,
-        content: (
-          <span className="flex flex-col gap-0.5">
-            <span className="text-[13px] font-bold">{t('pin.busy')}</span>
-            <span className="text-[11px]">{reason}</span>
-          </span>
-        ),
-        disabled: true,
-      };
-    }
-    const label = t('pin.cellPin', { ...where, subject: pinSubjectName, teacher: pinTeacherName });
-    if (pin.progress && pin.progress.left === 0) {
-      return { label: `${label}, ${t('pin.noteOver')}`, className: pinOver, content: <PinGlyph sub={t('pin.overPlan')} /> };
-    }
-    if (pin.isSuggested(day, period)) {
-      return {
-        label: `${label}, ${t('pin.noteSuggested')}`,
-        className: pinSuggested,
-        content: (
-          <span className="flex flex-col gap-0.5">
-            <span className="text-[13px] font-bold">{t('pin.suggested')}</span>
-            <span className="text-[11px]">{t('pin.clickPin')}</span>
-          </span>
-        ),
-      };
-    }
-    if (c.limit) {
-      return { label: `${label}, ${t('pin.noteLimit', { load: c.load, max: c.max })}`, className: pinWarn, content: <PinGlyph sub={t('pin.limit', { load: c.load, max: c.max })} /> };
-    }
-    if (c.subjectThatDay) {
-      const note = t('pin.subjectDay', { subject: pinSubjectName, day: tc(`days.short.${day}`) });
-      return { label: `${label}, ${note}`, className: pinWarn, content: <PinGlyph sub={note} /> };
-    }
-    return { label, className: pinFree, content: <PinGlyph sub={t('pin.free')} /> };
+    if (!pin.names || !time) return null;
+    return pinOverlayCell({
+      cell: pin.cellAt(day, period),
+      day,
+      n: period,
+      time: `${time.start}–${time.end}`,
+      ctx,
+      lang,
+      t,
+      tc,
+      names: pin.names,
+      progress: pin.progress,
+      suggested: pin.isSuggested(day, period),
+      group: pinTarget?.groupKey !== undefined,
+      entryView: (e) => classCellView(e, ctx, lang, t, plan),
+    });
   }
+
+  function pinFromList(item: PlanItem) {
+    pinOrigin.current = { key: planKey(item) };
+    if (item.kind === 'group') {
+      const spec = latestGroupSpec({ ctx, entries, classId: cls.id, groupKey: item.key });
+      if (spec && groupSpecIsCurrent({ ctx, classId: cls.id, spec })) {
+        pin.start(spec);
+        return;
+      }
+      if (pinTarget) stopPin();
+      setAssign({ slot: null, groupKey: item.key });
+      return;
+    }
+    if (pinTarget) stopPin();
+    setAssign({ slot: null, subjectId: item.subjectId });
+  }
+
+  const activePlanItem = pinTarget
+    ? plan.find((p) => (p.kind === 'group' ? p.key === pinTarget.groupKey : pinTarget.groupKey === undefined && p.subjectId === pinTarget.lessons[0]?.subjectId))
+    : undefined;
 
   function print() {
     window.open(`${base}/print/class/${cls.id}?year=${encodeURIComponent(yearId)}&auto=1`, '_blank', 'noopener');
@@ -314,38 +240,10 @@ function ClassView({ cls, classes }: { cls: SchoolClass; classes: SchoolClass[] 
         </div>
       </div>
 
-      {pinTarget && pin.progress ? (
-        <PinBar
-          subject={pinSubjectName}
-          teacher={pinTeacherName}
-          color={pinSubject?.color ?? '#E9E9E9'}
-          progress={pin.progress}
-          suggestedCount={pin.suggested.length}
-          onSuggest={pin.suggest}
-          onPinSuggested={() => void pin.pinSuggested()}
-          onDone={stopPin}
-        />
-      ) : (
-        !readOnly && <p className="mb-3.5 rounded-lg border border-line bg-white px-3.5 py-2.5 text-[13px] text-ink-soft">{t('pin.hint')}</p>
-      )}
+      <PinHeader pin={pin} hint={t('pin.hint')} readOnly={readOnly} />
 
       <div className="flex flex-wrap items-start gap-5">
-        <section
-          data-pin-mode={pinTarget ? 'true' : undefined}
-          className={cx(
-            'min-w-0 flex-[999_1_620px] overflow-x-auto rounded-[14px] border border-line bg-white p-4',
-            pinTarget && 'outline outline-2 outline-offset-2 outline-brand',
-          )}
-        >
-          {pinTarget && (
-            <div aria-label={t('pin.legendLabel')} className="mb-3 ml-1 flex flex-wrap gap-3.5">
-              <Swatch className="border-[1.5px] border-dashed border-fill-success bg-success-soft/50">{t('pin.legendFree', { teacher: pinTeacherName })}</Swatch>
-              <Swatch className="border-[1.5px] border-dashed border-fill-warning-strong bg-warning-soft">{t('pin.legendSubjectDay')}</Swatch>
-              <Swatch className="border-[1.5px] border-dashed border-fill-over bg-danger-soft">{t('pin.legendOver')}</Swatch>
-              <Swatch className="border-[1.5px] border-fill-success bg-success-soft">{t('pin.legendSuggested')}</Swatch>
-              <Swatch className="bg-[repeating-linear-gradient(135deg,theme(colors.surface.3)_0_6px,theme(colors.line.DEFAULT)_6px_12px)]">{t('pin.legendBusy')}</Swatch>
-            </div>
-          )}
+        <PinSection pin={pin} teacher={pin.names?.teacher ?? ''} className="flex-[999_1_620px]">
           <TimetableGrid
             rows={rows}
             cellsFor={(d, p) => {
@@ -360,10 +258,7 @@ function ClassView({ cls, classes }: { cls: SchoolClass; classes: SchoolClass[] 
             overlay={pinTarget ? pinOverlay : undefined}
             activateOnClick={!!pinTarget}
           />
-          <p role="status" className="mx-1 mb-0 mt-3 min-h-[1px] text-[13px] font-semibold text-success empty:mt-0">
-            {pin.message}
-          </p>
-        </section>
+        </PinSection>
         <div className="flex min-w-[280px] max-w-[360px] flex-[1_1_300px] flex-col gap-4">
           <SubjectProgress
             cls={cls}
@@ -371,13 +266,9 @@ function ClassView({ cls, classes }: { cls: SchoolClass; classes: SchoolClass[] 
             {...(readOnly
               ? {}
               : {
-                  onPin: (subjectId: string) => {
-                    if (pinTarget) stopPin();
-                    pinOrigin.current = { subjectId };
-                    setAssign({ slot: null, subjectId });
-                  },
+                  onPin: pinFromList,
                   onStop: stopPin,
-                  ...(pinTarget ? { activeSubjectId: pinTarget.subjectId } : {}),
+                  ...(activePlanItem ? { activeKey: planKey(activePlanItem) } : {}),
                 })}
           />
         </div>
@@ -388,15 +279,11 @@ function ClassView({ cls, classes }: { cls: SchoolClass; classes: SchoolClass[] 
           classId={cls.id}
           slot={assign.slot}
           {...(assign.subjectId ? { subjectId: assign.subjectId } : {})}
+          {...(assign.groupKey ? { groupKey: assign.groupKey } : {})}
           entries={entries}
           onClose={() => setAssign(null)}
           onSave={save}
           onPin={pin.start}
-          onGroup={(item) => {
-            const at = assign.slot;
-            setAssign(null);
-            if (at) setBlock({ baseClassId: cls.id, day: at.day, period: at.period, mode: { kind: 'group', item } });
-          }}
           onCombine={(subjectId) => {
             const at = assign.slot;
             setAssign(null);
