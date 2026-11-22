@@ -4,7 +4,7 @@
 import { useEffect, useLayoutEffect, useRef, useState, type DependencyList, type RefObject } from 'react';
 import { placePopover, type Placement } from '../popoverPlacement';
 
-export const LIST_MAX = 288;
+const LIST_MAX = 288;
 
 export function usePopover(
   triggerRef: RefObject<HTMLElement>,

@@ -95,17 +95,26 @@ describe('Select', () => {
   });
 
   it('jumps by typeahead, skipping disabled options and wrapping around', async () => {
-    const { user, trigger } = setup();
-    trigger.focus();
-    await user.keyboard('c');
-    expect(screen.getByRole('listbox')).toBeInTheDocument();
-    expect(activeOption()).toHaveTextContent('Cherry');
-    await new Promise((r) => setTimeout(r, 550));
-    await user.keyboard('b');
-    expect(activeOption()).toHaveTextContent('Blueberry');
-    await new Promise((r) => setTimeout(r, 550));
-    await user.keyboard('a');
-    expect(activeOption()).toHaveTextContent('Apple');
+    // Testing Library awaits a real 0ms timeout after each user-event call; frozen timers would hang it.
+    vi.useFakeTimers({ shouldAdvanceTime: true });
+    try {
+      renderWithI18n(<Controlled />);
+      const user = userEvent.setup({ advanceTimers: (ms) => vi.advanceTimersByTime(ms) });
+      screen.getByRole('combobox', { name: 'Fruit' }).focus();
+      await user.keyboard('c');
+      expect(screen.getByRole('listbox')).toBeInTheDocument();
+      expect(activeOption()).toHaveTextContent('Cherry');
+      await user.keyboard('h');
+      expect(activeOption()).toHaveTextContent('Cherry');
+      vi.advanceTimersByTime(500);
+      await user.keyboard('b');
+      expect(activeOption()).toHaveTextContent('Blueberry');
+      vi.advanceTimersByTime(500);
+      await user.keyboard('a');
+      expect(activeOption()).toHaveTextContent('Apple');
+    } finally {
+      vi.useRealTimers();
+    }
   });
 
   it('picks with Enter and Space and refocuses the trigger', async () => {
@@ -249,8 +258,26 @@ describe('Select', () => {
         <Select options={fruits} value="" onChange={() => {}} />
       </Field>,
     );
-    await user.click(screen.getByRole('combobox', { name: 'Fruit' }));
-    expect(screen.getByRole('listbox', { name: 'Fruit' })).toBeInTheDocument();
+    const trigger = screen.getByRole('combobox', { name: 'Fruit' });
+    await user.click(trigger);
+    const listbox = screen.getByRole('listbox', { name: 'Fruit' });
+    const labelledBy = document.getElementById(listbox.getAttribute('aria-labelledby') ?? '');
+    expect(labelledBy?.tagName).toBe('LABEL');
+    expect(labelledBy).toBe(screen.getByText('Fruit', { selector: 'label' }));
+    expect(labelledBy).not.toBe(trigger);
+  });
+
+  it('prefers aria-labelledby over aria-label for the listbox', async () => {
+    const user = userEvent.setup();
+    renderWithI18n(
+      <>
+        <span id="ext">External</span>
+        <Select options={fruits} value="" onChange={() => {}} aria-labelledby="ext" aria-label="Ignored" />
+      </>,
+    );
+    await user.click(screen.getByRole('combobox', { name: 'External' }));
+    expect(screen.getByRole('listbox')).toHaveAttribute('aria-labelledby', 'ext');
+    expect(screen.getByRole('listbox')).not.toHaveAttribute('aria-label');
   });
 
   it('renders a hidden input when name is set', () => {

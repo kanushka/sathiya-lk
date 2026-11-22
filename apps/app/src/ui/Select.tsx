@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
 // Copyright (C) 2026 Kanushka Gayan
 
-import { useEffect, useId, useMemo, useRef, useState, type KeyboardEvent, type ReactNode } from 'react';
+import { useEffect, useId, useLayoutEffect, useMemo, useRef, useState, type KeyboardEvent, type ReactNode } from 'react';
 import { useTranslation } from 'react-i18next';
 import { isComposing } from './composing';
 import { cx } from './cx';
@@ -92,6 +92,7 @@ export function Select<V extends string = string>({
   const popRef = useRef<HTMLDivElement>(null);
   const listRef = useRef<HTMLDivElement>(null);
   const searchRef = useRef<HTMLInputElement>(null);
+  const [fieldLabelId, setFieldLabelId] = useState<string>();
 
   const ordered = useMemo(() => groupOptions(options).flatMap((g) => g.options), [options]);
   const groups = useMemo(() => {
@@ -104,6 +105,13 @@ export function Select<V extends string = string>({
 
   const { pos, listMax } = usePopover(triggerRef, popRef, open, [flat.length], () => setOpen(false));
   const typeahead = useTypeahead(flat, setActive);
+
+  useLayoutEffect(() => {
+    if (!open || ariaLabelledBy || ariaLabel) return;
+    const label = triggerRef.current?.labels?.[0];
+    if (label && !label.id) label.id = `${baseId}-label`;
+    setFieldLabelId(label?.id);
+  }, [open, ariaLabelledBy, ariaLabel, baseId]);
 
   useEffect(() => {
     if (open && searchable) searchRef.current?.focus();
@@ -254,7 +262,6 @@ export function Select<V extends string = string>({
         <MenuPanel
           ref={popRef}
           pos={pos}
-          data-select-popover=""
           onMouseDown={(e) => {
             if (e.target !== searchRef.current) e.preventDefault();
           }}
@@ -294,8 +301,8 @@ export function Select<V extends string = string>({
             ref={listRef}
             id={listId}
             role="listbox"
-            aria-label={ariaLabel}
-            aria-labelledby={ariaLabel ? undefined : (ariaLabelledBy ?? baseId)}
+            aria-label={ariaLabelledBy ? undefined : ariaLabel}
+            aria-labelledby={ariaLabelledBy ?? (ariaLabel ? undefined : fieldLabelId)}
             style={{ maxHeight: listMax }}
             className="overflow-y-auto"
           >
