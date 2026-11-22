@@ -19,7 +19,7 @@ One `.xlsx` (download from the app) with three sheets. Headers bilingual ("Full 
 
 **Subjects**: Name (English)* · Name (Sinhala) · Short name (blank → auto via existing `subjectShort` logic, unique). Colour auto-assigned like manual add.
 
-**Teachers**: Staff ID (blank → next number with school prefix, `nextStaffNumber`) · Title (one of `TEACHER_TITLES`) · Full name* · Phone · Email · Subjects (comma-separated; match English name, Sinhala name or short name, case-insensitive) · Grades ("6-9, 11"; must be in `school.grades`) · Max periods/day (blank → same default as TeacherModal) · Primary teacher? (Yes/No, ඔව්/නැත; blank → No).
+**Teachers**: Staff ID (blank → next number with school prefix, `nextStaffNumber`) · Title (one of `TEACHER_TITLES`) · Full name* · Phone · Email · Subjects (comma-separated, or semicolon-separated when a name has a comma; match English name, Sinhala name or short name, case-insensitive) · Grades ("6-9, 11"; must be in `school.grades`) · Max periods/day (blank → same default as TeacherModal) · Primary teacher? (Yes/No, ඔව්/නැත; blank → No).
 
 **How to fill**: instructions in Sinhala and English, list of valid titles and the school's grades.
 
@@ -31,6 +31,7 @@ CSV upload also accepted: one CSV per kind (Teachers CSV or Subjects CSV, detect
 - Teacher subject references must resolve to an existing subject or one in the file's Subjects sheet.
 - Title in list; grades in school grades; phone/email valid (reuse existing validators); required fields present.
 - Max 200 rows per sheet. Unknown/missing headers → clear error.
+- Cells over 500 characters (subject/teacher names over 200) → tooLong. Cells Excel turned into a date, or a Phone that arrived as a number, get a specific "format as Plain text" error; the template pre-formats Staff ID, Phone and Grades as text. Error table shows the first 100 errors.
 - Server re-validates everything (never trust client); client validation is for the preview.
 
 ## Flow / UI
