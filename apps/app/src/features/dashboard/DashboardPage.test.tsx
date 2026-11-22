@@ -74,18 +74,27 @@ describe('dashboard page', () => {
     const user = setup();
     await user.click(screen.getByRole('button', { name: 'Publish to teachers' }));
     expect(call).not.toHaveBeenCalled();
-    await user.click(within(screen.getByRole('dialog')).getByRole('button', { name: 'Publish' }));
+    await user.click(within(screen.getByRole('dialog')).getByRole('button', { name: 'Publish anyway' }));
     expect(call).toHaveBeenCalledWith('publishYear', { schoolId: 'siripura', yearId: 'y-2026' });
     expect(await screen.findByText(/5 classes.*19 teachers/)).toBeInTheDocument();
+  });
+
+  it('summarises open problems in the publish dialog and relabels the confirm button', async () => {
+    const user = setup();
+    await user.click(screen.getByRole('button', { name: 'Publish to teachers' }));
+    const dialog = screen.getByRole('dialog');
+    expect(within(dialog).getByText('5 problems need attention:')).toBeInTheDocument();
+    expect(within(dialog).getByText('5 classes not complete')).toBeInTheDocument();
+    expect(within(dialog).queryByRole('button', { name: 'Publish' })).not.toBeInTheDocument();
   });
 
   it('keeps the modal usable when publish fails', async () => {
     vi.mocked(call).mockRejectedValue(new Error('boom'));
     const user = setup();
     await user.click(screen.getByRole('button', { name: 'Publish to teachers' }));
-    await user.click(within(screen.getByRole('dialog')).getByRole('button', { name: 'Publish' }));
+    await user.click(within(screen.getByRole('dialog')).getByRole('button', { name: 'Publish anyway' }));
     expect(await screen.findByText('Could not publish. Try again.')).toBeInTheDocument();
-    expect(within(screen.getByRole('dialog')).getByRole('button', { name: 'Publish' })).toBeEnabled();
+    expect(within(screen.getByRole('dialog')).getByRole('button', { name: 'Publish anyway' })).toBeEnabled();
   });
 
   it('creates a draft year from the label', async () => {
@@ -97,6 +106,24 @@ describe('dashboard page', () => {
     await user.type(within(dialog).getByLabelText('Year label'), ' 2027 ');
     await user.click(within(dialog).getByRole('button', { name: 'Create year' }));
     expect(api.createYear).toHaveBeenCalledWith('siripura', '2027');
+  });
+
+  it('rejects a malformed or duplicate year label', async () => {
+    const user = setup();
+    await user.click(screen.getByRole('button', { name: 'New year' }));
+    const dialog = screen.getByRole('dialog');
+    const create = within(dialog).getByRole('button', { name: 'Create year' });
+    await user.type(within(dialog).getByLabelText('Year label'), 'abc');
+    expect(within(dialog).getByText('Enter a 4-digit year, for example 2027')).toBeInTheDocument();
+    expect(create).toBeDisabled();
+    await user.clear(within(dialog).getByLabelText('Year label'));
+    await user.type(within(dialog).getByLabelText('Year label'), '2026');
+    expect(within(dialog).getByText('2026 already exists')).toBeInTheDocument();
+    expect(create).toBeDisabled();
+    await user.clear(within(dialog).getByLabelText('Year label'));
+    await user.type(within(dialog).getByLabelText('Year label'), '2027');
+    expect(create).toBeEnabled();
+    expect(api.createYear).not.toHaveBeenCalled();
   });
 
   it('hides write actions when read-only', () => {

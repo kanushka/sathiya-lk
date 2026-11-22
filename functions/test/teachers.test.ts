@@ -69,7 +69,7 @@ describe('createTeacher', () => {
     const sup = await signUp();
     await makeSuper(sup);
     await sup.call('setSchoolStatus', { schoolId: sid, status: 'disabled' });
-    await expectFnError(admin.call('createTeacher', { schoolId: sid, teacher: teacherInput('SCC010') }), 'permission-denied', 'not-allowed');
+    await expectFnError(admin.call('createTeacher', { schoolId: sid, teacher: teacherInput('SCC010') }), 'failed-precondition', 'school-disabled');
   });
 });
 

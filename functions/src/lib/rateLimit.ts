@@ -10,6 +10,7 @@ import { runTx } from './tx';
 export const REGISTER_PER_UID_PER_DAY = 3;
 export const REGISTER_PER_IP_PER_DAY = 10;
 export const REPORT_PER_IP_PER_DAY = 10;
+export const CHECK_CENSUS_PER_IP_PER_DAY = 60;
 export const VERIFY_PER_UID_PER_DAY = 5;
 export const RESET_PER_IP_PER_DAY = 10;
 export const VERIFY_PER_IP_PER_DAY = 20;

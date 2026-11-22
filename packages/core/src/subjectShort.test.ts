@@ -2,7 +2,7 @@
 // Copyright (C) 2026 Kanushka Gayan
 
 import { describe, expect, it } from 'vitest';
-import { shortTaken, suggestSubjectShort } from './subjectShort';
+import { nameTaken, shortTaken, suggestSubjectShort } from './subjectShort';
 import { STANDARD_SUBJECTS } from './standardSubjects';
 
 describe('suggestSubjectShort', () => {
@@ -59,5 +59,18 @@ describe('STANDARD_SUBJECTS', () => {
       expect(s.nameSi).not.toBe('');
       expect(s.color).toMatch(/^#[0-9A-F]{6}$/);
     }
+  });
+});
+
+describe('nameTaken', () => {
+  const existing = ['Mathematics', 'Science & Technology'];
+  it('matches ignoring case and surrounding or repeated whitespace', () => {
+    expect(nameTaken('mathematics', existing)).toBe(true);
+    expect(nameTaken('  MATHEMATICS ', existing)).toBe(true);
+    expect(nameTaken('Science  &  Technology', existing)).toBe(true);
+  });
+  it('is false for a different or empty name', () => {
+    expect(nameTaken('Maths', existing)).toBe(false);
+    expect(nameTaken('   ', ['', ' '])).toBe(false);
   });
 });

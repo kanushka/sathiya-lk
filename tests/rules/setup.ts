@@ -25,6 +25,7 @@ export const roles = {
   otherAdmin: { uid: 'u-other', claims: { sid: 's2', role: 'admin' } },
   otherTeacher: { uid: 'u-other-t', claims: { sid: 's2', role: 'teacher', tid: 't9' } },
   disabledAdmin: { uid: 'u-dis', claims: { sid: 'sd', role: 'admin' } },
+  disabledTeacher: { uid: 'u-dis-t', claims: { sid: 'sd', role: 'teacher', tid: 'td' } },
   noClaims: { uid: 'u-new', claims: {} },
 } as const;
 

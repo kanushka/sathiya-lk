@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
 // Copyright (C) 2026 Kanushka Gayan
-import { paths, type ApiErrorCode, type Claims, type School } from '@sathiya/core';
+import { EMAIL_RE, paths, type ApiErrorCode, type Claims, type School } from '@sathiya/core';
 import { HttpsError, type CallableRequest, type FunctionsErrorCode } from 'firebase-functions/v2/https';
 import { db } from './admin';
 
@@ -10,6 +10,7 @@ export function fail(code: FunctionsErrorCode, apiCode: ApiErrorCode, message: s
 
 export const invalid = (message: string): never => fail('invalid-argument', 'invalid', message);
 export const notAllowed = (message = 'Not allowed'): never => fail('permission-denied', 'not-allowed', message);
+export const schoolDisabled = (): never => fail('failed-precondition', 'school-disabled', 'School is suspended');
 
 export interface Caller {
   uid: string;
@@ -43,7 +44,8 @@ export async function requireSchoolAdmin(req: CallableRequest, sid: unknown): Pr
   if (!isAdminOf(caller.claims, schoolId)) notAllowed('Not an admin of this school');
   const snap = await db.doc(paths.school(schoolId)).get();
   const school = snap.data() as Omit<School, 'id'> | undefined;
-  if (!school || school.status === 'disabled') notAllowed('School is not active');
+  if (!school) notAllowed('School is not active');
+  if (school!.status === 'disabled') schoolDisabled();
   return { ...caller, sid: schoolId, school: school! };
 }
 
@@ -109,6 +111,6 @@ export function docIdList(v: unknown, name: string): string[] {
 
 export function email(v: unknown, name = 'email'): string {
   const e = str(v, name, 254).toLowerCase();
-  if (!/^[^\s@/]+@[^\s@/]+\.[^\s@/]+$/.test(e)) invalid(`${name} is not a valid email`);
+  if (!EMAIL_RE.test(e)) fail('invalid-argument', 'invalid', `${name} is not a valid email`, { field: name });
   return e;
 }

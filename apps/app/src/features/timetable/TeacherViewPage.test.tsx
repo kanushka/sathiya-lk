@@ -272,6 +272,17 @@ describe('TeacherViewPage', () => {
     expect(screen.getByText('Wednesday · 1A Sinhala · 14:00–14:40')).toBeInTheDocument();
   });
 
+  it('lists lessons outside their class period template separately, with delete', async () => {
+    const orphan = entry('o-6c', 4, 8, [C.c6c], [[S.science, T.gunasekara]]);
+    const api = setup(T.gunasekara, { entries: [orphan] });
+    expect(screen.queryByText('Outside school hours')).not.toBeInTheDocument();
+    const section = screen.getByRole('region', { name: 'Outside the period template' });
+    expect(section).toHaveTextContent('Fri P8 · 6C · Science');
+    await userEvent.click(within(section).getByRole('button', { name: 'Delete Fri P8 Science' }));
+    await userEvent.click(within(screen.getByRole('dialog', { name: 'Delete this entry?' })).getByRole('button', { name: 'Delete' }));
+    expect(api.deleteEntry).toHaveBeenCalledWith(expect.objectContaining({ entryId: 'o-6c' }));
+  });
+
   it('read-only: load bars but no picker, pin hint or delete', async () => {
     ro.value = true;
     const api = setup(T.perera);

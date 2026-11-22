@@ -13,6 +13,10 @@
     "newTitle": "New timetable year",
     "label": "Year label",
     "labelHint": "For example 2027. It starts as an empty draft.",
+    "errors": {
+      "format": "Enter a 4-digit year, for example 2027",
+      "duplicate": "{{label}} already exists"
+    },
     "create": "Create year",
     "cancel": "Cancel",
     "created": "Year created",
@@ -22,8 +26,24 @@
     "button": "Publish to teachers",
     "title": "Publish the {{year}} timetable?",
     "body": "Teachers will see the timetable as it is now. You can publish again after making changes.",
-    "clashes": "There are still {{n}} clashes in this timetable.",
+    "problemsTitle_one": "{{count}} problem needs attention:",
+    "problemsTitle_other": "{{count}} problems need attention:",
+    "problems": {
+      "incomplete_one": "{{count}} class not complete",
+      "incomplete_other": "{{count}} classes not complete",
+      "clashes_one": "{{count}} clash",
+      "clashes_other": "{{count}} clashes",
+      "overLimit_one": "{{count}} teacher over the daily limit",
+      "overLimit_other": "{{count}} teachers over the daily limit",
+      "overTarget_one": "{{count}} subject over its plan",
+      "overTarget_other": "{{count}} subjects over their plan",
+      "orphaned_one": "{{count}} entry outside the period template",
+      "orphaned_other": "{{count}} entries outside the period template",
+      "groupNoTeacher_one": "{{count}} option without a teacher",
+      "groupNoTeacher_other": "{{count}} options without a teacher"
+    },
     "confirm": "Publish",
+    "confirmAnyway": "Publish anyway",
     "cancel": "Cancel",
     "done": "Published: {{classes}} classes, {{teachers}} teachers",
     "failed": "Could not publish. Try again."

@@ -23,6 +23,16 @@ const focusable =
 
 const stack: symbol[] = [];
 
+function inertOutside(keep: HTMLElement): () => void {
+  const changed: Element[] = [];
+  for (const el of Array.from(document.body.children)) {
+    if (el === keep || el.hasAttribute('inert') || el.matches('[aria-live], script')) continue;
+    el.setAttribute('inert', '');
+    changed.push(el);
+  }
+  return () => changed.forEach((el) => el.removeAttribute('inert'));
+}
+
 function focusables(root: HTMLElement): HTMLElement[] {
   return Array.from(root.querySelectorAll<HTMLElement>(focusable)).filter((el) => !el.closest('[data-menu-panel]'));
 }
@@ -37,6 +47,7 @@ function ModalPanel({ title, subtitle, onClose, footer, width = 560, zoom, busy 
   const titleId = useId();
   const panelRef = useRef<HTMLElement>(null);
   const bodyRef = useRef<HTMLDivElement>(null);
+  const backdropRef = useRef<HTMLDivElement>(null);
   const pressedOnBackdrop = useRef(false);
   const onCloseRef = useRef(onClose);
   onCloseRef.current = busy ? () => undefined : onClose;
@@ -46,6 +57,7 @@ function ModalPanel({ title, subtitle, onClose, footer, width = 560, zoom, busy 
     stack.push(id);
     const previous = document.activeElement as HTMLElement | null;
     const panel = panelRef.current;
+    const restoreInert = backdropRef.current ? inertOutside(backdropRef.current) : undefined;
     const first = (bodyRef.current && focusables(bodyRef.current)[0]) ?? (panel && focusables(panel)[0]) ?? panel;
     first?.focus();
     const overflow = document.body.style.overflow;
@@ -80,6 +92,7 @@ function ModalPanel({ title, subtitle, onClose, footer, width = 560, zoom, busy 
     document.addEventListener('keydown', onKeyDown);
     return () => {
       document.removeEventListener('keydown', onKeyDown);
+      restoreInert?.();
       stack.splice(stack.indexOf(id), 1);
       document.body.style.overflow = overflow;
       previous?.focus?.();
@@ -102,6 +115,7 @@ function ModalPanel({ title, subtitle, onClose, footer, width = 560, zoom, busy 
 
   return (
     <div
+      ref={backdropRef}
       data-testid="modal-backdrop"
       style={zoom && zoom !== 1 ? { zoom } : undefined}
       className="fixed inset-0 z-50 flex items-center justify-center overflow-y-auto bg-navy/45 p-4 sm:p-8"

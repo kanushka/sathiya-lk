@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
 // Copyright (C) 2026 Kanushka Gayan
 import { useCallback, useState } from 'react';
-import { ApiError, call } from '../../lib/callable';
+import { ApiError, call, isSchoolDisabled } from '../../lib/callable';
 
 export type SetupItemKind = 'teacher' | 'subject' | 'class' | 'template' | 'grade';
 
@@ -12,6 +12,7 @@ export interface DeleteSetupItem {
   pending: boolean;
   usedIn: number | null;
   failed: boolean;
+  suspended: boolean;
   reset: () => void;
 }
 
@@ -19,10 +20,12 @@ export function useDeleteSetupItem(): DeleteSetupItem {
   const [pending, setPending] = useState(false);
   const [usedIn, setUsedIn] = useState<number | null>(null);
   const [failed, setFailed] = useState(false);
+  const [suspended, setSuspended] = useState(false);
 
   const run = useCallback(async (schoolId: string, kind: SetupItemKind, id: string): Promise<DeleteOutcome> => {
     setPending(true);
     setFailed(false);
+    setSuspended(false);
     try {
       const res = await call('deleteSetupItem', { schoolId, kind, id });
       if (res.deleted) return 'deleted';
@@ -34,6 +37,7 @@ export function useDeleteSetupItem(): DeleteSetupItem {
         setUsedIn(typeof n === 'number' ? n : 0);
         return 'in-use';
       }
+      setSuspended(isSchoolDisabled(err));
       setFailed(true);
       return 'error';
     } finally {
@@ -44,7 +48,8 @@ export function useDeleteSetupItem(): DeleteSetupItem {
   const reset = useCallback(() => {
     setUsedIn(null);
     setFailed(false);
+    setSuspended(false);
   }, []);
 
-  return { run, pending, usedIn, failed, reset };
+  return { run, pending, usedIn, failed, suspended, reset };
 }

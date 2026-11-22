@@ -35,6 +35,14 @@ describe('fillWithClassTeacher', () => {
     expect(monday.map((d) => d.period)).toEqual([1, 2, 3, 4, 5, 6, 7]);
   });
 
+  it('does not count a lesson outside the class template as placed', () => {
+    const orphan = entry('o', 4, 8, [C.c6c], [[S.science, T.dissanayake]]);
+    const without = fillWithClassTeacher({ ctx, entries: [], classId: C.c6c });
+    const withOrphan = fillWithClassTeacher({ ctx, entries: [orphan], classId: C.c6c });
+    const science = (ds: typeof without) => ds.filter((d) => d.lessons[0]?.subjectId === S.science).length;
+    expect(science(withOrphan)).toBe(science(without));
+  });
+
   it('leaves slots empty once no subject item needs more', () => {
     const drafts = fillWithClassTeacher({ ctx, entries: [], classId: C.c6b });
     const plan = ctx.grades.find((g) => g.id === 'g-6')!.plan;

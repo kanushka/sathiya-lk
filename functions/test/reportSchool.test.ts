@@ -48,6 +48,7 @@ describe('reportSchool', () => {
     await expectFnError(report(c, { schoolId: sid }), 'invalid-argument', 'invalid');
     await expectFnError(report(c, { schoolId: sid, reason: 'other', details: 'x'.repeat(1001) }), 'invalid-argument', 'invalid');
     await expectFnError(report(c, { schoolId: sid, reason: 'other', email: 'not-an-email' }), 'invalid-argument', 'invalid');
+    await expect(report(c, { schoolId: sid, reason: 'other', email: 'not-an-email' })).rejects.toMatchObject({ details: { field: 'email' } });
     await expectFnError(report(c, { reason: 'other' }), 'invalid-argument', 'invalid');
     expect(await reportsFor(sid)).toHaveLength(0);
   });

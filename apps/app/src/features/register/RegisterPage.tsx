@@ -39,11 +39,35 @@ export function RegisterPage() {
   const [confirmed, setConfirmed] = useState(false);
   const [censusTaken, setCensusTaken] = useState<{ schoolId?: string } | null>(null);
   const [reporting, setReporting] = useState(false);
+  const [checking, setChecking] = useState(false);
   const needsGate = gate || (!confirmed && isUnverifiedPasswordUser(user));
+  const draftVersion = useRef(0);
 
   function editSchool(next: SchoolDraft) {
+    draftVersion.current++;
+    setChecking(false);
     if (next.censusNo !== school.censusNo || next.type !== school.type) setCensusTaken(null);
     setSchool(next);
+  }
+
+  async function nextFromSchool() {
+    const census = school.type !== 'government' && school.noCensus ? '' : school.censusNo;
+    if (census === '') {
+      setStep(2);
+      return;
+    }
+    setChecking(true);
+    const version = draftVersion.current;
+    let available = true;
+    try {
+      available = await api.censusAvailable(census);
+    } catch {
+      available = true;
+    }
+    if (version !== draftVersion.current) return;
+    setChecking(false);
+    if (available) setStep(2);
+    else setCensusTaken({});
   }
 
   async function submit() {
@@ -172,7 +196,8 @@ export function RegisterPage() {
           <StepSchool
             value={school}
             onChange={editSchool}
-            onNext={() => setStep(2)}
+            onNext={() => void nextFromSchool()}
+            checking={checking}
             censusTaken={!!censusTaken}
             onReport={() => setReporting(true)}
           />

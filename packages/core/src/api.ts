@@ -17,6 +17,7 @@ export const callables = {
   reportSchool: 'reportSchool',
   sendAuthEmail: 'sendAuthEmail',
   releaseCensusNo: 'releaseCensusNo',
+  checkCensusNo: 'checkCensusNo',
   recordSignIn: 'recordSignIn',
 } as const;
 
@@ -48,6 +49,8 @@ export interface SendAuthEmailReq { kind: AuthEmailKind; email?: string; lang: L
 export interface SendAuthEmailRes { ok: true }
 export interface ReleaseCensusNoReq { schoolId: string }
 export interface ReleaseCensusNoRes { censusNo: string; freed: boolean }
+export interface CheckCensusNoReq { censusNo: string }
+export interface CheckCensusNoRes { available: boolean }
 interface CallableMap {
   registerSchool: { req: RegisterSchoolReq; res: RegisterSchoolRes };
   createTeacher: { req: CreateTeacherReq; res: CreateTeacherRes };
@@ -62,8 +65,9 @@ interface CallableMap {
   reportSchool: { req: ReportSchoolReq; res: ReportSchoolRes };
   sendAuthEmail: { req: SendAuthEmailReq; res: SendAuthEmailRes };
   releaseCensusNo: { req: ReleaseCensusNoReq; res: ReleaseCensusNoRes };
+  checkCensusNo: { req: CheckCensusNoReq; res: CheckCensusNoRes };
   recordSignIn: { req: RecordSignInReq; res: RecordSignInRes };
 }
 export type CallableName = keyof typeof callables;
 export type CallableTypes = { [K in CallableName]: CallableMap[K] };
-export type ApiErrorCode = 'clash' | 'in-use' | 'not-allowed' | 'invalid' | 'census-taken' | 'email-unverified' | 'already-has-school' | 'rate-limited';
+export type ApiErrorCode = 'clash' | 'in-use' | 'not-allowed' | 'invalid' | 'census-taken' | 'email-unverified' | 'already-has-school' | 'rate-limited' | 'school-disabled';

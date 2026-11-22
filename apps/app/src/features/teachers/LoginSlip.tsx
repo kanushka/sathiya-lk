@@ -72,17 +72,26 @@ export function LoginSlip({ slip, hasStaffId, onReset, resetting, resetError, fo
       </div>
       {hasStaffId && (
         <div className="flex flex-wrap gap-2">
-          <Button ref={printRef} size="sm" onClick={() => void printSlips([slip], labels)}>
+          <Button ref={printRef} size="sm" disabled={!slip.password} onClick={() => void printSlips([slip], labels)}>
             {t('slip.print')}
           </Button>
-          <a
-            href={whatsappUrl(slipText(slip, labels))}
-            target="_blank"
-            rel="noreferrer"
-            className="inline-flex h-8 items-center rounded-lg border border-line-strong bg-white px-3 text-[13px] font-semibold text-ink hover:bg-surface"
-          >
-            {t('slip.whatsapp')}
-          </a>
+          {slip.password ? (
+            <a
+              href={whatsappUrl(slipText(slip, labels))}
+              target="_blank"
+              rel="noreferrer"
+              className="inline-flex h-8 items-center rounded-lg border border-line-strong bg-white px-3 text-[13px] font-semibold text-ink hover:bg-surface"
+            >
+              {t('slip.whatsapp')}
+            </a>
+          ) : (
+            <span
+              aria-disabled="true"
+              className="inline-flex h-8 cursor-not-allowed items-center rounded-lg border border-line bg-white px-3 text-[13px] font-semibold text-ink-muted opacity-60"
+            >
+              {t('slip.whatsapp')}
+            </span>
+          )}
           {onReset && (
             <Button size="sm" variant="danger" onClick={onReset} disabled={resetting}>
               {resetting ? t('slip.resetting') : t('slip.reset')}
@@ -90,6 +99,7 @@ export function LoginSlip({ slip, hasStaffId, onReset, resetting, resetError, fo
           )}
         </div>
       )}
+      {hasStaffId && onReset && !slip.password && <p className="-mt-2 text-xs text-ink-muted">{t('slip.needsReset')}</p>}
       {resetError && (
         <FormError size="field">{t('slip.resetFailed')}</FormError>
       )}

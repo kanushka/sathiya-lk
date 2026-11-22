@@ -70,8 +70,8 @@ function WeekRow({ n, start, snap, lang }: { n: number; start?: string; snap: Te
                     className="rounded-md border-l-4 bg-surface-2 px-1.5 py-1"
                     style={{ borderLeftColor: cell.color || 'var(--brand)' }}
                   >
-                    <b className="block truncate text-xs">{text.title}</b>
-                    <span className="block truncate text-[10px] text-ink-muted">{text.sub}</span>
+                    <b className="line-clamp-2 break-words text-xs">{text.title}</b>
+                    <span className="line-clamp-2 break-words text-[10px] text-ink-muted">{text.sub}</span>
                     {!start && <span className="block text-[10px] text-ink-muted">{clock(cell.start)}</span>}
                   </div>
                 );

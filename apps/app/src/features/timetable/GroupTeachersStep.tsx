@@ -3,8 +3,8 @@
 
 import {
   blockMates,
-  classProgress,
-  effectivePlan,
+  classPlacement,
+  classRemaining,
   latestGroupSpec,
   pickName,
   pinSlots,
@@ -29,6 +29,7 @@ import { isComposing } from '../../ui/composing';
 import { cx } from '../../ui/cx';
 import { inputClass } from '../../ui/Field';
 import { Icon } from '../../ui/Icon';
+import { FullMateChip } from './FullMateChip';
 import { blockerText, classNames } from './conflictLabel';
 import { limitWarning, planItemColor, teacherReason } from './labels';
 import { initials, type GroupItem } from './pickerData';
@@ -79,8 +80,10 @@ export function GroupTeachersStep(props: GroupTeachersStepProps) {
     Object.fromEntries(options.map((s) => [s, s === lockedSubjectId ? (lockedTeacherId ?? null) : (preferred.get(s) ?? null)])),
   );
   const [classIds, setClassIds] = useState<string[]>(() => {
-    const init = initialClassIds ?? latestGroupSpec({ ctx, entries, classId, groupKey: item.key })?.classIds ?? [classId];
-    return [classId, ...mates.filter((m) => init.includes(m.id)).map((m) => m.id)];
+    if (initialClassIds) return [classId, ...mates.filter((m) => initialClassIds.includes(m.id)).map((m) => m.id)];
+    const latest = latestGroupSpec({ ctx, entries, classId, groupKey: item.key })?.classIds ?? [classId];
+    const hasRoom = (id: string) => classRemaining({ ctx, entries, classId: id, item: { groupKey: item.key } }).left > 0;
+    return [classId, ...mates.filter((m) => latest.includes(m.id) && hasRoom(m.id)).map((m) => m.id)];
   });
   const [open, setOpen] = useState<string | null>(null);
   const [query, setQuery] = useState('');
@@ -107,7 +110,7 @@ export function GroupTeachersStep(props: GroupTeachersStepProps) {
 
   useEffect(() => {
     const id = inputRef.current?.getAttribute('aria-activedescendant');
-    if (id) document.getElementById(id)?.scrollIntoView?.({ block: 'nearest' });
+    if (id) document.getElementById(id)?.scrollIntoView({ block: 'nearest' });
   });
 
   const slotOptions = useMemo(
@@ -159,6 +162,10 @@ export function GroupTeachersStep(props: GroupTeachersStepProps) {
   const spec: PinSpec | null =
     missing.length === 0 ? { classIds, lessons: options.map((s) => ({ subjectId: s, teacherId: picked[s]! })), groupKey: item.key } : null;
   const teacherCount = new Set(chosenIds).size;
+  const fullMate = mates
+    .filter((m) => classIds.includes(m.id))
+    .map((m) => ({ m, room: classRemaining({ ctx, entries, classId: m.id, item: { groupKey: item.key } }) }))
+    .find((x) => x.room.left === 0);
 
   let note = '';
   let tone: 'ok' | 'need' | 'bad' = 'ok';
@@ -169,6 +176,9 @@ export function GroupTeachersStep(props: GroupTeachersStepProps) {
     tone = 'need';
   } else if (dupIds.size > 0) {
     note = t('assign.groupDuplicate');
+    tone = 'bad';
+  } else if (fullMate) {
+    note = t('assign.mateFull', { class: fullMate.m.name, placed: fullMate.room.placed, needed: fullMate.room.needed });
     tone = 'bad';
   } else if (slot && where && spec) {
     const cell = pinSlots({ ctx, entries, spec }).find((s) => s.day === slot.day && s.period === slot.period)?.cell;
@@ -186,7 +196,7 @@ export function GroupTeachersStep(props: GroupTeachersStepProps) {
   } else {
     note = t('assign.groupWeek', { count: teacherCount, classes: classesLabel });
   }
-  const disabled = !spec || dupIds.size > 0 || pending;
+  const disabled = !spec || dupIds.size > 0 || !!fullMate || pending;
 
   async function confirm() {
     if (!spec || disabled) return;
@@ -222,8 +232,7 @@ export function GroupTeachersStep(props: GroupTeachersStepProps) {
     setClassIds((cur) => (cur.includes(id) ? cur.filter((c) => c !== id) : [classId, ...mates.filter((m) => m.id === id || cur.includes(m.id)).map((m) => m.id)]));
   }
 
-  const plan = effectivePlan(cls, grade);
-  const progress = classProgress(classId, entries, plan).find((r) => r.key === planKey(item));
+  const progress = classPlacement(cls, entries, ctx).rows.find((r) => r.key === planKey(item));
   const need = progress
     ? progress.placed < progress.needed
       ? t('picker.needs', { count: progress.needed - progress.placed })
@@ -427,6 +436,10 @@ export function GroupTeachersStep(props: GroupTeachersStepProps) {
             </span>
             {mates.map((m) => {
               const on = classIds.includes(m.id);
+              const room = classRemaining({ ctx, entries, classId: m.id, item: { groupKey: item.key } });
+              if (!on && room.left === 0) {
+                return <FullMateChip key={m.id} name={m.name} placed={room.placed} needed={room.needed} />;
+              }
               const busy = !!slot && entries.some((e) => e.day === slot.day && e.period === slot.period && e.classIds.includes(m.id));
               return (
                 <ToggleChip key={m.id} pressed={on} onToggle={() => toggleMate(m.id)}>
@@ -444,7 +457,7 @@ export function GroupTeachersStep(props: GroupTeachersStepProps) {
   const footer = (
     <>
       <span className={cx('flex-1 text-xs font-semibold', tone === 'ok' ? 'text-success' : tone === 'need' ? 'text-warning' : 'text-danger')}>{note}</span>
-      <Button variant="primary" loading={pending} disabled={!spec || dupIds.size > 0} onClick={() => void confirm()}>
+      <Button variant="primary" loading={pending} disabled={!spec || dupIds.size > 0 || !!fullMate} onClick={() => void confirm()}>
         {label}
       </Button>
     </>

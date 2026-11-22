@@ -6,6 +6,7 @@ import userEvent from '@testing-library/user-event';
 import { describe, expect, it, vi } from 'vitest';
 import { renderWithI18n } from '../test/render';
 import { useState } from 'react';
+import { createPortal } from 'react-dom';
 import { Button } from './Button';
 import { Modal } from './Modal';
 
@@ -104,5 +105,56 @@ describe('Modal', () => {
       </Modal>,
     );
     expect(screen.queryByRole('dialog')).not.toBeInTheDocument();
+  });
+
+  describe('inert background', () => {
+    function Page({ nested = false }: { nested?: boolean }) {
+      const [open, setOpen] = useState(false);
+      const [inner, setInner] = useState(false);
+      return (
+        <>
+          <div id="app-root">
+            <button onClick={() => setOpen(true)}>Open outer</button>
+          </div>
+          {createPortal(<div aria-live="polite" data-testid="live" />, document.body)}
+          <Modal open={open} title="Outer" onClose={() => setOpen(false)} footer={nested ? <button onClick={() => setInner(true)}>Open inner</button> : null}>
+            <input aria-label="Outer field" />
+          </Modal>
+          <Modal open={inner} title="Inner" onClose={() => setInner(false)}>
+            <input aria-label="Inner field" />
+          </Modal>
+        </>
+      );
+    }
+
+    it('makes the page behind inert while open and restores it on close', async () => {
+      const user = userEvent.setup();
+      renderWithI18n(<Page />);
+      const root = document.getElementById('app-root') as HTMLElement;
+      expect(root.closest('[inert]')).toBeNull();
+      await user.click(screen.getByRole('button', { name: 'Open outer' }));
+      expect(root.closest('[inert]')).not.toBeNull();
+      expect(screen.getByRole('dialog').closest('[inert]')).toBeNull();
+      expect(screen.getByTestId('live').closest('[inert]')).toBeNull();
+      await user.keyboard('{Escape}');
+      expect(root.closest('[inert]')).toBeNull();
+      expect(document.querySelector('[inert]')).toBeNull();
+    });
+
+    it('keeps the outer dialog inert under a nested one until the nested one closes', async () => {
+      const user = userEvent.setup();
+      renderWithI18n(<Page nested />);
+      const root = document.getElementById('app-root') as HTMLElement;
+      await user.click(screen.getByRole('button', { name: 'Open outer' }));
+      await user.click(screen.getByRole('button', { name: 'Open inner' }));
+      const [outer, inner] = screen.getAllByRole('dialog', { hidden: true });
+      expect(outer?.closest('[inert]')).not.toBeNull();
+      expect(inner?.closest('[inert]')).toBeNull();
+      await user.keyboard('{Escape}');
+      expect(outer?.closest('[inert]')).toBeNull();
+      expect(root.closest('[inert]')).not.toBeNull();
+      await user.keyboard('{Escape}');
+      expect(document.querySelector('[inert]')).toBeNull();
+    });
   });
 });

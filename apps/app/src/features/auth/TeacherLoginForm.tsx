@@ -23,23 +23,36 @@ export function TeacherLoginForm({ autoFocus }: { autoFocus?: boolean }) {
   const [staffId, setStaffId] = useState('');
   const [password, setPassword] = useState('');
   const [schoolError, setSchoolError] = useState(false);
+  const [suspended, setSuspended] = useState(false);
+  const [unknown, setUnknown] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
   const searchRef = useRef<HTMLInputElement>(null);
+  const lookup = useRef(0);
 
   useEffect(() => {
+    setUnknown(false);
+    setSuspended(false);
     if (!schoolParam) return;
-    let live = true;
+    setSchool(null);
+    const id = ++lookup.current;
     void getDirectorySchool(schoolParam)
       .then((s) => {
-        if (live && s) {
-          setSchool(s);
-          rememberSchool(s);
+        if (lookup.current !== id) return;
+        if (!s) {
+          setUnknown(true);
+          return;
         }
+        if (s.status === 'disabled') {
+          setSuspended(true);
+          return;
+        }
+        setSchool(s);
+        rememberSchool(s);
       })
       .catch(() => undefined);
     return () => {
-      live = false;
+      lookup.current++;
     };
   }, [schoolParam]);
 
@@ -48,8 +61,11 @@ export function TeacherLoginForm({ autoFocus }: { autoFocus?: boolean }) {
   }, [autoFocus]);
 
   function choose(s: DirectorySchool | null) {
+    lookup.current++;
     setSchool(s);
     setSchoolError(false);
+    setSuspended(false);
+    setUnknown(false);
     if (s) rememberSchool(s);
   }
 
@@ -87,7 +103,15 @@ export function TeacherLoginForm({ autoFocus }: { autoFocus?: boolean }) {
         <Field
           label={t('teacher.school')}
           hint={t('teacher.schoolHint')}
-          error={schoolError ? t('teacher.chooseSchool') : undefined}
+          error={
+            suspended
+              ? t('teacher.schoolSuspended')
+              : unknown
+                ? t('teacher.schoolUnknown')
+                : schoolError
+                  ? t('teacher.chooseSchool')
+                  : undefined
+          }
         >
           <SchoolSearch id="teacher-school" ref={searchRef} value={school} onChange={choose} />
         </Field>

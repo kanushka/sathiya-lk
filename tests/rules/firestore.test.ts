@@ -47,6 +47,15 @@ const seed: Record<string, Record<string, unknown>> = {
   [`${paths.years('s1')}/y2`]: { label: '2027', status: 'draft' },
   [`${paths.years('s2')}/y1`]: { label: '2026', status: 'published', publishedAt: 1 },
   [`${paths.years('sd')}/y1`]: { label: '2026', status: 'draft' },
+  [`${paths.members('sd')}/u-dis`]: { uid: 'u-dis', role: 'admin', email: 'd@x.lk' },
+  [`${paths.members('sd')}/u-dis-t`]: { uid: 'u-dis-t', role: 'teacher', teacherId: 'td' },
+  [`${paths.invites('sd')}/e@x.lk`]: { email: 'e@x.lk', invitedBy: 'u-dis', createdAt: 1 },
+  [`${paths.templates('sd')}/p1`]: { name: 'Default', isDefault: true, mode: 'same', rows: [] },
+  [`${paths.grades('sd')}/g1`]: { number: 6, plan: [] },
+  [`${paths.classes('sd')}/c1`]: { gradeId: 'g1', name: '6A', templateId: 'p1' },
+  [`${paths.entries('sd', 'y1')}/e1`]: { day: 0, period: 1, classIds: ['c1'], lessons: [], teacherIds: ['td'] },
+  [paths.publishedClass('sd', 'y1', 'c1')]: { cells: [] },
+  [paths.publishedTeacher('sd', 'y1', 'td')]: { cells: [] },
   [`${paths.entries('s1', 'y1')}/e1`]: { day: 0, period: 1, classIds: ['c1'], lessons: [], teacherIds: ['t1'] },
   [slotLock('s1', 'y1', '0_t_t1')]: { updatedAt: 1, entryId: 'e1' },
   [paths.publishedClass('s1', 'y1', 'c1')]: { cells: [] },
@@ -266,15 +275,55 @@ describe.each(['subjects', 'periodTemplates', 'classes', 'grades'] as const)('se
 });
 
 describe('disabled school', () => {
+  const sd = paths.school('sd');
+  const scoped = [
+    `${paths.teachers('sd')}/td`,
+    `${paths.subjects('sd')}/sub1`,
+    `${paths.templates('sd')}/p1`,
+    `${paths.grades('sd')}/g1`,
+    `${paths.classes('sd')}/c1`,
+    `${paths.members('sd')}/u-dis`,
+    `${paths.members('sd')}/u-dis-t`,
+    `${paths.invites('sd')}/e@x.lk`,
+    `${paths.years('sd')}/y1`,
+    `${paths.entries('sd', 'y1')}/e1`,
+    paths.publishedClass('sd', 'y1', 'c1'),
+    paths.publishedTeacher('sd', 'y1', 'td'),
+  ];
+  const lists = [
+    paths.teachers('sd'),
+    paths.subjects('sd'),
+    paths.templates('sd'),
+    paths.grades('sd'),
+    paths.classes('sd'),
+    paths.members('sd'),
+    paths.invites('sd'),
+    paths.years('sd'),
+    paths.entries('sd', 'y1'),
+    paths.publishedClasses('sd', 'y1'),
+    paths.publishedTeachers('sd', 'y1'),
+  ];
+
   it('denies every admin write', async () => {
     await assertFails(update('disabledAdmin', `${paths.subjects('sd')}/sub1`, { short: 'X' }));
     await assertFails(set('disabledAdmin', `${paths.grades('sd')}/g1`, { number: 6, plan: [] }));
     await assertFails(set('disabledAdmin', `${paths.years('sd')}/y2`, { label: '2027', status: 'draft' }));
     await assertFails(update('disabledAdmin', `${paths.years('sd')}/y1`, { label: 'x' }));
+    await assertFails(update('disabledAdmin', sd, { nameEn: 'x' }));
+    await assertFails(update('disabledAdmin', `${paths.teachers('sd')}/td`, { name: 'x' }));
   });
-  it('still allows reads', async () => {
-    await assertSucceeds(read('disabledAdmin', `${paths.subjects('sd')}/sub1`));
+  it('denies every teacher write', async () => {
+    await assertFails(update('disabledTeacher', `${paths.teachers('sd')}/td`, { name: 'x' }));
+    await assertFails(update('disabledTeacher', `${paths.years('sd')}/y1`, { label: 'x' }));
+    await assertFails(update('disabledTeacher', sd, { nameEn: 'x' }));
   });
+  allow([['disabledAdmin', sd], ['disabledTeacher', sd], ['super', sd]], read);
+  deny(scoped.map((p): Case => ['disabledAdmin', p]), read);
+  deny(scoped.map((p): Case => ['disabledTeacher', p]), read);
+  deny(lists.map((p): Case => ['disabledAdmin', p]), list);
+  deny(lists.map((p): Case => ['disabledTeacher', p]), list);
+  allow(scoped.map((p): Case => ['super', p]), read);
+  allow(lists.map((p): Case => ['super', p]), list);
 });
 
 describe('members', () => {
@@ -325,10 +374,16 @@ describe('years', () => {
       await assertFails(set('admin', y3, { label: '  ', status: 'draft' }));
       await assertFails(set('admin', y3, { label: 2028, status: 'draft' }));
     });
+    it('denies admin creating a year whose label is not a 4-digit year', async () => {
+      for (const label of ['abc', '28', '20288', ' 2028', '2028 ', '1999', '2101', '2028a']) {
+        await assertFails(set('admin', y3, { label, status: 'draft' }));
+      }
+      await assertSucceeds(set('admin', y3, { label: '2000', status: 'draft' }));
+    });
     deny([['teacher', y3], ['super', y3], ['otherAdmin', y3], ['anon', y3]], (r, p) => set(r, p, { label: '2028', status: 'draft' }));
   });
   describe('update', () => {
-    allow([['admin', y2], ['admin', y1]], (r, p) => update(r, p, { label: 'renamed' }));
+    allow([['admin', y2], ['admin', y1]], (r, p) => update(r, p, { label: '2029' }));
     it('denies admin changing status or publishedAt', async () => {
       await assertFails(update('admin', y2, { status: 'published' }));
       await assertFails(update('admin', y1, { status: 'draft' }));
@@ -339,6 +394,11 @@ describe('years', () => {
       await assertFails(update('admin', y2, { label: ' ' }));
       await assertFails(update('admin', y2, { label: 7 }));
       await assertFails(set('admin', y2, { status: 'draft' }));
+    });
+    it('denies admin renaming a year to anything but a 4-digit year', async () => {
+      for (const label of ['renamed', '28', '1999', '2101', ' 2028']) {
+        await assertFails(update('admin', y2, { label }));
+      }
     });
     deny([['teacher', y2], ['super', y2]], (r, p) => update(r, p, { label: 'x' }));
   });

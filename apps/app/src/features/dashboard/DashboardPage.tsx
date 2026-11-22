@@ -12,7 +12,7 @@ import { EmptyState } from '../../ui/EmptyState';
 import { Select } from '../../ui/Select';
 import { colomboNow, greetingKey } from '../teacher/colomboNow';
 import * as api from './api';
-import { attentionItems, classChips, dashboardStats, type ChipStatus } from './model';
+import { attentionItems, classChips, dashboardStats, publishProblems, type ChipStatus } from './model';
 import { NewYearModal } from './NewYearModal';
 import { PublishModal } from './PublishModal';
 
@@ -111,7 +111,7 @@ export function DashboardPage() {
           </div>
 
           <div className="flex flex-wrap items-start gap-5">
-            <section className="min-w-[420px] flex-[2_1_480px] rounded-[14px] border border-line-soft bg-white p-5">
+            <section className="min-w-0 flex-[2_1_480px] md:min-w-[420px] rounded-[14px] border border-line-soft bg-white p-5">
               <div className="mb-3 flex items-center justify-between">
                 <h2 className="m-0 text-[17px] font-bold">{t('classes.title')}</h2>
                 <span className="text-[13px] text-ink-soft">{t('classes.legend')}</span>
@@ -160,6 +160,7 @@ export function DashboardPage() {
 
       {dialog === 'new' && (
         <NewYearModal
+          existingLabels={years.map((y) => y.label)}
           onClose={() => setDialog(null)}
           onCreate={async (label) => {
             setYearId(await api.createYear(sid, label));
@@ -169,7 +170,7 @@ export function DashboardPage() {
       {dialog === 'publish' && year && (
         <PublishModal
           yearLabel={year.label}
-          clashes={stats.clashes}
+          problems={publishProblems(school, entries)}
           onClose={() => setDialog(null)}
           onPublish={async () => {
             const res = await api.publishYear(sid, year.id);

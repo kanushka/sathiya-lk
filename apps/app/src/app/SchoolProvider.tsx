@@ -22,6 +22,7 @@ import { applyBrand, applyDefaultBrand } from '../lib/theme';
 import { EmptyState } from '../ui/EmptyState';
 import { LoadingState } from '../ui/LoadingState';
 import { useAuth } from './AuthProvider';
+import { SuspendedSchool } from './SuspendedSchool';
 
 export type SchoolState = SchoolContext & { loading: boolean; error?: Error };
 
@@ -63,9 +64,9 @@ export function SchoolProvider({ sid: sidProp, scope = 'full', children }: Schoo
   const params = useParams();
   const { claims } = useAuth();
   const sid = sidProp ?? params.sid ?? claims.sid ?? null;
-  const full = scope === 'full' ? sid : null;
-
   const school = useDoc<School>(sid ? paths.school(sid) : null);
+  const suspended = school.data?.status === 'disabled' && claims.super !== true;
+  const full = scope === 'full' && school.data && !suspended ? sid : null;
   const teachers = useCollection<Teacher>(full ? paths.teachers(full) : null);
   const subjects = useCollection<Subject>(full ? paths.subjects(full) : null);
   const templates = useCollection<PeriodTemplate>(full ? paths.templates(full) : null);
@@ -122,6 +123,7 @@ export function SchoolProvider({ sid: sidProp, scope = 'full', children }: Schoo
   );
 
   if (school.loading) return <LoadingState />;
+  if (suspended && sid) return <SuspendedSchool sid={sid} school={school.data!} />;
   if (!schoolValue) {
     return <EmptyState icon="profile" title={t('school.missingTitle')} body={t('school.missingBody')} />;
   }

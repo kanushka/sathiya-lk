@@ -2,7 +2,7 @@
 // Copyright (C) 2026 Kanushka Gayan
 
 import { describe, expect, it } from 'vitest';
-import { C, ctx, defaultTemplate, entries, entry, S, T, TPL } from './fixtures';
+import { C, ctx, defaultTemplate, entries, entries6B, entry, S, T, TPL } from './fixtures';
 import { orphanedEntries, usageCount, warnings } from './usage';
 import type { SchoolContext } from './types';
 
@@ -52,12 +52,25 @@ describe('warnings', () => {
     ]);
   });
 
+  it('does not count orphaned entries toward over-target', () => {
+    const orphan = entry('o', 2, 8, [C.c6b], [[S.maths, T.perera]]);
+    expect(warnings([...entries6B, orphan], shrunk).filter((w) => w.kind === 'over-target')).toEqual([]);
+  });
+
   it('reports group entries missing a teacher and orphans', () => {
     const group = entry('g', 1, 4, [C.c6a, C.c6b], [[S.buddhism, T.ananda], [S.islam, null]], 'religion');
     const orphan = entry('o', 2, 8, [C.c6b], [[S.history, T.rSilva]]);
     expect(warnings([group, orphan], shrunk)).toEqual([
       { kind: 'group-no-teacher', refId: 'g', day: 1, detail: 'Religion has an option without a teacher' },
-      { kind: 'orphaned', refId: 'o', day: 2, detail: 'Wed P8 is outside the class template' },
+      { kind: 'orphaned', refId: 'o', classId: C.c6b, day: 2, detail: 'Wed P8 is outside the class template' },
     ]);
+  });
+
+  it('judges a joined entry against each class’s own template', () => {
+    const joint = entry('j', 4, 8, [C.c6b, C.c6c], [[S.maths, T.perera]]);
+    const reversed = entry('r', 4, 8, [C.c6c, C.c6b], [[S.maths, T.perera]]);
+    expect(warnings([joint], ctx)).toEqual([{ kind: 'orphaned', refId: 'j', classId: C.c6c, day: 4, detail: 'Fri P8 is outside the class template' }]);
+    expect(warnings([reversed], ctx)).toEqual([{ kind: 'orphaned', refId: 'r', classId: C.c6c, day: 4, detail: 'Fri P8 is outside the class template' }]);
+    expect(orphanedEntries([joint, reversed], ctx).map((e) => e.id)).toEqual(['j', 'r']);
   });
 });

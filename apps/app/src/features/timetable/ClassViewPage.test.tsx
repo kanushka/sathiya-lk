@@ -459,7 +459,7 @@ describe('ClassViewPage', () => {
       }
 
       it('assigns a group at the slot and enters group pin mode', async () => {
-        const api = setup();
+        const api = setupWith(entries6B.filter((e) => e.id !== 'e-religion-3-6'));
         await activate('Wednesday', 4);
         await userEvent.click(within(screen.getByRole('dialog')).getByRole('option', { name: /^Religion/ }));
         await userEvent.click(within(screen.getByRole('dialog')).getByRole('button', { name: 'Assign' }));
@@ -471,7 +471,7 @@ describe('ClassViewPage', () => {
         });
         expect(pinBar()).toHaveTextContent('Religion · 6A+6B');
         expect(pinBar()).toHaveTextContent('Buddhism – Ven. Ananda Thero · Catholicism – Rev. Fr. M. Silva · Islam – Mr. A. Rizan');
-        expect(pinBar()).toHaveTextContent('4 of 3 placed');
+        expect(pinBar()).toHaveTextContent('3 of 3 placed');
         expect(screen.getByLabelText('Pin mode legend')).toHaveTextContent('Free for all 3 teachers and 6A+6B');
         expect(cellNamed(/^Wednesday, period 4, 09:50–10:30: Religion 6A\+6B, pinned, click to unpin$/)).toBeInTheDocument();
         expect(cellNamed(/^Thursday, period 7, 12:10–12:50: pin Religion for 6A\+6B, over plan$/)).toBeInTheDocument();
@@ -523,5 +523,48 @@ describe('ClassViewPage', () => {
       await activate('Monday', 1);
       expect(screen.getByRole('button', { name: 'Clear slot' })).toBeInTheDocument();
     });
+  });
+});
+
+describe('ClassViewPage outside the period template', () => {
+  const orphan = entry('o-6c', 4, 8, [C.c6c], [[S.science, T.gunasekara]]);
+
+  function setupOrphan(route = `/admin/timetable/class/${C.c6c}`) {
+    const api = makeApi();
+    renderWithSchool(
+      <TimetableApiContext.Provider value={api}>
+        <Routes>
+          <Route path="/admin/timetable/class/:classId" element={<ClassViewPage />} />
+        </Routes>
+      </TimetableApiContext.Provider>,
+      { ctx, entries: [orphan], route },
+    );
+    return api;
+  }
+
+  it('lists the orphaned entry and deletes it after confirming', async () => {
+    const api = setupOrphan();
+    const section = screen.getByRole('region', { name: 'Outside the period template' });
+    expect(section).toHaveTextContent('Fri P8 · 6C · Science · Mrs. S. Gunasekara');
+    await userEvent.click(within(section).getByRole('button', { name: 'Delete Fri P8 Science' }));
+    await userEvent.click(within(screen.getByRole('dialog', { name: 'Delete this entry?' })).getByRole('button', { name: 'Delete' }));
+    expect(api.deleteEntry).toHaveBeenCalledWith({ schoolId: ctx.school.id, yearId: 'y-2026', entryId: 'o-6c' });
+    await waitFor(() => expect(screen.queryByRole('region', { name: 'Outside the period template' })).not.toBeInTheDocument());
+  });
+
+  it('scrolls the list into view when linked to it', () => {
+    const scroll = vi.spyOn(Element.prototype, 'scrollIntoView');
+    try {
+      setupOrphan(`/admin/timetable/class/${C.c6c}#outside-template`);
+      expect(scroll).toHaveBeenCalled();
+      expect(scroll.mock.contexts[0]).toHaveAttribute('id', 'outside-template');
+    } finally {
+      scroll.mockRestore();
+    }
+  });
+
+  it('shows no list when every entry fits the template', () => {
+    setup();
+    expect(screen.queryByRole('region', { name: 'Outside the period template' })).not.toBeInTheDocument();
   });
 });

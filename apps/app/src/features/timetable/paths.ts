@@ -8,6 +8,8 @@ export function useAdminBase(): string {
   return sid ? `/s/${sid}` : '/admin';
 }
 
+export const OUTSIDE_TEMPLATE_ID = 'outside-template';
+
 export type ViewKind = 'class' | 'teacher';
 
 const lastKey = (kind: ViewKind) => `sathiya.timetable.${kind}`;

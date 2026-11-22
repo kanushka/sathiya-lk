@@ -47,6 +47,7 @@ interface RowSlot {
 export interface PinMode {
   target: PinSpec | null;
   progress: PinProgress | null;
+  fullNote: string;
   suggested: Slot[];
   message: string;
   names: PinNames | null;
@@ -84,6 +85,13 @@ export function usePinMode(args: {
     return pinSlots({ ctx, entries, spec: target }).map((s) => ({ day: s.day, period: s.period, classPeriod: s.period, cell: s.cell }));
   }, [ctx, entries, target, teacherViewId]);
   const progress = useMemo(() => (target ? pinProgress({ ctx, entries, spec: target }) : null), [ctx, entries, target]);
+  const fullNote = useMemo(
+    () =>
+      (progress?.full ?? [])
+        .map((f) => t('pin.classFull', { class: ctx.classes.find((c) => c.id === f.classId)?.name ?? f.classId, placed: f.placed, needed: f.needed }))
+        .join(', '),
+    [progress, ctx, t],
+  );
   const slotAt = useCallback((day: DayIndex, n: number) => slots.find((s) => s.day === day && s.period === n), [slots]);
   const cellAt = useCallback((day: DayIndex, n: number) => slotAt(day, n)?.cell, [slotAt]);
   const periodAt = useCallback((day: DayIndex, n: number) => slotAt(day, n)?.classPeriod ?? null, [slotAt]);
@@ -186,12 +194,16 @@ export function usePinMode(args: {
         const ok = await remove(c.entry.id);
         if (ok && latest()) setMessage(t('pin.unpinned', where));
       } else if (c.kind === 'free' && period !== null) {
+        if (progress && progress.left === 0 && progress.full.length > 0) {
+          setMessage(fullNote);
+          return;
+        }
         setRawSuggested((list) => list.filter((s) => s.day !== day || s.period !== period));
         const ok = await save(specDraft(target, day, period));
         if (latest()) setMessage(ok ? t('pin.pinned', where) : '');
       }
     },
-    [cellAt, periodAt, target, names, tc, remove, save, t],
+    [cellAt, periodAt, target, names, progress, fullNote, tc, remove, save, t],
   );
 
   const suggest = useCallback(() => {
@@ -221,5 +233,5 @@ export function usePinMode(args: {
     setMessage(done > 0 ? t('pin.pinnedMany', { count: done, subject: names.subject }) : '');
   }, [target, names, suggested, periodAt, save, t]);
 
-  return { target, progress, suggested, message, names, cellAt, periodAt, isSuggested, start, stop, toggle, suggest, pinSuggested };
+  return { target, progress, fullNote, suggested, message, names, cellAt, periodAt, isSuggested, start, stop, toggle, suggest, pinSuggested };
 }

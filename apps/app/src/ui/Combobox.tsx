@@ -88,7 +88,7 @@ export function Combobox<T>({
   const { pos, listMax } = usePopover(triggerRef, popRef, open, [flat.length, query], () => setOpen(false));
 
   useEffect(() => {
-    listRef.current?.querySelector('[data-active="true"]')?.scrollIntoView?.({ block: 'nearest' });
+    listRef.current?.querySelector('[data-active="true"]')?.scrollIntoView({ block: 'nearest' });
   }, [active]);
 
   function openList() {

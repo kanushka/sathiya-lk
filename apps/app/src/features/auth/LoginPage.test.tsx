@@ -2,6 +2,7 @@
 // Copyright (C) 2026 Kanushka Gayan
 import { screen, waitFor, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
+import { Link } from 'react-router-dom';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import * as api from './api';
 import { recordSignIn } from '../teacher/signIn';
@@ -118,6 +119,90 @@ describe('teacher login', () => {
     renderAuth(<LoginPage />, { route: '/login?as=teacher&school=siripura' });
     await waitFor(() => expect(screen.getByLabelText('School')).toHaveValue('Siripura Central College, Peradeniya'));
     expect(api.getDirectorySchool).toHaveBeenCalledWith('siripura');
+  });
+
+  it('explains a suspended school from ?school= instead of an empty picker', async () => {
+    const user = userEvent.setup();
+    vi.mocked(api.getDirectorySchool).mockResolvedValue({ ...siripura, status: 'disabled' });
+    renderAuth(<LoginPage />, { route: '/login?as=teacher&school=siripura' });
+    expect(await screen.findByText('This school is currently suspended. Contact your school admin.')).toBeInTheDocument();
+    expect(screen.getByLabelText('School')).toHaveValue('');
+    await user.type(screen.getByLabelText('Staff ID'), 'SCC024');
+    await user.type(within(teacherCard()).getByLabelText('Password'), 'k7m4x9pq');
+    await user.click(within(teacherCard()).getByRole('button', { name: 'Log in' }));
+    expect(api.signInWithPassword).not.toHaveBeenCalled();
+    expect(localStorage.getItem('sathiya.school')).toBeNull();
+  });
+
+  it('opens the teacher tab with the school preselected for ?school= alone', async () => {
+    vi.mocked(api.getDirectorySchool).mockResolvedValue(siripura);
+    renderAuth(<LoginPage />, { route: '/login?school=siripura' });
+    expect(screen.getByRole('heading', { name: 'Teacher login' })).toBeInTheDocument();
+    await waitFor(() => expect(screen.getByLabelText('School')).toHaveValue('Siripura Central College, Peradeniya'));
+  });
+
+  it('keeps the admin tab reachable when ?school= is present', async () => {
+    const user = userEvent.setup();
+    renderAuth(<LoginPage />, { route: '/login?school=siripura' });
+    await user.click(screen.getByRole('tab', { name: 'School admin' }));
+    expect(screen.getByRole('heading', { name: 'Admin login' })).toBeInTheDocument();
+    expect(screen.getByTestId('location')).toHaveTextContent('as=admin');
+  });
+
+  it('says when ?school= matches no school', async () => {
+    vi.mocked(api.getDirectorySchool).mockResolvedValue(null);
+    renderAuth(<LoginPage />, { route: '/login?as=teacher&school=bogus' });
+    expect(await screen.findByText("We couldn't find that school. Choose it from the list.")).toBeInTheDocument();
+    expect(screen.getByLabelText('School')).toHaveValue('');
+  });
+
+  it('clears the unknown-school message when ?school= changes to a real school', async () => {
+    const user = userEvent.setup();
+    vi.mocked(api.getDirectorySchool).mockImplementation(async (id) => (id === 'siripura' ? siripura : null));
+    renderAuth(
+      <>
+        <LoginPage />
+        <Link to="/login?as=teacher&school=siripura">switch</Link>
+      </>,
+      { route: '/login?as=teacher&school=bogus' },
+    );
+    expect(await screen.findByText("We couldn't find that school. Choose it from the list.")).toBeInTheDocument();
+    await user.click(screen.getByRole('link', { name: 'switch' }));
+    await waitFor(() => expect(screen.getByLabelText('School')).toHaveValue('Siripura Central College, Peradeniya'));
+    expect(screen.queryByText("We couldn't find that school. Choose it from the list.")).not.toBeInTheDocument();
+  });
+
+  it('clears the chosen school when ?school= changes to a suspended school', async () => {
+    const user = userEvent.setup();
+    const closed = { ...siripura, id: 'closed', nameEn: 'Closed College', status: 'disabled' as const };
+    vi.mocked(api.getDirectorySchool).mockImplementation(async (id) => (id === 'siripura' ? siripura : closed));
+    renderAuth(
+      <>
+        <LoginPage />
+        <Link to="/login?as=teacher&school=closed">switch</Link>
+      </>,
+      { route: '/login?as=teacher&school=siripura' },
+    );
+    await waitFor(() => expect(screen.getByLabelText('School')).toHaveValue('Siripura Central College, Peradeniya'));
+    await user.click(screen.getByRole('link', { name: 'switch' }));
+    expect(await screen.findByText('This school is currently suspended. Contact your school admin.')).toBeInTheDocument();
+    expect(screen.getByLabelText('School')).toHaveValue('');
+    await user.type(screen.getByLabelText('Staff ID'), 'SCC024');
+    await user.type(within(teacherCard()).getByLabelText('Password'), 'k7m4x9pq');
+    await user.click(within(teacherCard()).getByRole('button', { name: 'Log in' }));
+    expect(api.signInWithPassword).not.toHaveBeenCalled();
+  });
+
+  it('ignores a ?school= lookup that finishes after a school is picked by hand', async () => {
+    const user = userEvent.setup();
+    let finish: (s: null) => void = () => undefined;
+    vi.mocked(api.getDirectorySchool).mockImplementation(() => new Promise((r) => (finish = r)));
+    renderAuth(<LoginPage />, { route: '/login?as=teacher&school=bogus' });
+    await pickSchool(user);
+    finish(null);
+    await new Promise((r) => setTimeout(r, 0));
+    expect(screen.queryByText("We couldn't find that school. Choose it from the list.")).not.toBeInTheDocument();
+    expect(screen.getByLabelText('School')).toHaveValue('Siripura Central College, Peradeniya');
   });
 
   it('requires a school before submitting', async () => {

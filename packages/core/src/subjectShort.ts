@@ -29,6 +29,13 @@ export function shortTaken(short: string, existing: readonly string[]): boolean 
   return k !== '' && existing.some((e) => key(e) === k);
 }
 
+const nameKey = (name: string) => name.trim().replace(/\s+/g, ' ').toLowerCase();
+
+export function nameTaken(name: string, existing: readonly (string | undefined)[]): boolean {
+  const k = nameKey(name);
+  return k !== '' && existing.some((e) => nameKey(e ?? '') === k);
+}
+
 export function suggestSubjectShort(nameEn: string, existing: readonly string[]): string {
   const words = latinWords(nameEn);
   if (words.length === 0) return '';

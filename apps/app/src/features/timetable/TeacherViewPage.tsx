@@ -37,6 +37,7 @@ import { BlockEditor } from './BlockEditor';
 import { blockKey, blockStateFor, isBlock, type BlockState } from './blockState';
 import type { CellView } from './Cell';
 import { classNames } from './labels';
+import { OutsideTemplateList } from './OutsideTemplateList';
 import { pickInitial, rememberLast, useAdminBase } from './paths';
 import { PinHeader, PinSection } from './PinPanel';
 import { pinOverlayCell } from './pinOverlay';
@@ -137,12 +138,17 @@ function TeacherView({ teacher, teachers, template }: { teacher: Teacher; teache
 
   const rows = useMemo(() => Object.fromEntries(DAYS.map((d) => [d, rowsFor(template, d)])) as Record<DayIndex, TemplateRow[]>, [template]);
   const mine = useMemo(() => entries.filter((e) => e.lessons.some((l) => l.teacherId === teacher.id)), [entries, teacher.id]);
-  const { bySlot, outside } = useMemo(() => {
+  const { bySlot, outside, orphans } = useMemo(() => {
     const bySlot = new Map<string, Entry[]>();
     const outside: Entry[] = [];
+    const orphans: Entry[] = [];
     for (const e of mine) {
       const w = entryWindow(e, ctx);
-      const row = w ? bestOverlapPeriod(template, e.day, w) : null;
+      if (!w) {
+        orphans.push(e);
+        continue;
+      }
+      const row = bestOverlapPeriod(template, e.day, w);
       if (row === null) {
         outside.push(e);
         continue;
@@ -151,8 +157,10 @@ function TeacherView({ teacher, teachers, template }: { teacher: Teacher; teache
       bySlot.set(key, [...(bySlot.get(key) ?? []), e]);
     }
     for (const list of bySlot.values()) list.sort((a, b) => (entryWindow(a, ctx)?.start ?? 0) - (entryWindow(b, ctx)?.start ?? 0));
-    outside.sort((a, b) => a.day - b.day || a.period - b.period);
-    return { bySlot, outside };
+    const byTime = (a: Entry, b: Entry) => a.day - b.day || a.period - b.period;
+    outside.sort(byTime);
+    orphans.sort(byTime);
+    return { bySlot, outside, orphans };
   }, [mine, ctx, template]);
   const at = (day: DayIndex, period: number) => bySlot.get(`${day}-${period}`) ?? [];
 
@@ -353,6 +361,9 @@ function TeacherView({ teacher, teachers, template }: { teacher: Teacher; teache
                 </ul>
               </div>
             )}
+            <div className="mt-4 empty:mt-0">
+              <OutsideTemplateList entries={orphans} onDelete={remove} readOnly={readOnly} />
+            </div>
           </>
         }
       >
@@ -369,7 +380,6 @@ function TeacherView({ teacher, teachers, template }: { teacher: Teacher; teache
           readOnly={readOnly}
           headerExtra={loadBar}
           overlay={pinTarget ? pinOverlay : undefined}
-          activateOnClick={!!pinTarget}
         />
       </PinSection>
 

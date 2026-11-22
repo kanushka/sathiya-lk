@@ -10,7 +10,6 @@ test('teacher view: pin a primary class by its own period times', async ({ page 
 
   const slot = page.getByRole('button', { name: /^Monday, period 5, 10:50–11:30: empty/ });
   await slot.click();
-  await slot.press('Enter');
   await page.getByRole('dialog', { name: 'Choose a subject' }).getByRole('listbox', { name: 'Subjects' }).getByRole('option', { name: /^English/ }).click();
 
   const picker = page.getByRole('dialog', { name: 'Choose a class' });

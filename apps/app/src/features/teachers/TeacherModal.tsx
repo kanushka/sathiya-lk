@@ -14,6 +14,7 @@ import { MultiSelect } from '../../ui/MultiSelect';
 import { Select } from '../../ui/Select';
 import { useToast } from '../../ui/Toast';
 import { useSchool } from '../../app/SchoolProvider';
+import { isSchoolDisabled } from '../../lib/callable';
 import * as api from './api';
 import { LoginSlip } from './LoginSlip';
 import { useSessionPasswords } from './sessionPasswords';
@@ -66,9 +67,10 @@ export function TeacherModal({ teacher, onClose }: TeacherModalProps) {
   const [savedId, setSavedId] = useState<string | null>(null);
   const [submitted, setSubmitted] = useState(false);
   const [saving, setSaving] = useState(false);
-  const [saveError, setSaveError] = useState(false);
+  const [saveError, setSaveError] = useState<string | null>(null);
   const [resetting, setResetting] = useState(false);
   const [resetError, setResetError] = useState(false);
+  const [confirmingReset, setConfirmingReset] = useState(false);
 
   const teacherId = teacher?.id ?? savedId;
   const locked = readOnly;
@@ -107,7 +109,7 @@ export function TeacherModal({ teacher, onClose }: TeacherModalProps) {
       ...(form.email.trim() ? { email: form.email.trim() } : {}),
     };
     setSaving(true);
-    setSaveError(false);
+    setSaveError(null);
     try {
       if (teacher) {
         await api.updateTeacher(school.id, teacher.id, input);
@@ -118,8 +120,8 @@ export function TeacherModal({ teacher, onClose }: TeacherModalProps) {
         setSessionPassword(res.teacherId, res.password);
         setSavedId(res.teacherId);
       }
-    } catch {
-      setSaveError(true);
+    } catch (err) {
+      setSaveError(t(isSchoolDisabled(err) ? 'shell:suspended.writeBlocked' : 'modal.saveFailed'));
     } finally {
       setSaving(false);
     }
@@ -135,6 +137,7 @@ export function TeacherModal({ teacher, onClose }: TeacherModalProps) {
       setResetError(true);
     } finally {
       setResetting(false);
+      setConfirmingReset(false);
     }
   }
 
@@ -154,7 +157,7 @@ export function TeacherModal({ teacher, onClose }: TeacherModalProps) {
         ) : (
           <>
             {saveError && (
-              <FormError className="mr-auto">{t('modal.saveFailed')}</FormError>
+              <FormError className="mr-auto">{saveError}</FormError>
             )}
             <Button onClick={onClose} disabled={saving}>{t('modal.cancel')}</Button>
             {!readOnly && (
@@ -264,11 +267,32 @@ export function TeacherModal({ teacher, onClose }: TeacherModalProps) {
           }}
           hasStaffId={!!teacherId}
           focusPrint={!!savedId}
-          onReset={teacherId && !readOnly ? reset : undefined}
+          onReset={teacherId && !readOnly ? () => setConfirmingReset(true) : undefined}
           resetting={resetting}
           resetError={resetError}
         />
       </div>
+      {confirmingReset && (
+        <Modal
+          open
+          width={440}
+          title={t('resetConfirm.title', { name: teacherDisplayName({ name: form.name, ...(form.title ? { title: form.title } : {}) }, lang) })}
+          onClose={() => setConfirmingReset(false)}
+          busy={resetting}
+          footer={
+            <>
+              <Button onClick={() => setConfirmingReset(false)} disabled={resetting}>{t('resetConfirm.cancel')}</Button>
+              <Button variant="dangerSolid" onClick={() => void reset()} loading={resetting} loadingLabel={t('slip.resetting')}>
+                {t('resetConfirm.confirm')}
+              </Button>
+            </>
+          }
+        >
+          <p className="text-sm text-ink-soft">
+            {t('resetConfirm.body', { name: teacherDisplayName({ name: form.name, ...(form.title ? { title: form.title } : {}) }, lang) })}
+          </p>
+        </Modal>
+      )}
     </Modal>
   );
 }

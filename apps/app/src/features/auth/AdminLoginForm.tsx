@@ -44,6 +44,7 @@ export function AdminLoginForm({ autoFocus }: { autoFocus?: boolean }) {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState<string | null>(null);
+  const [resetError, setResetError] = useState<string | null>(null);
   const [busy, setBusy] = useState<'google' | 'password' | null>(null);
   const emailRef = useRef<HTMLInputElement>(null);
 
@@ -81,9 +82,10 @@ export function AdminLoginForm({ autoFocus }: { autoFocus?: boolean }) {
 
   async function reset() {
     if (!email.trim()) {
-      setError(t('admin.resetNeedsEmail'));
+      setResetError(t('admin.resetNeedsEmail'));
       return;
     }
+    setResetError(null);
     try {
       await sendAuthEmail({ kind: 'reset', email: email.trim(), lang });
       toast.show(t('admin.resetSent'), 'success');
@@ -114,14 +116,17 @@ export function AdminLoginForm({ autoFocus }: { autoFocus?: boolean }) {
         {t('admin.or')}
         <span className="h-px flex-1 bg-line" />
       </div>
-      <Field label={t('admin.email')} className="mb-[18px]">
+      <Field label={t('admin.email')} error={resetError} className="mb-[18px]">
         <input
           className={inputClass}
           ref={emailRef}
           type="email"
           autoComplete="email"
           value={email}
-          onChange={(e) => setEmail(e.target.value)}
+          onChange={(e) => {
+            setEmail(e.target.value);
+            setResetError(null);
+          }}
         />
       </Field>
       <Field label={t('admin.password')} error={error} className="mb-2">

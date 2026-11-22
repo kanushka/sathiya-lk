@@ -5,7 +5,7 @@ import { teacherDisplayName, withTeacherIds, type Conflict, type Entry, type Ent
 import { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useSchool, useYear } from '../../app/SchoolProvider';
-import { ApiError, call } from '../../lib/callable';
+import { ApiError, call, isSchoolDisabled } from '../../lib/callable';
 import { useToast } from '../../ui/Toast';
 
 export interface TimetableApi {
@@ -104,7 +104,7 @@ export function useTimetable(): UseTimetable {
           return t('errors.conflict.class', { name: cls?.name ?? c.id });
         });
         toast.show(t('errors.clash', { items: items.join('; ') }), 'error');
-      } else toast.show(t('errors.generic'), 'error');
+      } else toast.show(t(isSchoolDisabled(err) ? 'shell:suspended.writeBlocked' : 'errors.generic'), 'error');
     },
     [ctx.teachers, ctx.classes, t, toast],
   );

@@ -89,9 +89,9 @@ export async function signUp(email = `u-${uniq()}@example.com`, password = 'secr
 
 export const unverifiedSignUp = (email?: string) => signUp(email, undefined, false);
 
-export async function signInGoogle(email: string, emailVerified = false): Promise<Client> {
+export async function signInGoogle(email: string, emailVerified = false, name?: string): Promise<Client> {
   const c = client();
-  const idToken = JSON.stringify({ sub: `g-${uniq()}`, email, email_verified: emailVerified });
+  const idToken = JSON.stringify({ sub: `g-${uniq()}`, email, email_verified: emailVerified, ...(name ? { name } : {}) });
   await signInWithCredential(c.auth, GoogleAuthProvider.credential(idToken));
   return c;
 }

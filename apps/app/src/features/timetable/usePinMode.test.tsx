@@ -44,7 +44,7 @@ describe('usePinMode', () => {
     expect(pin.cellAt(2, 4)).toBeUndefined();
     act(() => pin.start(science));
     expect(pin.target).toEqual(science);
-    expect(pin.progress).toEqual({ placed: 3, needed: 5, left: 2, over: 0 });
+    expect(pin.progress).toEqual({ placed: 3, needed: 5, left: 2, over: 0, full: [] });
     expect(cell(2, 4)).toBe('free');
     expect(cell(4, 1)).toBe('pinned');
     expect(cell(0, 1)).toBe('taken');
@@ -135,7 +135,7 @@ describe('usePinMode', () => {
     });
     expect(api.saveEntry).toHaveBeenCalledTimes(2);
     expect(pin.suggested).toEqual([]);
-    expect(pin.progress).toEqual({ placed: 5, needed: 5, left: 0, over: 0 });
+    expect(pin.progress).toEqual({ placed: 5, needed: 5, left: 0, over: 0, full: [] });
     expect(pin.message).toBe('Pinned 2 Science lessons.');
   });
 
@@ -172,7 +172,7 @@ describe('usePinMode', () => {
       await pin.pinSuggested();
     });
     expect(api.saveEntry).toHaveBeenCalledTimes(2);
-    expect(pin.progress).toEqual({ placed: 5, needed: 5, left: 0, over: 0 });
+    expect(pin.progress).toEqual({ placed: 5, needed: 5, left: 0, over: 0, full: [] });
     expect(pin.suggested).toEqual([]);
   });
 
@@ -239,6 +239,68 @@ describe('usePinMode with a group spec', () => {
       expect.objectContaining({ entry: { day: 0, period: 1, classIds: [C.c6a, C.c6b], lessons: group.lessons, groupKey: 'religion' } }),
     );
     expect(pin.message).toBe('Religion pinned to Monday, period 1.');
+  });
+});
+
+describe('usePinMode with a joined class at its target', () => {
+  const aesthetic = {
+    classIds: [C.c6a, C.c6b],
+    lessons: [
+      { subjectId: S.music, teacherId: T.fernando },
+      { subjectId: S.dancing, teacherId: T.senanayake },
+      { subjectId: S.art, teacherId: T.dissanayake },
+    ],
+    groupKey: 'aesthetic',
+  };
+
+  it('names the full class and refuses a hand pin', async () => {
+    const api = setup();
+    act(() => pin.start(aesthetic));
+    expect(pin.progress).toMatchObject({ placed: 0, needed: 3, left: 0 });
+    expect(pin.fullNote).toBe('6B already has 3/3');
+    const free = ([0, 1, 2, 3, 4] as DayIndex[]).flatMap((d) => [1, 2, 3, 4, 5, 6, 7, 8].map((p) => [d, p] as [DayIndex, number])).find(([d, p]) => cell(d, p) === 'free')!;
+    await act(async () => {
+      await pin.toggle(...free);
+    });
+    expect(api.saveEntry).not.toHaveBeenCalled();
+    expect(pin.message).toBe('6B already has 3/3');
+  });
+
+  it('suggests nothing', () => {
+    setup();
+    act(() => pin.start(aesthetic));
+    act(() => pin.suggest());
+    expect(pin.suggested).toEqual([]);
+  });
+
+  it('stops suggestions at the smallest remaining count across classes', async () => {
+    const api = setup();
+    act(() => pin.start({ classIds: [C.c6a, C.c6b], lessons: [{ subjectId: S.science, teacherId: T.gunasekara }] }));
+    expect(pin.progress?.left).toBe(2);
+    act(() => pin.suggest());
+    expect(pin.suggested).toHaveLength(2);
+    await act(async () => {
+      await pin.pinSuggested();
+    });
+    expect(api.saveEntry).toHaveBeenCalledTimes(2);
+  });
+
+  it('pins no more suggestions than are still needed after a hand pin', async () => {
+    const api = setup();
+    act(() => pin.start({ classIds: [C.c6a, C.c6b], lessons: [{ subjectId: S.science, teacherId: T.gunasekara }] }));
+    act(() => pin.suggest());
+    expect(pin.suggested).toHaveLength(2);
+    const other = ([0, 1, 2, 3, 4] as DayIndex[])
+      .flatMap((d) => [1, 2, 3, 4, 5, 6, 7, 8].map((p) => [d, p] as [DayIndex, number]))
+      .find(([d, p]) => cell(d, p) === 'free' && !pin.isSuggested(d, p))!;
+    await act(async () => {
+      await pin.toggle(...other);
+    });
+    expect(pin.progress?.left).toBe(1);
+    await act(async () => {
+      await pin.pinSuggested();
+    });
+    expect(api.saveEntry).toHaveBeenCalledTimes(2);
   });
 });
 

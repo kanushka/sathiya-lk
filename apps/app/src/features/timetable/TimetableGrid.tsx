@@ -33,7 +33,6 @@ export interface TimetableGridProps {
   readOnly?: boolean;
   headerExtra?(day: DayIndex): ReactNode;
   overlay?(day: DayIndex, period: number): GridOverlay | null;
-  activateOnClick?: boolean;
 }
 
 const DAYS: DayIndex[] = [0, 1, 2, 3, 4];
@@ -47,7 +46,7 @@ function periodTimes(rows: TemplateRow[]): Map<number, { start: string; end: str
   return map;
 }
 
-export function TimetableGrid({ rows, cellsFor, selected, onSelect, onActivate, onClear, readOnly, headerExtra, overlay, activateOnClick }: TimetableGridProps) {
+export function TimetableGrid({ rows, cellsFor, selected, onSelect, onActivate, onClear, readOnly, headerExtra, overlay }: TimetableGridProps) {
   const { t } = useTranslation('timetable');
   const { t: tc } = useTranslation('common');
   const root = useRef<HTMLDivElement>(null);
@@ -95,14 +94,8 @@ export function TimetableGrid({ rows, cellsFor, selected, onSelect, onActivate, 
   }
 
   function onClick(day: DayIndex, period: number) {
-    if (activateOnClick) {
-      onSelect(day, period);
-      if (!readOnly && !overlay?.(day, period)?.disabled) onActivate?.(day, period);
-      return;
-    }
-    if (selected && selected.day === day && selected.period === period) {
-      if (!readOnly) onActivate?.(day, period);
-    } else onSelect(day, period);
+    onSelect(day, period);
+    if (!readOnly && !overlay?.(day, period)?.disabled) onActivate?.(day, period);
   }
 
   return (

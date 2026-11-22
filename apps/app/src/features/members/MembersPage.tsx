@@ -72,10 +72,10 @@ export function MembersPage() {
           <TBody>
             {rows.map(({ m, teacher }) => (
               <Tr key={m.uid}>
-                <Td>{teacher ? teacherDisplayName(teacher, lang) : (m.email ?? t('list.unknown'))}</Td>
+                <Td>{m.name ?? (teacher ? teacherDisplayName(teacher, lang) : (m.email ?? t('list.unknown')))}</Td>
                 <Td>{t(m.role === 'admin' ? 'list.admin' : 'list.teacher')}</Td>
                 <Td>{teacher?.staffId ?? ''}</Td>
-                <Td>{teacher ? (m.email ?? teacher.email ?? '') : ''}</Td>
+                <Td>{m.email ?? teacher?.email ?? '—'}</Td>
               </Tr>
             ))}
           </TBody>

@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
 // Copyright (C) 2026 Kanushka Gayan
-import { REPORT_REASONS, type ReportReason } from '@sathiya/core';
+import { EMAIL_RE, REPORT_REASONS, type ReportReason } from '@sathiya/core';
 import { useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Button } from '../../ui/Button';
@@ -10,9 +10,9 @@ import { RadioGroup } from '../../ui/RadioGroup';
 import { useToast } from '../../ui/Toast';
 import { FormError } from '../../ui/FormError';
 import { getDirectorySchool, reportSchool, type DirectorySchool } from './api';
+import { toApiError } from '../../lib/callable';
 import { detailCode } from './errors';
 import { SchoolSearch } from './SchoolSearch';
-
 
 export interface ReportSchoolModalProps {
   open: boolean;
@@ -29,6 +29,7 @@ export function ReportSchoolModal({ open, onClose, initialSchoolId }: ReportScho
   const [email, setEmail] = useState('');
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [emailError, setEmailError] = useState<string | null>(null);
 
   useEffect(() => {
     if (!open) return;
@@ -37,6 +38,7 @@ export function ReportSchoolModal({ open, onClose, initialSchoolId }: ReportScho
     setDetails('');
     setEmail('');
     setError(null);
+    setEmailError(null);
     if (!initialSchoolId) return;
     let live = true;
     getDirectorySchool(initialSchoolId).then(
@@ -50,8 +52,13 @@ export function ReportSchoolModal({ open, onClose, initialSchoolId }: ReportScho
 
   async function send() {
     if (!school || !reason) return;
+    if (email.trim() && !EMAIL_RE.test(email.trim())) {
+      setEmailError(t('report.invalidEmail'));
+      return;
+    }
     setBusy(true);
     setError(null);
+    setEmailError(null);
     try {
       await reportSchool({
         schoolId: school.id,
@@ -62,7 +69,10 @@ export function ReportSchoolModal({ open, onClose, initialSchoolId }: ReportScho
       toast.show(t('report.sent'), 'success');
       onClose();
     } catch (err) {
-      setError(detailCode(err) === 'rate-limited' ? t('report.rateLimited') : t('report.error'));
+      const api = toApiError(err);
+      if (detailCode(err) === 'rate-limited') setError(t('report.rateLimited'));
+      else if (api.code === 'invalid' && (api.details as { field?: unknown } | undefined)?.field === 'email') setEmailError(t('report.invalidEmail'));
+      else setError(t('report.error'));
     } finally {
       setBusy(false);
     }
@@ -101,8 +111,17 @@ export function ReportSchoolModal({ open, onClose, initialSchoolId }: ReportScho
         <Field label={t('report.details')}>
           <textarea className={textareaClass} value={details} onChange={(e) => setDetails(e.target.value)} />
         </Field>
-        <Field label={t('report.email')}>
-          <input type="email" autoComplete="email" className={inputClass} value={email} onChange={(e) => setEmail(e.target.value)} />
+        <Field label={t('report.email')} error={emailError}>
+          <input
+            type="email"
+            autoComplete="email"
+            className={inputClass}
+            value={email}
+            onChange={(e) => {
+              setEmail(e.target.value);
+              setEmailError(null);
+            }}
+          />
         </Field>
         {error && (
           <FormError>{error}</FormError>

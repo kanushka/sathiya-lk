@@ -1,11 +1,33 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
 // Copyright (C) 2026 Kanushka Gayan
 import { spawn } from 'node:child_process';
+import { closeSync, constants, ftruncateSync, openSync, readFileSync, rmSync, writeSync } from 'node:fs';
 
 const APP_PORT = 5173;
 const WEB_PORT = 4321;
+const APP_URL = `http://localhost:${APP_PORT}`;
+const WEB_URL = `http://localhost:${WEB_PORT}`;
 const children = [];
 let stopping = false;
+
+// The emulator reads functions/.env.local over functions/.env, so mail links point at the local app and website.
+// An empty file or one whose first line is the marker is ours, possibly left behind by a crash, so it is safe to overwrite.
+const ENV_LOCAL = new URL('../functions/.env.local', import.meta.url);
+const MARKER = '# dev-local';
+function claimEnvLocal() {
+  const fd = openSync(ENV_LOCAL, constants.O_RDWR | constants.O_CREAT);
+  try {
+    const current = readFileSync(fd, 'utf8');
+    if (current !== '' && current.split('\n', 1)[0] !== MARKER) return false;
+    ftruncateSync(fd);
+    writeSync(fd, `${MARKER}\nAPP_URL=${APP_URL}\nWEB_URL=${WEB_URL}\n`, 0);
+    return true;
+  } finally {
+    closeSync(fd);
+  }
+}
+const wroteEnvLocal = claimEnvLocal();
+if (!wroteEnvLocal) console.warn('functions/.env.local already exists; mail links use its values');
 
 function run(name, args, { env = {}, onLine } = {}) {
   // Own process group, so stopping reaches the grandchildren (java emulators, vite, astro).
@@ -51,6 +73,7 @@ async function stop(code = 0) {
   }, 15000);
   await Promise.all(alive.map((c) => new Promise((r) => (c.exitCode !== null || c.signalCode !== null ? r() : c.on('exit', r)))));
   clearTimeout(timer);
+  if (wroteEnvLocal) rmSync(ENV_LOCAL, { force: true });
   process.exit(code);
 }
 
@@ -69,15 +92,15 @@ await emulatorsReady;
 if ((await run('seed', ['seed']).done) !== 0) await stop(1);
 
 run('app', ['--filter', 'app', 'exec', 'vite', '--port', String(APP_PORT), '--strictPort'], {
-  env: { VITE_USE_EMULATORS: 'true', VITE_APPCHECK_SITE_KEY: '' },
+  env: { VITE_USE_EMULATORS: 'true', VITE_APPCHECK_SITE_KEY: '', VITE_WEB_URL: WEB_URL },
 });
 run('web', ['--filter', 'web', 'exec', 'astro', 'dev', '--port', String(WEB_PORT)], {
-  env: { PUBLIC_APP_URL: `http://localhost:${APP_PORT}` },
+  env: { PUBLIC_APP_URL: APP_URL },
 });
 
 console.log(`
-  App:          http://localhost:${APP_PORT}
-  Website:      http://localhost:${WEB_PORT}
+  App:          ${APP_URL}
+  Website:      ${WEB_URL}
   Emulator UI:  http://127.0.0.1:4000
   Ctrl-C stops everything.
 `);

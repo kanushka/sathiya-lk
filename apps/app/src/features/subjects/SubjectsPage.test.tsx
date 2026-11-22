@@ -95,6 +95,34 @@ describe('subjects page', () => {
     expect(api.addSubject).not.toHaveBeenCalled();
   });
 
+  it('rejects an English or Sinhala name that another subject already has', async () => {
+    const user = userEvent.setup();
+    render();
+    await user.click(screen.getByRole('button', { name: '+ Add subject' }));
+    const dialog = screen.getByRole('dialog');
+    await user.type(within(dialog).getByLabelText('Name in English'), '  mathematics ');
+    expect(within(dialog).getByText('mathematics already exists')).toBeInTheDocument();
+    await user.click(within(dialog).getByRole('button', { name: 'Add subject' }));
+    expect(api.addSubject).not.toHaveBeenCalled();
+    await user.clear(within(dialog).getByLabelText('Name in English'));
+    await user.type(within(dialog).getByLabelText('Name in English'), 'Agriculture');
+    await user.type(within(dialog).getByLabelText('Name in Sinhala'), 'ගණිතය');
+    expect(within(dialog).getByText('ගණිතය already exists')).toBeInTheDocument();
+    await user.click(within(dialog).getByRole('button', { name: 'Add subject' }));
+    expect(api.addSubject).not.toHaveBeenCalled();
+  });
+
+  it('inline edit refuses a name that another subject already has', async () => {
+    const user = userEvent.setup();
+    render();
+    const en = screen.getByLabelText('English name of Sinhala');
+    await user.clear(en);
+    await user.type(en, 'mathematics{Enter}');
+    expect(await screen.findByText('mathematics already exists')).toBeInTheDocument();
+    expect(api.updateSubject).not.toHaveBeenCalled();
+    expect(en).toHaveValue('Sinhala');
+  });
+
   it('load standard skips subjects already present and reports the count', async () => {
     const user = userEvent.setup();
     vi.mocked(api.fetchDefaultSubjects).mockResolvedValue([

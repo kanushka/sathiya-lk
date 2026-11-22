@@ -119,6 +119,16 @@ describe('useTimetable', () => {
     expect(screen.getByText(/Could not save/)).toBeInTheDocument();
   });
 
+  it('says the school is suspended when a save is refused for that reason', async () => {
+    const api: TimetableApi = { saveEntry: vi.fn().mockRejectedValue(new ApiError('school-disabled', 'School is suspended')), deleteEntry: vi.fn() };
+    setup(api);
+    await act(async () => {
+      await latest.save(draft);
+    });
+    expect(screen.getByText("This school is suspended, so changes can't be saved.")).toBeInTheDocument();
+    expect(screen.queryByText(/Could not save/)).toBeNull();
+  });
+
   it('optimistically removes and reverts on failure', async () => {
     const d = deferred<{ ok: true }>();
     const api: TimetableApi = { saveEntry: vi.fn(), deleteEntry: vi.fn(() => d.promise) };

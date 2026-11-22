@@ -13,18 +13,19 @@ export interface PinBarProps {
   detail?: string;
   color: string;
   progress: PinProgress;
+  fullNote?: string;
   suggestedCount: number;
   onSuggest(): void;
   onPinSuggested(): void;
   onDone(): void;
 }
 
-export function PinBar({ title, detail, color, progress, suggestedCount, onSuggest, onPinSuggested, onDone }: PinBarProps) {
+export function PinBar({ title, detail, color, progress, fullNote, suggestedCount, onSuggest, onPinSuggested, onDone }: PinBarProps) {
   const { t } = useTranslation('timetable');
   const titleId = useId();
   const { placed, needed, left, over } = progress;
   const base = t('pin.progress', { placed, needed });
-  const text = over > 0 ? base : `${base} · ${left > 0 ? t('pin.toGo', { count: left }) : t('pin.complete')}`;
+  const text = over > 0 ? base : `${base} · ${left > 0 ? t('pin.toGo', { count: left }) : fullNote || t('pin.complete')}`;
   const max = Math.max(needed, placed, 1);
   const pct = Math.round((Math.min(placed, needed || placed) / max) * 100);
 

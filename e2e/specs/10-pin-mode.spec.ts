@@ -16,7 +16,6 @@ test('class view: assign once, then pin, unpin, go over plan and exit pin mode',
 
   const plus = page.getByRole('button', { name: 'Monday, period 2, 08:30–09:10: empty, Add lesson' });
   await plus.click();
-  await plus.press('Enter');
   const popup = page.getByRole('dialog', { name: 'Choose a subject' });
   await expect(popup.getByRole('combobox', { name: 'Search subjects' })).toBeFocused();
   await page.keyboard.type('History');

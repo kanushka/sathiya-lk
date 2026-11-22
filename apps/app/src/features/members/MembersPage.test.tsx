@@ -20,7 +20,7 @@ vi.mock('../../lib/firestore', () => ({
 vi.mock('../../ui/AdminLayout', async (orig) => ({ ...(await orig<typeof import('../../ui/AdminLayout')>()), useReadOnly: () => flags.readOnly }));
 
 const members: (Member & { id: string })[] = [
-  { id: 'u1', uid: 'u1', role: 'admin', email: 'principal@siripura.lk' },
+  { id: 'u1', uid: 'u1', role: 'admin', email: 'principal@siripura.lk', name: 'Principal Siripura' },
   { id: 'u2', uid: 'u2', role: 'admin', teacherId: 't-perera', email: 'perera@siripura.lk' },
   { id: 'u3', uid: 'u3', role: 'teacher', teacherId: 't-rizan' },
 ];
@@ -40,11 +40,14 @@ function setup() {
 describe('members page', () => {
   it('lists admins, teachers with access and pending invites', () => {
     setup();
-    expect(screen.getByText('principal@siripura.lk')).toBeInTheDocument();
+    const admin = screen.getByText('Principal Siripura').closest('tr')!;
+    expect(within(admin).getByText('principal@siripura.lk')).toBeInTheDocument();
     const row = screen.getByText('Mrs. N. Perera').closest('tr')!;
     expect(within(row).getByText('SCC024')).toBeInTheDocument();
     expect(within(row).getByText('Admin')).toBeInTheDocument();
-    expect(within(screen.getByText('Mr. A. Rizan').closest('tr')!).getByText('Teacher')).toBeInTheDocument();
+    const teacher = screen.getByText('Mr. A. Rizan').closest('tr')!;
+    expect(within(teacher).getByText('Teacher')).toBeInTheDocument();
+    expect(within(teacher).getByText('—')).toBeInTheDocument();
     expect(screen.getByText('new@siripura.lk')).toBeInTheDocument();
   });
 
@@ -113,5 +116,11 @@ describe('members page', () => {
     setup();
     expect(screen.queryByRole('button', { name: 'Invite admin' })).not.toBeInTheDocument();
     expect(screen.getByText('principal@siripura.lk')).toBeInTheDocument();
+  });
+
+  it('falls back to the email as the name when none is stored', () => {
+    data.members = [{ id: 'u9', uid: 'u9', role: 'admin', email: 'vp@siripura.lk' }];
+    setup();
+    expect(screen.getAllByText('vp@siripura.lk')).toHaveLength(2);
   });
 });

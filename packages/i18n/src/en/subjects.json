@@ -51,6 +51,7 @@
     "errors": {
       "name": "Enter the subject name in English",
       "short": "Enter a short name",
+      "nameTaken": "{{name}} already exists",
       "shortTaken": "Another subject already uses this short name"
     }
   }

@@ -172,8 +172,15 @@ describe('TeacherAssignPicker', () => {
     expect(h.onPin).toHaveBeenCalledWith(spec);
   });
 
+  it('does not offer combining with a class that already has the subject’s target', async () => {
+    setup(T.rizan, { day: 4, row: 5 });
+    await pickSubject('English');
+    await userEvent.click(classOption(/^6A/));
+    expect(within(dialog()).getByRole('button', { name: '6B already has 5/5' })).toBeDisabled();
+  });
+
   it('moves a group class to the group step with the teacher locked and saves the group', async () => {
-    const h = setup(T.rizan, { day: 4, row: 5 });
+    const h = setup(T.rizan, { day: 4, row: 5 }, entries.filter((e) => e.id !== 'e-religion-3-6'));
     await pickSubject('Islam');
     const row = classOption(/^6B · Religion \(Islam\)/);
     await userEvent.click(row);

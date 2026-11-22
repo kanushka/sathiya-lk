@@ -3,6 +3,7 @@
 
 import {
   blockMates,
+  classRemaining,
   periodsFor,
   pickName,
   pinProgress,
@@ -32,6 +33,7 @@ import { inputClass } from '../../ui/Field';
 import { Icon } from '../../ui/Icon';
 import { Modal } from '../../ui/Modal';
 import { busyLabel } from './conflictLabel';
+import { FullMateChip } from './FullMateChip';
 import { GroupTeachersStep } from './GroupTeachersStep';
 import { placeThenPin } from './placeThenPin';
 import { teacherSubjects, type GroupItem } from './pickerData';
@@ -154,7 +156,7 @@ function TeacherAssignPickerBody({ teacherId, slot, entries, onClose, onSave, on
 
   useEffect(() => {
     const id = (subjectId ? classInput : subjectInput).current?.getAttribute('aria-activedescendant');
-    if (id) document.getElementById(id)?.scrollIntoView?.({ block: 'nearest' });
+    if (id) document.getElementById(id)?.scrollIntoView({ block: 'nearest' });
   });
 
   if (!teacher || !rowTime) return null;
@@ -468,6 +470,10 @@ function TeacherAssignPickerBody({ teacherId, slot, entries, onClose, onSave, on
                 </span>
                 {mateClasses.map((m) => {
                   const on = mates.includes(m.id);
+                  const room = classRemaining({ ctx, entries, classId: m.id, item: { subjectId: selected.option.subjectId } });
+                  if (!on && room.left === 0) {
+                    return <FullMateChip key={m.id} name={m.name} placed={room.placed} needed={room.needed} />;
+                  }
                   return (
                     <ToggleChip key={m.id} pressed={on} onToggle={() => setMates((cur) => (on ? cur.filter((x) => x !== m.id) : [...cur, m.id]))}>
                       {`${on ? '✓' : '+'} ${m.name}`}

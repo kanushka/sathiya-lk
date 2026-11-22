@@ -5,7 +5,7 @@ import type { ApiErrorCode, CallableName, CallableTypes } from '@sathiya/core';
 import { httpsCallable } from 'firebase/functions';
 import { functions } from './firebase';
 
-const apiCodes: readonly ApiErrorCode[] = ['clash', 'in-use', 'not-allowed', 'invalid', 'census-taken', 'email-unverified', 'already-has-school', 'rate-limited'];
+const apiCodes: readonly ApiErrorCode[] = ['clash', 'in-use', 'not-allowed', 'invalid', 'census-taken', 'email-unverified', 'already-has-school', 'rate-limited', 'school-disabled'];
 
 export class ApiError extends Error {
   code: ApiErrorCode;
@@ -35,6 +35,8 @@ export function toApiError(err: unknown): ApiError {
   }
   return new ApiError('invalid', message, e.details);
 }
+
+export const isSchoolDisabled = (err: unknown): boolean => toApiError(err).code === 'school-disabled';
 
 export function call<K extends CallableName>(name: K, req: CallableTypes[K]['req']): Promise<CallableTypes[K]['res']>;
 // NoInfer + never defaults keep this overload for explicit call<Req, Res>() only, so untyped calls get CallableTypes.

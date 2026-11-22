@@ -92,6 +92,16 @@ describe('claimInvites', () => {
     expect(await c.claims()).toEqual({ sid, role: 'admin', tid: undefined });
   });
 
+  it('stores the invited admin’s name from their sign-in', async () => {
+    const { admin, sid } = await adminWithSchool();
+    const email = `named-${uniq()}@example.com`;
+    await admin.call('inviteAdmin', { schoolId: sid, email });
+    const c = await signInGoogle(email, true, 'Nimal Perera');
+    await c.call('claimInvites', {});
+    const member = (await adminDb.doc(`${paths.members(sid)}/${c.uid}`).get()).data();
+    expect(member).toMatchObject({ role: 'admin', email, name: 'Nimal Perera' });
+  });
+
   it('skips invites of a disabled school', async () => {
     const { admin, sid } = await adminWithSchool();
     const email = `disabled-${uniq()}@example.com`;

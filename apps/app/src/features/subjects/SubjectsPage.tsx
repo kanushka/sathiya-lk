@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
 // Copyright (C) 2026 Kanushka Gayan
-import { pickName, usageCount, type Lang, type Subject } from '@sathiya/core';
+import { nameTaken, pickName, usageCount, type Lang, type Subject } from '@sathiya/core';
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useSchool, useYear } from '../../app/SchoolProvider';
@@ -45,6 +45,15 @@ export function SubjectsPage() {
   }
 
   async function edit(s: Subject, patch: Partial<Omit<Subject, 'id'>>) {
+    const others = school.subjects.filter((x) => x.id !== s.id);
+    const clash = [
+      patch.nameEn !== undefined && nameTaken(patch.nameEn, others.map((x) => x.nameEn)) ? patch.nameEn : null,
+      patch.nameSi !== undefined && nameTaken(patch.nameSi, others.map((x) => x.nameSi)) ? patch.nameSi : null,
+    ].find((n) => n !== null);
+    if (clash) {
+      toast.show(t('modal.errors.nameTaken', { name: clash }), 'error');
+      return;
+    }
     try {
       const { id: _id, ...current } = s;
       await api.updateSubject(school.school.id, s.id, { ...current, ...patch });

@@ -83,4 +83,45 @@ describe('ReportSchoolModal', () => {
     await user.click(within(dialog()).getByRole('button', { name: 'Send report' }));
     expect(await within(dialog()).findByRole('alert')).toHaveTextContent('Too many reports');
   });
+
+  async function readyToSend(user: ReturnType<typeof userEvent.setup>) {
+    renderAuth(<ReportSchoolModal open onClose={() => undefined} initialSchoolId="siripura" />);
+    await within(dialog()).findByDisplayValue(/Siripura/);
+    await user.click(within(dialog()).getByRole('radio', { name: 'Other' }));
+  }
+
+  it('rejects a malformed email with a field error without calling the callable', async () => {
+    const user = userEvent.setup();
+    await readyToSend(user);
+    const email = within(dialog()).getByLabelText(/Your email/);
+    await user.type(email, 'bad-email');
+    await user.click(within(dialog()).getByRole('button', { name: 'Send report' }));
+    expect(api.reportSchool).not.toHaveBeenCalled();
+    expect(email).toBeInvalid();
+    expect(email).toHaveAccessibleDescription('Enter a valid email address');
+    await user.type(email, 'x');
+    expect(within(dialog()).queryByText('Enter a valid email address')).not.toBeInTheDocument();
+  });
+
+  it('maps a server invalid-email rejection to the email field', async () => {
+    const user = userEvent.setup();
+    vi.mocked(api.reportSchool).mockRejectedValue(new ApiError('invalid', 'x', { code: 'invalid', field: 'email' }));
+    await readyToSend(user);
+    const email = within(dialog()).getByLabelText(/Your email/);
+    await user.type(email, 'a@b.co');
+    await user.click(within(dialog()).getByRole('button', { name: 'Send report' }));
+    await waitFor(() => expect(email).toBeInvalid());
+    expect(within(dialog()).queryByText(/Could not send the report/)).not.toBeInTheDocument();
+  });
+
+  it('keeps an invalid rejection about another field off the email field', async () => {
+    const user = userEvent.setup();
+    vi.mocked(api.reportSchool).mockRejectedValue(new ApiError('invalid', 'details is about email', { code: 'invalid', field: 'details' }));
+    await readyToSend(user);
+    const email = within(dialog()).getByLabelText(/Your email/);
+    await user.type(email, 'a@b.co');
+    await user.click(within(dialog()).getByRole('button', { name: 'Send report' }));
+    expect(await within(dialog()).findByText(/Could not send the report/)).toBeInTheDocument();
+    expect(email).toBeValid();
+  });
 });

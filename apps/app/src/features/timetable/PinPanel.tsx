@@ -15,6 +15,7 @@ export function PinHeader({ pin, hint, readOnly }: { pin: PinMode; hint: string;
         {...(pin.names?.detail ? { detail: pin.names.detail } : {})}
         color={pin.names?.color ?? '#E9E9E9'}
         progress={pin.progress}
+        fullNote={pin.fullNote}
         suggestedCount={pin.suggested.length}
         onSuggest={pin.suggest}
         onPinSuggested={() => void pin.pinSuggested()}

@@ -18,6 +18,7 @@ export const claimInvites = onCall(callOpts, async (req): Promise<ClaimInvitesRe
   const { uid, token } = requireAuth(req);
   if (!token.email || !isVerified(token)) notAllowed('A verified email is required');
   const email = token.email!.toLowerCase();
+  const name = typeof token.name === 'string' ? token.name.trim() : '';
 
   // Claims hold one school: claim the first invite of an active school, or any for the school the user already belongs to.
   // Claims are set before the invite is consumed (both idempotent), so a failure leaves the invite for a retry.
@@ -40,7 +41,7 @@ export const claimInvites = onCall(callOpts, async (req): Promise<ClaimInvitesRe
     sid = inviteSid;
     await db.runTransaction(async (tx) => {
       const invite = await tx.get(doc.ref);
-      tx.set(memberRef, { uid, role: 'admin', email, teacherId: tid }, { merge: true });
+      tx.set(memberRef, { uid, role: 'admin', email, teacherId: tid, ...(name && !(member.data() as Member | undefined)?.name ? { name } : {}) }, { merge: true });
       if (invite.exists) tx.delete(doc.ref);
     });
     claimed.push(inviteSid);

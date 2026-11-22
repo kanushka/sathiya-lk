@@ -14,7 +14,6 @@ test('teacher view: build a religion block through the assign popup', async ({ p
 
   const slot = page.getByRole('button', { name: /^Tuesday, period 2, 08:30–09:10: empty/ });
   await slot.click();
-  await slot.press('Enter');
   const subjects = page.getByRole('dialog', { name: 'Choose a subject' });
   await subjects.getByRole('listbox', { name: 'Subjects' }).getByRole('option', { name: /^Buddhism/ }).click();
 
