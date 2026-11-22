@@ -80,7 +80,8 @@ export const importSetup = onCall({ ...callOpts, timeoutSeconds: 300 }, async (r
         created[i] = { teacherId, staffId: teacher.staffId, name: teacher.name, ...(teacher.title && { title: teacher.title }), password };
       } catch (e) {
         failed = true;
-        logger.error('importSetup teacher creation failed', { sid, staffId: teacher.staffId, row: plan.teachers[i]!.row, error: e });
+        const { code, message } = (e ?? {}) as { code?: unknown; message?: unknown };
+        logger.error('importSetup teacher creation failed', { sid, row: plan.teachers[i]!.row, code: String(code ?? ''), message: String(message ?? e) });
       }
     }
   };
