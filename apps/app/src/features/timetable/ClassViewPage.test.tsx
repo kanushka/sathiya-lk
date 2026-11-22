@@ -300,6 +300,13 @@ describe('ClassViewPage', () => {
       expect(within(pinBar()).getByText('+1 over')).toBeInTheDocument();
     });
 
+    it('uses the fill-over orange for over-plan cells', async () => {
+      await assignScience();
+      await userEvent.click(cellNamed(/^Thursday, period 7, .*: pin Science/));
+      const over = await screen.findByRole('button', { name: /^Friday, period 5, .*: pin Science.*over plan$/ });
+      expect(over).toHaveClass('border-fill-over');
+    });
+
     it('rolls back a clashing pin and shows the conflict', async () => {
       const api = makeApi();
       vi.mocked(api.saveEntry)

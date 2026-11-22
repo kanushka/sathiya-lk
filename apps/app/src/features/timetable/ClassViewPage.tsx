@@ -83,7 +83,7 @@ export function ClassViewPage() {
 const pinCell = 'box-border border-[1.5px] border-dashed items-center px-2.5 text-center';
 const pinFree = `${pinCell} border-fill-success bg-success-soft/50 text-success`;
 const pinWarn = `${pinCell} border-fill-warning-strong bg-warning-soft text-warning`;
-const pinOver = `${pinCell} border-danger bg-danger-soft text-danger`;
+const pinOver = `${pinCell} border-fill-over bg-danger-soft text-danger`;
 const pinSuggested = 'items-center border-[1.5px] border-solid border-fill-success bg-success-soft px-2.5 text-center text-success';
 const pinBusy = 'border-line bg-[repeating-linear-gradient(135deg,theme(colors.surface.3)_0_6px,theme(colors.line.DEFAULT)_6px_12px)] px-2.5 text-ink-muted';
 
@@ -341,7 +341,7 @@ function ClassView({ cls, classes }: { cls: SchoolClass; classes: SchoolClass[] 
             <div aria-label={t('pin.legendLabel')} className="mb-3 ml-1 flex flex-wrap gap-3.5">
               <Swatch className="border-[1.5px] border-dashed border-fill-success bg-success-soft/50">{t('pin.legendFree', { teacher: pinTeacherName })}</Swatch>
               <Swatch className="border-[1.5px] border-dashed border-fill-warning-strong bg-warning-soft">{t('pin.legendSubjectDay')}</Swatch>
-              <Swatch className="border-[1.5px] border-dashed border-danger bg-danger-soft">{t('pin.legendOver')}</Swatch>
+              <Swatch className="border-[1.5px] border-dashed border-fill-over bg-danger-soft">{t('pin.legendOver')}</Swatch>
               <Swatch className="border-[1.5px] border-fill-success bg-success-soft">{t('pin.legendSuggested')}</Swatch>
               <Swatch className="bg-[repeating-linear-gradient(135deg,theme(colors.surface.3)_0_6px,theme(colors.line.DEFAULT)_6px_12px)]">{t('pin.legendBusy')}</Swatch>
             </div>
