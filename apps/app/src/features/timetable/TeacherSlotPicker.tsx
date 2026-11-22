@@ -14,7 +14,6 @@ import {
   type PlanItem,
   type SchoolContext,
   type Subject,
-  type Teacher,
 } from '@sathiya/core';
 import { useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
@@ -27,6 +26,7 @@ import { Modal } from '../../ui/Modal';
 import { busyLabel } from './conflictLabel';
 import { classNames, limitWarning } from './labels';
 import type { GroupItem } from './SlotPicker';
+import { teacherSubjects } from './pickerData';
 
 export interface TeacherSlotPickerProps {
   open: boolean;
@@ -35,7 +35,7 @@ export interface TeacherSlotPickerProps {
   day: DayIndex;
   period: number;
   entries: Entry[];
-  editing?: Entry;
+  editing: Entry;
   onSave(d: EntryDraft): Promise<boolean>;
   onClear(id: string): Promise<boolean>;
   onGroup(args: { classId: string; period: number; subjectId: string; item: GroupItem }): void;
@@ -45,18 +45,6 @@ export function TeacherSlotPicker(props: TeacherSlotPickerProps) {
   const readOnly = useReadOnly();
   if (!props.open || readOnly) return null;
   return <TeacherSlotPickerBody {...props} />;
-}
-
-export function teacherSubjects(teacher: Teacher, ctx: SchoolContext): Subject[] {
-  if (!teacher.isPrimary) return teacher.subjectIds.map((id) => ctx.subjects.find((s) => s.id === id)).filter((s): s is Subject => !!s);
-  const ids = new Set<string>();
-  const grades = ctx.grades.filter((g) => teacher.grades.includes(g.number));
-  const plans = grades.map((g) => g.plan).concat(ctx.classes.filter((c) => grades.some((g) => g.id === c.gradeId)).map((c) => c.planOverride ?? []));
-  for (const item of plans.flat()) {
-    if (item.kind === 'subject') ids.add(item.subjectId);
-    else item.optionSubjectIds.forEach((id) => ids.add(id));
-  }
-  return ctx.subjects.filter((s) => ids.has(s.id));
 }
 
 function planItemFor(ctx: SchoolContext, o: ClassOption, subjectId: string): PlanItem | undefined {
@@ -84,14 +72,14 @@ function TeacherSlotPickerBody({ onClose, teacherId, day, period, entries, editi
 
   const options = useMemo(() => {
     if (!subjectId || !time) return [];
-    return classOptionsForTeacherSlot({ ctx, entries, teacherId, day, defaultPeriod: period, subjectId, ...(editing ? { editingEntryId: editing.id } : {}) });
+    return classOptionsForTeacherSlot({ ctx, entries, teacherId, day, defaultPeriod: period, subjectId, editingEntryId: editing.id });
   }, [ctx, entries, teacherId, day, period, subjectId, editing, time]);
 
   if (!teacher || !defaultTemplate || !time) return null;
 
   const subject = ctx.subjects.find((s) => s.id === subjectId);
   const subjectName = (s: Subject) => pickName(s, lang);
-  const load = teacherDayLoad(teacher.id, day, editing ? entries.filter((e) => e.id !== editing.id) : entries);
+  const load = teacherDayLoad(teacher.id, day, entries.filter((e) => e.id !== editing.id));
   const atLimit = load >= teacher.maxPerDay;
   const free = options.filter((o) => o.free);
   const taken = options.filter((o) => !o.free);
@@ -112,7 +100,7 @@ function TeacherSlotPickerBody({ onClose, teacherId, day, period, entries, editi
     }
     setBusy(true);
     const draft: EntryDraft = {
-      ...(editing ? { id: editing.id } : {}),
+      id: editing.id,
       day,
       period: o.period,
       classIds: [o.cls.id],
@@ -124,7 +112,6 @@ function TeacherSlotPickerBody({ onClose, teacherId, day, period, entries, editi
   }
 
   async function clear() {
-    if (!editing) return;
     setBusy(true);
     const ok = await onClear(editing.id);
     setBusy(false);
@@ -132,8 +119,8 @@ function TeacherSlotPickerBody({ onClose, teacherId, day, period, entries, editi
   }
 
   const sectionLabel = 'mb-1.5 mt-3.5 block text-xs font-bold uppercase tracking-[.04em]';
-  const isCurrent = (o: ClassOption) => !!editing && editing.classIds.includes(o.cls.id) && editing.period === o.period;
-  const editingSubject = editing && ctx.subjects.find((s) => s.id === editing.lessons.find((l) => l.teacherId === teacherId)?.subjectId);
+  const isCurrent = (o: ClassOption) => editing.classIds.includes(o.cls.id) && editing.period === o.period;
+  const editingSubject = ctx.subjects.find((s) => s.id === editing.lessons.find((l) => l.teacherId === teacherId)?.subjectId);
 
   const row = (o: ClassOption) => {
     const item = subjectId ? planItemFor(ctx, o, subjectId) : undefined;
@@ -172,18 +159,14 @@ function TeacherSlotPickerBody({ onClose, teacherId, day, period, entries, editi
       subtitle={t('picker.slot', { day: tc(`days.long.${day}`), n: period, time: `${time.start}–${time.end}` })}
       width={520}
       footer={
-        editing ? (
-          <Button variant="danger" className="mr-auto" disabled={busy} onClick={clear}>
-            {t('picker.clear')}
-          </Button>
-        ) : undefined
+        <Button variant="danger" className="mr-auto" disabled={busy} onClick={clear}>
+          {t('picker.clear')}
+        </Button>
       }
     >
-      {editing && (
-        <p className="mb-3 text-sm text-ink-soft">
-          {t('teacherPicker.currentLesson', { classes: classNames(ctx, editing.classIds), subject: editingSubject ? subjectName(editingSubject) : '' })}
-        </p>
-      )}
+      <p className="mb-3 text-sm text-ink-soft">
+        {t('teacherPicker.currentLesson', { classes: classNames(ctx, editing.classIds), subject: editingSubject ? subjectName(editingSubject) : '' })}
+      </p>
       <label htmlFor="teacher-picker-subject" className={`${sectionLabel} mt-0 text-ink-muted`}>
         {t('picker.subject')}
       </label>

@@ -2,84 +2,169 @@
 // Copyright (C) 2026 Kanushka Gayan
 
 import {
+  effectivePlan,
   pickName,
   pinProgress,
   pinSlots,
+  specDraft,
   suggestPins,
   teacherDisplayName,
+  teacherPinSlots,
   type DayIndex,
   type Entry,
   type EntryDraft,
-  type PinCell,
   type PinProgress,
-  type PinSlot,
+  type PinSpec,
   type SchoolContext,
+  type TeacherPinCell,
 } from '@sathiya/core';
 import { useCallback, useMemo, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useLang } from '../../app/LangProvider';
-import type { PinTarget } from './AssignPicker';
+import { classNames } from './conflictLabel';
+import { planItemColor } from './labels';
 import type { Slot } from './TimetableGrid';
 
+export type PinView = { kind: 'class' } | { kind: 'teacher'; teacherId: string };
+
+export interface PinNames {
+  title: string;
+  detail?: string;
+  subject: string;
+  teacher: string;
+  classes: string;
+  base: string;
+  color: string;
+}
+
+interface RowSlot {
+  day: DayIndex;
+  period: number;
+  classPeriod: number | null;
+  cell: TeacherPinCell;
+}
+
 export interface PinMode {
-  target: PinTarget | null;
-  slots: PinSlot[];
+  target: PinSpec | null;
   progress: PinProgress | null;
   suggested: Slot[];
   message: string;
-  cellAt(day: DayIndex, period: number): PinCell | undefined;
-  isSuggested(day: DayIndex, period: number): boolean;
-  start(target: PinTarget): void;
+  names: PinNames | null;
+  cellAt(day: DayIndex, n: number): TeacherPinCell | undefined;
+  periodAt(day: DayIndex, n: number): number | null;
+  isSuggested(day: DayIndex, n: number): boolean;
+  start(target: PinSpec): void;
   stop(): void;
-  toggle(day: DayIndex, period: number): Promise<void>;
+  toggle(day: DayIndex, n: number): Promise<void>;
   suggest(): void;
   pinSuggested(): Promise<void>;
 }
 
 export function usePinMode(args: {
   ctx: SchoolContext;
-  classId: string;
   entries: Entry[];
   save(d: EntryDraft): Promise<boolean>;
   remove(id: string): Promise<boolean>;
+  view: PinView;
 }): PinMode {
-  const { ctx, classId, entries, save, remove } = args;
+  const { ctx, entries, save, remove, view } = args;
+  const teacherViewId = view.kind === 'teacher' ? view.teacherId : null;
   const { t } = useTranslation('timetable');
   const { t: tc } = useTranslation('common');
   const { lang } = useLang();
-  const [target, setTarget] = useState<PinTarget | null>(null);
+  const [target, setTarget] = useState<PinSpec | null>(null);
   const [rawSuggested, setRawSuggested] = useState<Slot[]>([]);
   const [message, setMessage] = useState('');
 
-  const slots = useMemo(() => (target ? pinSlots({ ctx, entries, classId, ...target }) : []), [ctx, entries, classId, target]);
-  const progress = useMemo(() => (target ? pinProgress({ ctx, entries, classId, subjectId: target.subjectId }) : null), [ctx, entries, classId, target]);
-  const cellAt = useCallback((day: DayIndex, period: number) => slots.find((s) => s.day === day && s.period === period)?.cell, [slots]);
-  const suggested = useMemo(
-    () => rawSuggested.filter((s) => cellAt(s.day, s.period)?.kind === 'free').slice(0, progress?.left ?? 0),
-    [rawSuggested, cellAt, progress],
+  const slots = useMemo<RowSlot[]>(() => {
+    if (!target) return [];
+    if (teacherViewId !== null) {
+      return teacherPinSlots({ ctx, entries, spec: target, teacherId: teacherViewId }).map((s) => ({ day: s.day, period: s.row, classPeriod: s.period, cell: s.cell }));
+    }
+    return pinSlots({ ctx, entries, spec: target }).map((s) => ({ day: s.day, period: s.period, classPeriod: s.period, cell: s.cell }));
+  }, [ctx, entries, target, teacherViewId]);
+  const progress = useMemo(() => (target ? pinProgress({ ctx, entries, spec: target }) : null), [ctx, entries, target]);
+  const slotAt = useCallback((day: DayIndex, n: number) => slots.find((s) => s.day === day && s.period === n), [slots]);
+  const cellAt = useCallback((day: DayIndex, n: number) => slotAt(day, n)?.cell, [slotAt]);
+  const periodAt = useCallback((day: DayIndex, n: number) => slotAt(day, n)?.classPeriod ?? null, [slotAt]);
+
+  const toRows = useCallback(
+    (picks: Slot[]) => {
+      const out: Slot[] = [];
+      for (const r of picks) {
+        const s = slots.find((x) => x.day === r.day && x.classPeriod === r.period);
+        if (s && s.cell.kind === 'free') out.push({ day: s.day, period: s.period });
+      }
+      return out.slice(0, progress?.left ?? 0);
+    },
+    [slots, progress],
   );
+  const suggested = useMemo(() => toRows(rawSuggested), [toRows, rawSuggested]);
   const seq = useRef(new Map<string, number>());
-  const isSuggested = useCallback((day: DayIndex, period: number) => suggested.some((s) => s.day === day && s.period === period), [suggested]);
+  const isSuggested = useCallback((day: DayIndex, n: number) => suggested.some((s) => s.day === day && s.period === n), [suggested]);
 
-  const subjectName = useCallback(() => {
-    const s = target && ctx.subjects.find((x) => x.id === target.subjectId);
-    return s ? pickName(s, lang) : (target?.subjectId ?? '');
-  }, [ctx.subjects, target, lang]);
-
-  const draftFor = useCallback(
-    (day: DayIndex, period: number, tg: PinTarget): EntryDraft => ({ day, period, classIds: [classId], lessons: [{ subjectId: tg.subjectId, teacherId: tg.teacherId }] }),
-    [classId],
+  const namesFor = useCallback(
+    (spec: PinSpec): PinNames => {
+      const classes = classNames(ctx, spec.classIds);
+      const subjectOf = (id: string) => {
+        const s = ctx.subjects.find((x) => x.id === id);
+        return s ? pickName(s, lang) : id;
+      };
+      const teacherOf = (id: string) => {
+        const x = ctx.teachers.find((y) => y.id === id);
+        return x ? teacherDisplayName(x, lang) : '';
+      };
+      const base = ctx.classes.find((c) => c.id === spec.classIds[0]);
+      const baseName = base?.name ?? spec.classIds[0] ?? '';
+      const template = teacherViewId !== null && base ? ctx.templates.find((x) => x.id === base.templateId) : undefined;
+      const templateNote = base && template && !template.isDefault ? t('pin.otherTemplate', { class: base.name, template: template.name }) : undefined;
+      if (spec.groupKey === undefined) {
+        const lesson = spec.lessons[0];
+        const subject = lesson ? subjectOf(lesson.subjectId) : '';
+        const teacher = lesson ? teacherOf(lesson.teacherId) : '';
+        const sub = lesson && ctx.subjects.find((x) => x.id === lesson.subjectId);
+        return {
+          title: teacherViewId !== null ? t('pin.teacherTarget', { subject, classes }) : t('pin.target', { subject, teacher }),
+          ...(templateNote ? { detail: templateNote } : {}),
+          subject,
+          teacher,
+          classes,
+          base: baseName,
+          color: sub ? sub.color : '#E9E9E9',
+        };
+      }
+      const grade = base && ctx.grades.find((g) => g.id === base.gradeId);
+      const item = base && grade ? effectivePlan(base, grade).find((p) => p.kind === 'group' && p.key === spec.groupKey) : undefined;
+      const group = item ? pickName(item as { nameEn: string; nameSi?: string }, lang) : spec.groupKey;
+      const teachers = [...new Set(spec.lessons.map((l) => teacherOf(l.teacherId)))].join(', ');
+      return {
+        title: t('pin.targetGroup', { group, classes }),
+        detail: [...spec.lessons.map((l) => t('pin.groupLesson', { subject: subjectOf(l.subjectId), teacher: teacherOf(l.teacherId) })), ...(templateNote ? [templateNote] : [])].join(' · '),
+        subject: group,
+        teacher: teachers,
+        classes,
+        base: baseName,
+        color: item ? planItemColor(item, ctx) : '#E9E9E9',
+      };
+    },
+    [ctx, lang, t, teacherViewId],
   );
+  const names = useMemo(() => (target ? namesFor(target) : null), [target, namesFor]);
 
   const start = useCallback(
-    (next: PinTarget) => {
-      const s = ctx.subjects.find((x) => x.id === next.subjectId);
-      const teacher = ctx.teachers.find((x) => x.id === next.teacherId);
+    (next: PinSpec) => {
+      const n = namesFor(next);
       setTarget(next);
       setRawSuggested([]);
-      setMessage(t('pin.started', { subject: s ? pickName(s, lang) : next.subjectId, teacher: teacher ? teacherDisplayName(teacher, lang) : '' }));
+      setMessage(
+        next.groupKey !== undefined
+          ? t('pin.startedGroup', { group: n.subject, classes: n.classes })
+          : teacherViewId !== null
+            ? t('pin.startedFor', { subject: n.subject, classes: n.classes })
+            : t('pin.started', { subject: n.subject, teacher: n.teacher }),
+      );
     },
-    [ctx.subjects, ctx.teachers, t, lang],
+    [namesFor, t, teacherViewId],
   );
 
   const stop = useCallback(() => {
@@ -89,45 +174,53 @@ export function usePinMode(args: {
   }, [t]);
 
   const toggle = useCallback(
-    async (day: DayIndex, period: number) => {
-      const c = cellAt(day, period);
-      if (!target || !c) return;
-      const where = { day: tc(`days.long.${day}`), n: period, subject: subjectName() };
-      const key = `${day}-${period}`;
+    async (day: DayIndex, n: number) => {
+      const c = cellAt(day, n);
+      const period = periodAt(day, n);
+      if (!target || !c || !names) return;
+      const where = { day: tc(`days.long.${day}`), n, subject: names.subject };
+      const key = `${day}-${n}`;
       const mine = (seq.current.get(key) ?? 0) + 1;
       seq.current.set(key, mine);
       const latest = () => seq.current.get(key) === mine;
       if (c.kind === 'pinned') {
         const ok = await remove(c.entry.id);
         if (ok && latest()) setMessage(t('pin.unpinned', where));
-      } else if (c.kind === 'free') {
+      } else if (c.kind === 'free' && period !== null) {
         setRawSuggested((list) => list.filter((s) => s.day !== day || s.period !== period));
-        const ok = await save(draftFor(day, period, target));
+        const ok = await save(specDraft(target, day, period));
         if (latest()) setMessage(ok ? t('pin.pinned', where) : '');
       }
     },
-    [cellAt, target, tc, subjectName, remove, save, draftFor, t],
+    [cellAt, periodAt, target, names, tc, remove, save, t],
   );
 
   const suggest = useCallback(() => {
-    if (!target || !progress) return;
-    const picks = suggestPins({ ctx, entries, classId, ...target, count: progress.left });
+    if (!target || !progress || !names) return;
+    const picks = suggestPins({ ctx, entries, spec: target, count: progress.left, ...(teacherViewId === null ? {} : { teacherId: teacherViewId }) });
+    const shown = toRows(picks).length;
     setRawSuggested(picks);
-    const teacher = ctx.teachers.find((x) => x.id === target.teacherId);
-    setMessage(picks.length > 0 ? t('pin.suggestedMsg', { count: picks.length }) : t('pin.noSuggest', { teacher: teacher ? teacherDisplayName(teacher, lang) : '' }));
-  }, [target, progress, ctx, entries, classId, t, lang]);
+    setMessage(
+      shown > 0
+        ? t('pin.suggestedMsg', { count: shown })
+        : target.groupKey === undefined
+          ? t('pin.noSuggest', { teacher: names.teacher })
+          : t('pin.noSuggestGroup', { group: names.subject }),
+    );
+  }, [target, progress, names, ctx, entries, t, teacherViewId, toRows]);
 
   const pinSuggested = useCallback(async () => {
-    if (!target) return;
+    if (!target || !names) return;
     const list = suggested;
     setRawSuggested([]);
     let done = 0;
     for (const s of list) {
-      if (!(await save(draftFor(s.day, s.period, target)))) break;
+      const period = periodAt(s.day, s.period);
+      if (period === null || !(await save(specDraft(target, s.day, period)))) break;
       done += 1;
     }
-    setMessage(done > 0 ? t('pin.pinnedMany', { count: done, subject: subjectName() }) : '');
-  }, [target, suggested, save, draftFor, t, subjectName]);
+    setMessage(done > 0 ? t('pin.pinnedMany', { count: done, subject: names.subject }) : '');
+  }, [target, names, suggested, periodAt, save, t]);
 
-  return { target, slots, progress, suggested, message, cellAt, isSuggested, start, stop, toggle, suggest, pinSuggested };
+  return { target, progress, suggested, message, names, cellAt, periodAt, isSuggested, start, stop, toggle, suggest, pinSuggested };
 }

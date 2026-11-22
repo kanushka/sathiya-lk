@@ -3,7 +3,7 @@
 
 import { describe, expect, it } from 'vitest';
 import { C, ctx, entries, entry, S, T } from './fixtures';
-import { classOptionsForTeacherSlot, matchClassPeriod, preferredTeacherFor, teacherDayLoad, teacherOptionsForSlot, teachesSubject } from './availability';
+import { classOptionsForTeacherSlot, matchClassPeriod, preferredTeacherFor, teacherClassOptions, teacherDayLoad, teacherOptionsForSlot, teachesSubject } from './availability';
 import type { DayIndex, Entry, Teacher } from './types';
 
 const teacher = (id: string): Teacher => ctx.teachers.find((t) => t.id === id)!;
@@ -236,5 +236,26 @@ describe('preferredTeacherFor', () => {
   it('breaks ties by the earliest lesson in the week', () => {
     const e = [sin('a', 3, 1, T.rSilva), sin('b', 1, 2, T.ranasinghe)];
     expect(preferredTeacherFor({ entries: e, classId: C.c6a, subjectId: S.sinhala })).toBe(T.ranasinghe);
+  });
+});
+
+describe('teacherClassOptions', () => {
+  it('lists qualifying classes with the subject item, preferred first', () => {
+    const r = teacherClassOptions({ ctx, entries, teacherId: T.perera, subjectId: S.maths });
+    expect(r.map((o) => o.cls.id)).toEqual([C.c6b, C.c6a, C.c6c]);
+    expect(r.map((o) => o.preferred)).toEqual([true, false, false]);
+    expect(r[0]!.item).toMatchObject({ kind: 'subject', subjectId: S.maths });
+    expect(r[0]!.template.id).toBe(r[0]!.cls.templateId);
+  });
+
+  it('matches group options and falls back by grade then name without a preference', () => {
+    const r = teacherClassOptions({ ctx, entries: [], teacherId: T.ananda, subjectId: S.buddhism });
+    expect(r.map((o) => o.cls.id)).toEqual([C.c6a, C.c6b, C.c6c, C.c12a]);
+    expect(r[0]!.item).toMatchObject({ kind: 'group', key: 'religion' });
+    expect(r.some((o) => o.preferred)).toBe(false);
+  });
+
+  it('is empty for an unknown teacher', () => {
+    expect(teacherClassOptions({ ctx, entries, teacherId: 'nope', subjectId: S.maths })).toEqual([]);
   });
 });

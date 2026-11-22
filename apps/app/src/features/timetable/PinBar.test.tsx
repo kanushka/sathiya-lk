@@ -9,8 +9,7 @@ import { PinBar, type PinBarProps } from './PinBar';
 
 function setup(over: Partial<PinBarProps> = {}) {
   const props: PinBarProps = {
-    subject: 'Sinhala',
-    teacher: 'Mrs. J. Ranasinghe',
+    title: 'Sinhala · Mrs. J. Ranasinghe',
     color: '#F2E2E7',
     progress: { placed: 3, needed: 5, left: 2, over: 0 },
     suggestedCount: 0,
@@ -35,6 +34,12 @@ describe('PinBar', () => {
     expect(meter).toHaveAttribute('aria-valuenow', '3');
     expect(meter).toHaveAttribute('aria-valuemax', '5');
     expect(meter).not.toHaveAttribute('data-over');
+  });
+
+  it('shows an optional detail line under the title', () => {
+    setup({ title: 'Religion · 6A+6B', detail: 'Buddhism: Mr. A, Islam: Mr. B' });
+    expect(bar()).toHaveTextContent('Religion · 6A+6B');
+    expect(screen.getByText('Buddhism: Mr. A, Islam: Mr. B')).toBeInTheDocument();
   });
 
   it('says complete when the plan is met', () => {

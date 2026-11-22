@@ -5,11 +5,12 @@ import { findConflicts } from './clash';
 import { findClass, gradeOf, templateOf } from './lookup';
 import { effectivePlan } from './plan';
 import { bestOverlapPeriod, periodsFor, toMinutes } from './time';
-import type { DayIndex, Entry, SchoolClass, SchoolContext, Teacher } from './types';
+import type { DayIndex, Entry, PeriodTemplate, PlanItem, SchoolClass, SchoolContext, Teacher } from './types';
 
 export type UnavailableReason = 'busy' | 'limit' | 'not-qualified';
 export interface TeacherOption { teacher: Teacher; loadToday: number; reason?: UnavailableReason; busyWith?: { classIds: string[]; subjectId: string } }
 export interface BusyDetail { kind: 'teacher' | 'class'; entryId: string; classIds: string[]; subjectId: string; teacherId: string | null; groupKey?: string }
+export interface TeacherClassOption { cls: SchoolClass; item: PlanItem; subjectId: string; preferred: boolean; template: PeriodTemplate }
 export interface ClassOption { cls: SchoolClass; period: number; free: boolean; busy?: BusyDetail }
 
 export function busyDetail(e: Entry, kind: BusyDetail['kind'], teacherId: string): BusyDetail {
@@ -119,5 +120,23 @@ export function classOptionsForTeacherSlot(args: { ctx: SchoolContext; entries: 
     out.push({ cls, period, free: conflicts.length === 0, ...(busy ? { busy } : {}), gradeNumber: grade.number });
   }
   out.sort((a, b) => a.gradeNumber - b.gradeNumber || a.cls.name.localeCompare(b.cls.name));
+  return out.map(({ gradeNumber: _, ...o }) => o);
+}
+
+export function teacherClassOptions(args: { ctx: SchoolContext; entries: Entry[]; teacherId: string; subjectId: string }): TeacherClassOption[] {
+  const { ctx, entries, teacherId, subjectId } = args;
+  const teacher = ctx.teachers.find((t) => t.id === teacherId);
+  if (!teacher) return [];
+  const out: Array<TeacherClassOption & { gradeNumber: number }> = [];
+  for (const cls of ctx.classes) {
+    const grade = gradeOf(ctx, cls);
+    const template = templateOf(ctx, cls);
+    if (!grade || !template || !teachesSubject(teacher, subjectId, grade.number)) continue;
+    const plan = effectivePlan(cls, grade);
+    const item = plan.find((p) => p.kind === 'subject' && p.subjectId === subjectId) ?? plan.find((p) => p.kind === 'group' && p.optionSubjectIds.includes(subjectId));
+    if (!item) continue;
+    out.push({ cls, item, subjectId, preferred: preferredTeacherFor({ entries, classId: cls.id, subjectId }) === teacherId, template, gradeNumber: grade.number });
+  }
+  out.sort((a, b) => Number(b.preferred) - Number(a.preferred) || a.gradeNumber - b.gradeNumber || a.cls.name.localeCompare(b.cls.name, undefined, { numeric: true }));
   return out.map(({ gradeNumber: _, ...o }) => o);
 }
