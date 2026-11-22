@@ -428,6 +428,32 @@ describe('register', () => {
       expect(screen.queryByText(/already registered on Sathiya/)).not.toBeInTheDocument();
     });
 
+    it('ignores a census result once the school details have changed', async () => {
+      const user = userEvent.setup();
+      let answer: (v: boolean) => void = () => undefined;
+      vi.mocked(api.censusAvailable).mockImplementation(() => new Promise((r) => (answer = r)));
+      renderAuth(<RegisterPage />, { route: '/register', at: '/register' });
+      await fillSchool(user);
+      await user.type(screen.getByLabelText('Census number'), '5');
+      answer(false);
+      await new Promise((r) => setTimeout(r, 0));
+      expect(screen.queryByText(/already registered on Sathiya/)).not.toBeInTheDocument();
+      expect(screen.getByLabelText('Census number')).not.toHaveAttribute('aria-invalid', 'true');
+      expect(screen.getByRole('button', { name: 'Next: logo & colours' })).toBeEnabled();
+    });
+
+    it('does not move on when a census result arrives after a required field was cleared', async () => {
+      const user = userEvent.setup();
+      let answer: (v: boolean) => void = () => undefined;
+      vi.mocked(api.censusAvailable).mockImplementation(() => new Promise((r) => (answer = r)));
+      renderAuth(<RegisterPage />, { route: '/register', at: '/register' });
+      await fillSchool(user);
+      await user.clear(screen.getByLabelText('City'));
+      answer(true);
+      await new Promise((r) => setTimeout(r, 0));
+      expect(screen.queryByRole('button', { name: 'Next: your account' })).not.toBeInTheDocument();
+    });
+
     it('skips the census check when the school has no census number', async () => {
       const user = userEvent.setup();
       renderAuth(<RegisterPage />, { route: '/register', at: '/register' });

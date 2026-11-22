@@ -41,8 +41,11 @@ export function RegisterPage() {
   const [reporting, setReporting] = useState(false);
   const [checking, setChecking] = useState(false);
   const needsGate = gate || (!confirmed && isUnverifiedPasswordUser(user));
+  const draftVersion = useRef(0);
 
   function editSchool(next: SchoolDraft) {
+    draftVersion.current++;
+    setChecking(false);
     if (next.censusNo !== school.censusNo || next.type !== school.type) setCensusTaken(null);
     setSchool(next);
   }
@@ -54,12 +57,14 @@ export function RegisterPage() {
       return;
     }
     setChecking(true);
+    const version = draftVersion.current;
     let available = true;
     try {
       available = await api.censusAvailable(census);
     } catch {
       available = true;
     }
+    if (version !== draftVersion.current) return;
     setChecking(false);
     if (available) setStep(2);
     else setCensusTaken({});
