@@ -49,6 +49,11 @@ function subjectOnDay(entries: Entry[], day: DayIndex, baseClassId: string, spec
   return entries.some((e) => e.day === day && e.classIds.includes(baseClassId) && hasSubjectThatDay(e, spec));
 }
 
+function blockerOf(hit: Entry, spec: PinSpec): BusyDetail {
+  const teacherId = specTeacherIds(spec).find((id) => hit.lessons.some((l) => l.teacherId === id));
+  return teacherId === undefined ? busyDetail(hit, 'class', spec.lessons[0]!.teacherId) : busyDetail(hit, 'teacher', teacherId);
+}
+
 export function pinSlots(args: PinArgs): PinSlot[] {
   const { ctx, entries, spec } = args;
   const baseId = spec.classIds[0];
@@ -83,8 +88,7 @@ export function pinSlots(args: PinArgs): PinSlot[] {
         seen.add(c.entryId);
         const hit = entries.find((e) => e.id === c.entryId);
         if (!hit) continue;
-        const teacherId = specTeachers.map((t) => t.id).find((id) => hit.lessons.some((l) => l.teacherId === id));
-        blockers.push(teacherId === undefined ? busyDetail(hit, 'class', spec.lessons[0]!.teacherId) : busyDetail(hit, 'teacher', teacherId));
+        blockers.push(blockerOf(hit, spec));
       }
       if (blockers.length > 0) {
         out.push({ day, period, cell: { kind: 'busy', busy: blockers[0]!, blockers } });
@@ -179,6 +183,11 @@ export function teacherPinSlots(args: PinArgs & { teacherId: string }): TeacherP
         })
         .flatMap((p) => cells.filter((c) => c.day === day && c.period === p.period));
       const chosen = candidates.find((c) => c.cell.kind === 'free') ?? candidates[0];
+      if (chosen?.cell.kind === 'taken') {
+        const busy = blockerOf(chosen.cell.entry, spec);
+        out.push({ day, row, period: chosen.period, cell: { kind: 'busy', busy, blockers: [busy] } });
+        continue;
+      }
       out.push(chosen ? { day, row, period: chosen.period, cell: chosen.cell } : { day, row, period: null, cell: { kind: 'none' } });
     }
   }

@@ -81,6 +81,14 @@ describe('TeacherAssignPicker', () => {
     expect(classOption(/^6A/)).toHaveTextContent(/Busy · Teaching 1A · English · \d+ free this week/);
   });
 
+  it('notes a row whose class period holds another lesson as busy with that lesson', async () => {
+    setup(T.rizan, { day: 1, row: 2 }, [...entries, entry('occ', 1, 2, [C.c6a], [[S.science, T.perera]])]);
+    await pickSubject('English');
+    expect(classOption(/^6A/)).toHaveTextContent(/Busy · 6A · Science · Mrs. N. Perera · \d+ free this week/);
+    await userEvent.click(classOption(/^6A/));
+    expect(within(dialog()).getByText('6A · Science · Mrs. N. Perera. Pin the other free slots instead.')).toBeInTheDocument();
+  });
+
   it('notes a row with no period of the class', async () => {
     setup(T.rizan, { day: 4, row: 8 });
     await pickSubject('English');

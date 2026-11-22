@@ -231,6 +231,14 @@ describe('teacherPinSlots', () => {
     expect(at(slots, 1, 5)).toMatchObject({ period: 6, cell: { kind: 'free' } });
   });
 
+  it('marks a row busy with a class blocker when the class period holds another lesson', () => {
+    const o = entry('o', 1, 2, [C.c1a], [[S.science, T.kumari]]);
+    const slots = teacherPinSlots({ ...base, entries: [o] });
+    const cell = at(slots, 1, 2);
+    expect(cell.period).toBe(2);
+    expect(cell.cell).toMatchObject({ kind: 'busy', blockers: [expect.objectContaining({ entryId: 'o', kind: 'class' })] });
+  });
+
   it('shows a matching entry as pinned on its row', () => {
     const pin = entry('p', 1, 2, [C.c1a], [[S.maths, T.wickramasinghe]]);
     expect(at(teacherPinSlots({ ...base, entries: [pin] }), 1, 2)).toEqual({ day: 1, row: 2, period: 2, cell: { kind: 'pinned', entry: pin } });
