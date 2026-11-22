@@ -553,14 +553,13 @@ describe('ClassViewPage outside the period template', () => {
   });
 
   it('scrolls the list into view when linked to it', () => {
-    const scroll = vi.fn();
-    Element.prototype.scrollIntoView = scroll;
+    const scroll = vi.spyOn(Element.prototype, 'scrollIntoView');
     try {
       setupOrphan(`/admin/timetable/class/${C.c6c}#outside-template`);
       expect(scroll).toHaveBeenCalled();
       expect(scroll.mock.contexts[0]).toHaveAttribute('id', 'outside-template');
     } finally {
-      delete (Element.prototype as Partial<Element>).scrollIntoView;
+      scroll.mockRestore();
     }
   });
 

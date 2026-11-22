@@ -95,7 +95,7 @@ function AssignPickerBody({ classId, slot, subjectId: initialSubject, groupKey, 
 
   useEffect(() => {
     const id = (subjectId ? teacherInput : subjectInput).current?.getAttribute('aria-activedescendant');
-    if (id) document.getElementById(id)?.scrollIntoView?.({ block: 'nearest' });
+    if (id) document.getElementById(id)?.scrollIntoView({ block: 'nearest' });
   });
 
   const candidates = useMemo<Candidate[]>(() => {

@@ -110,7 +110,7 @@ export function GroupTeachersStep(props: GroupTeachersStepProps) {
 
   useEffect(() => {
     const id = inputRef.current?.getAttribute('aria-activedescendant');
-    if (id) document.getElementById(id)?.scrollIntoView?.({ block: 'nearest' });
+    if (id) document.getElementById(id)?.scrollIntoView({ block: 'nearest' });
   });
 
   const slotOptions = useMemo(

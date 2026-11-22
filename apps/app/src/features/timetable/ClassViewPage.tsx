@@ -128,7 +128,7 @@ function ClassView({ cls, classes }: { cls: SchoolClass; classes: SchoolClass[] 
   );
   const { hash } = useLocation();
   useEffect(() => {
-    if (hash === `#${OUTSIDE_TEMPLATE_ID}`) document.getElementById(OUTSIDE_TEMPLATE_ID)?.scrollIntoView?.({ block: 'start' });
+    if (hash === `#${OUTSIDE_TEMPLATE_ID}`) document.getElementById(OUTSIDE_TEMPLATE_ID)?.scrollIntoView({ block: 'start' });
   }, [hash]);
   const fillDrafts = useMemo(() => fillWithClassTeacher({ ctx, entries, classId: cls.id }), [ctx, entries, cls.id]);
 

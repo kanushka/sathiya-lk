@@ -88,7 +88,7 @@ export function Select<V extends string = string>({
   }, [open, searchable]);
 
   useEffect(() => {
-    if (open) listRef.current?.querySelector('[data-active="true"]')?.scrollIntoView?.({ block: 'nearest' });
+    if (open) listRef.current?.querySelector('[data-active="true"]')?.scrollIntoView({ block: 'nearest' });
   }, [open, active]);
 
   function openList() {

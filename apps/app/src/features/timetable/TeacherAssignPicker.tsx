@@ -156,7 +156,7 @@ function TeacherAssignPickerBody({ teacherId, slot, entries, onClose, onSave, on
 
   useEffect(() => {
     const id = (subjectId ? classInput : subjectInput).current?.getAttribute('aria-activedescendant');
-    if (id) document.getElementById(id)?.scrollIntoView?.({ block: 'nearest' });
+    if (id) document.getElementById(id)?.scrollIntoView({ block: 'nearest' });
   });
 
   if (!teacher || !rowTime) return null;

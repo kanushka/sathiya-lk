@@ -34,6 +34,8 @@ for (const name of ['localStorage', 'sessionStorage'] as const) {
   }
 }
 
+if (!Element.prototype.scrollIntoView) Element.prototype.scrollIntoView = () => undefined;
+
 afterEach(() => {
   cleanup();
   localStorage.clear();
