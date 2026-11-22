@@ -12,7 +12,7 @@ import { getDirectorySchool, signInWithPassword, type DirectorySchool } from './
 import { authErrorMessage } from './errors';
 import { readRememberedSchool, rememberSchool } from './schoolMemory';
 
-export function TeacherLoginForm({ focus }: { focus?: boolean }) {
+export function TeacherLoginForm({ autoFocus }: { autoFocus?: boolean }) {
   const { t } = useTranslation('auth');
   const { refreshClaims } = useAuth();
   const navigate = useNavigate();
@@ -43,8 +43,8 @@ export function TeacherLoginForm({ focus }: { focus?: boolean }) {
   }, [schoolParam]);
 
   useEffect(() => {
-    if (focus) searchRef.current?.focus();
-  }, [focus]);
+    if (autoFocus) searchRef.current?.focus();
+  }, [autoFocus]);
 
   function choose(s: DirectorySchool | null) {
     setSchool(s);
@@ -76,13 +76,8 @@ export function TeacherLoginForm({ focus }: { focus?: boolean }) {
   }
 
   return (
-    <form
-      onSubmit={submit}
-      noValidate
-      className="w-full max-w-[460px] flex-1 basis-[400px] rounded-2xl border border-line bg-white p-5 sm:p-8"
-    >
-      <p className="m-0 text-[13px] font-bold uppercase tracking-[.06em] text-warning">{t('teacher.eyebrow')}</p>
-      <h1 className="mb-1 mt-1.5 text-[26px] font-bold">{t('teacher.title')}</h1>
+    <form onSubmit={submit} noValidate>
+      <h1 className="mb-1 mt-0 text-[26px] font-bold">{t('teacher.title')}</h1>
       <p lang="si" className="mb-6 text-ink-muted font-[family-name:'Noto_Sans_Sinhala',Inter,sans-serif]">
         {t('teacher.titleSi')}
       </p>

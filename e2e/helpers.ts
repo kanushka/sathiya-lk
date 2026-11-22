@@ -8,8 +8,8 @@ export const SHOTS = new URL('./__screenshots__/', import.meta.url).pathname;
 
 export const shot = (page: Page, name: string) => page.screenshot({ path: `${SHOTS}${name}.png`, fullPage: true });
 
-export const adminForm = (page: Page) => page.locator('form', { has: page.getByRole('heading', { name: 'Admin login' }) });
-export const teacherForm = (page: Page) => page.locator('form', { has: page.getByRole('heading', { name: 'Teacher login' }) });
+export const adminForm = (page: Page) => page.getByRole('tabpanel', { name: 'School admin' });
+export const teacherForm = (page: Page) => page.getByRole('tabpanel', { name: 'Teacher' });
 
 export async function loginAdmin(page: Page, email: string, password: string, landing: RegExp = /\/admin$/): Promise<void> {
   await page.goto('/login');
