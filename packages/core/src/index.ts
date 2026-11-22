@@ -8,6 +8,8 @@ export * from './directory';
 export * from './directoryDoc';
 export * from './census';
 export * from './staff';
+export * from './standardSubjects';
+export * from './subjectShort';
 export * from './color';
 export * from './paths';
 export * from './api';
