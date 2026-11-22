@@ -8,6 +8,7 @@ import { cx } from './cx';
 import { fieldBaseClass, fieldFocusClass } from './Field';
 import { Icon } from './Icon';
 import { MenuEmpty, MenuGroup, MenuOption, MenuPanel, MenuSearch } from './listbox/MenuPanel';
+import { triggerLabelledBy, useFieldLabelId } from './listbox/useFieldLabelId';
 import { usePopover } from './listbox/usePopover';
 
 export interface ComboboxProps<T> {
@@ -83,6 +84,7 @@ export function Combobox<T>({
     if (open) searchRef.current?.focus();
   }, [open]);
 
+  const fieldLabelId = useFieldLabelId(triggerRef, !ariaLabelledBy, baseId);
   const { pos, listMax } = usePopover(triggerRef, popRef, open, [flat.length, query], () => setOpen(false));
 
   useEffect(() => {
@@ -142,12 +144,17 @@ export function Combobox<T>({
         aria-controls={open ? listId : undefined}
         aria-invalid={ariaInvalid}
         aria-describedby={ariaDescribedBy}
-        aria-labelledby={ariaLabelledBy}
+        aria-labelledby={triggerLabelledBy({
+          ariaLabelledBy,
+          triggerId: baseId,
+          valueId: `${baseId}-value`,
+          hasValue: value !== undefined,
+        })}
         disabled={disabled}
         onClick={() => (open ? close() : openList())}
         className={cx(fieldBaseClass, fieldFocusClass, 'flex h-10 items-center gap-2 text-left')}
       >
-        <span className={cx('min-w-0 flex-1 truncate', value === undefined && 'text-ink-muted')}>
+        <span id={`${baseId}-value`} className={cx('min-w-0 flex-1 truncate', value === undefined && 'text-ink-muted')}>
           {value === undefined ? placeholder : getLabel(value)}
         </span>
         <Icon name="chevronDown" size={16} className="shrink-0 text-ink-muted" />
@@ -177,8 +184,8 @@ export function Combobox<T>({
             ref={listRef}
             id={listId}
             role="listbox"
-            aria-label={ariaLabelledBy ? undefined : placeholder}
-            aria-labelledby={ariaLabelledBy}
+            aria-label={ariaLabelledBy || fieldLabelId ? undefined : placeholder}
+            aria-labelledby={ariaLabelledBy ?? fieldLabelId}
             style={{ maxHeight: listMax }}
             className="overflow-y-auto"
           >

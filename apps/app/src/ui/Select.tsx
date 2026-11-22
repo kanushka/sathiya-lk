@@ -10,7 +10,7 @@ import { Icon } from './Icon';
 import { MenuEmpty, MenuGroup, MenuOption, MenuPanel, MenuSearch } from './listbox/MenuPanel';
 import { filterOptions, firstEnabled, groupOptions, isPrintable, navigateIndex } from './listbox/options';
 import { usePopover } from './listbox/usePopover';
-import { useFieldLabelId } from './listbox/useFieldLabelId';
+import { triggerLabelledBy, useFieldLabelId } from './listbox/useFieldLabelId';
 import { useTypeahead } from './listbox/useTypeahead';
 
 export interface SelectOption<V extends string = string> {
@@ -81,7 +81,7 @@ export function Select<V extends string = string>({
   const { pos, listMax } = usePopover(triggerRef, popRef, open, [flat.length], () => setOpen(false));
   const typeahead = useTypeahead(flat, setActive);
 
-  const fieldLabelId = useFieldLabelId(triggerRef, open && !ariaLabelledBy && !ariaLabel, baseId);
+  const fieldLabelId = useFieldLabelId(triggerRef, !ariaLabelledBy && !ariaLabel, baseId);
 
   useEffect(() => {
     if (open && searchable) searchRef.current?.focus();
@@ -180,7 +180,14 @@ export function Select<V extends string = string>({
         aria-invalid={ariaInvalid}
         aria-describedby={ariaDescribedBy}
         aria-label={ariaLabel}
-        aria-labelledby={ariaLabelledBy}
+        aria-labelledby={triggerLabelledBy({
+          ariaLabelledBy,
+          ariaLabel,
+          fieldLabelId,
+          triggerId: baseId,
+          valueId: `${baseId}-value`,
+          hasValue: !!selected,
+        })}
         aria-required={required || undefined}
         disabled={disabled}
         onClick={() => (open ? close() : openList())}
@@ -195,7 +202,7 @@ export function Select<V extends string = string>({
           size === 'sm' ? 'h-8' : 'h-10',
         )}
       >
-        <span className={cx('min-w-0 flex-1 truncate', !selected && 'text-ink-muted')}>
+        <span id={`${baseId}-value`} className={cx('min-w-0 flex-1 truncate', !selected && 'text-ink-muted')}>
           {selected ? selected.label : (placeholder ?? t('select.placeholder'))}
         </span>
         <Icon name="chevronDown" size={16} className="shrink-0 text-ink-muted" />

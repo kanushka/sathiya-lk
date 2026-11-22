@@ -10,7 +10,7 @@ import { fieldBoxClass, fieldFocusWithinClass } from './Field';
 import { Icon } from './Icon';
 import { MenuEmpty, MenuGroup, MenuOption, MenuPanel, MenuSearch } from './listbox/MenuPanel';
 import { filterOptions, firstEnabled, groupOptions, isPrintable, navigateIndex } from './listbox/options';
-import { useFieldLabelId } from './listbox/useFieldLabelId';
+import { triggerLabelledBy, useFieldLabelId } from './listbox/useFieldLabelId';
 import { usePopover } from './listbox/usePopover';
 import { useTypeahead } from './listbox/useTypeahead';
 import type { SelectOption } from './Select';
@@ -80,7 +80,7 @@ export function MultiSelect<V extends string = string>({
     setOpen(false),
   );
   const typeahead = useTypeahead(flat, setActive);
-  const fieldLabelId = useFieldLabelId(triggerRef, open && !ariaLabelledBy && !ariaLabel, baseId);
+  const fieldLabelId = useFieldLabelId(triggerRef, !ariaLabelledBy && !ariaLabel, baseId);
 
   useEffect(() => {
     if (open && searchable) searchRef.current?.focus();
@@ -171,7 +171,7 @@ export function MultiSelect<V extends string = string>({
       e.preventDefault();
       openList();
     } else if (e.key === 'Backspace') {
-      const last = value[value.length - 1];
+      const last = [...value].reverse().find((v) => selectedOptions.some((o) => o.value === v));
       if (last !== undefined) {
         e.preventDefault();
         remove(last);
@@ -213,7 +213,10 @@ export function MultiSelect<V extends string = string>({
         {chips.map((o) => (
           <span
             key={o.value}
-            className="inline-flex h-7 min-w-0 max-w-[10rem] items-center gap-0.5 rounded-md bg-surface-3 pl-2 pr-0.5 text-[13px] font-medium text-ink"
+            className={cx(
+              'inline-flex h-7 min-w-0 max-w-[10rem] items-center gap-0.5 rounded-md bg-surface-3 pl-2 pr-0.5 text-[13px] font-medium',
+              disabled ? 'text-ink-muted' : 'text-ink',
+            )}
           >
             <span className="truncate">{o.label}</span>
             <button
@@ -232,7 +235,12 @@ export function MultiSelect<V extends string = string>({
           </span>
         ))}
         {overflow > 0 && (
-          <span className="inline-flex h-7 shrink-0 items-center rounded-md bg-surface-3 px-2 text-[13px] font-semibold text-ink-soft">
+          <span
+            className={cx(
+              'inline-flex h-7 shrink-0 items-center rounded-md bg-surface-3 px-2 text-[13px] font-semibold',
+              disabled ? 'text-ink-muted' : 'text-ink-soft',
+            )}
+          >
             {t('multi.more', { count: overflow })}
           </span>
         )}
@@ -248,7 +256,14 @@ export function MultiSelect<V extends string = string>({
           aria-invalid={ariaInvalid}
           aria-describedby={ariaDescribedBy}
           aria-label={ariaLabel}
-          aria-labelledby={ariaLabelledBy}
+          aria-labelledby={triggerLabelledBy({
+            ariaLabelledBy,
+            ariaLabel,
+            fieldLabelId,
+            triggerId: baseId,
+            valueId: `${baseId}-value`,
+            hasValue: selectedOptions.length > 0,
+          })}
           aria-required={required || undefined}
           disabled={disabled}
           onKeyDown={onTriggerKeyDown}
@@ -257,6 +272,13 @@ export function MultiSelect<V extends string = string>({
           }}
           className="flex h-8 min-w-8 flex-1 items-center gap-2 bg-transparent pl-1.5 text-left focus:outline-none disabled:cursor-not-allowed"
         >
+          {selectedOptions.length > 0 && (
+            <span id={`${baseId}-value`} className="sr-only">
+              {selectedOptions.length > maxChips
+                ? t('multi.count', { count: selectedOptions.length, total: options.length })
+                : selectedOptions.map((o) => o.label).join(', ')}
+            </span>
+          )}
           <span className="min-w-0 flex-1 truncate text-ink-muted">
             {selectedOptions.length === 0 && (placeholder ?? t('select.placeholder'))}
           </span>

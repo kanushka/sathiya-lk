@@ -6,6 +6,7 @@ import userEvent from '@testing-library/user-event';
 import { describe, expect, it, vi } from 'vitest';
 import { renderWithI18n } from '../test/render';
 import { Combobox } from './Combobox';
+import { Field } from './Field';
 import { Modal } from './Modal';
 
 interface Subj { id: string; name: string; group: string }
@@ -235,5 +236,40 @@ describe('Combobox', () => {
     expect(container.querySelector('.w-64')).toContainElement(trigger);
     await user.click(trigger);
     expect(screen.getByRole('listbox', { name: 'Subject' })).toHaveAttribute('aria-labelledby', 'subj-label');
+  });
+
+  it('keeps the value in the trigger name with aria-labelledby and names the listbox from a field label', async () => {
+    const user = userEvent.setup();
+    const { unmount } = renderWithI18n(
+      <>
+        <span id="subj-label">Subject</span>
+        <Combobox
+          items={items}
+          getKey={(s) => s.id}
+          getLabel={(s) => s.name}
+          value={items[0]}
+          onChange={vi.fn()}
+          placeholder="Pick"
+          searchPlaceholder="Search subject…"
+          aria-labelledby="subj-label"
+        />
+      </>,
+    );
+    expect(screen.getByRole('button')).toHaveAccessibleName('Subject Mathematics');
+    unmount();
+    renderWithI18n(
+      <Field label="Subject">
+        <Combobox
+          items={items}
+          getKey={(s) => s.id}
+          getLabel={(s) => s.name}
+          onChange={vi.fn()}
+          placeholder="Pick"
+          searchPlaceholder="Search subject…"
+        />
+      </Field>,
+    );
+    await user.click(screen.getByRole('button', { name: 'Subject' }));
+    expect(screen.getByRole('listbox', { name: 'Subject' })).toBeInTheDocument();
   });
 });

@@ -26,7 +26,7 @@ export const fieldBoxClass =
 export const fieldFocusWithinClass =
   'focus-within:border-brand focus-within:ring-[3px] focus-within:ring-brand/30 data-[invalid=true]:focus-within:ring-danger/20';
 
-export const inputClass =`h-10 ${fieldBaseClass} ${fieldFocusClass}`;
+export const inputClass = `h-10 ${fieldBaseClass} ${fieldFocusClass}`;
 
 export const textareaClass = `h-auto min-h-[88px] py-2.5 leading-relaxed resize-y ${fieldBaseClass} ${fieldFocusClass}`;
 

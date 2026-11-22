@@ -17,3 +17,17 @@ export function useFieldLabelId(
   }, [active, triggerRef, baseId]);
   return labelId;
 }
+
+export function triggerLabelledBy(opts: {
+  ariaLabelledBy?: string;
+  ariaLabel?: string;
+  fieldLabelId?: string;
+  triggerId: string;
+  valueId: string;
+  hasValue: boolean;
+}): string | undefined {
+  const { ariaLabelledBy, ariaLabel, fieldLabelId, triggerId, valueId, hasValue } = opts;
+  if (!hasValue) return ariaLabelledBy;
+  const label = ariaLabelledBy ?? (ariaLabel ? triggerId : fieldLabelId);
+  return label ? `${label} ${valueId}` : undefined;
+}

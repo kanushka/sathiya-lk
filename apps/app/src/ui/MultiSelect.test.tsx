@@ -49,10 +49,11 @@ function setup(props: Props = {}) {
     ...utils,
     onChange,
     user: userEvent.setup(),
-    trigger: screen.getByRole('combobox', { name: props['aria-label'] ?? 'Grades' }),
+    trigger: screen.getByRole('combobox', { name: new RegExp(`^${props['aria-label'] ?? 'Grades'}`) }),
   };
 }
 
+const visible = { ignore: '.sr-only, script, style' };
 const activeOption = () => screen.getAllByRole('option').find((o) => o.dataset.active === 'true');
 
 describe('MultiSelect', () => {
@@ -74,7 +75,7 @@ describe('MultiSelect', () => {
     const chips = screen.getAllByRole('button', { name: /^Remove / });
     expect(chips.map((b) => b.getAttribute('aria-label'))).toEqual(['Remove Grade 6', 'Remove Grade 9']);
     expect(screen.getByText('+2')).toBeInTheDocument();
-    expect(screen.getByRole('combobox', { name: 'Grades' })).not.toHaveTextContent('Choose…');
+    expect(screen.getByRole('combobox', { name: 'Grades 4 of 6 selected' })).not.toHaveTextContent('Choose…');
   });
 
   it('removes a value with its chip button without opening the menu', async () => {
@@ -95,9 +96,43 @@ describe('MultiSelect', () => {
     expect(screen.queryByRole('listbox')).not.toBeInTheDocument();
   });
 
+  it('exposes the selection in the combobox name and updates it after Backspace', async () => {
+    const { user, trigger } = setup({ value: ['g9', 'g6'] });
+    expect(trigger).toHaveAccessibleName('Grades Grade 6, Grade 9');
+    trigger.focus();
+    await user.keyboard('{Backspace}');
+    expect(trigger).toHaveAccessibleName('Grades Grade 9');
+    await user.keyboard('{Backspace}');
+    expect(trigger).toHaveAccessibleName('Grades');
+  });
+
+  it('keeps the selection in the name with a Field label or aria-labelledby', () => {
+    const { unmount } = renderWithI18n(
+      <Field label="Grades">
+        <MultiSelect options={grades} value={['g7']} onChange={() => {}} />
+      </Field>,
+    );
+    expect(screen.getByRole('combobox')).toHaveAccessibleName('Grades Grade 7');
+    unmount();
+    renderWithI18n(
+      <>
+        <span id="ext">Classes</span>
+        <MultiSelect options={grades} value={['g6', 'g7']} onChange={() => {}} aria-labelledby="ext" />
+      </>,
+    );
+    expect(screen.getByRole('combobox')).toHaveAccessibleName('Classes Grade 6, Grade 7');
+  });
+
+  it('ignores values missing from options on Backspace', async () => {
+    const { user, trigger, onChange } = setup({ value: ['g6', 'gone'] });
+    trigger.focus();
+    await user.keyboard('{Backspace}');
+    expect(onChange).toHaveBeenLastCalledWith(['gone']);
+  });
+
   it('opens when clicking the wrapper outside the combobox', async () => {
     const { user, trigger } = setup({ value: ['g6'] });
-    const chipLabel = within(trigger.parentElement!).getByText('Grade 6');
+    const chipLabel = within(trigger.parentElement!).getByText('Grade 6', visible);
     await user.click(chipLabel);
     expect(screen.getByRole('listbox')).toBeInTheDocument();
     expect(trigger).toHaveFocus();
@@ -149,7 +184,7 @@ describe('MultiSelect', () => {
     await user.click(trigger);
     await user.click(screen.getByRole('button', { name: 'Select all' }));
     expect(onChange).toHaveBeenLastCalledWith(['g7', 'g6', 'g9', 'g10', 'g11']);
-    expect(screen.getByText('5 of 6 selected')).toBeInTheDocument();
+    expect(screen.getByText('5 of 6 selected', visible)).toBeInTheDocument();
     expect(screen.getByRole('listbox')).toBeInTheDocument();
     await user.click(screen.getByRole('button', { name: 'Clear' }));
     expect(onChange).toHaveBeenLastCalledWith([]);
@@ -222,7 +257,7 @@ describe('MultiSelect', () => {
   it('is disabled: no menu, no chip removal', async () => {
     const { user, trigger, onChange } = setup({ value: ['g6'], disabled: true });
     expect(trigger).toBeDisabled();
-    await user.click(screen.getByText('Grade 6'));
+    await user.click(screen.getByText('Grade 6', visible));
     expect(screen.queryByRole('listbox')).not.toBeInTheDocument();
     expect(screen.getByRole('button', { name: 'Remove Grade 6' })).toBeDisabled();
     expect(onChange).not.toHaveBeenCalled();

@@ -40,7 +40,7 @@ function Controlled(props: Partial<SelectProps> & { onChange?: (v: string) => vo
 function setup(props: Partial<SelectProps> & { onChange?: (v: string) => void } = {}) {
   const onChange = props.onChange ?? vi.fn();
   renderWithI18n(<Controlled {...props} onChange={onChange} />);
-  return { onChange, user: userEvent.setup(), trigger: screen.getByRole('combobox', { name: 'Fruit' }) };
+  return { onChange, user: userEvent.setup(), trigger: screen.getByRole('combobox', { name: /^Fruit/ }) };
 }
 
 const activeOption = () => screen.getAllByRole('option').find((o) => o.dataset.active === 'true');
@@ -224,7 +224,8 @@ describe('Select', () => {
     expect(search).toHaveAttribute('aria-activedescendant', screen.getByRole('option', { name: 'Chemistry' }).id);
     await user.keyboard('{ArrowDown}{Enter}');
     expect(onChange).toHaveBeenCalledWith('history');
-    await user.click(screen.getByRole('combobox', { name: 'Subject' }));
+    expect(screen.getByRole('combobox', { name: 'Subject History' })).toBeInTheDocument();
+    await user.click(screen.getByRole('combobox', { name: /^Subject/ }));
     await user.type(screen.getByRole('combobox', { name: 'Search' }), 'zzz');
     expect(screen.getByText('No matches')).toBeInTheDocument();
   });
@@ -278,6 +279,23 @@ describe('Select', () => {
     await user.click(screen.getByRole('combobox', { name: 'External' }));
     expect(screen.getByRole('listbox')).toHaveAttribute('aria-labelledby', 'ext');
     expect(screen.getByRole('listbox')).not.toHaveAttribute('aria-label');
+  });
+
+  it('keeps the selected value in the name with aria-labelledby or a Field label', () => {
+    const { unmount } = renderWithI18n(
+      <>
+        <span id="ext">External</span>
+        <Select options={fruits} value="cherry" onChange={() => {}} aria-labelledby="ext" />
+      </>,
+    );
+    expect(screen.getByRole('combobox')).toHaveAccessibleName('External Cherry');
+    unmount();
+    renderWithI18n(
+      <Field label="Fruit">
+        <Select options={fruits} value="apple" onChange={() => {}} />
+      </Field>,
+    );
+    expect(screen.getByRole('combobox')).toHaveAccessibleName('Fruit Apple');
   });
 
   it('renders a hidden input when name is set', () => {
