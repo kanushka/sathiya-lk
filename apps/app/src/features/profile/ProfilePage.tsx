@@ -9,6 +9,7 @@ import { useReadOnly } from '../../ui/AdminLayout';
 import { Alert } from '../../ui/Alert';
 import { Button } from '../../ui/Button';
 import { Field, inputClass } from '../../ui/Field';
+import { PageHeader } from '../../ui/PageHeader';
 import { useToast } from '../../ui/Toast';
 import { uploadLogo } from '../register/api';
 import { BrandPreview } from '../register/BrandPreview';
@@ -84,8 +85,7 @@ export function ProfilePage() {
 
   return (
     <div>
-      <h1 className="mb-1.5 mt-0 text-2xl font-bold text-ink">{t('page.title')}</h1>
-      <p className="mb-5 text-sm text-ink-soft">{t('page.subtitle')}</p>
+      <PageHeader title={t('page.title')} subtitle={t('page.subtitle')} />
       <form
         className="flex flex-wrap gap-6 rounded-[14px] border border-line-soft bg-white p-6"
         onSubmit={(e) => {

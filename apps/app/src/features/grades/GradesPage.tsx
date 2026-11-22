@@ -7,6 +7,7 @@ import { useSchool } from '../../app/SchoolProvider';
 import { useReadOnly } from '../../ui/AdminLayout';
 import { Button } from '../../ui/Button';
 import { EmptyState } from '../../ui/EmptyState';
+import { PageHeader } from '../../ui/PageHeader';
 import { useToast } from '../../ui/Toast';
 import { DeleteSetupModal } from '../teachers/DeleteSetupModal';
 import * as api from './api';
@@ -55,13 +56,15 @@ export function GradesPage() {
   };
 
   const addGradeButton = !readOnly && choices.length > 0 && (
-    <Button variant="link" className="mx-2 mt-2.5" onClick={() => setDialog({ kind: 'addGrade' })}>
+    <Button variant="primary" onClick={() => setDialog({ kind: 'addGrade' })}>
       {t('rail.addGrade')}
     </Button>
   );
 
   return (
-    <div className="flex min-h-[600px] gap-6">
+    <div>
+      <PageHeader title={t('page.heading')} actions={addGradeButton || undefined} />
+      <div className="flex min-h-[600px] gap-6">
       <nav aria-label={t('rail.title')} className="w-[150px] shrink-0 border-r border-line-soft pr-2.5">
         <p className="mx-2 mb-2.5 text-[11px] font-bold uppercase tracking-widest text-ink-muted">{t('rail.title')}</p>
         {grades.map((g) => (
@@ -78,15 +81,14 @@ export function GradesPage() {
             <span className="text-xs font-medium text-ink-muted">{school.classes.filter((c) => c.gradeId === g.id).length}</span>
           </button>
         ))}
-        {addGradeButton}
       </nav>
 
       <div className="min-w-0 flex-1">
         {!grade ? (
-          <EmptyState icon="grades" title={t('page.empty')} body={t('page.emptyBody')} />
+          <EmptyState icon="grades" title={t('page.empty')} body={t('page.emptyBody')} action={addGradeButton || undefined} />
         ) : (
           <>
-            <h1 className="mb-5 mt-0 text-2xl font-bold text-ink">{t('page.title', { n: grade.number })}</h1>
+            <h2 className="mb-4 mt-0 text-xl font-bold text-ink">{t('page.title', { n: grade.number })}</h2>
 
             <section className="mb-5 rounded-[14px] border border-line-soft bg-white p-5">
               <div className="mb-3.5 flex items-center justify-between">
@@ -129,6 +131,7 @@ export function GradesPage() {
             </section>
           </>
         )}
+        </div>
       </div>
 
       {dialog?.kind === 'addGrade' && (

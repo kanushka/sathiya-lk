@@ -1,5 +1,6 @@
 {
   "page": {
+    "heading": "Grades & classes",
     "title": "Grade {{n}} settings",
     "empty": "No grades yet",
     "emptyBody": "Add a grade to set up its classes and subjects.",

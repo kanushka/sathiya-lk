@@ -9,6 +9,7 @@ import { useCollection } from '../../lib/firestore';
 import { useReadOnly } from '../../ui/AdminLayout';
 import { Button } from '../../ui/Button';
 import { EmptyState } from '../../ui/EmptyState';
+import { PageHeader } from '../../ui/PageHeader';
 import { Table, TBody, Td, Th, THead, Tr } from '../../ui/Table';
 import { useToast } from '../../ui/Toast';
 import * as api from './api';
@@ -40,17 +41,17 @@ export function MembersPage() {
 
   return (
     <div>
-      <div className="mb-5 flex flex-wrap items-start justify-between gap-3">
-        <div>
-          <h1 className="mb-1.5 mt-0 text-2xl font-bold text-ink">{t('page.title')}</h1>
-          <p className="m-0 text-sm text-ink-soft">{t('page.subtitle')}</p>
-        </div>
-        {!readOnly && (
-          <Button variant="primary" onClick={() => setInviting(true)}>
-            {t('page.invite')}
-          </Button>
-        )}
-      </div>
+      <PageHeader
+        title={t('page.title')}
+        subtitle={t('page.subtitle')}
+        actions={
+          !readOnly && (
+            <Button variant="primary" onClick={() => setInviting(true)}>
+              {t('page.invite')}
+            </Button>
+          )
+        }
+      />
 
       {rows.length === 0 ? (
         <EmptyState icon="members" title={t('list.empty')} />

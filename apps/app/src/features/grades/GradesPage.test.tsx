@@ -29,6 +29,8 @@ async function openGrade6() {
   return user;
 }
 
+const headerActions = () => within(screen.getByTestId('page-header')).getAllByRole('button').map((b) => b.textContent);
+
 describe('grades page', () => {
   it('grade 1 plan is measured against its classes\' Primary template', async () => {
     const user = userEvent.setup();
@@ -159,6 +161,13 @@ describe('grades page', () => {
     await user.click(screen.getByRole('button', { name: 'Remove s-gone from Aesthetic' }));
     const saved = vi.mocked(api.saveGradePlan).mock.calls[0]![2];
     expect(saved.find((p) => p.kind === 'group' && p.key === 'aesthetic')).toMatchObject({ optionSubjectIds: [S.music, S.dancing, S.art, S.pali] });
+  });
+
+  it('has the page title and a primary + Add grade at the top right', async () => {
+    await openGrade6();
+    expect(screen.getByRole('heading', { level: 1, name: 'Grades & classes' })).toBeInTheDocument();
+    expect(headerActions().at(-1)).toBe('+ Add grade');
+    expect(screen.getByRole('heading', { level: 2, name: 'Grade 6 settings' })).toBeInTheDocument();
   });
 
   it('read-only hides every write control', async () => {

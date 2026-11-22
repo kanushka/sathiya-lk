@@ -23,6 +23,11 @@ beforeEach(() => {
 const render = () => renderWithSchool(<SubjectsPage />, { ctx, entries });
 
 describe('subjects page', () => {
+  it('header actions end with the primary + Add subject', () => {
+    render();
+    expect(within(screen.getByTestId('page-header')).getAllByRole('button').map((b) => b.textContent)).toEqual(['Load standard Sri Lankan list', '+ Add subject']);
+  });
+
   it('add requires the English name', async () => {
     const user = userEvent.setup();
     render();

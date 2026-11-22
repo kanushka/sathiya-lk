@@ -10,6 +10,7 @@ import { Alert } from '../../ui/Alert';
 import { Button } from '../../ui/Button';
 import { cx } from '../../ui/cx';
 import { EmptyState } from '../../ui/EmptyState';
+import { PageHeader } from '../../ui/PageHeader';
 import { useToast } from '../../ui/Toast';
 import { DeleteSetupModal } from '../teachers/DeleteSetupModal';
 import * as api from './api';
@@ -40,8 +41,17 @@ export function TemplatesPage() {
 
   return (
     <div>
-      <h1 className="mb-1.5 mt-0 text-2xl font-bold text-ink">{t('page.title')}</h1>
-      <p className="mb-5 text-sm text-ink-soft">{t('page.subtitle')}</p>
+      <PageHeader
+        title={t('page.title')}
+        subtitle={t('page.subtitle')}
+        actions={
+          !readOnly && (
+            <Button variant="primary" onClick={() => setDialog({ kind: 'new' })}>
+              {t('list.new')}
+            </Button>
+          )
+        }
+      />
 
       {orphans > 0 && (
         <Alert tone="danger" role="status" className="mb-5">
@@ -65,11 +75,6 @@ export function TemplatesPage() {
               </span>
             </button>
           ))}
-          {!readOnly && (
-            <button type="button" className="h-[42px] rounded-xl border-[1.5px] border-dashed border-line-strong bg-transparent font-semibold text-brand focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand focus-visible:ring-offset-2" onClick={() => setDialog({ kind: 'new' })}>
-              {t('list.new')}
-            </button>
-          )}
         </div>
 
         <section className="min-w-[520px] flex-1 rounded-[14px] border border-line-soft bg-white p-6">
