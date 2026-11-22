@@ -26,6 +26,7 @@ import { isComposing } from '../../ui/composing';
 import { cx } from '../../ui/cx';
 import { Icon } from '../../ui/Icon';
 import { Modal } from '../../ui/Modal';
+import { GroupTeachersStep } from './GroupTeachersStep';
 import { limitWarning, planItemColor, teacherReason, teachesAtAll } from './labels';
 import { initials, usePickItems, type GroupItem, type PickItem } from './pickerData';
 
@@ -33,11 +34,11 @@ export interface AssignPickerProps {
   classId: string;
   slot: { day: DayIndex; period: number } | null;
   subjectId?: string;
+  groupKey?: string;
   entries: Entry[];
   onClose(): void;
   onSave(d: EntryDraft): Promise<boolean>;
   onPin(spec: PinSpec): void;
-  onGroup(item: GroupItem): void;
   onCombine(subjectId: string): void;
 }
 
@@ -60,7 +61,7 @@ const inputClass =
   'box-border h-[42px] w-full rounded-[10px] border border-line-strong px-3 text-sm text-ink focus:border-brand focus:outline-none focus:ring-2 focus:ring-brand/30';
 const capClass = 'm-0 text-[11px] font-bold uppercase tracking-[.06em]';
 
-function AssignPickerBody({ classId, slot, subjectId: initialSubject, entries, onClose, onSave, onPin, onGroup, onCombine }: AssignPickerProps) {
+function AssignPickerBody({ classId, slot, subjectId: initialSubject, groupKey, entries, onClose, onSave, onPin, onCombine }: AssignPickerProps) {
   const { t } = useTranslation('timetable');
   const { t: tc } = useTranslation('common');
   const { lang } = useLang();
@@ -80,10 +81,15 @@ function AssignPickerBody({ classId, slot, subjectId: initialSubject, entries, o
   const template = cls && ctx.templates.find((x) => x.id === cls.templateId);
   const time = slot && template ? periodsFor(template, slot.day).find((p) => p.period === slot.period) : undefined;
   const items = usePickItems(ctx, classId, entries, lang);
+  const [group, setGroup] = useState<GroupItem | null>(() => {
+    const found = groupKey === undefined ? undefined : items.find((p) => p.item.kind === 'group' && p.item.key === groupKey)?.item;
+    return found?.kind === 'group' ? found : null;
+  });
 
   useEffect(() => {
+    if (group) return;
     (subjectId ? teacherInput : subjectInput).current?.focus();
-  }, [subjectId]);
+  }, [subjectId, group]);
 
   useEffect(() => {
     const id = (subjectId ? teacherInput : subjectInput).current?.getAttribute('aria-activedescendant');
@@ -142,7 +148,7 @@ function AssignPickerBody({ classId, slot, subjectId: initialSubject, entries, o
   const subjectColor = subject?.color ?? '#E9E9E9';
 
   const q = query.trim().toLowerCase();
-  const subjectOptions = items.filter((p) => (slot || p.item.kind === 'subject') && (!q || p.name.toLowerCase().includes(q) || shortOf(p).includes(q)));
+  const subjectOptions = items.filter((p) => !q || p.name.toLowerCase().includes(q) || shortOf(p).includes(q));
   function shortOf(p: PickItem): string {
     if (p.item.kind !== 'subject') return '';
     const id = p.item.subjectId;
@@ -169,7 +175,8 @@ function AssignPickerBody({ classId, slot, subjectId: initialSubject, entries, o
 
   function choose(p: PickItem) {
     if (p.item.kind === 'group') {
-      onGroup(p.item);
+      setGroup(p.item);
+      setQuery('');
       return;
     }
     setSubjectId(p.item.subjectId);
@@ -179,6 +186,7 @@ function AssignPickerBody({ classId, slot, subjectId: initialSubject, entries, o
   }
 
   function back() {
+    setGroup(null);
     setSubjectId(null);
     setQuery('');
     setTeacherQuery('');
@@ -198,6 +206,18 @@ function AssignPickerBody({ classId, slot, subjectId: initialSubject, entries, o
     setBusy(false);
     if (!ok) return;
     onPin(singleSpec(classId, subjectId, teacherId));
+    onClose();
+  }
+
+  async function confirmGroup(spec: PinSpec, placeNow: boolean) {
+    if (busy) return;
+    if (placeNow && slot) {
+      setBusy(true);
+      const ok = await onSave({ day: slot.day, period: slot.period, classIds: spec.classIds, lessons: spec.lessons, ...(spec.groupKey === undefined ? {} : { groupKey: spec.groupKey }) });
+      setBusy(false);
+      if (!ok) return;
+    }
+    onPin(spec);
     onClose();
   }
 
@@ -237,7 +257,7 @@ function AssignPickerBody({ classId, slot, subjectId: initialSubject, entries, o
 
   const need = (p: PickItem) => (p.placed < p.needed ? t('picker.needs', { count: p.needed - p.placed }) : t('picker.done', { placed: p.placed, needed: p.needed }));
   const preferredName = (p: PickItem) => {
-    if (p.item.kind === 'group') return t('assign.groupTag');
+    if (p.item.kind === 'group') return `${t('assign.groupTag')} · ${t('assign.optionCount', { count: p.item.optionSubjectIds.length })}`;
     const id = preferredTeacherFor({ entries, classId, subjectId: p.item.subjectId });
     const teacher = ctx.teachers.find((x) => x.id === id);
     return teacher ? teacherDisplayName(teacher, lang) : '';
@@ -305,12 +325,26 @@ function AssignPickerBody({ classId, slot, subjectId: initialSubject, entries, o
       </ul>
     );
 
+  const subtitle = slot && time ? t('picker.slot', { day: tc(`days.long.${slot.day}`), n: slot.period, time: `${time.start}–${time.end}` }) : t('assign.wholeWeek');
+
+  if (group) {
+    return (
+      <GroupTeachersStep key={group.key} classId={classId} item={group} slot={slot} entries={entries} onBack={back} onConfirm={confirmGroup}>
+        {({ body, footer: groupFooter }) => (
+          <Modal open onClose={onClose} title={t('assign.groupTitle', { group: pickName(group, lang) })} subtitle={subtitle} width={560} footer={groupFooter}>
+            {body}
+          </Modal>
+        )}
+      </GroupTeachersStep>
+    );
+  }
+
   return (
     <Modal
       open
       onClose={onClose}
       title={subjectId ? t('picker.titleTeacher') : t('picker.titleSubject')}
-      subtitle={slot && time ? t('picker.slot', { day: tc(`days.long.${slot.day}`), n: slot.period, time: `${time.start}–${time.end}` }) : t('assign.wholeWeek')}
+      subtitle={subtitle}
       width={520}
       footer={footer}
     >

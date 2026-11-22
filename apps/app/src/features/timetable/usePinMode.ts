@@ -123,7 +123,7 @@ export function usePinMode(args: {
       const teachers = [...new Set(spec.lessons.map((l) => teacherOf(l.teacherId)))].join(', ');
       return {
         title: t('pin.targetGroup', { group, classes }),
-        detail: spec.lessons.map((l) => t('pin.target', { subject: subjectOf(l.subjectId), teacher: teacherOf(l.teacherId) })).join(' · '),
+        detail: spec.lessons.map((l) => t('pin.groupLesson', { subject: subjectOf(l.subjectId), teacher: teacherOf(l.teacherId) })).join(' · '),
         subject: group,
         teacher: teachers,
         classes,

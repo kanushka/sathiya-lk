@@ -33,17 +33,27 @@ describe('SubjectProgress', () => {
     expect(screen.queryByRole('button', { name: /^Pin / })).not.toBeInTheDocument();
   });
 
-  it('offers a pin button per subject row, none for groups', async () => {
+  it('offers a pin button per subject and group row, keyed by plan key', async () => {
     const onPin = vi.fn();
     renderWithSchool(<SubjectProgress cls={cls6B} entries={entries6B} onPin={onPin} onStop={vi.fn()} />, { ctx, entries: entries6B });
-    expect(within(row('Religion')).queryByRole('button')).not.toBeInTheDocument();
     await userEvent.click(within(row('Sinhala')).getByRole('button', { name: 'Pin Sinhala' }));
-    expect(onPin).toHaveBeenCalledWith(S.sinhala);
+    expect(onPin).toHaveBeenCalledWith(expect.objectContaining({ kind: 'subject', subjectId: S.sinhala }));
+    const religion = within(row('Religion')).getByRole('button', { name: 'Pin Religion' });
+    expect(religion).toHaveAttribute('data-pin-key', 'group:religion');
+    expect(within(row('Sinhala')).getByRole('button')).toHaveAttribute('data-pin-key', `subject:${S.sinhala}`);
+    await userEvent.click(religion);
+    expect(onPin).toHaveBeenLastCalledWith(expect.objectContaining({ kind: 'group', key: 'religion' }));
+  });
+
+  it('marks a group row active by its plan key', () => {
+    renderWithSchool(<SubjectProgress cls={cls6B} entries={entries6B} onPin={vi.fn()} onStop={vi.fn()} activeKey="group:religion" />, { ctx, entries: entries6B });
+    expect(row('Religion')).toHaveAttribute('data-active', 'true');
+    expect(within(row('Religion')).getByRole('button', { name: 'Stop pinning Religion' })).toBeInTheDocument();
   });
 
   it('tints the row being pinned and turns its button into stop', async () => {
     const onStop = vi.fn();
-    renderWithSchool(<SubjectProgress cls={cls6B} entries={entries6B} onPin={vi.fn()} onStop={onStop} activeSubjectId={S.sinhala} />, { ctx, entries: entries6B });
+    renderWithSchool(<SubjectProgress cls={cls6B} entries={entries6B} onPin={vi.fn()} onStop={onStop} activeKey={`subject:${S.sinhala}`} />, { ctx, entries: entries6B });
     expect(row('Sinhala')).toHaveAttribute('data-active', 'true');
     expect(row('Science')).not.toHaveAttribute('data-active');
     await userEvent.click(within(row('Sinhala')).getByRole('button', { name: 'Stop pinning Sinhala' }));

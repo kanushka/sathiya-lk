@@ -40,11 +40,12 @@ export interface PinOverlayInput {
   progress: PinProgress | null;
   suggested: boolean;
   classNote?: string;
+  group?: boolean;
   entryView(e: Entry): CellView;
 }
 
 export function pinOverlayCell(a: PinOverlayInput): GridOverlay | null {
-  const { cell: c, day, n, time, ctx, lang, t, tc, names, progress, suggested, classNote, entryView } = a;
+  const { cell: c, day, n, time, ctx, lang, t, tc, names, progress, suggested, classNote, group, entryView } = a;
   if (!c) return null;
   const where = { day: tc(`days.long.${day}`), n, time };
   if (c.kind === 'none') {
@@ -62,7 +63,7 @@ export function pinOverlayCell(a: PinOverlayInput): GridOverlay | null {
   if (c.kind === 'pinned') {
     const view = entryView(c.entry);
     return {
-      label: t('pin.cellPinned', { ...where, subject: view.title, teacher: view.sub }),
+      label: group ? t('pin.cellPinnedGroup', { ...where, group: view.title, classes: names.classes }) : t('pin.cellPinned', { ...where, subject: view.title, teacher: view.sub }),
       className: 'border-transparent text-ink ring-2 ring-brand ring-offset-2',
       content: <CellBody cells={[{ ...view, sub: t('pin.clickUnpin') }]} />,
     };
@@ -84,7 +85,7 @@ export function pinOverlayCell(a: PinOverlayInput): GridOverlay | null {
       disabled: true,
     };
   }
-  const base = t('pin.cellPin', { ...where, subject: names.subject, teacher: names.teacher });
+  const base = group ? t('pin.cellPinGroup', { ...where, group: names.subject, classes: names.classes }) : t('pin.cellPin', { ...where, subject: names.subject, teacher: names.teacher });
   const label = classNote ? `${base}, ${classNote}` : base;
   if (progress && progress.left === 0) {
     return { label: `${label}, ${t('pin.noteOver')}`, className: pinOver, content: <PinGlyph sub={t('pin.overPlan')} /> };
@@ -108,7 +109,7 @@ export function pinOverlayCell(a: PinOverlayInput): GridOverlay | null {
     const note = t('pin.subjectDay', { subject: names.subject, day: tc(`days.short.${day}`) });
     return { label: `${label}, ${note}`, className: pinWarn, content: <PinGlyph sub={note} /> };
   }
-  return { label, className: pinFree, content: <PinGlyph sub={t('pin.free')} /> };
+  return { label, className: pinFree, content: <PinGlyph sub={group ? t('pin.freeGroup') : t('pin.free')} /> };
 }
 
 function Swatch({ className, children }: { className: string; children: string }) {
@@ -120,11 +121,11 @@ function Swatch({ className, children }: { className: string; children: string }
   );
 }
 
-export function PinLegend({ teacher }: { teacher: string }) {
+export function PinLegend({ teacher, group }: { teacher: string; group?: { count: number; classes: string } }) {
   const { t } = useTranslation('timetable');
   return (
     <div aria-label={t('pin.legendLabel')} className="mb-3 ml-1 flex flex-wrap gap-3.5">
-      <Swatch className="border-[1.5px] border-dashed border-[#2E8B4A] bg-[#F5FBF6]">{t('pin.legendFree', { teacher })}</Swatch>
+      <Swatch className="border-[1.5px] border-dashed border-[#2E8B4A] bg-[#F5FBF6]">{group ? t('pin.legendFreeGroup', group) : t('pin.legendFree', { teacher })}</Swatch>
       <Swatch className="border-[1.5px] border-dashed border-[#B7831F] bg-[#FFF6E2]">{t('pin.legendSubjectDay')}</Swatch>
       <Swatch className="border-[1.5px] border-dashed border-[#C2410C] bg-[#FDECEA]">{t('pin.legendOver')}</Swatch>
       <Swatch className="border-[1.5px] border-[#2E8B4A] bg-[#E4F2E7]">{t('pin.legendSuggested')}</Swatch>

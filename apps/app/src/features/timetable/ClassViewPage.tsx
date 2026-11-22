@@ -4,6 +4,8 @@
 import {
   effectivePlan,
   fillWithClassTeacher,
+  latestGroupSpec,
+  planKey,
   periodsFor,
   rowsFor,
   teacherDisplayName,
@@ -11,6 +13,7 @@ import {
   type DayIndex,
   type Entry,
   type EntryDraft,
+  type PlanItem,
   type SchoolClass,
   type SchoolContext,
   type TemplateRow,
@@ -93,10 +96,10 @@ function ClassView({ cls, classes }: { cls: SchoolClass; classes: SchoolClass[] 
 
   const [selected, setSelected] = useState<Slot | undefined>();
   const [picker, setPicker] = useState<{ day: DayIndex; period: number; editing: Entry } | null>(null);
-  const [assign, setAssign] = useState<{ slot: Slot | null; subjectId?: string } | null>(null);
+  const [assign, setAssign] = useState<{ slot: Slot | null; subjectId?: string; groupKey?: string } | null>(null);
   const pin = usePinMode({ ctx, entries, save, remove, view: { kind: 'class' } });
   const { target: pinTarget, stop: stopPin } = pin;
-  const pinOrigin = useRef<{ day: DayIndex; period: number } | { subjectId: string } | null>(null);
+  const pinOrigin = useRef<{ day: DayIndex; period: number } | { key: string } | null>(null);
   const pinWasOn = useRef(false);
   const [block, setBlock] = useState<BlockState | null>(null);
   const [fill, setFill] = useState<{ drafts: EntryDraft[]; done: number; running: boolean } | null>(null);
@@ -125,8 +128,8 @@ function ClassView({ cls, classes }: { cls: SchoolClass; classes: SchoolClass[] 
     if (active && active !== document.body) return;
     const origin = pinOrigin.current;
     const el =
-      origin && 'subjectId' in origin
-        ? document.querySelector<HTMLElement>(`[data-pin-subject="${origin.subjectId}"]`)
+      origin && 'key' in origin
+        ? document.querySelector<HTMLElement>(`[data-pin-key="${origin.key}"]`)
         : origin && document.querySelector<HTMLElement>(`[data-day="${origin.day}"][data-period="${origin.period}"]`);
     el?.focus();
   }, [pinTarget]);
@@ -184,9 +187,30 @@ function ClassView({ cls, classes }: { cls: SchoolClass; classes: SchoolClass[] 
       names: pin.names,
       progress: pin.progress,
       suggested: pin.isSuggested(day, period),
+      group: pinTarget?.groupKey !== undefined,
       entryView: (e) => classCellView(e, ctx, lang, t, plan),
     });
   }
+
+  function pinFromList(item: PlanItem) {
+    pinOrigin.current = { key: planKey(item) };
+    if (item.kind === 'group') {
+      const spec = latestGroupSpec({ ctx, entries, classId: cls.id, groupKey: item.key });
+      if (spec) {
+        pin.start(spec);
+        return;
+      }
+      if (pinTarget) stopPin();
+      setAssign({ slot: null, groupKey: item.key });
+      return;
+    }
+    if (pinTarget) stopPin();
+    setAssign({ slot: null, subjectId: item.subjectId });
+  }
+
+  const activePlanItem = pinTarget
+    ? plan.find((p) => (p.kind === 'group' ? p.key === pinTarget.groupKey : pinTarget.groupKey === undefined && p.subjectId === pinTarget.lessons[0]?.subjectId))
+    : undefined;
 
   function print() {
     window.open(`${base}/print/class/${cls.id}?year=${encodeURIComponent(yearId)}&auto=1`, '_blank', 'noopener');
@@ -274,7 +298,12 @@ function ClassView({ cls, classes }: { cls: SchoolClass; classes: SchoolClass[] 
             pinTarget && 'outline outline-2 outline-offset-2 outline-brand',
           )}
         >
-          {pinTarget && <PinLegend teacher={pin.names?.teacher ?? ''} />}
+          {pinTarget && (
+            <PinLegend
+              teacher={pin.names?.teacher ?? ''}
+              {...(pinTarget.groupKey === undefined ? {} : { group: { count: new Set(pinTarget.lessons.map((l) => l.teacherId)).size, classes: pin.names?.classes ?? '' } })}
+            />
+          )}
           <TimetableGrid
             rows={rows}
             cellsFor={(d, p) => {
@@ -300,13 +329,9 @@ function ClassView({ cls, classes }: { cls: SchoolClass; classes: SchoolClass[] 
             {...(readOnly
               ? {}
               : {
-                  onPin: (subjectId: string) => {
-                    if (pinTarget) stopPin();
-                    pinOrigin.current = { subjectId };
-                    setAssign({ slot: null, subjectId });
-                  },
+                  onPin: pinFromList,
                   onStop: stopPin,
-                  ...(pinTarget?.lessons[0] ? { activeSubjectId: pinTarget.lessons[0].subjectId } : {}),
+                  ...(activePlanItem ? { activeKey: planKey(activePlanItem) } : {}),
                 })}
           />
         </div>
@@ -317,15 +342,11 @@ function ClassView({ cls, classes }: { cls: SchoolClass; classes: SchoolClass[] 
           classId={cls.id}
           slot={assign.slot}
           {...(assign.subjectId ? { subjectId: assign.subjectId } : {})}
+          {...(assign.groupKey ? { groupKey: assign.groupKey } : {})}
           entries={entries}
           onClose={() => setAssign(null)}
           onSave={save}
           onPin={pin.start}
-          onGroup={(item) => {
-            const at = assign.slot;
-            setAssign(null);
-            if (at) setBlock({ baseClassId: cls.id, day: at.day, period: at.period, mode: { kind: 'group', item } });
-          }}
           onCombine={(subjectId) => {
             const at = assign.slot;
             setAssign(null);
