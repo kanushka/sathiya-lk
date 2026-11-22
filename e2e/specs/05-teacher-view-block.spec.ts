@@ -25,6 +25,7 @@ test('teacher view: build a religion block through the block editor', async ({ p
   const buddhism = block.getByRole('combobox', { name: 'Buddhism' });
   await expect(buddhism).toContainText(/Ananda/);
   await buddhism.click();
+  await expect(page.getByRole('option', { name: /Ananda/ })).toBeVisible();
   await expect(page.getByRole('option', { name: /M\. Silva/ })).toHaveCount(0);
   await page.keyboard.press('Escape');
   await pick(block, 'Catholicism', /M\. Silva/);
