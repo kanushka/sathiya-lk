@@ -59,7 +59,7 @@ export function StatusButton({ school, setStatus }: { school: School; setStatus:
         footer={
           <>
             <Button onClick={() => setConfirming(false)}>{t('buttons.cancel', { ns: 'common' })}</Button>
-            <Button variant="danger" disabled={busy} onClick={() => void apply()}>
+            <Button variant="dangerSolid" disabled={busy} onClick={() => void apply()}>
               {t('confirmDisable.confirm')}
             </Button>
           </>

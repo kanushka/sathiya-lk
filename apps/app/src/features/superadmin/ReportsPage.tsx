@@ -163,7 +163,7 @@ function SuspendButton({ school, setStatus }: { school: School; setStatus: SetSt
         footer={
           <>
             <Button onClick={() => setConfirming(false)}>{t('buttons.cancel', { ns: 'common' })}</Button>
-            <Button variant="danger" disabled={busy} onClick={() => void apply()}>
+            <Button variant="dangerSolid" disabled={busy} onClick={() => void apply()}>
               {t('confirmDisable.confirm')}
             </Button>
           </>
