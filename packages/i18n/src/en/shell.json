@@ -63,5 +63,11 @@
   "school": {
     "missingTitle": "School not found",
     "missingBody": "This school does not exist or you no longer have access to it."
+  },
+  "phoneNotice": {
+    "title": "Best on a bigger screen",
+    "body": "Sathiya's admin screens work best on a laptop, desktop or tablet. You can continue, but some screens may be hard to use on a phone.",
+    "continue": "Continue anyway",
+    "banner": "Admin screens work best on a laptop, desktop or tablet."
   }
 }

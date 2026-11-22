@@ -13,6 +13,7 @@ export interface ModalProps {
   onClose: () => void;
   footer?: ReactNode;
   width?: number;
+  zoom?: number;
   children: ReactNode;
 }
 
@@ -30,7 +31,7 @@ export function Modal(props: ModalProps) {
   return createPortal(<ModalPanel {...props} />, document.body);
 }
 
-function ModalPanel({ title, subtitle, onClose, footer, width = 560, children }: ModalProps) {
+function ModalPanel({ title, subtitle, onClose, footer, width = 560, zoom, children }: ModalProps) {
   const { t } = useTranslation('shell');
   const titleId = useId();
   const panelRef = useRef<HTMLElement>(null);
@@ -95,6 +96,7 @@ function ModalPanel({ title, subtitle, onClose, footer, width = 560, children }:
   return (
     <div
       data-testid="modal-backdrop"
+      style={zoom && zoom !== 1 ? { zoom } : undefined}
       className="fixed inset-0 z-50 flex items-center justify-center overflow-y-auto bg-navy/45 p-4 sm:p-8"
       onMouseDown={onBackdropDown}
       onClick={onBackdropClick}

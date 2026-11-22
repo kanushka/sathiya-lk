@@ -6,6 +6,7 @@ import { Link, Navigate, Outlet, createBrowserRouter, useParams, type RouteObjec
 import { AdminLayout } from '../ui/AdminLayout';
 import { EmptyState } from '../ui/EmptyState';
 import { LoadingState } from '../ui/LoadingState';
+import { PhoneNotice } from '../ui/PhoneNotice';
 import { useAuth } from './AuthProvider';
 import { RequireRole, hasRole } from './RequireRole';
 import { SchoolProvider } from './SchoolProvider';
@@ -108,6 +109,7 @@ export function buildRoutes(featureRoutes: RouteObject[]): RouteObject[] {
     {
       element: (
         <RequireRole role="admin">
+          <PhoneNotice />
           <AdminLayout />
         </RequireRole>
       ),
@@ -136,6 +138,7 @@ export function buildRoutes(featureRoutes: RouteObject[]): RouteObject[] {
     {
       element: (
         <RequireRole role="super">
+          <PhoneNotice />
           <Outlet />
         </RequireRole>
       ),
@@ -145,6 +148,7 @@ export function buildRoutes(featureRoutes: RouteObject[]): RouteObject[] {
       path: '/s/:sid',
       element: (
         <RequireRole role="super">
+          <PhoneNotice />
           <SuperSchoolLayout />
         </RequireRole>
       ),
