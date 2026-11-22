@@ -2,6 +2,7 @@
 // Copyright (C) 2026 Kanushka Gayan
 import { screen, waitFor, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
+import { Link } from 'react-router-dom';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import * as api from './api';
 import { recordSignIn } from '../teacher/signIn';
@@ -153,6 +154,22 @@ describe('teacher login', () => {
     renderAuth(<LoginPage />, { route: '/login?as=teacher&school=bogus' });
     expect(await screen.findByText("We couldn't find that school. Choose it from the list.")).toBeInTheDocument();
     expect(screen.getByLabelText('School')).toHaveValue('');
+  });
+
+  it('clears the unknown-school message when ?school= changes to a real school', async () => {
+    const user = userEvent.setup();
+    vi.mocked(api.getDirectorySchool).mockImplementation(async (id) => (id === 'siripura' ? siripura : null));
+    renderAuth(
+      <>
+        <LoginPage />
+        <Link to="/login?as=teacher&school=siripura">switch</Link>
+      </>,
+      { route: '/login?as=teacher&school=bogus' },
+    );
+    expect(await screen.findByText("We couldn't find that school. Choose it from the list.")).toBeInTheDocument();
+    await user.click(screen.getByRole('link', { name: 'switch' }));
+    await waitFor(() => expect(screen.getByLabelText('School')).toHaveValue('Siripura Central College, Peradeniya'));
+    expect(screen.queryByText("We couldn't find that school. Choose it from the list.")).not.toBeInTheDocument();
   });
 
   it('requires a school before submitting', async () => {

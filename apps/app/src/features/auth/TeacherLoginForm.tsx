@@ -30,6 +30,8 @@ export function TeacherLoginForm({ autoFocus }: { autoFocus?: boolean }) {
   const searchRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
+    setUnknown(false);
+    setSuspended(false);
     if (!schoolParam) return;
     let live = true;
     void getDirectorySchool(schoolParam)
