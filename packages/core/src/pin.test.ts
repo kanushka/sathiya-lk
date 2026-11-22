@@ -251,6 +251,16 @@ describe('teacherPinSlots', () => {
     expect(at(slots, 0, 2)).toMatchObject({ period: 2, cell: { kind: 'busy', blockers: [expect.objectContaining({ entryId: 't1' })] } });
   });
 
+  it('suggests only the chosen period of a free teacher row', () => {
+    const rows = teacherPinSlots({ ...base, entries: [] });
+    const chosen = new Set(rows.filter((r) => r.cell.kind === 'free').map((r) => `${r.day}-${r.period}`));
+    const all = suggestPins({ ctx, entries: [], spec: spec1a, count: 40 });
+    expect(all.some((p) => !chosen.has(`${p.day}-${p.period}`))).toBe(true);
+    const picks = suggestPins({ ctx, entries: [], spec: spec1a, count: 40, teacherId: T.wickramasinghe });
+    expect(picks.length).toBeGreaterThan(0);
+    expect(picks.every((p) => chosen.has(`${p.day}-${p.period}`))).toBe(true);
+  });
+
   it('returns [] when the base class is unknown', () => {
     expect(teacherPinSlots({ ...base, spec: singleSpec('nope', S.maths, T.wickramasinghe), entries })).toEqual([]);
   });

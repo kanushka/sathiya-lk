@@ -104,10 +104,14 @@ export function pinSlots(args: PinArgs): PinSlot[] {
   return out;
 }
 
-export function suggestPins(args: PinArgs & { count: number }): Array<{ day: DayIndex; period: number }> {
-  const { ctx, entries, spec } = args;
+export function suggestPins(args: PinArgs & { count: number; teacherId?: string }): Array<{ day: DayIndex; period: number }> {
+  const { ctx, entries, spec, teacherId } = args;
   const baseId = spec.classIds[0];
-  const slots = pinSlots(args).filter((s) => s.cell.kind === 'free');
+  const rows =
+    teacherId === undefined
+      ? null
+      : new Set(teacherPinSlots({ ctx, entries, spec, teacherId }).filter((s) => s.cell.kind === 'free').map((s) => `${s.day}-${s.period}`));
+  const slots = pinSlots(args).filter((s) => s.cell.kind === 'free' && (!rows || rows.has(`${s.day}-${s.period}`)));
   const teachers = specTeacherIds(spec).map((id) => ctx.teachers.find((t) => t.id === id));
   if (!baseId || teachers.some((t) => !t)) return [];
   const specTeachers = teachers as NonNullable<(typeof teachers)[number]>[];
