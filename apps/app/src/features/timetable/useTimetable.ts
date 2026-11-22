@@ -37,6 +37,9 @@ interface Overlay {
 
 const emptyOverlay = (): Overlay => ({ added: new Map(), removed: new Map() });
 
+const sameContent = (a: Entry, b: Entry) =>
+  sameSlotKey(a) === sameSlotKey(b) && JSON.stringify(a.lessons) === JSON.stringify(b.lessons) && (a.groupKey ?? null) === (b.groupKey ?? null);
+
 const sameSlotKey = (e: Pick<Entry, 'day' | 'period' | 'classIds' | 'lessons' | 'groupKey'>) =>
   JSON.stringify([e.day, e.period, [...e.classIds].sort(), e.lessons.map((l) => `${l.subjectId}:${l.teacherId ?? ''}`).sort(), e.groupKey ?? null]);
 
@@ -70,11 +73,20 @@ export function useTimetable(): UseTimetable {
   }, [serverEntries]);
 
   const entries = useMemo(() => {
-    const base = serverEntries.filter((e) => !overlay.removed.has(e.id) && !overlay.added.has(e.id));
-    const ids = new Set(serverEntries.map((e) => e.id));
+    const byId = new Map(serverEntries.map((e) => [e.id, e]));
     const slots = new Set(serverEntries.map(sameSlotKey));
+    // A settled save shows the server copy once it matches what was saved; a no-op save brings no new snapshot.
+    const caughtUp = (v: AddedRec) => {
+      const server = v.serverId ? byId.get(v.serverId) : undefined;
+      return !!server && (!v.settled || sameContent(server, v.entry));
+    };
+    const shadows = (e: Entry) => {
+      const rec = overlay.added.get(e.id);
+      return !!rec && !(rec.settled && caughtUp(rec));
+    };
+    const base = serverEntries.filter((e) => !overlay.removed.has(e.id) && !shadows(e));
     const added = [...overlay.added.entries()].filter(([id, v]) =>
-      v.serverId ? !ids.has(v.serverId) : !id.startsWith('tmp-') || !slots.has(sameSlotKey(v.entry)),
+      v.serverId ? !caughtUp(v) : !id.startsWith('tmp-') || !slots.has(sameSlotKey(v.entry)),
     );
     return [...base, ...added.map(([, v]) => v.entry)];
   }, [serverEntries, overlay]);

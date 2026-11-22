@@ -62,6 +62,33 @@ describe('useTimetable', () => {
     expect(screen.getByTestId('n')).toHaveTextContent(String(before + 1));
   });
 
+  it('keeps an edited entry visible when the save changes nothing on the server', async () => {
+    const api: TimetableApi = { saveEntry: vi.fn(async (req) => ({ entryId: req.entry.id! })), deleteEntry: vi.fn() };
+    setup(api);
+    const existing = entries6B[0]!;
+    const same: EntryDraft = { id: existing.id, day: existing.day, period: existing.period, classIds: existing.classIds, lessons: existing.lessons };
+    await act(async () => {
+      expect(await latest.save(same)).toBe(true);
+    });
+    expect(latest.entries.filter((e) => e.id === existing.id)).toHaveLength(1);
+    expect(latest.entries).toHaveLength(entries6B.length);
+    expect(api.deleteEntry).not.toHaveBeenCalled();
+  });
+
+  it('replacing the teacher saves the same entry id once', async () => {
+    const api: TimetableApi = { saveEntry: vi.fn(async (req) => ({ entryId: req.entry.id! })), deleteEntry: vi.fn() };
+    setup(api);
+    const existing = entries6B[0]!;
+    const changed: EntryDraft = { id: existing.id, day: existing.day, period: existing.period, classIds: existing.classIds, lessons: [{ ...existing.lessons[0]!, teacherId: T.ananda }] };
+    await act(async () => {
+      await latest.save(changed);
+    });
+    expect(api.saveEntry).toHaveBeenCalledTimes(1);
+    expect(vi.mocked(api.saveEntry).mock.calls[0]![0].entry.id).toBe(existing.id);
+    expect(api.deleteEntry).not.toHaveBeenCalled();
+    expect(latest.entries.filter((e) => e.id === existing.id)).toHaveLength(1);
+  });
+
   it('reverts and toasts teacher/class names on clash', async () => {
     const err = new ApiError('clash', 'clash', {
       code: 'clash',

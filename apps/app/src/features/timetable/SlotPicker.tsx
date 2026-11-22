@@ -100,6 +100,8 @@ function SlotPickerBody({ onClose, classId, day, period, entries, editing, onSav
     <Badge tone="success">{t('picker.teaches', { class: cls.name, subject: pickName(subject, lang) })}</Badge>
   );
   const currentTeacher = editing?.lessons[0]?.teacherId ?? null;
+  const currentSubject = editing?.lessons[0]?.subjectId ?? null;
+  const isCurrent = (teacherId: string) => teacherId === currentTeacher && subjectId === currentSubject;
 
   function pick(p: PickItem) {
     if (p.item.kind === 'group') onGroup(p.item);
@@ -111,7 +113,7 @@ function SlotPickerBody({ onClose, classId, day, period, entries, editing, onSav
   }
 
   async function assign(teacherId: string) {
-    if (!subjectId) return;
+    if (!subjectId || isCurrent(teacherId)) return;
     setBusy('assign');
     const draft: EntryDraft = {
       ...(editing ? { id: editing.id } : {}),
@@ -141,7 +143,7 @@ function SlotPickerBody({ onClose, classId, day, period, entries, editing, onSav
       <li key={o.teacher.id}>
         <button
           type="button"
-          disabled={busy !== null}
+          disabled={busy !== null || isCurrent(o.teacher.id)}
           onClick={() => assign(o.teacher.id)}
           className="flex w-full items-center gap-2.5 rounded-lg border border-warning-line bg-warning-soft/50 px-3 py-2 text-left hover:bg-warning-soft focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand focus-visible:ring-offset-2 disabled:opacity-60"
         >
@@ -151,7 +153,7 @@ function SlotPickerBody({ onClose, classId, day, period, entries, editing, onSav
           {o.teacher.id === currentTeacher && (
             <Badge tone="brand">{t('picker.current')}</Badge>
           )}
-          <span className="text-xs font-bold text-brand">{t('picker.assign')}</span>
+          {!isCurrent(o.teacher.id) && <span className="text-xs font-bold text-brand">{t('picker.assign')}</span>}
         </button>
       </li>
     ) : (
@@ -236,7 +238,7 @@ function SlotPickerBody({ onClose, classId, day, period, entries, editing, onSav
                 <button
                   ref={isPreferred(o) ? preferredRef : undefined}
                   type="button"
-                  disabled={busy !== null}
+                  disabled={busy !== null || isCurrent(o.teacher.id)}
                   onClick={() => assign(o.teacher.id)}
                   className="flex w-full items-center gap-2.5 rounded-lg border border-success-line bg-success-soft/50 px-3 py-2.5 text-left hover:bg-success-soft focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand focus-visible:ring-offset-2 disabled:opacity-60"
                 >
@@ -253,7 +255,7 @@ function SlotPickerBody({ onClose, classId, day, period, entries, editing, onSav
                   {o.teacher.id === currentTeacher && (
                     <Badge tone="brand">{t('picker.current')}</Badge>
                   )}
-                  <span className="text-xs font-bold text-brand">{t('picker.assign')}</span>
+                  {!isCurrent(o.teacher.id) && <span className="text-xs font-bold text-brand">{t('picker.assign')}</span>}
                 </button>
               </li>
             ))}

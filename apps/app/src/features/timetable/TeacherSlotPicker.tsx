@@ -93,7 +93,7 @@ function TeacherSlotPickerBody({ onClose, teacherId, day, period, entries, editi
   };
 
   async function assign(o: ClassOption) {
-    if (!subjectId) return;
+    if (!subjectId || unchanged(o)) return;
     const item = planItemFor(ctx, o, subjectId);
     if (item?.kind === 'group') {
       onGroup({ classId: o.cls.id, period: o.period, subjectId, item });
@@ -121,6 +121,8 @@ function TeacherSlotPickerBody({ onClose, teacherId, day, period, entries, editi
 
   const sectionLabel = 'mb-1.5 mt-3.5 block text-xs font-bold uppercase tracking-[.04em]';
   const isCurrent = (o: ClassOption) => editing.classIds.includes(o.cls.id) && editing.period === o.period;
+  const currentSubject = editing.lessons.find((l) => l.teacherId === teacherId)?.subjectId;
+  const unchanged = (o: ClassOption) => isCurrent(o) && subjectId === currentSubject;
   const editingSubject = ctx.subjects.find((s) => s.id === editing.lessons.find((l) => l.teacherId === teacherId)?.subjectId);
 
   const row = (o: ClassOption) => {
@@ -135,7 +137,7 @@ function TeacherSlotPickerBody({ onClose, teacherId, day, period, entries, editi
       <li key={o.cls.id}>
         <button
           type="button"
-          disabled={busy !== null || !o.free}
+          disabled={busy !== null || !o.free || unchanged(o)}
           onClick={() => assign(o)}
           className={
             o.free
@@ -146,7 +148,7 @@ function TeacherSlotPickerBody({ onClose, teacherId, day, period, entries, editi
           <strong className="text-sm">{o.cls.name}</strong>
           <span className="min-w-0 flex-1 text-xs text-ink-muted">{notes.join(' · ')}</span>
           {isCurrent(o) && <Badge tone="brand">{t('picker.current')}</Badge>}
-          {o.free && <span className="text-xs font-bold text-brand">{t('picker.assign')}</span>}
+          {o.free && !unchanged(o) && <span className="text-xs font-bold text-brand">{t('picker.assign')}</span>}
         </button>
       </li>
     );
