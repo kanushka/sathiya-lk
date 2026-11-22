@@ -7,6 +7,7 @@ import {
   pickName,
   pinProgress,
   singleSpec,
+  specDraft,
   teacherClassOptions,
   teacherDisplayName,
   teacherPinSlots,
@@ -29,6 +30,7 @@ import { Icon } from '../../ui/Icon';
 import { Modal } from '../../ui/Modal';
 import { busyLabel } from './conflictLabel';
 import { GroupTeachersStep } from './GroupTeachersStep';
+import { placeThenPin } from './placeThenPin';
 import { planItemColor } from './labels';
 import type { GroupItem } from './pickerData';
 import { teacherSubjects } from './TeacherSlotPicker';
@@ -231,7 +233,7 @@ function TeacherAssignPickerBody({ teacherId, slot, entries, onClose, onSave, on
       tone = 'ok';
       action = async () => {
         setBusy(true);
-        const ok = await onSave({ day: slot.day, period, classIds: spec.classIds, lessons: spec.lessons });
+        const ok = await onSave(specDraft(spec, slot.day, period));
         setBusy(false);
         if (!ok) return;
         onPin(spec);
@@ -280,16 +282,13 @@ function TeacherAssignPickerBody({ teacherId, slot, entries, onClose, onSave, on
     }
   }
 
-  async function confirmGroup(spec: PinSpec, placeNow: boolean) {
-    if (busy || !groupFor) return;
-    if (placeNow && groupFor.period !== null) {
-      setBusy(true);
-      const ok = await onSave({ day: slot.day, period: groupFor.period, classIds: spec.classIds, lessons: spec.lessons, ...(spec.groupKey === undefined ? {} : { groupKey: spec.groupKey }) });
-      setBusy(false);
-      if (!ok) return;
-    }
-    onPin(spec);
-    onClose();
+  function confirmGroup(spec: PinSpec, placeNow: boolean) {
+    const at = placeNow && groupFor && groupFor.period !== null ? { day: slot.day, period: groupFor.period } : null;
+    const done = (s: PinSpec) => {
+      onPin(s);
+      onClose();
+    };
+    return placeThenPin({ spec, at, save: onSave, done });
   }
 
   if (groupFor && groupFor.option.item.kind === 'group') {

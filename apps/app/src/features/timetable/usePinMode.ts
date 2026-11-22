@@ -6,6 +6,7 @@ import {
   pickName,
   pinProgress,
   pinSlots,
+  specDraft,
   suggestPins,
   teacherDisplayName,
   teacherPinSlots,
@@ -143,17 +144,6 @@ export function usePinMode(args: {
   );
   const names = useMemo(() => (target ? namesFor(target) : null), [target, namesFor]);
 
-  const draftFor = useCallback(
-    (period: number, day: DayIndex, tg: PinSpec): EntryDraft => ({
-      day,
-      period,
-      classIds: tg.classIds,
-      lessons: tg.lessons,
-      ...(tg.groupKey === undefined ? {} : { groupKey: tg.groupKey }),
-    }),
-    [],
-  );
-
   const start = useCallback(
     (next: PinSpec) => {
       const n = namesFor(next);
@@ -185,11 +175,11 @@ export function usePinMode(args: {
         if (ok && latest()) setMessage(t('pin.unpinned', where));
       } else if (c.kind === 'free' && period !== null) {
         setRawSuggested((list) => list.filter((s) => s.day !== day || s.period !== period));
-        const ok = await save(draftFor(period, day, target));
+        const ok = await save(specDraft(target, day, period));
         if (latest()) setMessage(ok ? t('pin.pinned', where) : '');
       }
     },
-    [cellAt, periodAt, target, names, tc, remove, save, draftFor, t],
+    [cellAt, periodAt, target, names, tc, remove, save, t],
   );
 
   const suggest = useCallback(() => {
@@ -212,11 +202,11 @@ export function usePinMode(args: {
     let done = 0;
     for (const s of list) {
       const period = periodAt(s.day, s.period);
-      if (period === null || !(await save(draftFor(period, s.day, target)))) break;
+      if (period === null || !(await save(specDraft(target, s.day, period)))) break;
       done += 1;
     }
     setMessage(done > 0 ? t('pin.pinnedMany', { count: done, subject: names.subject }) : '');
-  }, [target, names, suggested, periodAt, save, draftFor, t]);
+  }, [target, names, suggested, periodAt, save, t]);
 
   return { target, slots, progress, suggested, message, names, cellAt, periodAt, isSuggested, start, stop, toggle, suggest, pinSuggested };
 }
