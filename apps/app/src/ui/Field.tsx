@@ -14,8 +14,15 @@ export interface FieldProps {
   children: ReactElement<{ id?: string; 'aria-describedby'?: string; 'aria-invalid'?: boolean }>;
 }
 
-export const inputClass =
-  'h-10 w-full rounded-lg border border-line-strong bg-white px-3 text-sm text-ink placeholder:text-[#7A8194] focus:border-brand focus:outline-none focus:ring-2 focus:ring-brand/30 disabled:bg-slate-50 aria-[invalid=true]:border-danger';
+export const fieldBaseClass =
+  'w-full rounded-lg border border-line-strong bg-white px-3 text-sm text-ink placeholder:text-ink-muted hover:border-line-hover disabled:cursor-not-allowed disabled:border-line disabled:bg-surface-2 disabled:text-ink-muted disabled:hover:border-line aria-[invalid=true]:border-danger';
+
+export const fieldFocusClass =
+  'focus:border-brand focus:outline-none focus:ring-[3px] focus:ring-brand/30 aria-[invalid=true]:focus:ring-danger/20';
+
+export const inputClass = `h-10 ${fieldBaseClass} ${fieldFocusClass}`;
+
+export const textareaClass = `h-auto min-h-[88px] py-2.5 leading-relaxed resize-y ${fieldBaseClass} ${fieldFocusClass}`;
 
 export function Field({ label, hint, error, id, required, className, children }: FieldProps) {
   const autoId = useId();

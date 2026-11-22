@@ -6,6 +6,7 @@ import { createPortal } from 'react-dom';
 import { useTranslation } from 'react-i18next';
 import { cx } from './cx';
 import { Icon } from './Icon';
+import { IconButton } from './IconButton';
 
 export type ToastKind = 'info' | 'success' | 'error';
 
@@ -21,11 +22,25 @@ export interface ToastApi {
 
 const ToastCtx = createContext<ToastApi | null>(null);
 
-const kindClass: Record<ToastKind, string> = {
-  info: 'border-l-navy',
-  success: 'border-l-teal',
-  error: 'border-l-danger',
+const kindBadge: Record<ToastKind, string> = {
+  info: 'bg-surface-3 text-navy',
+  success: 'bg-success-soft text-success',
+  error: 'bg-danger-soft text-danger',
 };
+
+function ToastBadge({ kind }: { kind: ToastKind }) {
+  return (
+    <span
+      aria-hidden="true"
+      className={cx(
+        'mt-px flex h-5 w-5 shrink-0 items-center justify-center rounded-full text-xs font-bold',
+        kindBadge[kind],
+      )}
+    >
+      {kind === 'success' ? <Icon name="check" size={12} strokeWidth={2.5} /> : kind === 'error' ? '!' : 'i'}
+    </span>
+  );
+}
 
 export function ToastProvider({ children, duration = 4000 }: { children: ReactNode; duration?: number }) {
   const [toasts, setToasts] = useState<ToastItem[]>([]);
@@ -76,21 +91,18 @@ function ToastList({ toasts, onDismiss }: { toasts: ToastItem[]; onDismiss: (id:
       {toasts.map((toast) => (
         <div
           key={toast.id}
-          className={cx(
-            'pointer-events-auto flex items-start gap-3 rounded-xl border border-l-4 border-line bg-white px-4 py-3 text-sm text-ink shadow-[0_14px_30px_-18px_rgba(20,33,61,.5)]',
-            kindClass[toast.kind],
-          )}
+          className="pointer-events-auto flex items-start gap-3 rounded-xl border border-line bg-white py-3 pl-4 pr-2 text-sm text-ink shadow-[0_14px_30px_-18px_rgba(20,33,61,.5)]"
         >
-          <p className="flex-1">{toast.message}</p>
-          <button
-            type="button"
+          <ToastBadge kind={toast.kind} />
+          <p className="flex-1 pt-px">{toast.message}</p>
+          <IconButton
+            icon="close"
+            label={t('toast.close')}
+            size="sm"
+            variant="ghost"
             onClick={() => onDismiss(toast.id)}
-            aria-label={t('toast.close')}
-            title={t('toast.close')}
-            className="-mr-1 flex h-6 w-6 shrink-0 items-center justify-center rounded-md text-ink-muted hover:bg-slate-100"
-          >
-            <Icon name="close" size={14} />
-          </button>
+            className="-my-1.5"
+          />
         </div>
       ))}
     </div>

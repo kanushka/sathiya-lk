@@ -15,7 +15,7 @@ function sources(dir: string): string[] {
 describe('danger colour', () => {
   it('is defined once as a CSS variable and exposed as a Tailwind colour', () => {
     expect(readFileSync(join(__dirname, '../index.css'), 'utf8')).toMatch(/--danger:\s*#a3262a/i);
-    expect(readFileSync(join(__dirname, '../../tailwind.config.ts'), 'utf8')).toContain("danger: 'var(--danger)'");
+    expect(readFileSync(join(__dirname, '../../tailwind.config.ts'), 'utf8')).toContain('var(--danger) calc(<alpha-value> * 100%)');
   });
 
   it('is never hard-coded in components', () => {

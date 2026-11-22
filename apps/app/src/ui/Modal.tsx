@@ -4,7 +4,7 @@
 import { useEffect, useId, useRef, type MouseEvent, type ReactNode } from 'react';
 import { createPortal } from 'react-dom';
 import { useTranslation } from 'react-i18next';
-import { Icon } from './Icon';
+import { IconButton } from './IconButton';
 
 export interface ModalProps {
   open: boolean;
@@ -115,21 +115,18 @@ function ModalPanel({ title, subtitle, onClose, footer, width = 560, children }:
             </h2>
             {subtitle && <p className="mt-0.5 text-[13px] text-ink-muted">{subtitle}</p>}
           </div>
-          <button
-            type="button"
+          <IconButton
+            icon="close"
+            label={t('modal.close')}
             onClick={onClose}
-            aria-label={t('modal.close')}
-            title={t('modal.close')}
-            className="flex h-9 w-9 shrink-0 items-center justify-center rounded-[10px] bg-[#F1F2F5] text-ink-soft hover:bg-[#E6E8ED] focus-visible:outline focus-visible:outline-2 focus-visible:outline-brand"
-          >
-            <Icon name="close" size={18} />
-          </button>
+            className="bg-surface-3 hover:bg-line"
+          />
         </header>
         <div ref={bodyRef} className="min-h-0 flex-1 overflow-y-auto px-7 py-6">
           {children}
         </div>
         {footer && (
-          <footer className="flex items-center justify-end gap-3 border-t border-line-soft bg-[#FAFAFB] px-7 py-4">
+          <footer className="flex items-center justify-end gap-3 border-t border-line-soft bg-surface px-7 py-4">
             {footer}
           </footer>
         )}
