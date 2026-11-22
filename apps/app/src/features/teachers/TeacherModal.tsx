@@ -195,6 +195,7 @@ export function TeacherModal({ teacher, onClose }: TeacherModalProps) {
               <Checkbox
                 checked={form.isPrimary}
                 onChange={(v) => set('isPrimary', v)}
+                disabled={locked}
                 label={t('modal.primary')}
                 hint={t('modal.primaryHint')}
               />
@@ -206,6 +207,7 @@ export function TeacherModal({ teacher, onClose }: TeacherModalProps) {
                   onChange={(v) => set('subjectIds', v)}
                   placeholder={t('modal.subjectsPlaceholder')}
                   maxChips={Infinity}
+                  disabled={locked}
                   wrap
                   options={subjects.map((s) => ({ value: s.id, label: pickName(s, lang) }))}
                 />

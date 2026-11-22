@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
 // Copyright (C) 2026 Kanushka Gayan
 import { ctx, entries } from '@sathiya/core/fixtures';
-import { screen, waitFor, within } from '@testing-library/react';
+import { fireEvent, screen, waitFor, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { ApiError, call } from '../../lib/callable';
@@ -239,5 +239,19 @@ describe('teachers page', () => {
     for (const name of ['+ Add teacher', 'Edit', 'Delete']) {
       expect(screen.queryByRole('button', { name })).not.toBeInTheDocument();
     }
+  });
+
+  it('locked modal cannot open the subjects menu', async () => {
+    const user = userEvent.setup();
+    render();
+    const row = screen.getByText('Mrs. N. Perera').closest('tr')!;
+    await user.click(within(row).getByRole('button', { name: 'Edit' }));
+    const dialog = screen.getByRole('dialog');
+    flags.readOnly = true;
+    fireEvent.change(within(dialog).getByRole('textbox', { name: /^Name/ }), { target: { value: 'Mrs. N. Perera ' } });
+    const subjects = within(dialog).getByRole('combobox', { name: /^Subjects/ });
+    expect(subjects).toBeDisabled();
+    await user.click(subjects);
+    expect(screen.queryByRole('listbox')).not.toBeInTheDocument();
   });
 });
