@@ -21,7 +21,9 @@
       "classTeacher": "Class teacher",
       "login": "Login",
       "actions": "Actions"
-    }
+    },
+    "printPartial_one": "{{count}} teacher could not be reset and was left out of the slips",
+    "printPartial_other": "{{count}} teachers could not be reset and were left out of the slips"
   },
   "modal": {
     "titleAdd": "Add teacher",
@@ -67,7 +69,8 @@
     "reset": "Reset password",
     "resetting": "Resetting…",
     "resetFailed": "Could not reset the password. Try again.",
-    "qrAlt": "QR code to the teacher login page"
+    "qrAlt": "QR code to the teacher login page",
+    "needsReset": "Reset the password first to print a slip"
   },
   "deleteGuard": {
     "title": "Delete {{name}}?",
@@ -94,5 +97,28 @@
   },
   "print": {
     "title": "Teacher login slips"
+  },
+  "resetConfirm": {
+    "title": "Reset {{name}}'s password?",
+    "body": "The current password stops working immediately. {{name}} cannot sign in until you give them the new one.",
+    "confirm": "Reset password",
+    "cancel": "Cancel"
+  },
+  "printAll": {
+    "title": "Print login slips",
+    "body": "A password is only known right after it is created or reset. Slips for other teachers cannot show it.",
+    "withKnown_one": "Print {{count}} slip with new password",
+    "withKnown_other": "Print {{count}} slips with new passwords",
+    "knownHint": "{{count}} of {{total}} teachers have a fresh password in this session.",
+    "resetAll": "Reset all passwords and print",
+    "resetAllHint": "Gives every teacher a new password, then prints all {{total}} slips.",
+    "confirmTitle": "Reset every teacher's password?",
+    "confirmBody": "Every teacher's current password stops working immediately. Teachers cannot sign in until they get their new slip.",
+    "confirmAction": "Reset all and print",
+    "resetting": "Resetting…",
+    "cancel": "Cancel",
+    "back": "Back",
+    "close": "Close",
+    "failed": "Could not reset the passwords. Try again."
   }
 }

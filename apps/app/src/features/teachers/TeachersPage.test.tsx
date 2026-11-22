@@ -1,5 +1,6 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
 // Copyright (C) 2026 Kanushka Gayan
+import { usageCount } from '@sathiya/core';
 import { ctx, entries } from '@sathiya/core/fixtures';
 import { fireEvent, screen, waitFor, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
@@ -25,6 +26,8 @@ beforeEach(() => {
   clearSessionPasswords();
   vi.mocked(printSlips).mockResolvedValue(true);
 });
+
+const unused = { ...ctx, classes: ctx.classes.map(({ classTeacherId: _, ...c }) => c) };
 
 const render = () => renderWithSchool(<TeachersPage />, { ctx, entries });
 
@@ -139,7 +142,7 @@ describe('teachers page', () => {
     await waitFor(() => expect(within(dialog).getByRole('button', { name: 'Print slip' })).toHaveFocus());
   });
 
-  it('shows a new password after reset', async () => {
+  it('asks for confirmation before resetting a password', async () => {
     const user = userEvent.setup();
     vi.mocked(api.resetTeacherPassword).mockResolvedValue('n3w8pass');
     render();
@@ -148,8 +151,36 @@ describe('teachers page', () => {
     const dialog = screen.getByRole('dialog');
     expect(within(dialog).getByText('Reset to get a new password')).toBeInTheDocument();
     await user.click(within(dialog).getByRole('button', { name: 'Reset password' }));
+    expect(api.resetTeacherPassword).not.toHaveBeenCalled();
+    const confirm = screen.getByRole('dialog', { name: /Reset .*password\?/ });
+    expect(within(confirm).getByText(/current password stops working immediately/)).toBeInTheDocument();
+    await user.click(within(confirm).getByRole('button', { name: 'Cancel' }));
+    expect(api.resetTeacherPassword).not.toHaveBeenCalled();
+    await user.click(within(dialog).getByRole('button', { name: 'Reset password' }));
+    await user.click(within(screen.getByRole('dialog', { name: /Reset .*password\?/ })).getByRole('button', { name: 'Reset password' }));
     expect(await within(dialog).findByText('n3w8pass')).toBeInTheDocument();
     expect(api.resetTeacherPassword).toHaveBeenCalledWith('siripura', expect.any(String));
+  });
+
+  it('disables Print slip and WhatsApp until a fresh password is known', async () => {
+    const user = userEvent.setup();
+    const perera = ctx.teachers.find((t) => t.staffId === 'SCC024')!;
+    const { unmount } = render();
+    await user.click(within(screen.getByText('Mrs. N. Perera').closest('tr')!).getByRole('button', { name: 'Edit' }));
+    let dialog = screen.getByRole('dialog');
+    expect(within(dialog).getByRole('button', { name: 'Print slip' })).toBeDisabled();
+    expect(within(dialog).queryByRole('link', { name: 'Share on WhatsApp' })).not.toBeInTheDocument();
+    expect(within(dialog).getByText('Share on WhatsApp')).toHaveAttribute('aria-disabled', 'true');
+    expect(within(dialog).getByText('Reset the password first to print a slip')).toBeInTheDocument();
+    unmount();
+
+    setSessionPassword('test-user:siripura', perera.id, 'abcd2345');
+    render();
+    await user.click(within(screen.getByText('Mrs. N. Perera').closest('tr')!).getByRole('button', { name: 'Edit' }));
+    dialog = screen.getByRole('dialog');
+    expect(within(dialog).getByRole('button', { name: 'Print slip' })).toBeEnabled();
+    expect(within(dialog).getByRole('link', { name: 'Share on WhatsApp' })).toBeInTheDocument();
+    expect(within(dialog).queryByText('Reset the password first to print a slip')).not.toBeInTheDocument();
   });
 
   it('updates an existing teacher without the callable', async () => {
@@ -168,23 +199,81 @@ describe('teachers page', () => {
     expect(api.createTeacher).not.toHaveBeenCalled();
   });
 
-  it('prints slips with session passwords and reset-needed for the rest', async () => {
+  it('print all opens a dialog and prints only the slips with a fresh password', async () => {
     const user = userEvent.setup();
     const perera = ctx.teachers.find((t) => t.staffId === 'SCC024')!;
     setSessionPassword('test-user:siripura', perera.id, 'abcd2345');
     render();
     await user.click(screen.getByRole('button', { name: 'Print all login slips' }));
+    expect(printSlips).not.toHaveBeenCalled();
+    const dialog = screen.getByRole('dialog', { name: 'Print login slips' });
+    expect(within(dialog).getByText(/only known right after/)).toBeInTheDocument();
+    await user.click(within(dialog).getByRole('button', { name: 'Print 1 slip with new password' }));
     await waitFor(() => expect(printSlips).toHaveBeenCalled());
     const slips = vi.mocked(printSlips).mock.calls[0]![0];
-    expect(slips.find((s) => s.staffId === 'SCC024')?.password).toBe('abcd2345');
-    expect(slips.find((s) => s.staffId === 'SCC011')?.password).toBeUndefined();
-    expect(slips[0]!.url).toBe(`${window.location.origin}/login?as=teacher&school=siripura`);
+    expect(slips).toHaveLength(1);
+    expect(slips[0]).toMatchObject({ staffId: 'SCC024', password: 'abcd2345', url: `${window.location.origin}/login?as=teacher&school=siripura` });
+    expect(screen.queryByRole('dialog', { name: 'Print login slips' })).not.toBeInTheDocument();
+  });
+
+  it('print all disables the known-passwords option when there are none', async () => {
+    const user = userEvent.setup();
+    render();
+    await user.click(screen.getByRole('button', { name: 'Print all login slips' }));
+    const dialog = screen.getByRole('dialog', { name: 'Print login slips' });
+    expect(within(dialog).getByRole('button', { name: 'Print 0 slips with new passwords' })).toBeDisabled();
+  });
+
+  it('print all can reset every password after a confirmation, then prints all slips', async () => {
+    const user = userEvent.setup();
+    vi.mocked(api.resetTeacherPassword).mockImplementation(async (_s, id) => `pw-${id}`);
+    render();
+    await user.click(screen.getByRole('button', { name: 'Print all login slips' }));
+    await user.click(within(screen.getByRole('dialog')).getByRole('button', { name: 'Reset all passwords and print' }));
+    const confirm = screen.getByRole('dialog', { name: "Reset every teacher's password?" });
+    expect(within(confirm).getByText(/Every teacher's current password stops working immediately/)).toBeInTheDocument();
+    expect(api.resetTeacherPassword).not.toHaveBeenCalled();
+    await user.click(within(confirm).getByRole('button', { name: 'Reset all and print' }));
+    await waitFor(() => expect(printSlips).toHaveBeenCalled());
+    expect(api.resetTeacherPassword).toHaveBeenCalledTimes(ctx.teachers.length);
+    const slips = vi.mocked(printSlips).mock.calls[0]![0];
+    expect(slips).toHaveLength(ctx.teachers.length);
+    expect(slips.every((x) => x.password?.startsWith('pw-'))).toBe(true);
+  });
+
+  it('print all leaves out teachers whose reset failed', async () => {
+    const user = userEvent.setup();
+    const bad = ctx.teachers[0]!.id;
+    vi.mocked(api.resetTeacherPassword).mockImplementation(async (_s, id) => {
+      if (id === bad) throw new Error('no login');
+      return `pw-${id}`;
+    });
+    render();
+    await user.click(screen.getByRole('button', { name: 'Print all login slips' }));
+    await user.click(within(screen.getByRole('dialog')).getByRole('button', { name: 'Reset all passwords and print' }));
+    await user.click(within(screen.getByRole('dialog', { name: "Reset every teacher's password?" })).getByRole('button', { name: 'Reset all and print' }));
+    await waitFor(() => expect(printSlips).toHaveBeenCalled());
+    expect(vi.mocked(printSlips).mock.calls[0]![0]).toHaveLength(ctx.teachers.length - 1);
+    expect(await screen.findByText('1 teacher could not be reset and was left out of the slips')).toBeInTheDocument();
+  });
+
+  it('shows the usage on the first delete dialog and offers no delete button when in use', async () => {
+    const user = userEvent.setup();
+    const used = ctx.teachers.find((t) => usageCount('teacher', t.id, ctx, entries) > 0)!;
+    const count = usageCount('teacher', used.id, ctx, entries) + ctx.classes.filter((c) => c.classTeacherId === used.id).length;
+    render();
+    const row = screen.getByText(used.staffId).closest('tr')!;
+    await user.click(within(row).getByRole('button', { name: 'Delete' }));
+    const dialog = screen.getByRole('dialog');
+    expect(within(dialog).getByText(new RegExp(`Used in ${count} slots`))).toBeInTheDocument();
+    expect(within(dialog).queryByRole('button', { name: 'Delete' })).not.toBeInTheDocument();
+    expect(call).not.toHaveBeenCalled();
   });
 
   it('blocks deleting an in-use teacher and shows the count', async () => {
     const user = userEvent.setup();
     vi.mocked(call).mockResolvedValue({ deleted: false, usedIn: 12 });
-    render();
+    renderWithSchool(<TeachersPage />, { ctx: unused, entries: [] });
     const row = screen.getByText('Mrs. N. Perera').closest('tr')!;
     await user.click(within(row).getByRole('button', { name: 'Delete' }));
     await user.click(within(screen.getByRole('dialog')).getByRole('button', { name: 'Delete' }));
@@ -195,7 +284,7 @@ describe('teachers page', () => {
   it('treats an in-use ApiError as blocked too', async () => {
     const user = userEvent.setup();
     vi.mocked(call).mockRejectedValue(new ApiError('in-use', 'in use', { usedIn: 3 }));
-    render();
+    renderWithSchool(<TeachersPage />, { ctx: unused, entries: [] });
     const row = screen.getByText('Mrs. N. Perera').closest('tr')!;
     await user.click(within(row).getByRole('button', { name: 'Delete' }));
     await user.click(within(screen.getByRole('dialog')).getByRole('button', { name: 'Delete' }));

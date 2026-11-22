@@ -62,3 +62,32 @@ test('admin adds a teacher, sees the 8-character password and prints the login s
   const row = page.getByRole('row', { name: /SCC059 Mrs\. E\. Tester/ });
   await expect(row).not.toContainText('Not logged in yet', { timeout: 15_000 });
 });
+
+test('slips need a fresh password and print-all explains it first', async ({ page }) => {
+  await loginAdmin(page, ADMIN.email, ADMIN.password);
+  await page.getByRole('link', { name: 'Teachers' }).click();
+
+  await page.getByRole('button', { name: 'Print all login slips' }).click();
+  const printAll = page.getByRole('dialog', { name: 'Print login slips' });
+  await expect(printAll.getByText(/only known right after/)).toBeVisible();
+  await expect(printAll.getByRole('button', { name: /^Print 0 slips/ })).toBeDisabled();
+  await printAll.getByRole('button', { name: 'Close' }).click();
+
+  await page.getByRole('row', { name: /SCC011/ }).getByRole('button', { name: 'Edit' }).click();
+  const modal = page.getByRole('dialog', { name: 'Edit teacher' });
+  await expect(modal.getByRole('button', { name: 'Print slip' })).toBeDisabled();
+  await expect(modal.getByText('Reset the password first to print a slip')).toBeVisible();
+  await modal.getByRole('button', { name: 'Reset password' }).click();
+  const confirm = page.getByRole('dialog', { name: /Reset .*password\?/ });
+  await expect(confirm.getByText(/current password stops working immediately/)).toBeVisible();
+  await confirm.getByRole('button', { name: 'Reset password' }).click();
+  await expect(modal.locator('b.font-mono')).toBeVisible();
+  await expect(modal.getByRole('button', { name: 'Print slip' })).toBeEnabled();
+});
+
+test('members list shows the admin name and email in their own columns', async ({ page }) => {
+  await loginAdmin(page, ADMIN.email, ADMIN.password);
+  await page.getByRole('link', { name: 'Members' }).click();
+  const row = page.getByRole('row', { name: new RegExp(ADMIN.name) });
+  await expect(row).toContainText(ADMIN.email);
+});

@@ -70,6 +70,7 @@ export function TeacherModal({ teacher, onClose }: TeacherModalProps) {
   const [saveError, setSaveError] = useState<string | null>(null);
   const [resetting, setResetting] = useState(false);
   const [resetError, setResetError] = useState(false);
+  const [confirmingReset, setConfirmingReset] = useState(false);
 
   const teacherId = teacher?.id ?? savedId;
   const locked = readOnly;
@@ -136,6 +137,7 @@ export function TeacherModal({ teacher, onClose }: TeacherModalProps) {
       setResetError(true);
     } finally {
       setResetting(false);
+      setConfirmingReset(false);
     }
   }
 
@@ -265,11 +267,32 @@ export function TeacherModal({ teacher, onClose }: TeacherModalProps) {
           }}
           hasStaffId={!!teacherId}
           focusPrint={!!savedId}
-          onReset={teacherId && !readOnly ? reset : undefined}
+          onReset={teacherId && !readOnly ? () => setConfirmingReset(true) : undefined}
           resetting={resetting}
           resetError={resetError}
         />
       </div>
+      {confirmingReset && (
+        <Modal
+          open
+          width={440}
+          title={t('resetConfirm.title', { name: teacherDisplayName({ name: form.name, ...(form.title ? { title: form.title } : {}) }, lang) })}
+          onClose={() => setConfirmingReset(false)}
+          busy={resetting}
+          footer={
+            <>
+              <Button onClick={() => setConfirmingReset(false)} disabled={resetting}>{t('resetConfirm.cancel')}</Button>
+              <Button variant="dangerSolid" onClick={() => void reset()} loading={resetting} loadingLabel={t('slip.resetting')}>
+                {t('resetConfirm.confirm')}
+              </Button>
+            </>
+          }
+        >
+          <p className="text-sm text-ink-soft">
+            {t('resetConfirm.body', { name: teacherDisplayName({ name: form.name, ...(form.title ? { title: form.title } : {}) }, lang) })}
+          </p>
+        </Modal>
+      )}
     </Modal>
   );
 }

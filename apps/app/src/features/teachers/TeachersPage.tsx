@@ -1,10 +1,10 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
 // Copyright (C) 2026 Kanushka Gayan
-import { pickName, teacherDisplayName, type Lang, type Teacher } from '@sathiya/core';
+import { pickName, teacherDisplayName, usageCount, type Lang, type Teacher } from '@sathiya/core';
 import { useEffect, useMemo, useState } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
-import { useSchool } from '../../app/SchoolProvider';
+import { useSchool, useYear } from '../../app/SchoolProvider';
 import { useReadOnly } from '../../ui/AdminLayout';
 import { Button } from '../../ui/Button';
 import { EmptyState } from '../../ui/EmptyState';
@@ -15,12 +15,14 @@ import { PageHeader } from '../../ui/PageHeader';
 import { useToast } from '../../ui/Toast';
 import { DeleteSetupModal } from './DeleteSetupModal';
 import { usePrintLabels } from './LoginSlip';
+import { PrintAllModal } from './PrintAllModal';
 import { printSlips } from './printSlips';
+import { resetPasswords } from './resetAll';
 import { useSessionPasswords } from './sessionPasswords';
 import { teacherLoginUrl } from './slip';
 import { TeacherModal } from './TeacherModal';
 
-type Dialog = { kind: 'edit'; teacher?: Teacher } | { kind: 'delete'; teacher: Teacher } | null;
+type Dialog = { kind: 'edit'; teacher?: Teacher } | { kind: 'printAll' } | { kind: 'delete'; teacher: Teacher } | null;
 
 function formatLogin(ts: number | undefined, lang: string, never: string): string {
   return ts ? new Date(ts).toLocaleDateString(lang, { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' }) : never;
@@ -29,10 +31,12 @@ function formatLogin(ts: number | undefined, lang: string, never: string): strin
 export function TeachersPage() {
   const { t, i18n } = useTranslation('teachers');
   const lang = i18n.language as Lang;
-  const { school, teachers, subjects, classes } = useSchool();
+  const state = useSchool();
+  const { school, teachers, subjects, classes } = state;
+  const { entries } = useYear();
   const readOnly = useReadOnly();
   const toast = useToast();
-  const { passwords } = useSessionPasswords();
+  const { passwords, set: setSessionPassword } = useSessionPasswords();
   const printLabels = usePrintLabels();
   const [search, setSearch] = useState('');
   const [params, setParams] = useSearchParams();
@@ -46,16 +50,29 @@ export function TeachersPage() {
   const q = search.trim().toLowerCase();
   const rows = q ? sorted.filter((x) => teacherDisplayName(x, lang).toLowerCase().includes(q) || x.staffId.toLowerCase().includes(q)) : sorted;
 
-  async function printAll() {
+  async function printTeachers(list: Teacher[], pw: Readonly<Record<string, string>>) {
     const url = teacherLoginUrl(window.location.origin, school.id);
-    const slips = sorted.map((x) => ({
+    const slips = list.map((x) => ({
       schoolName: pickName(school, lang),
       staffId: x.staffId,
       name: teacherDisplayName(x, lang),
-      password: passwords[x.id],
+      password: pw[x.id],
       url,
     }));
     if (!(await printSlips(slips, printLabels))) toast.show(t('page.printBlocked'), 'error');
+  }
+
+  const known = sorted.filter((x) => passwords[x.id]);
+
+  async function resetAllAndPrint(): Promise<boolean> {
+    const { passwords: fresh, failed } = await resetPasswords(school.id, sorted.map((x) => x.id));
+    for (const [id, pw] of Object.entries(fresh)) setSessionPassword(id, pw);
+    const done = sorted.filter((x) => fresh[x.id]);
+    if (done.length === 0) return false;
+    setDialog(null);
+    if (failed > 0) toast.show(t('page.printPartial', { count: failed }), 'error');
+    await printTeachers(done, fresh);
+    return true;
   }
 
   const add = (
@@ -81,7 +98,7 @@ export function TeachersPage() {
               onChange={(e) => setSearch(e.target.value)}
             />
           </div>
-          <Button onClick={() => void printAll()} disabled={teachers.length === 0}>
+          <Button onClick={() => setDialog({ kind: 'printAll' })} disabled={teachers.length === 0}>
             {t('page.printAll')}
           </Button>
           {!readOnly && add}
@@ -150,12 +167,25 @@ export function TeachersPage() {
       )}
 
       {dialog?.kind === 'edit' && <TeacherModal key={dialog.teacher?.id ?? 'new'} teacher={dialog.teacher} onClose={() => setDialog(null)} />}
+      {dialog?.kind === 'printAll' && (
+        <PrintAllModal
+          total={sorted.length}
+          known={known.length}
+          onPrintKnown={() => {
+            setDialog(null);
+            void printTeachers(known, passwords);
+          }}
+          onResetAll={resetAllAndPrint}
+          onClose={() => setDialog(null)}
+        />
+      )}
       {dialog?.kind === 'delete' && (
         <DeleteSetupModal
           schoolId={school.id}
           kind="teacher"
           id={dialog.teacher.id}
           name={teacherDisplayName(dialog.teacher, lang)}
+          knownUsedIn={usageCount('teacher', dialog.teacher.id, state, entries) + classes.filter((c) => c.classTeacherId === dialog.teacher.id).length}
           onClose={() => setDialog(null)}
         />
       )}

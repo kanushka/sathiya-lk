@@ -16,13 +16,15 @@ export interface DeleteSetupModalProps {
   onClose: () => void;
   onDeleted?: () => void;
   body?: ReactNode;
+  knownUsedIn?: number;
 }
 
-export function DeleteSetupModal({ schoolId, kind, id, name, onClose, onDeleted, body }: DeleteSetupModalProps) {
+export function DeleteSetupModal({ schoolId, kind, id, name, onClose, onDeleted, body, knownUsedIn }: DeleteSetupModalProps) {
   const { t } = useTranslation('teachers');
   const toast = useToast();
   const del = useDeleteSetupItem();
-  const blocked = del.usedIn !== null;
+  const usedIn = del.usedIn ?? (knownUsedIn && knownUsedIn > 0 ? knownUsedIn : null);
+  const blocked = usedIn !== null;
 
   async function confirm() {
     const outcome = await del.run(schoolId, kind, id);
@@ -52,7 +54,7 @@ export function DeleteSetupModal({ schoolId, kind, id, name, onClose, onDeleted,
       }
     >
       {blocked ? (
-        <FormError>{t(`deleteGuard.inUse.${kind}`, { count: del.usedIn ?? 0 })}</FormError>
+        <FormError>{t(`deleteGuard.inUse.${kind}`, { count: usedIn ?? 0 })}</FormError>
       ) : (
         <p className="text-sm text-ink-soft">{body ?? t(`deleteGuard.body.${kind}`)}</p>
       )}
