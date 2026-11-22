@@ -189,6 +189,7 @@ function validateTeachers(
       while (used.has(formatStaffId(prefix, nextNo))) nextNo++;
       staffId = formatStaffId(prefix, nextNo);
       used.add(staffId);
+      if (!isValidStaffId(prefix, staffId)) err('staffId', 'staffIdFormat', { example: formatStaffId(prefix, 24) });
     }
 
     let title: Teacher['title'];

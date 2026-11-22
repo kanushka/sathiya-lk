@@ -136,6 +136,12 @@ describe('validateImport teacher errors', () => {
     expect(errs(p)).toEqual([e('staffId', 'staffIdFormat')]);
     expect(p.errors[0]?.params).toEqual({ example: 'SCC024' });
   });
+  it('an auto staff ID past 999 gets staffIdFormat', () => {
+    const p = one(okTeacher, { ...ctx, staffIds: ['SCC999'] });
+    expect(p.teachers[0]?.teacher.staffId).toBe('SCC1000');
+    expect(errs(p)).toEqual([e('staffId', 'staffIdFormat')]);
+    expect(p.errors[0]?.params).toEqual({ example: 'SCC024' });
+  });
   it('staffIdTaken and staffIdDuplicate', () => {
     const p = run([], [tch(2, { ...okTeacher, staffId: 'scc001' }), tch(3, { ...okTeacher, staffId: 'SCC009' }), tch(4, { ...okTeacher, staffId: 'scc009' })]);
     expect(errs(p)).toEqual([

@@ -63,7 +63,7 @@ describe('xlsx round trip with spreadsheet-typed cells', () => {
     ]).toBlob();
     const parsed = readSheets(await readImportFile(asFile([blob], 'filled.xlsx')));
     expect(parsed.errors).toEqual([]);
-    const plan = validateImport(parsed, { staffPrefix: 'T', schoolGrades: [6, 7, 8, 9], subjects: [], staffIds: [] });
+    const plan = validateImport(parsed, { staffPrefix: 'TT', schoolGrades: [6, 7, 8, 9], subjects: [], staffIds: [] });
     expect(plan.errors).toEqual([
       { sheet: 'teachers', row: 2, column: 'phone', code: 'excelNumber' },
       { sheet: 'teachers', row: 2, column: 'grades', code: 'excelDate' },
