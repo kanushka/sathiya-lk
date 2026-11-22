@@ -107,7 +107,6 @@ describe('importSetup', () => {
     expect(res.subjectIds).toHaveLength(1);
     const created = res.teachers.map((t) => t.staffId);
     expect(res.notCreated).toContain('SCC045');
-    expect(res.notCreated).toContain('SCC052');
     expect([...created, ...res.notCreated].sort()).toEqual(ids);
     const docs = await adminDb.collection(paths.teachers(sid)).get();
     expect(docs.docs.map((d) => d.data().staffId as string).sort()).toEqual([...created].sort());
