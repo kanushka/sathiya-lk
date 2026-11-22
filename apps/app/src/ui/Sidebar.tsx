@@ -109,13 +109,16 @@ export function Sidebar({ basePath = '/admin', readOnly = false }: SidebarProps)
     >
       {collapsed ? (
         <>
-          <SchoolLogo school={school} name={name} decorative={false} />
+          {school.logoUrl ? <SchoolLogo school={school} name={name} decorative={false} /> : <span className="sr-only">{name}</span>}
           <button
             type="button"
             onClick={toggle}
             aria-label={toggleLabel}
             title={toggleLabel}
-            className="mb-2 mt-2.5 flex h-8 w-8 items-center justify-center rounded-lg border border-line bg-white text-ink-muted hover:bg-surface"
+            className={cx(
+              'mb-2 flex h-8 w-8 items-center justify-center rounded-lg border border-line bg-white text-ink-muted hover:bg-surface',
+              school.logoUrl && 'mt-2.5',
+            )}
           >
             <Icon name="chevronRight" size={16} strokeWidth={2} />
           </button>

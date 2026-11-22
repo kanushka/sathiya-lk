@@ -80,7 +80,7 @@ export function PlanEditor({ plan, capacity, subjects, readOnly, onChange }: Pla
   return (
     <div>
       <div className="mb-1.5 flex flex-wrap items-end justify-between gap-3">
-        <h2 className="m-0 text-[17px] font-bold">{t('plan.title')}</h2>
+        <h3 className="m-0 text-[17px] font-bold">{t('plan.title')}</h3>
         <p className="m-0 text-sm">
           <b data-testid="plan-total" data-fit={fit} className={`text-lg ${fitColor[fit]}`}>
             {total} / {capacity.min === capacity.max ? capacity.max : `${capacity.min}–${capacity.max}`}

@@ -92,7 +92,7 @@ export function GradesPage() {
 
             <section className="mb-5 rounded-[14px] border border-line-soft bg-white p-5">
               <div className="mb-3.5 flex items-center justify-between">
-                <h2 className="m-0 text-[17px] font-bold">{t('classes.title')}</h2>
+                <h3 className="m-0 text-[17px] font-bold">{t('classes.title')}</h3>
                 {!readOnly && defaultTemplate && (
                   <Button onClick={() => void addClass()}>
                     {t('classes.add', { name: nextClassName(grade.number, gradeClasses.map((c) => c.name)) })}

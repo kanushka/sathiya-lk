@@ -78,10 +78,17 @@ describe('Sidebar', () => {
     await user.click(screen.getByRole('button', { name: 'Collapse menu' }));
     expect(localStorage.getItem('sathiya.sidebar')).toBe('collapsed');
     expect(screen.getByRole('navigation')).toHaveAttribute('data-collapsed', 'true');
-    expect(screen.queryByText('Siripura Central College')).not.toBeInTheDocument();
+    expect(screen.getByText('Siripura Central College')).toHaveClass('sr-only');
     expect(screen.getByRole('link', { name: 'Subjects' })).toHaveAttribute('title', 'Subjects');
     await user.click(screen.getByRole('button', { name: 'Expand menu' }));
     expect(localStorage.getItem('sathiya.sidebar')).toBe('expanded');
+  });
+
+  it('keeps the school name for screen readers when collapsed without a logo', () => {
+    localStorage.setItem('sathiya.sidebar', 'collapsed');
+    renderSidebar();
+    expect(screen.getByText('Siripura Central College')).toHaveClass('sr-only');
+    expect(screen.queryByTestId('school-logo')).toBeNull();
   });
 
   it('starts collapsed from storage', () => {
