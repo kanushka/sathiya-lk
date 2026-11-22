@@ -20,6 +20,7 @@ beforeEach(() => {
   vi.mocked(api.currentTermsVersion).mockResolvedValue('3');
   vi.mocked(api.createAccount).mockResolvedValue(undefined);
   vi.mocked(api.registerSchool).mockResolvedValue('siripura');
+  vi.mocked(api.censusAvailable).mockResolvedValue(true);
   vi.mocked(api.uploadLogo).mockResolvedValue('https://x/logo.png');
   vi.mocked(api.confirmVerified).mockResolvedValue(true);
   vi.mocked(sendAuthEmail).mockResolvedValue(undefined);
@@ -404,6 +405,41 @@ describe('register', () => {
       await user.click(screen.getByRole('button', { name: 'Create school' }));
     }
     const opts = { route: '/register', at: '/register' as const, signedIn: true };
+
+    it('checks the census number on Next and stays on step 1 when it is taken', async () => {
+      const user = userEvent.setup();
+      vi.mocked(api.censusAvailable).mockResolvedValue(false);
+      renderAuth(<RegisterPage />, { route: '/register', at: '/register' });
+      await fillSchool(user);
+      expect(api.censusAvailable).toHaveBeenCalledWith('03214');
+      expect(await screen.findByText(/already registered on Sathiya/)).toBeInTheDocument();
+      expect(screen.getByLabelText('Census number')).toHaveAttribute('aria-invalid', 'true');
+      expect(screen.queryByRole('button', { name: 'Next: your account' })).not.toBeInTheDocument();
+      await user.click(screen.getByRole('button', { name: 'report it' }));
+      expect(screen.getByRole('dialog', { name: 'Report a school' })).toBeInTheDocument();
+    });
+
+    it('moves on to step 2 when the census number is free, and when the check itself fails', async () => {
+      const user = userEvent.setup();
+      vi.mocked(api.censusAvailable).mockRejectedValue(new Error('offline'));
+      renderAuth(<RegisterPage />, { route: '/register', at: '/register' });
+      await fillSchool(user);
+      expect(await screen.findByRole('button', { name: 'Next: your account' })).toBeInTheDocument();
+      expect(screen.queryByText(/already registered on Sathiya/)).not.toBeInTheDocument();
+    });
+
+    it('skips the census check when the school has no census number', async () => {
+      const user = userEvent.setup();
+      renderAuth(<RegisterPage />, { route: '/register', at: '/register' });
+      await pickOption(user, screen.getByRole('combobox', { name: /^School type/ }), 'Private');
+      await user.click(screen.getByRole('checkbox', { name: /No census number/ }));
+      await user.type(screen.getByLabelText('School name (English)'), 'Siripura Central College');
+      await user.type(screen.getByLabelText('City'), 'Kandy');
+      await user.type(screen.getByLabelText('District'), 'Kandy');
+      await user.click(screen.getByRole('button', { name: 'Next: logo & colours' }));
+      expect(await screen.findByRole('button', { name: 'Next: your account' })).toBeInTheDocument();
+      expect(api.censusAvailable).not.toHaveBeenCalled();
+    });
 
     it('census-taken returns to step 1 with an alert and a report link preselecting the school', async () => {
       const user = userEvent.setup();

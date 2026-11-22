@@ -38,6 +38,10 @@ export async function registerSchool(req: RegisterSchoolReq): Promise<string> {
   return res.schoolId;
 }
 
+export async function censusAvailable(censusNo: string): Promise<boolean> {
+  return (await call('checkCensusNo', { censusNo })).available;
+}
+
 export async function uploadLogo(schoolId: string, file: File): Promise<string> {
   const ext = file.type === 'image/svg+xml' ? 'svg' : 'png';
   const fileRef = ref(storage, `schools/${schoolId}/logo.${ext}`);

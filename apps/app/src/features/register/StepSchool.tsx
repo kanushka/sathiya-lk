@@ -18,10 +18,11 @@ export interface StepSchoolProps {
   onChange(next: SchoolDraft): void;
   onNext(): void;
   censusTaken?: boolean;
+  checking?: boolean;
   onReport?(): void;
 }
 
-export function StepSchool({ value, onChange, onNext, censusTaken, onReport }: StepSchoolProps) {
+export function StepSchool({ value, onChange, onNext, censusTaken, checking, onReport }: StepSchoolProps) {
   const { t } = useTranslation('register');
   const set = <K extends keyof SchoolDraft>(k: K, v: SchoolDraft[K]) => onChange({ ...value, [k]: v });
   const [cityTouched, setCityTouched] = useState(false);
@@ -156,7 +157,7 @@ export function StepSchool({ value, onChange, onNext, censusTaken, onReport }: S
         </Field>
       </div>
       <div className="mt-7 flex justify-end border-t border-line-soft pt-5">
-        <Button variant="primary" size="lg" disabled={!schoolOk(value)} onClick={onNext}>
+        <Button variant="primary" size="lg" disabled={!schoolOk(value)} loading={checking} onClick={onNext}>
           {t('school.next')}
         </Button>
       </div>
