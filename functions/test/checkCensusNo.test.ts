@@ -25,4 +25,12 @@ describe('checkCensusNo', () => {
     }
     expect(rawErr(await rawCall('checkCensusNo', { censusNo: '654321' }, { ip }))).toEqual({ status: 'RESOURCE_EXHAUSTED', code: 'rate-limited' });
   });
+
+  it('does not count malformed requests toward the limit', async () => {
+    const ip = '203.0.113.81';
+    for (let i = 0; i < CHECK_CENSUS_PER_IP_PER_DAY; i++) {
+      expect(rawErr(await rawCall('checkCensusNo', { censusNo: '12a' }, { ip }))).toMatchObject({ code: 'invalid' });
+    }
+    expect((await rawCall('checkCensusNo', { censusNo: '654321' }, { ip })).result).toEqual({ available: true });
+  });
 });
