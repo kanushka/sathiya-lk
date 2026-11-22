@@ -1,0 +1,73 @@
+name: Deploy production
+on:
+  workflow_dispatch:
+    inputs:
+      use_committed_functions_env:
+        description: Deploy functions with only the committed functions/.env (no FUNCTIONS_ENV_PROD overrides)
+        type: boolean
+        default: false
+
+permissions:
+  contents: read
+
+concurrency:
+  group: deploy-production
+  cancel-in-progress: false
+
+jobs:
+  guard:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Refuse refs other than main
+        run: |
+          if [ "$GITHUB_REF" != "refs/heads/main" ]; then
+            echo "Production deploys run only from main (got $GITHUB_REF)." >&2
+            exit 1
+          fi
+
+  deploy:
+    needs: guard
+    if: github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    environment: production
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 9
+      - uses: actions/setup-node@v4
+        with:
+          node-version-file: .nvmrc
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+      - run: pnpm check:license
+      - run: pnpm typecheck
+      - run: pnpm test
+      - run: pnpm --filter web test
+      - run: pnpm build
+      - name: Deploy to production
+        env:
+          FIREBASE_SERVICE_ACCOUNT_PROD: ${{ secrets.FIREBASE_SERVICE_ACCOUNT_PROD }}
+          FUNCTIONS_ENV_PROD: ${{ secrets.FUNCTIONS_ENV_PROD }}
+          USE_COMMITTED_FUNCTIONS_ENV: ${{ inputs.use_committed_functions_env }}
+          GCLOUD_PROJECT: sathiya-lk
+        run: |
+          if [ -z "$FIREBASE_SERVICE_ACCOUNT_PROD" ]; then
+            echo "Secret FIREBASE_SERVICE_ACCOUNT_PROD is not set in the production environment." >&2
+            exit 1
+          fi
+          key="$(mktemp "$RUNNER_TEMP/prod-sa.XXXXXX.json")"
+          trap 'rm -f "$key" functions/.env.sathiya-lk' EXIT
+          if [ -n "$FUNCTIONS_ENV_PROD" ]; then
+            printf '%s\n' "$FUNCTIONS_ENV_PROD" > functions/.env.sathiya-lk
+          elif [ "$USE_COMMITTED_FUNCTIONS_ENV" != "true" ]; then
+            echo "Secret FUNCTIONS_ENV_PROD is not set. Set it, or re-run with use_committed_functions_env to deploy only the committed functions/.env (this drops any production overrides)." >&2
+            exit 1
+          fi
+          node apps/app/deploy/check-app-check.mjs
+          printf '%s' "$FIREBASE_SERVICE_ACCOUNT_PROD" > "$key"
+          export GOOGLE_APPLICATION_CREDENTIALS="$key"
+          pnpm exec firebase deploy -P default --only hosting:app --non-interactive
+          pnpm exec firebase deploy -P default --only hosting:web,functions,firestore,storage --non-interactive
