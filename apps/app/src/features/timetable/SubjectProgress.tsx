@@ -54,7 +54,7 @@ export function SubjectProgress({ cls, entries, onPin, onStop, activeSubjectId }
               <span className="h-2.5 w-2.5 shrink-0 rounded-[3px]" style={{ background: planItemColor(r.item, ctx) }} />
               <span className="flex-1 text-[13px]">{name}</span>
               <span className="h-1.5 w-[70px] overflow-hidden rounded-full bg-surface-3" aria-hidden="true">
-                <span data-bar className={cx('block h-1.5', over ? 'bg-danger' : done ? 'bg-success' : 'bg-warning')} style={{ width: `${pct}%` }} />
+                <span data-bar className={cx('block h-1.5', over ? 'bg-danger' : done ? 'bg-fill-success' : 'bg-fill-warning')} style={{ width: `${pct}%` }} />
               </span>
               <b data-over={over || undefined} className={cx('w-9 text-right text-[13px]', over ? 'text-danger' : done ? 'text-success' : 'text-warning')}>
                 {t('progress.count', { placed: r.placed, needed: r.needed })}

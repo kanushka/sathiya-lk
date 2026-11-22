@@ -144,7 +144,7 @@ export function DashboardPage() {
                   <Link key={i.key} to={base + i.to} className="flex gap-3 border-t border-line-soft py-3 text-ink no-underline">
                     <span
                       aria-hidden="true"
-                      className={cx('mt-1.5 h-2 w-2 shrink-0 rounded-full', i.severity === 'high' ? 'bg-danger' : 'bg-warning')}
+                      className={cx('mt-1.5 h-2 w-2 shrink-0 rounded-full', i.severity === 'high' ? 'bg-danger' : 'bg-fill-warning')}
                     />
                     <span>
                       <strong className="block text-sm">{t(`attention.${i.kind}.title`, params)}</strong>

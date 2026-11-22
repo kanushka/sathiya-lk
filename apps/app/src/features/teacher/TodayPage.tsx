@@ -4,7 +4,7 @@ import { currentAndNext, toMinutes, type DayIndex, type SnapshotCell, type Teach
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useLang } from '../../app/LangProvider';
-import { Badge as StatusBadge } from '../../ui/Badge';
+import { Badge } from '../../ui/Badge';
 import { cx } from '../../ui/cx';
 import { cellText, cellsAt, clock, slotsOf, weekdays } from './cells';
 import { TeacherFrame, type TeacherViewProps } from './TeacherFrame';
@@ -80,7 +80,7 @@ function TodayBody({ snap, now }: { snap: TeacherSnapshot; now: Date }) {
               >
                 <PeriodLabel n={slot.n} start={slot.row.start} />
                 <span className="flex-1 text-[15px] text-ink-muted">{t('teacher:freePeriod')}</span>
-                {isNow && <Badge>{t('teacher:now')}</Badge>}
+                {isNow && <NowTag>{t('teacher:now')}</NowTag>}
               </div>
             );
           }
@@ -94,7 +94,7 @@ function TodayBody({ snap, now }: { snap: TeacherSnapshot; now: Date }) {
                     key={k}
                     className={cx(
                       'flex items-center gap-3 rounded-xl px-3.5 py-3',
-                      isNow ? 'border-2 border-warning/70 bg-warning-soft' : 'border border-line bg-white',
+                      isNow ? 'border-2 border-fill-warning bg-warning-soft' : 'border border-line bg-white',
                       past(cell.end) && 'opacity-55',
                     )}
                   >
@@ -103,7 +103,7 @@ function TodayBody({ snap, now }: { snap: TeacherSnapshot; now: Date }) {
                       <b className="block text-[15px]">{text.title}</b>
                       <span className="text-[13px] text-ink-muted">{text.sub}</span>
                     </div>
-                    {isNow && <Badge>{t('teacher:now')}</Badge>}
+                    {isNow && <NowTag>{t('teacher:now')}</NowTag>}
                   </div>
                 );
               })}
@@ -125,7 +125,7 @@ function PeriodLabel({ n, start }: { n: number; start: string }) {
   );
 }
 
-function Badge({ children }: { children: string }) {
+function NowTag({ children }: { children: string }) {
   return <span className="text-[11px] font-extrabold text-warning">{children}</span>;
 }
 
@@ -140,7 +140,7 @@ interface NowCardProps {
 function NowCard({ todayIndex, current, next, minutesLeft, minutes }: NowCardProps) {
   const { t } = useTranslation(['teacher', 'common']);
   const { lang } = useLang();
-  const box = 'rounded-2xl border-2 border-warning/70 bg-white px-4 py-3.5 shadow-[0_14px_30px_-18px_rgba(20,33,61,.45)]';
+  const box = 'rounded-2xl border-2 border-fill-warning bg-white px-4 py-3.5 shadow-[0_14px_30px_-18px_rgba(20,33,61,.45)]';
 
   if (todayIndex === null) {
     return (
@@ -177,9 +177,9 @@ function NowCard({ todayIndex, current, next, minutesLeft, minutes }: NowCardPro
   return (
     <section data-testid="now-card" className={box}>
       <div className="flex items-center justify-between">
-        <StatusBadge tone="warning" className="tracking-wider">
+        <Badge tone="warning" className="tracking-wider">
           {t('teacher:now')} · {t('common:periods.periodN', { n: current.period })}
-        </StatusBadge>
+        </Badge>
         <span className="text-[13px] text-ink-muted">
           {clock(current.start)} – {clock(current.end)} · {t('teacher:minLeft', { n: minutesLeft ?? 0 })}
         </span>
@@ -194,7 +194,7 @@ function NowCard({ todayIndex, current, next, minutesLeft, minutes }: NowCardPro
         aria-valuenow={pct}
         className="mt-2.5 h-1.5 overflow-hidden rounded-full bg-surface-3"
       >
-        <span className="block h-1.5 bg-warning" style={{ width: `${pct}%` }} />
+        <span className="block h-1.5 bg-fill-warning" style={{ width: `${pct}%` }} />
       </div>
       {nextLine}
     </section>

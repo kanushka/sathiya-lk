@@ -20,6 +20,7 @@ import { Badge } from '../../ui/Badge';
 import { useReadOnly } from '../../ui/AdminLayout';
 import { Button } from '../../ui/Button';
 import { Combobox } from '../../ui/Combobox';
+import { inputClass } from '../../ui/Field';
 import { Modal } from '../../ui/Modal';
 import { limitWarning, planItemColor, teacherReason, teachesAtAll } from './labels';
 import { initials, usePickItems, type GroupItem, type PickItem } from './pickerData';
@@ -219,7 +220,7 @@ function SlotPickerBody({ onClose, classId, day, period, entries, editing, onSav
             value={query}
             onChange={(e) => setQuery(e.target.value)}
             placeholder={t('picker.teacherSearch')}
-            className="h-10 w-full rounded-lg border border-line-strong px-3 text-sm focus:border-brand focus:outline-none focus:ring-2 focus:ring-brand/30"
+            className={inputClass}
           />
           {q && available.length + unavailable.length === 0 && !pinned && (
             <p className="mx-0.5 mt-3 text-[13px] text-ink-muted">

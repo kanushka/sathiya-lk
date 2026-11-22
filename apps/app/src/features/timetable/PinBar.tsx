@@ -57,7 +57,7 @@ export function PinBar({ subject, teacher, color, progress, suggestedCount, onSu
           className="relative block h-1.5 w-[170px] overflow-hidden rounded-full bg-on-brand/25"
         >
           <span className="absolute inset-y-0 left-0 block bg-on-brand" style={{ width: `${pct}%` }} />
-          {over > 0 && <span className="absolute inset-y-0 right-0 block bg-danger" style={{ width: `${100 - pct}%` }} />}
+          {over > 0 && <span className="absolute inset-y-0 right-0 block bg-fill-over" style={{ width: `${100 - pct}%` }} />}
         </span>
       </div>
       <div className="flex flex-wrap gap-2">

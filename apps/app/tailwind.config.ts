@@ -18,6 +18,7 @@ export default {
         },
         success: { DEFAULT: '#1F6B34', soft: '#E4F2E7', line: '#CFE6D4' },
         warning: { DEFAULT: '#7A5410', soft: '#FBF1DC', line: '#F0DDB0' },
+        fill: { warning: '#D9A441', 'warning-strong': '#B7831F', success: '#2E8B4A', over: '#F2994A' },
         surface: { DEFAULT: '#FAFAFB', 2: '#F4F5F7', 3: '#F1F2F5' },
         teal: '#0E6B6A',
         navy: '#14213D',
