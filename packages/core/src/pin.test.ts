@@ -3,7 +3,7 @@
 
 import { describe, expect, it } from 'vitest';
 import { C, ctx, entries, entries6B, entry, S, T } from './fixtures';
-import { latestGroupSpec, matchesSpec, pinProgress, pinSlots, singleSpec, specDraft, suggestPins, teacherPinSlots, type PinSpec } from './pin';
+import { groupSpecIsCurrent, latestGroupSpec, matchesSpec, pinProgress, pinSlots, singleSpec, specDraft, suggestPins, teacherPinSlots, type PinSpec } from './pin';
 import type { Entry } from './types';
 
 const target = { ctx, spec: singleSpec(C.c6a, S.sinhala, T.ranasinghe) };
@@ -294,5 +294,33 @@ describe('specDraft', () => {
   it('keeps the groupKey of a group spec', () => {
     const spec: PinSpec = { classIds: [C.c6a, C.c6b], lessons: [{ subjectId: S.buddhism, teacherId: T.ananda }], groupKey: 'religion' };
     expect(specDraft(spec, 0, 1)).toEqual({ day: 0, period: 1, classIds: [C.c6a, C.c6b], lessons: spec.lessons, groupKey: 'religion' });
+  });
+});
+
+describe('groupSpecIsCurrent', () => {
+  const lessons = [
+    { subjectId: S.buddhism, teacherId: T.ananda },
+    { subjectId: S.catholicism, teacherId: T.mSilva },
+    { subjectId: S.islam, teacherId: T.rizan },
+  ];
+  const spec: PinSpec = { classIds: [C.c6b, C.c6a], lessons, groupKey: 'religion' };
+
+  it('holds when every option has a known teacher', () => {
+    expect(groupSpecIsCurrent({ ctx, classId: C.c6b, spec })).toBe(true);
+  });
+
+  it('fails when a teacher no longer exists', () => {
+    const gone = { ...ctx, teachers: ctx.teachers.filter((t) => t.id !== T.rizan) };
+    expect(groupSpecIsCurrent({ ctx: gone, classId: C.c6b, spec })).toBe(false);
+  });
+
+  it('fails when the lessons no longer match the plan options', () => {
+    expect(groupSpecIsCurrent({ ctx, classId: C.c6b, spec: { ...spec, lessons: lessons.slice(0, 2) } })).toBe(false);
+    const swapped = { ...spec, lessons: [...lessons.slice(0, 2), { subjectId: S.pali, teacherId: T.ananda }] };
+    expect(groupSpecIsCurrent({ ctx, classId: C.c6b, spec: swapped })).toBe(false);
+  });
+
+  it('fails when the class plan has no such group', () => {
+    expect(groupSpecIsCurrent({ ctx, classId: C.c6b, spec: { ...spec, groupKey: 'nope' } })).toBe(false);
   });
 });

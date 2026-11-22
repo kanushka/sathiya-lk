@@ -217,3 +217,14 @@ export function latestGroupSpec(args: { ctx: SchoolContext; entries: Entry[]; cl
   }
   return { classIds: [classId, ...latest.classIds.filter((c) => c !== classId)], lessons, groupKey };
 }
+
+export function groupSpecIsCurrent(args: { ctx: SchoolContext; classId: string; spec: PinSpec }): boolean {
+  const { ctx, classId, spec } = args;
+  const cls = findClass(ctx, classId);
+  const grade = cls && gradeOf(ctx, cls);
+  const item = cls && grade ? effectivePlan(cls, grade).find((p) => p.kind === 'group' && p.key === spec.groupKey) : undefined;
+  if (item?.kind !== 'group') return false;
+  const subjects = spec.lessons.map((l) => l.subjectId);
+  if (subjects.length !== item.optionSubjectIds.length || !item.optionSubjectIds.every((s) => subjects.includes(s))) return false;
+  return spec.lessons.every((l) => ctx.teachers.some((t) => t.id === l.teacherId));
+}
