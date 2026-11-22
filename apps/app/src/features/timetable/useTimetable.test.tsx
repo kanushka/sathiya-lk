@@ -157,6 +157,22 @@ describe('useTimetable', () => {
     }
     const serverCopy: Entry = { id: 'srv-1', day: 0, period: 8, classIds: [C.c6b], lessons: draft.lessons, teacherIds: [T.perera] };
 
+    it('no duplicate when the server copy differs from the optimistic one', async () => {
+      const d = deferred<{ entryId: string }>();
+      const api: TimetableApi = { saveEntry: vi.fn(() => d.promise), deleteEntry: vi.fn() };
+      render(<Live api={api}><Probe /></Live>);
+      let p!: Promise<boolean>;
+      act(() => {
+        p = latest.save(draft);
+      });
+      act(() => setServer([...entries6B, { ...serverCopy, groupKey: 'normalised' }]));
+      await act(async () => {
+        d.resolve({ entryId: 'srv-1' });
+        await p;
+      });
+      expect(latest.entries.filter((e) => e.id === 'srv-1' || e.id.startsWith('tmp-'))).toHaveLength(1);
+    });
+
     it('no duplicate when snapshot arrives before the callable resolves', async () => {
       const d = deferred<{ entryId: string }>();
       const api: TimetableApi = { saveEntry: vi.fn(() => d.promise), deleteEntry: vi.fn() };
