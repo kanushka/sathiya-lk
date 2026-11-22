@@ -103,6 +103,17 @@ describe('GroupTeachersStep', () => {
     expect(h.onConfirm).toHaveBeenCalledWith(spec([C.c6b]), true);
   });
 
+  it('blocks Assign while a selected mate is already full, until it is removed', async () => {
+    const h = setup({ initialClassIds: [C.c6a] }, entries6B);
+    const mate = screen.getByRole('button', { name: /6A/ });
+    expect(mate).toHaveAttribute('aria-pressed', 'true');
+    expect(screen.getByText('6A already has 3/3. Remove it to continue.')).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'Assign' })).toBeDisabled();
+    await userEvent.click(mate);
+    await userEvent.click(screen.getByRole('button', { name: 'Assign' }));
+    expect(h.onConfirm).toHaveBeenCalledWith(spec([C.c6b]), true);
+  });
+
   it('keeps a preselected mate with room removable', async () => {
     setup();
     const mate = screen.getByRole('button', { name: /6A/ });

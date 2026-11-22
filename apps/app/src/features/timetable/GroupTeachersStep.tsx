@@ -162,6 +162,10 @@ export function GroupTeachersStep(props: GroupTeachersStepProps) {
   const spec: PinSpec | null =
     missing.length === 0 ? { classIds, lessons: options.map((s) => ({ subjectId: s, teacherId: picked[s]! })), groupKey: item.key } : null;
   const teacherCount = new Set(chosenIds).size;
+  const fullMate = mates
+    .filter((m) => classIds.includes(m.id))
+    .map((m) => ({ m, room: classRemaining({ ctx, entries, classId: m.id, item: { groupKey: item.key } }) }))
+    .find((x) => x.room.left === 0);
 
   let note = '';
   let tone: 'ok' | 'need' | 'bad' = 'ok';
@@ -172,6 +176,9 @@ export function GroupTeachersStep(props: GroupTeachersStepProps) {
     tone = 'need';
   } else if (dupIds.size > 0) {
     note = t('assign.groupDuplicate');
+    tone = 'bad';
+  } else if (fullMate) {
+    note = t('assign.mateFull', { class: fullMate.m.name, placed: fullMate.room.placed, needed: fullMate.room.needed });
     tone = 'bad';
   } else if (slot && where && spec) {
     const cell = pinSlots({ ctx, entries, spec }).find((s) => s.day === slot.day && s.period === slot.period)?.cell;
@@ -189,7 +196,7 @@ export function GroupTeachersStep(props: GroupTeachersStepProps) {
   } else {
     note = t('assign.groupWeek', { count: teacherCount, classes: classesLabel });
   }
-  const disabled = !spec || dupIds.size > 0 || pending;
+  const disabled = !spec || dupIds.size > 0 || !!fullMate || pending;
 
   async function confirm() {
     if (!spec || disabled) return;
@@ -450,7 +457,7 @@ export function GroupTeachersStep(props: GroupTeachersStepProps) {
   const footer = (
     <>
       <span className={cx('flex-1 text-xs font-semibold', tone === 'ok' ? 'text-success' : tone === 'need' ? 'text-warning' : 'text-danger')}>{note}</span>
-      <Button variant="primary" loading={pending} disabled={!spec || dupIds.size > 0} onClick={() => void confirm()}>
+      <Button variant="primary" loading={pending} disabled={!spec || dupIds.size > 0 || !!fullMate} onClick={() => void confirm()}>
         {label}
       </Button>
     </>
