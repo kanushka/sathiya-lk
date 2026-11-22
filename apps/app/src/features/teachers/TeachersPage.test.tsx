@@ -224,7 +224,7 @@ describe('teachers page', () => {
     expect(within(dialog).getByRole('button', { name: 'Print 0 slips with new passwords' })).toBeDisabled();
   });
 
-  it('print all can reset every password after a confirmation, then prints all slips', async () => {
+  it('print all resets every password after a confirmation, then prints all slips on a fresh click', async () => {
     const user = userEvent.setup();
     vi.mocked(api.resetTeacherPassword).mockImplementation(async (_s, id) => `pw-${id}`);
     render();
@@ -234,8 +234,11 @@ describe('teachers page', () => {
     expect(within(confirm).getByText(/Every teacher's current password stops working immediately/)).toBeInTheDocument();
     expect(api.resetTeacherPassword).not.toHaveBeenCalled();
     await user.click(within(confirm).getByRole('button', { name: 'Reset all and print' }));
-    await waitFor(() => expect(printSlips).toHaveBeenCalled());
+    const done = await screen.findByRole('dialog', { name: 'Passwords reset' });
     expect(api.resetTeacherPassword).toHaveBeenCalledTimes(ctx.teachers.length);
+    expect(printSlips).not.toHaveBeenCalled();
+    await user.click(within(done).getByRole('button', { name: `Print ${ctx.teachers.length} slips` }));
+    await waitFor(() => expect(printSlips).toHaveBeenCalled());
     const slips = vi.mocked(printSlips).mock.calls[0]![0];
     expect(slips).toHaveLength(ctx.teachers.length);
     expect(slips.every((x) => x.password?.startsWith('pw-'))).toBe(true);
@@ -252,9 +255,38 @@ describe('teachers page', () => {
     await user.click(screen.getByRole('button', { name: 'Print all login slips' }));
     await user.click(within(screen.getByRole('dialog')).getByRole('button', { name: 'Reset all passwords and print' }));
     await user.click(within(screen.getByRole('dialog', { name: "Reset every teacher's password?" })).getByRole('button', { name: 'Reset all and print' }));
+    const done = await screen.findByRole('dialog', { name: 'Passwords reset' });
+    expect(within(done).getByText('1 teacher could not be reset and was left out of the slips')).toBeInTheDocument();
+    await user.click(within(done).getByRole('button', { name: `Print ${ctx.teachers.length - 1} slips` }));
     await waitFor(() => expect(printSlips).toHaveBeenCalled());
     expect(vi.mocked(printSlips).mock.calls[0]![0]).toHaveLength(ctx.teachers.length - 1);
-    expect(await screen.findByText('1 teacher could not be reset and was left out of the slips')).toBeInTheDocument();
+  });
+
+  it('print all moves focus into the confirmation step', async () => {
+    const user = userEvent.setup();
+    render();
+    await user.click(screen.getByRole('button', { name: 'Print all login slips' }));
+    await user.click(within(screen.getByRole('dialog')).getByRole('button', { name: 'Reset all passwords and print' }));
+    expect(screen.getByRole('dialog', { name: "Reset every teacher's password?" })).toContainElement(document.activeElement as HTMLElement);
+  });
+
+  it('print all offers no reset in the read-only view', async () => {
+    const user = userEvent.setup();
+    flags.readOnly = true;
+    render();
+    await user.click(screen.getByRole('button', { name: 'Print all login slips' }));
+    const dialog = screen.getByRole('dialog', { name: 'Print login slips' });
+    expect(within(dialog).queryByRole('button', { name: 'Reset all passwords and print' })).not.toBeInTheDocument();
+  });
+
+  it('does not ask a read-only viewer to reset the password on the slip', async () => {
+    const user = userEvent.setup();
+    render();
+    await user.click(within(screen.getByText('Mrs. N. Perera').closest('tr')!).getByRole('button', { name: 'Edit' }));
+    const dialog = screen.getByRole('dialog');
+    flags.readOnly = true;
+    fireEvent.change(within(dialog).getByRole('textbox', { name: /^Name/ }), { target: { value: 'Mrs. N. Perera ' } });
+    expect(within(dialog).queryByText('Reset the password first to print a slip')).not.toBeInTheDocument();
   });
 
   it('shows the usage on the first delete dialog and offers no delete button when in use', async () => {

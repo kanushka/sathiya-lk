@@ -99,7 +99,7 @@ export function LoginSlip({ slip, hasStaffId, onReset, resetting, resetError, fo
           )}
         </div>
       )}
-      {hasStaffId && !slip.password && <p className="-mt-2 text-xs text-ink-muted">{t('slip.needsReset')}</p>}
+      {hasStaffId && onReset && !slip.password && <p className="-mt-2 text-xs text-ink-muted">{t('slip.needsReset')}</p>}
       {resetError && (
         <FormError size="field">{t('slip.resetFailed')}</FormError>
       )}

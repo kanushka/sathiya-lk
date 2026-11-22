@@ -9,36 +9,64 @@ import { Modal } from '../../ui/Modal';
 export interface PrintAllModalProps {
   total: number;
   known: number;
+  readOnly: boolean;
   onPrintKnown: () => void;
-  onResetAll: () => Promise<boolean>;
+  onResetAll: () => Promise<{ failed: number } | null>;
   onClose: () => void;
 }
 
-export function PrintAllModal({ total, known, onPrintKnown, onResetAll, onClose }: PrintAllModalProps) {
+type View = { kind: 'options' } | { kind: 'confirm' } | { kind: 'done'; failed: number };
+
+export function PrintAllModal({ total, known, readOnly, onPrintKnown, onResetAll, onClose }: PrintAllModalProps) {
   const { t } = useTranslation('teachers');
-  const [confirming, setConfirming] = useState(false);
+  const [view, setView] = useState<View>({ kind: 'options' });
   const [busy, setBusy] = useState(false);
   const [failed, setFailed] = useState(false);
 
   async function resetAll() {
     setBusy(true);
     setFailed(false);
-    const ok = await onResetAll();
+    const result = await onResetAll();
     setBusy(false);
-    if (!ok) setFailed(true);
+    if (result) setView({ kind: 'done', failed: result.failed });
+    else setFailed(true);
   }
 
-  if (confirming) {
+  if (view.kind === 'done') {
     return (
       <Modal
+        key="done"
+        open
+        width={460}
+        title={t('printAll.doneTitle')}
+        onClose={onClose}
+        footer={
+          <>
+            <Button onClick={onClose}>{t('printAll.close')}</Button>
+            <Button variant="primary" onClick={onPrintKnown}>
+              {t('printAll.printReset', { count: known })}
+            </Button>
+          </>
+        }
+      >
+        <p className="m-0 text-sm text-ink-soft">{t('printAll.doneBody')}</p>
+        {view.failed > 0 && <FormError className="mt-3">{t('page.printPartial', { count: view.failed })}</FormError>}
+      </Modal>
+    );
+  }
+
+  if (view.kind === 'confirm') {
+    return (
+      <Modal
+        key="confirm"
         open
         width={460}
         title={t('printAll.confirmTitle')}
-        onClose={() => setConfirming(false)}
+        onClose={() => setView({ kind: 'options' })}
         busy={busy}
         footer={
           <>
-            <Button onClick={() => setConfirming(false)} disabled={busy}>{t('printAll.back')}</Button>
+            <Button onClick={() => setView({ kind: 'options' })} disabled={busy}>{t('printAll.back')}</Button>
             <Button variant="dangerSolid" onClick={() => void resetAll()} loading={busy} loadingLabel={t('printAll.resetting')}>
               {t('printAll.confirmAction')}
             </Button>
@@ -53,6 +81,7 @@ export function PrintAllModal({ total, known, onPrintKnown, onResetAll, onClose 
 
   return (
     <Modal
+      key="options"
       open
       width={520}
       title={t('printAll.title')}
@@ -67,12 +96,14 @@ export function PrintAllModal({ total, known, onPrintKnown, onResetAll, onClose 
           </Button>
           <p className="m-0 mt-1.5 text-xs text-ink-muted">{t('printAll.knownHint', { count: known, total })}</p>
         </div>
-        <div>
-          <Button variant="danger" onClick={() => setConfirming(true)}>
-            {t('printAll.resetAll')}
-          </Button>
-          <p className="m-0 mt-1.5 text-xs text-ink-muted">{t('printAll.resetAllHint', { total })}</p>
-        </div>
+        {!readOnly && (
+          <div>
+            <Button variant="danger" onClick={() => setView({ kind: 'confirm' })}>
+              {t('printAll.resetAll')}
+            </Button>
+            <p className="m-0 mt-1.5 text-xs text-ink-muted">{t('printAll.resetAllHint', { total })}</p>
+          </div>
+        )}
       </div>
     </Modal>
   );

@@ -64,15 +64,10 @@ export function TeachersPage() {
 
   const known = sorted.filter((x) => passwords[x.id]);
 
-  async function resetAllAndPrint(): Promise<boolean> {
+  async function resetAll(): Promise<{ failed: number } | null> {
     const { passwords: fresh, failed } = await resetPasswords(school.id, sorted.map((x) => x.id));
     for (const [id, pw] of Object.entries(fresh)) setSessionPassword(id, pw);
-    const done = sorted.filter((x) => fresh[x.id]);
-    if (done.length === 0) return false;
-    setDialog(null);
-    if (failed > 0) toast.show(t('page.printPartial', { count: failed }), 'error');
-    await printTeachers(done, fresh);
-    return true;
+    return Object.keys(fresh).length === 0 ? null : { failed };
   }
 
   const add = (
@@ -175,7 +170,8 @@ export function TeachersPage() {
             setDialog(null);
             void printTeachers(known, passwords);
           }}
-          onResetAll={resetAllAndPrint}
+          readOnly={readOnly}
+          onResetAll={resetAll}
           onClose={() => setDialog(null)}
         />
       )}

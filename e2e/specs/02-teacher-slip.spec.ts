@@ -71,7 +71,7 @@ test('slips need a fresh password and print-all explains it first', async ({ pag
   const printAll = page.getByRole('dialog', { name: 'Print login slips' });
   await expect(printAll.getByText(/only known right after/)).toBeVisible();
   await expect(printAll.getByRole('button', { name: /^Print 0 slips/ })).toBeDisabled();
-  await printAll.getByRole('button', { name: 'Close' }).click();
+  await printAll.locator('footer').getByRole('button', { name: 'Close' }).click();
 
   await page.getByRole('row', { name: /SCC011/ }).getByRole('button', { name: 'Edit' }).click();
   const modal = page.getByRole('dialog', { name: 'Edit teacher' });

@@ -116,9 +116,12 @@
     "confirmBody": "Every teacher's current password stops working immediately. Teachers cannot sign in until they get their new slip.",
     "confirmAction": "Reset all and print",
     "resetting": "Resetting…",
-    "cancel": "Cancel",
     "back": "Back",
     "close": "Close",
-    "failed": "Could not reset the passwords. Try again."
+    "failed": "Could not reset the passwords. Try again.",
+    "doneTitle": "Passwords reset",
+    "doneBody": "New passwords are ready. Print the slips now: they are lost if you reload or leave this page.",
+    "printReset_one": "Print {{count}} slip",
+    "printReset_other": "Print {{count}} slips"
   }
 }
