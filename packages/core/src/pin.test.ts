@@ -3,7 +3,7 @@
 
 import { describe, expect, it } from 'vitest';
 import { C, ctx, entries, entries6B, entry, S, T } from './fixtures';
-import { latestGroupSpec, matchesSpec, pinProgress, pinSlots, singleSpec, suggestPins, teacherPinSlots, type PinSpec } from './pin';
+import { latestGroupSpec, matchesSpec, pinProgress, pinSlots, singleSpec, specDraft, suggestPins, teacherPinSlots, type PinSpec } from './pin';
 import type { Entry } from './types';
 
 const target = { ctx, spec: singleSpec(C.c6a, S.sinhala, T.ranasinghe) };
@@ -271,5 +271,18 @@ describe('latestGroupSpec', () => {
     expect(latestGroupSpec({ ctx, entries: [], classId: C.c6a, groupKey: 'religion' })).toBeNull();
     const noTeacher = entry('n', 0, 1, [C.c6a], [[S.buddhism, null]], 'religion');
     expect(latestGroupSpec({ ctx, entries: [noTeacher], classId: C.c6a, groupKey: 'religion' })).toBeNull();
+  });
+});
+
+describe('specDraft', () => {
+  it('places a single spec without a groupKey', () => {
+    const d = specDraft(singleSpec(C.c6b, S.maths, T.perera), 2, 4);
+    expect(d).toEqual({ day: 2, period: 4, classIds: [C.c6b], lessons: [{ subjectId: S.maths, teacherId: T.perera }] });
+    expect('groupKey' in d).toBe(false);
+  });
+
+  it('keeps the groupKey of a group spec', () => {
+    const spec: PinSpec = { classIds: [C.c6a, C.c6b], lessons: [{ subjectId: S.buddhism, teacherId: T.ananda }], groupKey: 'religion' };
+    expect(specDraft(spec, 0, 1)).toEqual({ day: 0, period: 1, classIds: [C.c6a, C.c6b], lessons: spec.lessons, groupKey: 'religion' });
   });
 });

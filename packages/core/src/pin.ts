@@ -7,7 +7,7 @@ import { DAYS, findClass, gradeOf, templateOf } from './lookup';
 import { effectivePlan } from './plan';
 import { classProgress } from './progress';
 import { bestOverlapPeriod, periodsFor, windowOf } from './time';
-import type { DayIndex, Entry, SchoolContext } from './types';
+import type { DayIndex, Entry, EntryDraft, SchoolContext } from './types';
 
 export interface PinSpec { classIds: string[]; lessons: Array<{ subjectId: string; teacherId: string }>; groupKey?: string }
 export interface PinArgs { ctx: SchoolContext; entries: Entry[]; spec: PinSpec }
@@ -23,6 +23,10 @@ export interface TeacherPinSlot { day: DayIndex; row: number; period: number | n
 
 export function singleSpec(classId: string, subjectId: string, teacherId: string): PinSpec {
   return { classIds: [classId], lessons: [{ subjectId, teacherId }] };
+}
+
+export function specDraft(spec: PinSpec, day: DayIndex, period: number): EntryDraft {
+  return { day, period, classIds: spec.classIds, lessons: spec.lessons, ...(spec.groupKey === undefined ? {} : { groupKey: spec.groupKey }) };
 }
 
 const lessonKey = (l: { subjectId: string; teacherId: string | null }) => `${l.subjectId}|${l.teacherId ?? ''}`;
@@ -80,7 +84,7 @@ export function pinSlots(args: PinArgs): PinSlot[] {
         out.push({ day, period, cell: { kind: matchesSpec(own, spec) ? 'pinned' : 'taken', entry: own } });
         continue;
       }
-      const draft = { day, period, classIds: spec.classIds, lessons: spec.lessons, ...(spec.groupKey === undefined ? {} : { groupKey: spec.groupKey }) };
+      const draft = specDraft(spec, day, period);
       const seen = new Set<string>();
       const blockers: BusyDetail[] = [];
       for (const c of findConflicts(draft, entries, ctx)) {
