@@ -147,4 +147,13 @@ describe('readSheets header matching', () => {
     expect(r.errors).toEqual([]);
     expect(r.subjects[0]?.cells).toEqual({ nameEn: 'Maths', short: 'Math' });
   });
+
+  it('strips trailing stars and stays fast on star-heavy headers', () => {
+    const r = readSheets([{ name: 'x', rows: [['Full name  **', 'Grades*'], ['A', '6']] }]);
+    expect(r.errors).toEqual([]);
+    expect(r.teachers[0]?.cells).toEqual({ name: 'A', grades: '6' });
+    const start = Date.now();
+    readSheets([{ name: 'y', rows: [[`Full name${'*'.repeat(50_000)}x`]] }]);
+    expect(Date.now() - start).toBeLessThan(500);
+  });
 });

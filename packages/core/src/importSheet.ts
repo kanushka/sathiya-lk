@@ -156,14 +156,14 @@ export function parseCsv(text: string): string[][] {
   return rows;
 }
 
+const dropTrailingStars = (s: string) => {
+  let end = s.length;
+  while (end > 0 && s[end - 1] === '*') end--;
+  return s.slice(0, end).trimEnd();
+};
+
 const normHeader = (h: string) =>
-  h
-    .normalize('NFC')
-    .replace(/[\u200c\u200d]/g, '')
-    .toLowerCase()
-    .trim()
-    .replace(/\s*\*+$/, '')
-    .replace(/\s+/g, ' ');
+  dropTrailingStars(h.normalize('NFC').replace(/[\u200c\u200d]/g, '').toLowerCase().trim()).replace(/\s+/g, ' ');
 
 type AnyDef = ColumnDef<ImportColumn>;
 
