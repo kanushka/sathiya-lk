@@ -17,6 +17,7 @@ import {
   VERIFY_PER_UID_PER_DAY,
 } from './lib/rateLimit';
 import { mailConfig } from './email/params';
+import { appActionLink } from './email/actionLink';
 import { writeMail } from './email/send';
 import { passwordReset, verifyEmail } from './email/templates';
 
@@ -45,7 +46,7 @@ export const sendAuthEmail = onCall(callOpts, async (req): Promise<SendAuthEmail
     const to = token.email;
     if (!to) invalid('Account has no email address');
     if (token.email_verified === true) return { ok: true };
-    const link = await auth.generateEmailVerificationLink(to!, actionCodeSettings);
+    const link = appActionLink(await auth.generateEmailVerificationLink(to!, actionCodeSettings), appUrl);
     await writeMail({ to: [to!], message: verifyEmail({ link, lang, webUrl }) });
     return { ok: true };
   }
@@ -57,7 +58,7 @@ export const sendAuthEmail = onCall(callOpts, async (req): Promise<SendAuthEmail
   ]);
   if (isTeacherLogin(to)) return { ok: true };
   try {
-    const link = await auth.generatePasswordResetLink(to, actionCodeSettings);
+    const link = appActionLink(await auth.generatePasswordResetLink(to, actionCodeSettings), appUrl);
     await writeMail({ to: [to], message: passwordReset({ link, lang, webUrl }) });
   } catch (e) {
     if (!['auth/user-not-found', 'auth/email-not-found'].includes((e as { code?: string }).code ?? '')) logger.error('password reset email not sent', e);

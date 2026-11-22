@@ -32,6 +32,13 @@ describe('verifyEmail', () => {
     expect(screen.getByRole('link', { name: 'Continue registering' })).toHaveAttribute('href', '/register');
   });
 
+  it('reads the link sendAuthEmail builds, with an encoded code and extra params', async () => {
+    vi.mocked(api.applyEmailCode).mockResolvedValue(undefined);
+    at(`mode=verifyEmail&oobCode=${encodeURIComponent('a+b/c=')}&apiKey=KEY&lang=si&continueUrl=${encodeURIComponent('https://app.example.test/login')}`);
+    expect(await screen.findByRole('heading', { name: 'Email confirmed' })).toBeInTheDocument();
+    expect(api.applyEmailCode).toHaveBeenCalledWith('a+b/c=');
+  });
+
   it('explains an expired link', async () => {
     vi.mocked(api.applyEmailCode).mockRejectedValue(authError('auth/expired-action-code'));
     at('mode=verifyEmail&oobCode=abc');

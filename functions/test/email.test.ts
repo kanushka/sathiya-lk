@@ -161,8 +161,8 @@ describe('sendAuthEmail', () => {
     expect(mails).toHaveLength(1);
     expect(mails[0]).toMatchObject({ to: [emailOf(c)], from: FROM });
     expect(mails[0]!.message.subject).toBe('ඔබගේ ඊමේල් තහවුරු කරන්න · Confirm your email for Sathiya');
-    expect(mails[0]!.message.html).toMatch(/href="http[^"]*oobCode=/);
-    expect(mails[0]!.message.text).toMatch(/Confirm email: http\S*oobCode=/);
+    expect(mails[0]!.message.html).toMatch(new RegExp(`href="${APP_URL}/auth/action\\?mode=verifyEmail&amp;oobCode=[^"&]+&amp;apiKey=[^"&]+&amp;lang=en&amp;continueUrl=${encodeURIComponent(`${APP_URL}/login`)}"`));
+    expect(mails[0]!.message.text).toMatch(new RegExp(`Confirm email: ${APP_URL}/auth/action\\?mode=verifyEmail&oobCode=\\S+`));
   });
 
   it('verify refuses signed-out callers, is a no-op for verified users and is rate limited', async () => {
@@ -184,7 +184,7 @@ describe('sendAuthEmail', () => {
     const mails = await mailsTo(emailOf(known));
     expect(mails).toHaveLength(1);
     expect(mails[0]!.message.subject).toBe('Reset your Sathiya password · ඔබගේ මුරපදය යළි සකසන්න');
-    expect(mails[0]!.message.html).toMatch(/href="http[^"]*oobCode=/);
+    expect(mails[0]!.message.html).toMatch(new RegExp(`href="${APP_URL}/auth/action\\?mode=resetPassword&amp;oobCode=[^"&]+&amp;`));
     expect(await mailsTo(unknown)).toHaveLength(0);
   });
 
