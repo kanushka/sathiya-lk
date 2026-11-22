@@ -90,6 +90,7 @@
   "printSlips": "Print login slips",
   "done": "Done",
   "failed": "Couldn't import. Try again.",
+  "mayHaveImported": "The import may have finished. Check the Teachers and Subjects lists before importing again — re-importing teachers with blank Staff IDs would create duplicates.",
   "templateLabels": {
     "titles": "Titles",
     "grades": "Grades in this school",

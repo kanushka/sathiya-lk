@@ -192,13 +192,27 @@ describe('ImportModal import', () => {
     expect(within(dialog).getByRole('button', { name: 'Import' })).toBeDisabled();
   });
 
-  it('shows a generic failure', async () => {
+  it('offers a retry when the server refused the request', async () => {
     const user = userEvent.setup();
-    vi.mocked(call).mockRejectedValue(new ApiError('invalid', 'boom'));
+    vi.mocked(call).mockRejectedValue(new ApiError('invalid', 'Nothing to import', { code: 'invalid' }));
     const dialog = open();
     await choose(user, dialog, csv(SUBJECTS_CSV, 'subjects.csv'));
     await user.click(await within(dialog).findByRole('button', { name: 'Import' }));
     expect(await within(dialog).findByRole('alert')).toHaveTextContent("Couldn't import. Try again.");
+    expect(within(dialog).getByText('1 subject, 0 teachers to add')).toBeInTheDocument();
+    expect(within(dialog).getByRole('button', { name: 'Import' })).toBeEnabled();
+  });
+
+  it('drops the preview when the outcome is unknown', async () => {
+    const user = userEvent.setup();
+    vi.mocked(call).mockRejectedValue(new ApiError('invalid', 'deadline-exceeded'));
+    const dialog = open();
+    await choose(user, dialog, csv(SUBJECTS_CSV, 'subjects.csv'));
+    await user.click(await within(dialog).findByRole('button', { name: 'Import' }));
+    expect(await within(dialog).findByRole('alert')).toHaveTextContent('The import may have finished. Check the Teachers and Subjects lists');
+    expect(within(dialog).queryByText('1 subject, 0 teachers to add')).not.toBeInTheDocument();
+    expect(within(dialog).getByRole('button', { name: 'Import' })).toBeDisabled();
+    expect(call).toHaveBeenCalledTimes(1);
   });
 
   it('explains a suspended school', async () => {

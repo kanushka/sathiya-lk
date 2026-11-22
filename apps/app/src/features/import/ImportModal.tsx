@@ -16,7 +16,7 @@ import {
 import { useRef, useState, type ChangeEvent } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useSchool } from '../../app/SchoolProvider';
-import { ApiError, isSchoolDisabled } from '../../lib/callable';
+import { ApiError, isSchoolDisabled, toApiError } from '../../lib/callable';
 import { Button, buttonClass } from '../../ui/Button';
 import { cx } from '../../ui/cx';
 import { FormError } from '../../ui/FormError';
@@ -38,6 +38,13 @@ type View =
 
 function isImportErrors(details: unknown): details is { errors: ImportError[] } {
   return Array.isArray((details as { errors?: unknown } | null | undefined)?.errors);
+}
+
+// The server refuses with an API code (or permission-denied) only before writing anything. A timeout,
+// network drop or internal error maps to a bare 'invalid' and may come after some rows were saved.
+function wasRejected(err: unknown): boolean {
+  const e = toApiError(err);
+  return e.code !== 'invalid' || typeof (e.details as { code?: unknown } | null | undefined)?.code === 'string';
 }
 
 const MAX_SHOWN_ERRORS = 100;
@@ -161,8 +168,11 @@ export function ImportModal({ onClose }: { onClose: () => void }) {
       if (err instanceof ApiError && err.code === 'invalid' && isImportErrors(err.details)) {
         const errors = err.details.errors;
         setView((v) => (v.kind === 'preview' ? { ...v, errors } : v));
-      } else {
+      } else if (wasRejected(err)) {
         setFailure(t(isSchoolDisabled(err) ? 'shell:suspended.writeBlocked' : 'failed'));
+      } else {
+        setView({ kind: 'start' });
+        setFailure(t('mayHaveImported'));
       }
     } finally {
       setImporting(false);
