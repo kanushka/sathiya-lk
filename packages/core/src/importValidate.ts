@@ -1,7 +1,18 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
 // Copyright (C) 2026 Kanushka Gayan
 import { EMAIL_RE } from './email';
-import type { ImportColumn, ImportError, ImportErrorCode, ImportKind, ImportRow, ParsedSheets, SubjectColumn, TeacherColumn } from './importSheet';
+import {
+  IMPORT_CELL_MAX,
+  IMPORT_COLUMNS,
+  type ImportColumn,
+  type ImportError,
+  type ImportErrorCode,
+  type ImportKind,
+  type ImportRow,
+  type ParsedSheets,
+  type SubjectColumn,
+  type TeacherColumn,
+} from './importSheet';
 import { formatStaffId, isValidStaffId, nextStaffNumber } from './staff';
 import { SHORT_MAX, SUBJECT_SWATCHES, nameTaken, shortTaken, suggestSubjectShort } from './subjectShort';
 import { TEACHER_TITLES, type Subject, type Teacher } from './types';
@@ -42,6 +53,37 @@ export interface ImportPlan {
 
 const key = (s: string) => s.trim().replace(/\s+/g, ' ').toLowerCase();
 const titleKey = (s: string) => key(s).replace(/\.$/, '');
+const splitList = (text: string) =>
+  text.split(text.includes(';') ? ';' : ',').map((t) => t.trim()).filter((t) => t !== '');
+
+// Columns that are reported here are skipped by the per-column checks.
+function cellErrors<C extends ImportColumn>(
+  r: ImportRow<C>,
+  sheet: ImportKind,
+  ownMax: readonly C[],
+  errors: ImportError[],
+): Set<C> {
+  const bad = new Set<C>();
+  for (const { key: column } of IMPORT_COLUMNS[sheet] as readonly { key: C }[]) {
+    const text = r.cells[column];
+    if (text === undefined) continue;
+    const type = r.cellTypes?.[column];
+    let code: ImportErrorCode | null = null;
+    let params: Record<string, number> | undefined;
+    if (type === 'date') code = 'excelDate';
+    else if (type === 'number' && column === 'phone') code = 'excelNumber';
+    else if (text.length > IMPORT_CELL_MAX && !ownMax.includes(column)) {
+      code = 'tooLong';
+      params = { max: IMPORT_CELL_MAX };
+    }
+    if (code) {
+      errors.push({ sheet, row: r.row, column, code, ...(params && { params }) });
+      bad.add(column);
+    }
+  }
+  return bad;
+}
+
 const YES = new Set(['yes', 'y', 'true', 'ඔව්']);
 const NO = new Set(['', 'no', 'n', 'false', 'නැත']);
 
@@ -56,27 +98,30 @@ function validateSubjects(rows: ImportRow<SubjectColumn>[], ctx: ImportContext, 
   rows.forEach((r, i) => {
     const err = (column: SubjectColumn, code: ImportErrorCode, value?: string) =>
       errors.push({ sheet: 'subjects', row: r.row, column, code, ...(value !== undefined && { params: { value } }) });
+    const bad = cellErrors(r, 'subjects', ['nameEn', 'nameSi', 'short'], errors);
     const nameEn = r.cells.nameEn ?? '';
     const nameSi = r.cells.nameSi ?? '';
 
     for (const [column, name] of [['nameEn', nameEn], ['nameSi', nameSi]] as const) {
+      if (bad.has(column)) continue;
       if (name === '') {
         if (column === 'nameEn') err('nameEn', 'required');
         continue;
       }
-      if (nameTaken(name, existingNames)) err(column, 'nameTaken', name);
+      if (name.length > NAME_MAX) errors.push({ sheet: 'subjects', row: r.row, column, code: 'tooLong', params: { max: NAME_MAX } });
+      else if (nameTaken(name, existingNames)) err(column, 'nameTaken', name);
       else if (nameTaken(name, fileNames)) err(column, 'nameDuplicate', name);
     }
     fileNames.push(nameEn, nameSi);
 
     let short = r.cells.short ?? '';
-    if (short !== '') {
+    if (short === '' && nameEn !== '') {
+      short = suggestSubjectShort(nameEn, [...existingShorts, ...reserved, ...fileShorts]).slice(0, SHORT_MAX);
+      if (short === '') err('short', 'required');
+    } else if (short !== '' && !bad.has('short')) {
       if (short.length > SHORT_MAX) err('short', 'shortTooLong', short);
       else if (shortTaken(short, existingShorts)) err('short', 'shortTaken', short);
       else if (shortTaken(short, fileShorts)) err('short', 'shortDuplicate', short);
-    } else if (nameEn !== '') {
-      short = suggestSubjectShort(nameEn, [...existingShorts, ...reserved, ...fileShorts]).slice(0, SHORT_MAX);
-      if (short === '') err('short', 'required');
     }
     fileShorts.push(short);
 
@@ -128,11 +173,12 @@ function validateTeachers(
   };
 
   rows.forEach((r, i) => {
-    const c = r.cells;
+    const bad = cellErrors(r, 'teachers', ['name'], errors);
+    const c: Partial<Record<TeacherColumn, string>> = Object.fromEntries(Object.entries(r.cells).filter(([k]) => !bad.has(k as TeacherColumn)));
     const err = (column: ImportColumn, code: ImportErrorCode, params?: Record<string, string | number>) =>
       errors.push({ sheet: 'teachers' as ImportKind, row: r.row, column, code, ...(params && { params }) });
 
-    let staffId = explicit[i]!;
+    let staffId = bad.has('staffId') ? '' : explicit[i]!;
     if (staffId !== '') {
       if (!isValidStaffId(prefix, staffId)) err('staffId', 'staffIdFormat', { example: formatStaffId(prefix, 24) });
       else if (ctx.staffIds.includes(staffId)) err('staffId', 'staffIdTaken', { value: staffId });
@@ -151,8 +197,9 @@ function validateTeachers(
     }
 
     const name = c.name ?? '';
-    if (name === '') err('name', 'required');
-    else if (name.length > NAME_MAX) err('name', 'tooLong', { max: NAME_MAX });
+    if (name === '') {
+      if (!bad.has('name')) err('name', 'required');
+    } else if (name.length > NAME_MAX) err('name', 'tooLong', { max: NAME_MAX });
 
     const phone = c.phone;
     if (phone && !PHONE_RE.test(phone)) err('phone', 'phone', { value: phone });
@@ -163,11 +210,12 @@ function validateTeachers(
     const gradeText = c.grades ?? '';
     const parsed = parseGrades(gradeText);
     if (parsed === null) err('grades', 'gradeFormat', { value: gradeText });
-    else if (parsed.length === 0) err('grades', 'gradesRequired');
-    else {
+    else if (parsed.length === 0) {
+      if (!bad.has('grades')) err('grades', 'gradesRequired');
+    } else {
       grades = parsed;
-      const bad = parsed.filter((g) => !ctx.schoolGrades.includes(g));
-      if (bad.length > 0) err('grades', 'gradeNotInSchool', { value: bad.join(', ') });
+      const outside = parsed.filter((g) => !ctx.schoolGrades.includes(g));
+      if (outside.length > 0) err('grades', 'gradeNotInSchool', { value: outside.join(', ') });
     }
 
     let maxPerDay = DEFAULT_MAX_PER_DAY;
@@ -179,7 +227,7 @@ function validateTeachers(
 
     const flag = key(c.isPrimary ?? '');
     let isPrimary = false;
-    let primaryInvalid = false;
+    let primaryInvalid = bad.has('isPrimary');
     if (YES.has(flag)) isPrimary = true;
     else if (!NO.has(flag)) {
       primaryInvalid = true;
@@ -188,8 +236,8 @@ function validateTeachers(
 
     const subjectRefs: SubjectRef[] = [];
     if (!isPrimary && !primaryInvalid) {
-      const tokens = (c.subjects ?? '').split(',').map((t) => t.trim()).filter((t) => t !== '');
-      if (tokens.length === 0) err('subjects', 'subjectsRequired');
+      const tokens = splitList(c.subjects ?? '');
+      if (tokens.length === 0 && !bad.has('subjects')) err('subjects', 'subjectsRequired');
       const unknown: string[] = [];
       for (const t of tokens) {
         const ref = findSubject(t);

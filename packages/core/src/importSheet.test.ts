@@ -38,7 +38,7 @@ describe('IMPORT_COLUMNS', () => {
 describe('readSheets', () => {
   it('matches combined, English-only and Sinhala-only headers', () => {
     const r = readSheets([
-      { name: 'Teachers', rows: [['Full name / සම්පූර්ණ නම *', 'grades', 'දුරකථන'], ['A', 6, '0771234567']] },
+      { name: 'Teachers', rows: [['Full name / සම්පූර්ණ නම *', 'grades', 'දුරකථන'], ['A', '6', '0771234567']] },
     ]);
     expect(r.errors).toEqual([]);
     expect(r.teachers[0]).toEqual({ row: 2, cells: { name: 'A', grades: '6', phone: '0771234567' } });
@@ -77,7 +77,7 @@ describe('readSheets', () => {
       row: 1,
       column: 'name',
       code: 'missingHeader',
-      params: { header: 'Full name' },
+      params: { header: 'Full name', column: 'name' },
     });
   });
 
@@ -112,7 +112,34 @@ describe('readSheets', () => {
   });
 });
 
+describe('readSheets cell types', () => {
+  it('records Date and number cells so validation can explain them', () => {
+    const r = readSheets([
+      { name: 'T', rows: [['Full name', 'Grades', 'Phone', 'Primary teacher?'], ['A', new Date(Date.UTC(2026, 5, 9)), 771234567, true]] },
+    ]);
+    expect(r.teachers[0]).toEqual({
+      row: 2,
+      cells: { name: 'A', grades: '2026-06-09', phone: '771234567', isPrimary: 'Yes' },
+      cellTypes: { grades: 'date', phone: 'number' },
+    });
+  });
+
+  it('omits cellTypes for text-only rows', () => {
+    const r = readSheets([{ name: 'T', rows: [['Full name'], ['A']] }]);
+    expect(r.teachers[0]).not.toHaveProperty('cellTypes');
+  });
+});
+
 describe('readSheets header matching', () => {
+  it('uses විෂයන් for Subjects and still accepts විෂයයන්', () => {
+    expect(IMPORT_COLUMNS.teachers.find((c) => c.key === 'subjects')?.si).toBe('විෂයන්');
+    for (const h of ['විෂයන්', 'විෂයයන්', 'Subjects / විෂයයන්']) {
+      const r = readSheets([{ name: 'T', rows: [['Full name', h], ['A', 'Art']] }]);
+      expect(r.errors).toEqual([]);
+      expect(r.teachers[0]?.cells).toEqual({ name: 'A', subjects: 'Art' });
+    }
+  });
+
   it('ignores ZWJ/ZWNJ in headers', () => {
     const si = 'නම (ඉංග්‍රීසි)';
     const noZwj = si.replace(/\u200d/g, '');

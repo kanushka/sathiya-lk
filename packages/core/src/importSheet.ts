@@ -40,7 +40,9 @@ export type ImportErrorCode =
   | 'email'
   | 'subjectsRequired'
   | 'gradesRequired'
-  | 'tooLong';
+  | 'tooLong'
+  | 'excelDate'
+  | 'excelNumber';
 
 export interface ImportError {
   sheet: ImportKind | 'file';
@@ -55,9 +57,13 @@ export interface RawSheet {
   rows: unknown[][];
 }
 
+export type ImportCellType = 'date' | 'number';
+
 export interface ImportRow<C extends string> {
   row: number;
   cells: Partial<Record<C, string>>;
+  // Spreadsheet cells that weren't text, e.g. a grade range Excel turned into a date.
+  cellTypes?: Partial<Record<C, ImportCellType>>;
 }
 
 export interface ParsedSheets {
@@ -70,6 +76,7 @@ interface ColumnDef<K extends ImportColumn> {
   key: K;
   en: string;
   si: string;
+  aliases?: readonly string[];
   required: boolean;
 }
 
@@ -88,7 +95,7 @@ export const IMPORT_COLUMNS: {
     { key: 'name', en: 'Full name', si: 'සම්පූර්ණ නම', required: true },
     { key: 'phone', en: 'Phone', si: 'දුරකථන', required: false },
     { key: 'email', en: 'Email', si: 'විද්‍යුත් තැපෑල', required: false },
-    { key: 'subjects', en: 'Subjects', si: 'විෂයයන්', required: false },
+    { key: 'subjects', en: 'Subjects', si: 'විෂයන්', aliases: ['විෂයයන්'], required: false },
     { key: 'grades', en: 'Grades', si: 'ශ්‍රේණි', required: false },
     { key: 'maxPerDay', en: 'Max periods/day', si: 'දිනකට උපරිම කාලච්ඡේද', required: false },
     { key: 'isPrimary', en: 'Primary teacher?', si: 'ප්‍රාථමික ගුරුවරයෙක්ද?', required: false },
@@ -96,6 +103,7 @@ export const IMPORT_COLUMNS: {
 };
 
 export const IMPORT_MAX_ROWS = 200;
+export const IMPORT_CELL_MAX = 500;
 
 export function cellText(v: unknown): string {
   if (v === null || v === undefined) return '';
@@ -167,7 +175,9 @@ const LOOKUP: Record<ImportKind, Map<string, ImportColumn>> = {
 function buildLookup(defs: readonly AnyDef[]) {
   const m = new Map<string, ImportColumn>();
   for (const d of defs) {
-    for (const h of [d.en, d.si, `${d.en} / ${d.si}`]) m.set(normHeader(h), d.key);
+    for (const si of [d.si, ...(d.aliases ?? [])]) {
+      for (const h of [d.en, si, `${d.en} / ${si}`]) m.set(normHeader(h), d.key);
+    }
   }
   return m;
 }
@@ -213,25 +223,31 @@ export function readSheets(sheets: RawSheet[]): ParsedSheets {
 
     for (const d of IMPORT_COLUMNS[kind] as readonly AnyDef[]) {
       if (d.required && !mapped.has(d.key)) {
-        out.errors.push({ sheet: kind, row: 1, column: d.key, code: 'missingHeader', params: { header: d.en } });
+        out.errors.push({ sheet: kind, row: 1, column: d.key, code: 'missingHeader', params: { header: d.en, column: d.key } });
       }
     }
 
     const rows: ImportRow<string>[] = [];
     let overflow = false;
     for (let r = 1; r < sheet.rows.length; r++) {
-      const texts = (sheet.rows[r] ?? []).map(cellText);
+      const raw = sheet.rows[r] ?? [];
+      const texts = raw.map(cellText);
       if (isBlankRow(texts)) continue;
       if (rows.length >= IMPORT_MAX_ROWS) {
         overflow = true;
         break;
       }
       const cells: Record<string, string> = {};
+      const cellTypes: Record<string, ImportCellType> = {};
       texts.forEach((t, i) => {
         const key = colAt[i];
-        if (key && t !== '') cells[key] = t;
+        if (!key || t === '') return;
+        cells[key] = t;
+        const v = raw[i];
+        if (v instanceof Date) cellTypes[key] = 'date';
+        else if (typeof v === 'number') cellTypes[key] = 'number';
       });
-      rows.push({ row: r + 1, cells });
+      rows.push({ row: r + 1, cells, ...(Object.keys(cellTypes).length > 0 && { cellTypes }) });
     }
     if (overflow) {
       out.errors.push({ sheet: kind, row: null, column: null, code: 'tooManyRows', params: { max: IMPORT_MAX_ROWS } });

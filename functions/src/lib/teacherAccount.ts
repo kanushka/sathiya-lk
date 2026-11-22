@@ -6,7 +6,7 @@ import { setSchoolClaims } from './claims';
 import { fail } from './guards';
 import { newPassword } from './password';
 
-export const duplicateStaffId = (staffId: string): never => fail('already-exists', 'invalid', `Staff ID ${staffId} is already used`, { field: 'staffId' });
+const duplicateStaffId = (staffId: string): never => fail('already-exists', 'invalid', `Staff ID ${staffId} is already used`, { field: 'staffId' });
 
 export const createTeacherAccount = async (
   sid: string,

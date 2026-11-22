@@ -1,6 +1,7 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
 // Copyright (C) 2026 Kanushka Gayan
 import {
+  IMPORT_CELL_MAX,
   IMPORT_COLUMNS,
   IMPORT_MAX_ROWS,
   paths,
@@ -16,7 +17,6 @@ import { callOpts } from './lib/callOptions';
 import { fail, int, invalid, obj, requireSchoolAdmin } from './lib/guards';
 import { createTeacherAccount } from './lib/teacherAccount';
 
-const CELL_MAX = 500;
 const CONCURRENCY = 5;
 
 function rows<C extends string>(v: unknown, name: string, columns: readonly C[]): ImportRow<C>[] {
@@ -27,7 +27,7 @@ function rows<C extends string>(v: unknown, name: string, columns: readonly C[])
     const out: Partial<Record<C, string>> = {};
     for (const [k, val] of Object.entries(cells)) {
       if (!(columns as readonly string[]).includes(k)) invalid(`${name} has an unknown column`);
-      if (typeof val !== 'string' || val.length > CELL_MAX) invalid(`${name} cells must be text up to ${CELL_MAX} characters`);
+      if (typeof val !== 'string' || val.length > IMPORT_CELL_MAX) invalid(`${name} cells must be text up to ${IMPORT_CELL_MAX} characters`);
       out[k as C] = val as string;
     }
     return { row: int(r.row, `${name} row`, 2, 1_000_000), cells: out };

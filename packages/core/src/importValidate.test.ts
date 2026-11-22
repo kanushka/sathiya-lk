@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
 // Copyright (C) 2026 Kanushka Gayan
 import { describe, expect, it } from 'vitest';
-import type { ImportRow, SubjectColumn, TeacherColumn } from './importSheet';
+import { IMPORT_CELL_MAX, type ImportRow, type SubjectColumn, type TeacherColumn } from './importSheet';
 import { PHONE_RE, validateImport, type ImportContext } from './importValidate';
 import { SUBJECT_SWATCHES } from './subjectShort';
 
@@ -101,6 +101,17 @@ describe('validateImport subject errors', () => {
   });
 });
 
+describe('validateImport subject lengths', () => {
+  it('subject names over the name max are tooLong', () => {
+    const p = run([sub(2, { nameEn: 'x'.repeat(201), nameSi: 'y'.repeat(201), short: 'X' })], []);
+    expect(errs(p)).toEqual([
+      { sheet: 'subjects', row: 2, column: 'nameEn', code: 'tooLong' },
+      { sheet: 'subjects', row: 2, column: 'nameSi', code: 'tooLong' },
+    ]);
+    expect(p.errors[0]?.params).toEqual({ max: 200 });
+  });
+});
+
 describe('validateImport short reservation', () => {
   it('generated short never collides with a later explicit short', () => {
     const p = run([sub(2, { nameEn: 'Drama' }), sub(3, { nameEn: 'Dance', short: 'Dra' })], []);
@@ -169,6 +180,39 @@ describe('validateImport teacher errors', () => {
     for (const v of ['no', 'n', 'false', 'නැත']) {
       expect(one({ name: 'A', grades: '6', subjects: 'math', isPrimary: v }).teachers[0]?.teacher.isPrimary).toBe(false);
     }
+  });
+  it('any cell over the server limit is tooLong', () => {
+    const long = 'a'.repeat(IMPORT_CELL_MAX + 1);
+    const p = one({ ...okTeacher, email: `${long}@b.lk`, title: long });
+    expect(errs(p)).toEqual([e('title', 'tooLong'), e('email', 'tooLong')]);
+    expect(p.errors[0]?.params).toEqual({ max: IMPORT_CELL_MAX });
+  });
+  it('a grades cell Excel turned into a date gets excelDate, not gradeFormat', () => {
+    const p = run([], [{ row: 7, cells: { ...okTeacher, grades: '2026-06-09' }, cellTypes: { grades: 'date' } }]);
+    expect(errs(p)).toEqual([e('grades', 'excelDate')]);
+  });
+  it('a date in any other column gets excelDate', () => {
+    const p = run([], [{ row: 7, cells: { ...okTeacher, maxPerDay: '2026-01-05' }, cellTypes: { maxPerDay: 'date' } }]);
+    expect(errs(p)).toEqual([e('maxPerDay', 'excelDate')]);
+  });
+  it('a phone that arrived as a number gets excelNumber', () => {
+    const p = run([], [{ row: 7, cells: { ...okTeacher, phone: '771234567' }, cellTypes: { phone: 'number' } }]);
+    expect(errs(p)).toEqual([e('phone', 'excelNumber')]);
+  });
+  it('numeric grades and maxPerDay are fine', () => {
+    const p = run([], [{ row: 7, cells: { ...okTeacher, grades: '6', maxPerDay: '5' }, cellTypes: { grades: 'number', maxPerDay: 'number' } }]);
+    expect(p.errors).toEqual([]);
+  });
+  it('subjects split on semicolons when present, so names can contain commas', () => {
+    const p = run(
+      [sub(2, { nameEn: 'Art, Craft', short: 'AC' })],
+      [tch(7, { name: 'A', grades: '6', subjects: 'Art, Craft; math' }), tch(8, { name: 'B', grades: '6', subjects: 'AC, math' })],
+    );
+    expect(p.errors).toEqual([]);
+    expect(p.teachers.map((t) => t.subjectRefs)).toEqual([
+      [{ newIndex: 0 }, { existingId: 's1' }],
+      [{ newIndex: 0 }, { existingId: 's1' }],
+    ]);
   });
   it('collects errors across rows with original row numbers', () => {
     const p = run([], [tch(4, { grades: '6', isPrimary: 'y' }), tch(9, { name: 'A', isPrimary: 'y' })]);
