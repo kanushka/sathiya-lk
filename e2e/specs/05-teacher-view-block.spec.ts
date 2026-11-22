@@ -30,7 +30,7 @@ test('teacher view: build a religion block through the assign popup', async ({ p
   await group.getByRole('button', { name: /^Islam teacher:/ }).click();
   await group.getByRole('combobox', { name: 'Search Islam teachers' }).fill('Rizan');
   await group.getByRole('listbox', { name: 'Islam teachers' }).getByRole('option', { name: /Rizan/ }).click();
-  await expect(group.getByText('All 3 teachers and 6C are free on Tue P2.')).toBeVisible();
+  await expect(group.getByText('All 3 teachers and 6C are free on Tue 6C P2.')).toBeVisible();
   await shot(page, 'teacher-assign-group');
   await group.getByRole('button', { name: 'Assign' }).click();
   await expect(group).toBeHidden();

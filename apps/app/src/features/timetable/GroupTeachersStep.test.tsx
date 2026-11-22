@@ -68,6 +68,11 @@ describe('GroupTeachersStep', () => {
     expect(h.onConfirm).toHaveBeenCalledWith(spec([C.c6b, C.c6a]), true);
   });
 
+  it('names the class beside its period when opened from a teacher row', () => {
+    setup({ classPeriods: true });
+    expect(screen.getByText('All 3 teachers and 6A+6B are free on Wed 6B P4.')).toBeInTheDocument();
+  });
+
   it('toggles a mate class off and on', async () => {
     const h = setup();
     await userEvent.click(screen.getByRole('button', { name: /6A/ }));

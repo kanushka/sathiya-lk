@@ -39,6 +39,7 @@ export interface GroupTeachersStepProps {
   lockedSubjectId?: string;
   lockedTeacherId?: string;
   initialClassIds?: string[];
+  classPeriods?: boolean;
   onBack?(): void;
   back?: { text: string; label: string };
   onConfirm(spec: PinSpec, placeNow: boolean): void | Promise<unknown>;
@@ -59,7 +60,7 @@ const capClass = 'm-0 text-[11px] font-bold uppercase tracking-[.06em] text-ink-
 const chipClass = 'rounded-full bg-brand/10 px-[7px] py-0.5 text-[11px] font-bold text-brand';
 
 export function GroupTeachersStep(props: GroupTeachersStepProps) {
-  const { classId, item, slot, entries, lockedSubjectId, lockedTeacherId, initialClassIds, onBack, back, onConfirm, children } = props;
+  const { classId, item, slot, entries, lockedSubjectId, lockedTeacherId, initialClassIds, classPeriods, onBack, back, onConfirm, children } = props;
   const { t } = useTranslation('timetable');
   const { t: tc } = useTranslation('common');
   const { lang } = useLang();
@@ -118,7 +119,8 @@ export function GroupTeachersStep(props: GroupTeachersStepProps) {
   if (!cls || !grade) return null;
 
   const classesLabel = classNames(ctx, classIds);
-  const where = slot ? { day: tc(`days.short.${slot.day}`), n: slot.period } : null;
+  const day = slot ? tc(`days.short.${slot.day}`) : '';
+  const where = slot ? { day: classPeriods ? t('assign.dayOfClass', { day, class: cls.name }) : day, n: slot.period } : null;
   const subjectName = (id: string) => {
     const s = ctx.subjects.find((x) => x.id === id);
     return s ? pickName(s, lang) : id;

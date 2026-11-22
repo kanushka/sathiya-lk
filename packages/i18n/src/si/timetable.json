@@ -180,6 +180,7 @@
     "classesTogether": "එකට පන්ති",
     "thisClass": "{{name}}, මෙම පන්තිය",
     "mateBusy": "{{day}} {{n}} වන කාලච්ඡේදයේ කාර්යබහුලයි",
+    "dayOfClass": "{{day}} {{class}} පන්තියේ",
     "classesHint": "{{group}} සැලැස්මේ ඇති, එකම කාලසටහන් ආකෘතියේ {{grade}} ශ්‍රේණියේ පන්ති.",
     "groupMissing": "{{options}} සඳහා ගුරුවරයෙකු තෝරන්න.",
     "groupDuplicate": "එක් ගුරුවරයෙකුට එකම කාලච්ඡේදයේ විකල්ප දෙකක් ගත නොහැක.",

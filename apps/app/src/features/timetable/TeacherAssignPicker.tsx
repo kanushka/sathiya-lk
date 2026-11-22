@@ -302,6 +302,7 @@ function TeacherAssignPickerBody({ teacherId, slot, entries, onClose, onSave, on
         entries={entries}
         lockedSubjectId={groupFor.option.subjectId}
         lockedTeacherId={teacherId}
+        classPeriods
         onBack={() => setGroupFor(null)}
         back={{ text: t('teacherAssign.back'), label: t('teacherAssign.backLabel') }}
         onConfirm={confirmGroup}

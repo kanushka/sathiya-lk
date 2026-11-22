@@ -180,6 +180,7 @@
     "classesTogether": "Classes together",
     "thisClass": "{{name}}, this class",
     "mateBusy": "busy {{day}} P{{n}}",
+    "dayOfClass": "{{day}} {{class}}",
     "classesHint": "Grade {{grade}} classes on the same template with {{group}} in their plan.",
     "groupMissing": "Choose a teacher for {{options}}.",
     "groupDuplicate": "One teacher can’t take two options in the same period.",
