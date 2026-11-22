@@ -8,7 +8,7 @@ import { useLang } from '../../app/LangProvider';
 import { useCollection, useDoc, type CollectionState, type DocState } from '../../lib/firestore';
 import { Button } from '../../ui/Button';
 import { EmptyState } from '../../ui/EmptyState';
-import { Field, inputClass } from '../../ui/Field';
+import { Field, inputClass, textareaClass } from '../../ui/Field';
 import { LoadingState } from '../../ui/LoadingState';
 import { Modal } from '../../ui/Modal';
 import { Table, TBody, Td, Th, THead, Tr } from '../../ui/Table';
@@ -142,10 +142,10 @@ export function TermsPage({ versions: injectedVersions, config: injectedConfig, 
             <input className={inputClass} value={version} onChange={(e) => setVersion(e.target.value)} />
           </Field>
           <Field label={t('terms.fields.terms')} error={errors.termsMd}>
-            <textarea rows={6} className={`${inputClass} h-auto py-2 font-mono`} value={termsMd} onChange={(e) => setTermsMd(e.target.value)} />
+            <textarea rows={6} className={`${textareaClass} font-mono`} value={termsMd} onChange={(e) => setTermsMd(e.target.value)} />
           </Field>
           <Field label={t('terms.fields.privacy')} error={errors.privacyMd}>
-            <textarea rows={6} className={`${inputClass} h-auto py-2 font-mono`} value={privacyMd} onChange={(e) => setPrivacyMd(e.target.value)} />
+            <textarea rows={6} className={`${textareaClass} font-mono`} value={privacyMd} onChange={(e) => setPrivacyMd(e.target.value)} />
           </Field>
         </div>
       </Modal>

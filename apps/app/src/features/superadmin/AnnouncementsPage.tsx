@@ -5,9 +5,10 @@ import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useDoc, type DocState } from '../../lib/firestore';
 import { Button } from '../../ui/Button';
-import { Field, inputClass } from '../../ui/Field';
+import { Field, textareaClass } from '../../ui/Field';
 import { EmptyState } from '../../ui/EmptyState';
 import { LoadingState } from '../../ui/LoadingState';
+import { Switch } from '../../ui/Switch';
 import { useToast } from '../../ui/Toast';
 import { errorMessage } from './errors';
 import { announcementText, BannerView } from './AnnouncementBanner';
@@ -59,15 +60,12 @@ function AnnouncementForm({ initial, writer }: { initial: PlatformConfig['announ
       <p className="mb-5 text-sm text-ink-muted">{t('announcements.intro')}</p>
       <div className="flex flex-col gap-4 rounded-[14px] border border-line bg-white p-5">
         <Field label={t('announcements.textEn')} error={error ? t('announcements.textEnRequired') : undefined}>
-          <textarea rows={3} className={`${inputClass} h-auto py-2`} value={textEn} onChange={(e) => setTextEn(e.target.value)} />
+          <textarea rows={3} className={textareaClass} value={textEn} onChange={(e) => setTextEn(e.target.value)} />
         </Field>
         <Field label={t('announcements.textSi')} hint={t('announcements.textSiHint')}>
-          <textarea rows={3} className={`${inputClass} h-auto py-2`} value={textSi} onChange={(e) => setTextSi(e.target.value)} />
+          <textarea rows={3} className={textareaClass} value={textSi} onChange={(e) => setTextSi(e.target.value)} />
         </Field>
-        <label className="flex items-center gap-2 text-sm font-semibold text-ink-soft">
-          <input type="checkbox" checked={active} onChange={(e) => setActive(e.target.checked)} />
-          {t('announcements.active')}
-        </label>
+        <Switch checked={active} onChange={setActive} label={t('announcements.active')} />
         <div>
           <p className="mb-1.5 text-[13px] font-semibold text-ink-soft">{t('announcements.preview')}</p>
           <div data-testid="banner-preview" className="overflow-hidden rounded-lg border border-line">

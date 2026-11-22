@@ -6,6 +6,7 @@ import { useTranslation } from 'react-i18next';
 import { Link } from 'react-router-dom';
 import { useLang } from '../../app/LangProvider';
 import { useCollection, type CollectionState } from '../../lib/firestore';
+import { buttonClass } from '../../ui/Button';
 import { EmptyState } from '../../ui/EmptyState';
 import { LoadingState } from '../../ui/LoadingState';
 import { Select } from '../../ui/Select';
@@ -38,8 +39,7 @@ export function countCell(state: CountState | undefined, pick: (c: Extract<Count
   return pick(state.counts);
 }
 
-const linkBtn =
-  'inline-flex h-8 items-center rounded-lg border border-line-strong bg-white px-3 text-[13px] font-semibold text-ink hover:bg-slate-50';
+const linkBtn = buttonClass({ variant: 'secondary', size: 'sm' });
 
 export function SchoolsPage({ schools: injected, setStatus = defaultSetStatus }: SchoolsPageProps) {
   const { t } = useTranslation('superadmin');
