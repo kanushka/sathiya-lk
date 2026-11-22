@@ -1,9 +1,10 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
 // Copyright (C) 2026 Kanushka Gayan
 
-import { forwardRef, type HTMLAttributes, type ReactNode } from 'react';
+import { forwardRef, type HTMLAttributes, type InputHTMLAttributes, type ReactNode } from 'react';
 import { createPortal } from 'react-dom';
 import { cx } from '../cx';
+import { fieldFocusClass } from '../Field';
 import { Icon } from '../Icon';
 import type { Placement } from '../popoverPlacement';
 
@@ -43,12 +44,13 @@ export interface MenuOptionProps {
   active: boolean;
   selected: boolean;
   disabled?: boolean;
+  multi?: boolean;
   onPick: () => void;
   onHover: () => void;
   children: ReactNode;
 }
 
-export function MenuOption({ id, active, selected, disabled, onPick, onHover, children }: MenuOptionProps) {
+export function MenuOption({ id, active, selected, disabled, multi, onPick, onHover, children }: MenuOptionProps) {
   return (
     <div
       id={id}
@@ -66,8 +68,19 @@ export function MenuOption({ id, active, selected, disabled, onPick, onHover, ch
         selected && 'font-semibold',
       )}
     >
+      {multi && (
+        <span
+          aria-hidden="true"
+          className={cx(
+            'flex h-[18px] w-[18px] shrink-0 items-center justify-center rounded border',
+            selected ? 'border-brand bg-brand text-on-brand' : 'border-line-strong bg-white',
+          )}
+        >
+          {selected && <Icon name="check" size={12} strokeWidth={3} />}
+        </span>
+      )}
       <span className="min-w-0 flex-1">{children}</span>
-      {selected && <Icon name="check" size={16} className="shrink-0 text-brand" />}
+      {selected && !multi && <Icon name="check" size={16} className="shrink-0 text-brand" />}
     </div>
   );
 }
@@ -89,3 +102,40 @@ export function MenuGroup({ label, children }: { label: string; children: ReactN
 export function MenuEmpty({ children }: { children: ReactNode }) {
   return <p className="px-2.5 py-3 text-sm text-ink-muted">{children}</p>;
 }
+
+export interface MenuSearchProps extends Omit<InputHTMLAttributes<HTMLInputElement>, 'type' | 'role' | 'className'> {
+  label: string;
+  listId: string;
+  activeId?: string;
+}
+
+export const MenuSearch = forwardRef<HTMLInputElement, MenuSearchProps>(function MenuSearch(
+  { label, listId, activeId, ...rest },
+  ref,
+) {
+  return (
+    <div className="relative mb-1">
+      <Icon
+        name="search"
+        size={16}
+        className="pointer-events-none absolute left-2.5 top-1/2 -translate-y-1/2 text-ink-muted"
+      />
+      <input
+        ref={ref}
+        type="text"
+        role="combobox"
+        aria-expanded="true"
+        aria-controls={listId}
+        aria-autocomplete="list"
+        aria-activedescendant={activeId}
+        aria-label={label}
+        placeholder={label}
+        {...rest}
+        className={cx(
+          'h-9 w-full rounded-lg border border-line-strong bg-white pl-8 pr-2.5 text-sm text-ink placeholder:text-ink-muted',
+          fieldFocusClass,
+        )}
+      />
+    </div>
+  );
+});

@@ -1,14 +1,16 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
 // Copyright (C) 2026 Kanushka Gayan
 
-import { useEffect, useId, useLayoutEffect, useMemo, useRef, useState, type KeyboardEvent, type ReactNode } from 'react';
+import { useEffect, useId, useMemo, useRef, useState, type KeyboardEvent, type ReactNode } from 'react';
 import { useTranslation } from 'react-i18next';
 import { isComposing } from './composing';
 import { cx } from './cx';
 import { fieldBaseClass, fieldFocusClass } from './Field';
 import { Icon } from './Icon';
-import { MenuEmpty, MenuGroup, MenuOption, MenuPanel } from './listbox/MenuPanel';
+import { MenuEmpty, MenuGroup, MenuOption, MenuPanel, MenuSearch } from './listbox/MenuPanel';
+import { filterOptions, firstEnabled, groupOptions, isPrintable, navigateIndex } from './listbox/options';
 import { usePopover } from './listbox/usePopover';
+import { useFieldLabelId } from './listbox/useFieldLabelId';
 import { useTypeahead } from './listbox/useTypeahead';
 
 export interface SelectOption<V extends string = string> {
@@ -37,29 +39,6 @@ export interface SelectProps<V extends string = string> {
   size?: 'sm' | 'md';
   className?: string;
   renderOption?: (o: SelectOption<V>, state: { active: boolean; selected: boolean }) => ReactNode;
-}
-
-interface Group<V extends string> {
-  name: string;
-  options: SelectOption<V>[];
-}
-
-function groupOptions<V extends string>(options: SelectOption<V>[]): Group<V>[] {
-  const byName = new Map<string, SelectOption<V>[]>();
-  for (const o of options) {
-    const g = o.group ?? '';
-    const list = byName.get(g);
-    if (list) list.push(o);
-    else byName.set(g, [o]);
-  }
-  return [...byName].map(([name, list]) => ({ name, options: list }));
-}
-
-function firstEnabled<V extends string>(list: SelectOption<V>[], from: number, step: 1 | -1): number {
-  for (let i = from; i >= 0 && i < list.length; i += step) {
-    if (!list[i]!.disabled) return i;
-  }
-  return -1;
 }
 
 export function Select<V extends string = string>({
@@ -92,13 +71,9 @@ export function Select<V extends string = string>({
   const popRef = useRef<HTMLDivElement>(null);
   const listRef = useRef<HTMLDivElement>(null);
   const searchRef = useRef<HTMLInputElement>(null);
-  const [fieldLabelId, setFieldLabelId] = useState<string>();
 
   const ordered = useMemo(() => groupOptions(options).flatMap((g) => g.options), [options]);
-  const groups = useMemo(() => {
-    const q = query.trim().toLowerCase();
-    return groupOptions(q ? ordered.filter((o) => o.label.toLowerCase().includes(q)) : ordered);
-  }, [ordered, query]);
+  const groups = useMemo(() => groupOptions(filterOptions(ordered, query)), [ordered, query]);
   const flat = useMemo(() => groups.flatMap((g) => g.options), [groups]);
   const selected = ordered.find((o) => o.value === value);
   const searchLabel = searchPlaceholder ?? t('search');
@@ -106,12 +81,7 @@ export function Select<V extends string = string>({
   const { pos, listMax } = usePopover(triggerRef, popRef, open, [flat.length], () => setOpen(false));
   const typeahead = useTypeahead(flat, setActive);
 
-  useLayoutEffect(() => {
-    if (!open || ariaLabelledBy || ariaLabel) return;
-    const label = triggerRef.current?.labels?.[0];
-    if (label && !label.id) label.id = `${baseId}-label`;
-    setFieldLabelId(label?.id);
-  }, [open, ariaLabelledBy, ariaLabel, baseId]);
+  const fieldLabelId = useFieldLabelId(triggerRef, open && !ariaLabelledBy && !ariaLabel, baseId);
 
   useEffect(() => {
     if (open && searchable) searchRef.current?.focus();
@@ -141,41 +111,14 @@ export function Select<V extends string = string>({
     close();
   }
 
-  function move(step: 1 | -1) {
-    setActive((a) => {
-      const next = firstEnabled(flat, a < 0 ? (step === 1 ? 0 : flat.length - 1) : a + step, step);
-      return next < 0 ? a : next;
-    });
-  }
-
-  function isPrintable(e: KeyboardEvent) {
-    return e.key.length === 1 && e.key !== ' ' && !e.ctrlKey && !e.metaKey && !e.altKey;
-  }
-
   function onOpenKeyDown(e: KeyboardEvent) {
+    const next = navigateIndex(e.key, flat, active);
+    if (next !== null) {
+      e.preventDefault();
+      setActive(next);
+      return;
+    }
     switch (e.key) {
-      case 'ArrowDown':
-        e.preventDefault();
-        move(1);
-        return;
-      case 'ArrowUp':
-        e.preventDefault();
-        move(-1);
-        return;
-      case 'Home':
-        e.preventDefault();
-        setActive((a) => {
-          const i = firstEnabled(flat, 0, 1);
-          return i < 0 ? a : i;
-        });
-        return;
-      case 'End':
-        e.preventDefault();
-        setActive((a) => {
-          const i = firstEnabled(flat, flat.length - 1, -1);
-          return i < 0 ? a : i;
-        });
-        return;
       case 'Enter':
         if (isComposing(e)) return;
         e.preventDefault();
@@ -267,35 +210,18 @@ export function Select<V extends string = string>({
           }}
         >
           {searchable && (
-            <div className="relative mb-1">
-              <Icon
-                name="search"
-                size={16}
-                className="pointer-events-none absolute left-2.5 top-1/2 -translate-y-1/2 text-ink-muted"
-              />
-              <input
-                ref={searchRef}
-                type="text"
-                role="combobox"
-                aria-expanded="true"
-                aria-controls={listId}
-                aria-autocomplete="list"
-                aria-activedescendant={activeId}
-                aria-label={searchLabel}
-                placeholder={searchLabel}
-                value={query}
-                onChange={(e) => {
-                  const q = e.target.value.trim().toLowerCase();
-                  setQuery(e.target.value);
-                  setActive(firstEnabled(q ? ordered.filter((o) => o.label.toLowerCase().includes(q)) : ordered, 0, 1));
-                }}
-                onKeyDown={onOpenKeyDown}
-                className={cx(
-                  'h-9 w-full rounded-lg border border-line-strong bg-white pl-8 pr-2.5 text-sm text-ink placeholder:text-ink-muted',
-                  fieldFocusClass,
-                )}
-              />
-            </div>
+            <MenuSearch
+              ref={searchRef}
+              label={searchLabel}
+              listId={listId}
+              activeId={activeId}
+              value={query}
+              onChange={(e) => {
+                setQuery(e.target.value);
+                setActive(firstEnabled(filterOptions(ordered, e.target.value), 0, 1));
+              }}
+              onKeyDown={onOpenKeyDown}
+            />
           )}
           <div
             ref={listRef}

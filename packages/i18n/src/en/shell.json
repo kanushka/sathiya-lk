@@ -41,6 +41,13 @@
   "select": {
     "placeholder": "Choose…"
   },
+  "multi": {
+    "count": "{{count}} of {{total}} selected",
+    "selectAll": "Select all",
+    "clear": "Clear",
+    "remove": "Remove {{label}}",
+    "more": "+{{count}}"
+  },
   "loading": "Loading…",
   "notFound": {
     "title": "Page not found",

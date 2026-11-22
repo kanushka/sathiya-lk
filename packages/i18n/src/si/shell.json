@@ -41,6 +41,13 @@
   "select": {
     "placeholder": "තෝරන්න…"
   },
+  "multi": {
+    "count": "{{total}} න් {{count}} ක් තෝරා ඇත",
+    "selectAll": "සියල්ල තෝරන්න",
+    "clear": "ඉවත් කරන්න",
+    "remove": "{{label}} ඉවත් කරන්න",
+    "more": "+{{count}}"
+  },
   "loading": "පූරණය වෙමින්…",
   "notFound": {
     "title": "පිටුව හමු නොවීය",
