@@ -17,6 +17,7 @@ export const callables = {
   reportSchool: 'reportSchool',
   sendAuthEmail: 'sendAuthEmail',
   releaseCensusNo: 'releaseCensusNo',
+  recordSignIn: 'recordSignIn',
 } as const;
 
 export interface RegisterSchoolReq { school: Omit<School, 'id' | 'status' | 'createdAt' | 'activeYearId'>; adminName: string; acceptedTermsVersion: string }
@@ -29,6 +30,8 @@ export interface InviteAdminReq { schoolId: string; email: string; teacherId?: s
 export interface InviteAdminRes { ok: true }
 export type ClaimInvitesReq = Record<string, never>;
 export interface ClaimInvitesRes { schoolIds: string[] }
+export type RecordSignInReq = Record<string, never>;
+export interface RecordSignInRes { recorded: boolean }
 export interface SaveEntryReq { schoolId: string; yearId: string; entry: EntryDraft }
 export interface SaveEntryRes { entryId: string }
 export interface DeleteEntryReq { schoolId: string; yearId: string; entryId: string }
@@ -59,6 +62,7 @@ interface CallableMap {
   reportSchool: { req: ReportSchoolReq; res: ReportSchoolRes };
   sendAuthEmail: { req: SendAuthEmailReq; res: SendAuthEmailRes };
   releaseCensusNo: { req: ReleaseCensusNoReq; res: ReleaseCensusNoRes };
+  recordSignIn: { req: RecordSignInReq; res: RecordSignInRes };
 }
 export type CallableName = keyof typeof callables;
 export type CallableTypes = { [K in CallableName]: CallableMap[K] };

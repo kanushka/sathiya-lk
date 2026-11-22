@@ -58,4 +58,7 @@ test('admin adds a teacher, sees the 8-character password and prints the login s
 
   const teacher = await (await browser.newContext()).newPage();
   await loginTeacher(teacher, 'SCC059', password);
+  await expect(teacher).toHaveURL(/\/me/);
+  const row = page.getByRole('row', { name: /SCC059 Mrs\. E\. Tester/ });
+  await expect(row).not.toContainText('Not logged in yet', { timeout: 15_000 });
 });

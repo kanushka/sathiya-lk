@@ -7,6 +7,7 @@ import { useNavigate, useSearchParams } from 'react-router-dom';
 import { useAuth } from '../../app/AuthProvider';
 import { Button } from '../../ui/Button';
 import { Field, inputClass } from '../../ui/Field';
+import { recordSignIn } from '../teacher/signIn';
 import { SchoolSearch } from './SchoolSearch';
 import { getDirectorySchool, signInWithPassword, type DirectorySchool } from './api';
 import { authErrorMessage } from './errors';
@@ -67,6 +68,7 @@ export function TeacherLoginForm({ autoFocus }: { autoFocus?: boolean }) {
       setBusy(false);
       return;
     }
+    recordSignIn();
     try {
       await refreshClaims();
     } catch {

@@ -14,3 +14,4 @@ export { publishYear } from './publishYear';
 export { reportSchool } from './reportSchool';
 export { sendAuthEmail } from './sendAuthEmail';
 export { syncDirectory } from './syncDirectory';
+export { recordSignIn } from './recordSignIn';
