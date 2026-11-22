@@ -84,13 +84,28 @@ describe('members page', () => {
     expect(within(dialog).getByRole('button', { name: 'Send invite' })).toBeEnabled();
   });
 
-  it('copies the app link', async () => {
+  it('shows a teacher link with the school preselected and an admin link', () => {
+    setup();
+    expect(screen.getByText(`${window.location.origin}/login?as=teacher&school=siripura`)).toBeInTheDocument();
+    expect(screen.getByText(`${window.location.origin}/login`)).toBeInTheDocument();
+  });
+
+  it('copies each link and shows Copied!', async () => {
     const user = setup();
     const writeText = vi.fn().mockResolvedValue(undefined);
     Object.defineProperty(navigator, 'clipboard', { value: { writeText }, configurable: true });
-    await user.click(screen.getByRole('button', { name: 'Copy link' }));
-    expect(writeText).toHaveBeenCalledWith(window.location.origin);
-    expect(await screen.findByText('Link copied')).toBeInTheDocument();
+    await user.click(screen.getByRole('button', { name: 'Copy teacher sign-in link' }));
+    expect(writeText).toHaveBeenLastCalledWith(`${window.location.origin}/login?as=teacher&school=siripura`);
+    expect(await screen.findByRole('button', { name: 'Copy teacher sign-in link' })).toHaveTextContent('Copied!');
+    await user.click(screen.getByRole('button', { name: 'Copy admin sign-in link' }));
+    expect(writeText).toHaveBeenLastCalledWith(`${window.location.origin}/login`);
+  });
+
+  it('toasts when copying fails', async () => {
+    const user = setup();
+    Object.defineProperty(navigator, 'clipboard', { value: { writeText: vi.fn().mockRejectedValue(new Error('no')) }, configurable: true });
+    await user.click(screen.getByRole('button', { name: 'Copy admin sign-in link' }));
+    expect(await screen.findByText('Could not copy. Select the link and copy it.')).toBeInTheDocument();
   });
 
   it('hides invite when read-only', () => {
