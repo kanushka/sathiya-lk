@@ -78,6 +78,28 @@ describe('pinOverlayCell', () => {
     expect(screen.getByText('6B P5 · 10:00–10:40')).toBeInTheDocument();
   });
 
+  it('names the busy teacher in a group cell', () => {
+    const b: BusyDetail = { kind: 'teacher', classIds: [C.c12a], subjectId: S.pali, teacherId: T.ananda, entryId: 'x' };
+    const o = pinOverlayCell({
+      cell: { kind: 'busy', busy: b, blockers: [b] },
+      day: 2,
+      n: 4,
+      time: '10:00–10:40',
+      ctx,
+      lang: 'en',
+      t,
+      tc,
+      names: { subject: 'Religion', teacher: 'Ven. Ananda Thero', classes: '6C' },
+      progress: null,
+      suggested: false,
+      group: true,
+      entryView: (e) => classCellView(e, ctx, 'en', t),
+    })!;
+    expect(o.label).toBe('Wednesday, period 4, 10:00–10:40: busy, Ven. Ananda Thero · Teaching 12A · Pali');
+    renderWithI18n(<>{o.content}</>);
+    expect(screen.getByText('Ven. Ananda Thero · Teaching 12A · Pali')).toBeInTheDocument();
+  });
+
   it('names a pinned group cell by the group, whatever the entry view title', () => {
     const e = { id: 'g', day: 2 as const, period: 4, classIds: [C.c6c], lessons: [{ subjectId: S.buddhism, teacherId: T.ananda }], teacherIds: [T.ananda], groupKey: 'religion' };
     const o = pinOverlayCell({

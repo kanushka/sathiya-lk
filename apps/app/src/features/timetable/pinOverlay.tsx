@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
 // Copyright (C) 2026 Kanushka Gayan
 
-import type { DayIndex, Entry, Lang, PinProgress, SchoolContext, TeacherPinCell } from '@sathiya/core';
+import { teacherDisplayName, type DayIndex, type Entry, type Lang, type PinProgress, type SchoolContext, type TeacherPinCell } from '@sathiya/core';
 import type { TFunction } from 'i18next';
 import { useTranslation } from 'react-i18next';
 import { Icon } from '../../ui/Icon';
@@ -70,7 +70,11 @@ export function pinOverlayCell(a: PinOverlayInput): GridOverlay | null {
     };
   }
   if (c.kind === 'busy') {
-    const reasons = c.blockers.map((b) => busyLabel(t, b, ctx, lang));
+    const reasons = c.blockers.map((b) => {
+      const reason = busyLabel(t, b, ctx, lang);
+      const teacher = group && b.kind === 'teacher' ? ctx.teachers.find((x) => x.id === b.teacherId) : undefined;
+      return teacher ? t('assign.blocker', { who: teacherDisplayName(teacher, lang), reason }) : reason;
+    });
     const all = reasons.join('; ');
     return {
       label: t('pin.cellBusy', { ...where, reason: all }),
