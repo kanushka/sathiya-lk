@@ -58,7 +58,7 @@ describe('ImportModal preview', () => {
       schoolId: ctx.school.id,
       subjects: [{ row: 2, cells: { nameEn: 'Drama', nameSi: 'නාට්‍ය', short: 'Drama' } }],
       teachers: [],
-    });
+    }, { timeout: 310_000 });
     const done = await screen.findByRole('dialog', { name: 'Import complete' });
     expect(within(done).getByText('Added 1 subject and 0 teachers.')).toBeInTheDocument();
     expect(within(done).getByRole('button', { name: 'Print login slips' })).toBeDisabled();

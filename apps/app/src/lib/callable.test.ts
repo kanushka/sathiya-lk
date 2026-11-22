@@ -74,8 +74,14 @@ describe('call', () => {
   it('returns the callable data', async () => {
     respond = async () => ({ data: { entryId: 'e9' } });
     await expect(call<{ a: number }, unknown>('saveEntry', { a: 1 })).resolves.toEqual({ entryId: 'e9' });
-    expect(httpsCallable).toHaveBeenCalledWith({ region: 'test' }, 'saveEntry');
+    expect(httpsCallable).toHaveBeenCalledWith({ region: 'test' }, 'saveEntry', undefined);
     expect(calls).toEqual([{ a: 1 }]);
+  });
+
+  it('passes a client timeout through', async () => {
+    respond = async () => ({ data: {} });
+    await call<object, unknown>('importSetup', {}, { timeout: 310_000 });
+    expect(httpsCallable).toHaveBeenCalledWith({ region: 'test' }, 'importSetup', { timeout: 310_000 });
   });
 
   it('infers request and response types from the callable name', async () => {
