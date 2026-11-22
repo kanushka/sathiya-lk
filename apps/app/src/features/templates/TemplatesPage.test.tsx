@@ -25,6 +25,11 @@ function setup() {
 }
 
 describe('templates page', () => {
+  it('puts + New template at the top right of the page header', () => {
+    setup();
+    expect(within(screen.getByTestId('page-header')).getAllByRole('button').at(-1)).toHaveTextContent('+ New template');
+  });
+
   it('lists templates with class usage', () => {
     setup();
     expect(screen.getByText(/used by 3 classes/i)).toBeInTheDocument();

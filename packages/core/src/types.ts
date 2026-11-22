@@ -19,7 +19,7 @@ export interface PlatformConfig { currentTermsVersion: string; announcement?: An
 export interface DefaultSubject { nameEn: string; nameSi: string; short: string; color: string }
 export interface DefaultSubjectsDoc { subjects: DefaultSubject[]; updatedAt: number }
 export interface TermsVersion { version: string; termsMd: string; privacyMd: string; publishedAt: number }
-export const TEACHER_TITLES = ['Mr', 'Mrs', 'Miss', 'Ms', 'Dr', 'Rev', 'Ven.', 'Thero'] as const;
+export const TEACHER_TITLES = ['Mr', 'Mrs', 'Miss', 'Ms', 'Dr', 'Rev', 'Ven.'] as const;
 export type TeacherTitle = (typeof TEACHER_TITLES)[number];
 export interface Teacher { id: string; staffId: string; name: string; title?: TeacherTitle; isPrimary: boolean; subjectIds: string[]; grades: number[]; maxPerDay: number; phone?: string; email?: string; uid?: string; lastLoginAt?: number }
 export interface Subject extends Bilingual { id: string; short: string; color: string }

@@ -49,7 +49,9 @@
     "saved": "Subject added",
     "saveFailed": "Could not add the subject. Try again.",
     "errors": {
-      "name": "Enter the subject name in English"
+      "name": "Enter the subject name in English",
+      "short": "Enter a short name",
+      "shortTaken": "Another subject already uses this short name"
     }
   }
 }

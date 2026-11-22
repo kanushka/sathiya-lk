@@ -100,7 +100,7 @@ export function usePinMode(args: {
     [slots, progress],
   );
   const suggested = useMemo(() => toRows(rawSuggested), [toRows, rawSuggested]);
-  const seq = useRef(new Map<string, number>());
+  const seq = useRef(0);
   const isSuggested = useCallback((day: DayIndex, n: number) => suggested.some((s) => s.day === day && s.period === n), [suggested]);
 
   const namesFor = useCallback(
@@ -179,10 +179,9 @@ export function usePinMode(args: {
       const period = periodAt(day, n);
       if (!target || !c || !names) return;
       const where = { day: tc(`days.long.${day}`), n, subject: names.subject };
-      const key = `${day}-${n}`;
-      const mine = (seq.current.get(key) ?? 0) + 1;
-      seq.current.set(key, mine);
-      const latest = () => seq.current.get(key) === mine;
+      // Saves can finish out of order; only the most recent toggle announces.
+      const mine = ++seq.current;
+      const latest = () => seq.current === mine;
       if (c.kind === 'pinned') {
         const ok = await remove(c.entry.id);
         if (ok && latest()) setMessage(t('pin.unpinned', where));

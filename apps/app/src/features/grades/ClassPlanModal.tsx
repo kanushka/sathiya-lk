@@ -23,17 +23,17 @@ export function ClassPlanModal({ schoolId, cls, grade, template, subjects, onClo
   const { t } = useTranslation('grades');
   const toast = useToast();
   const [plan, setPlan] = useState<PlanItem[]>(() => structuredClone(cls.planOverride ?? grade.plan));
-  const [saving, setSaving] = useState(false);
+  const [saving, setSaving] = useState<'save' | 'clear' | null>(null);
 
   async function run(next: PlanItem[] | null) {
-    setSaving(true);
+    setSaving(next === null ? 'clear' : 'save');
     try {
       await api.setPlanOverride(schoolId, cls.id, next);
       toast.show(next === null ? t('classPlan.cleared', { name: cls.name }) : t('classPlan.saved', { name: cls.name }), 'success');
       onClose();
     } catch {
       toast.show(t('page.saveFailed'), 'error');
-      setSaving(false);
+      setSaving(null);
     }
   }
 
@@ -44,15 +44,16 @@ export function ClassPlanModal({ schoolId, cls, grade, template, subjects, onClo
       title={t('classPlan.title', { name: cls.name })}
       subtitle={t('classPlan.subtitle')}
       onClose={onClose}
+      busy={saving !== null}
       footer={
         <>
           {cls.planOverride && (
-            <Button className="mr-auto" onClick={() => void run(null)} disabled={saving}>
+            <Button className="mr-auto" onClick={() => void run(null)} loading={saving === 'clear'} disabled={saving === 'save'}>
               {t('classPlan.useGrade')}
             </Button>
           )}
-          <Button onClick={onClose}>{t('classPlan.cancel')}</Button>
-          <Button variant="primary" onClick={() => void run(plan)} disabled={saving}>
+          <Button onClick={onClose} disabled={saving !== null}>{t('classPlan.cancel')}</Button>
+          <Button variant="primary" onClick={() => void run(plan)} loading={saving === 'save'} loadingLabel={t('busy.saving', { ns: 'common' })} disabled={saving === 'clear'}>
             {t('classPlan.save')}
           </Button>
         </>

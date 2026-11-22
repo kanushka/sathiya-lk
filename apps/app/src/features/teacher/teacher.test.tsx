@@ -12,6 +12,9 @@ import { colomboNow } from './colomboNow';
 import { ChangePasswordModal } from './ChangePasswordModal';
 import { TodayPage } from './TodayPage';
 import { WeekPage } from './WeekPage';
+import { recordSignInOnce } from './signIn';
+
+vi.mock('./signIn');
 
 const year: Year = { id: 'y-2026', label: '2026', status: 'published' };
 const ctx = { ...baseCtx, school: { ...baseCtx.school, activeYearId: year.id } };
@@ -110,6 +113,22 @@ describe('TeacherFrame chrome', () => {
   it('links back to /admin for an admin who teaches', () => {
     renderWithSchool(<TodayPage now={wed0920} snapshot={snap()} />, { ctx, claims: { ...claims(T.perera), role: 'admin' } });
     expect(screen.getByRole('link', { name: 'School admin' })).toHaveAttribute('href', '/admin');
+  });
+
+  it('shows no badge in place of a missing logo', () => {
+    renderWithSchool(<TodayPage now={wed0920} snapshot={snap()} />, { ctx, claims: claims(T.perera) });
+    expect(screen.queryByTestId('school-logo')).toBeNull();
+    expect(screen.queryByText(ctx.school.staffPrefix)).toBeNull();
+  });
+
+  it('shows the uploaded logo', () => {
+    renderWithSchool(<TodayPage now={wed0920} snapshot={snap()} />, { ctx: { ...ctx, school: { ...ctx.school, logoUrl: 'https://example.test/logo.png' } }, claims: claims(T.perera) });
+    expect(screen.getByTestId('school-logo')).toHaveAttribute('src', 'https://example.test/logo.png');
+  });
+
+  it('records the sign-in once the teacher frame loads', () => {
+    renderWithSchool(<TodayPage now={wed0920} snapshot={snap()} />, { ctx, claims: claims(T.perera) });
+    expect(recordSignInOnce).toHaveBeenCalled();
   });
 
   it('hides the admin link for a plain teacher', () => {

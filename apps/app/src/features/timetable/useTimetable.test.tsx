@@ -62,6 +62,33 @@ describe('useTimetable', () => {
     expect(screen.getByTestId('n')).toHaveTextContent(String(before + 1));
   });
 
+  it('keeps an edited entry visible when the save changes nothing on the server', async () => {
+    const api: TimetableApi = { saveEntry: vi.fn(async (req) => ({ entryId: req.entry.id! })), deleteEntry: vi.fn() };
+    setup(api);
+    const existing = entries6B[0]!;
+    const same: EntryDraft = { id: existing.id, day: existing.day, period: existing.period, classIds: existing.classIds, lessons: existing.lessons };
+    await act(async () => {
+      expect(await latest.save(same)).toBe(true);
+    });
+    expect(latest.entries.filter((e) => e.id === existing.id)).toHaveLength(1);
+    expect(latest.entries).toHaveLength(entries6B.length);
+    expect(api.deleteEntry).not.toHaveBeenCalled();
+  });
+
+  it('replacing the teacher saves the same entry id once', async () => {
+    const api: TimetableApi = { saveEntry: vi.fn(async (req) => ({ entryId: req.entry.id! })), deleteEntry: vi.fn() };
+    setup(api);
+    const existing = entries6B[0]!;
+    const changed: EntryDraft = { id: existing.id, day: existing.day, period: existing.period, classIds: existing.classIds, lessons: [{ ...existing.lessons[0]!, teacherId: T.ananda }] };
+    await act(async () => {
+      await latest.save(changed);
+    });
+    expect(api.saveEntry).toHaveBeenCalledTimes(1);
+    expect(vi.mocked(api.saveEntry).mock.calls[0]![0].entry.id).toBe(existing.id);
+    expect(api.deleteEntry).not.toHaveBeenCalled();
+    expect(latest.entries.filter((e) => e.id === existing.id)).toHaveLength(1);
+  });
+
   it('reverts and toasts teacher/class names on clash', async () => {
     const err = new ApiError('clash', 'clash', {
       code: 'clash',
@@ -129,6 +156,22 @@ describe('useTimetable', () => {
       );
     }
     const serverCopy: Entry = { id: 'srv-1', day: 0, period: 8, classIds: [C.c6b], lessons: draft.lessons, teacherIds: [T.perera] };
+
+    it('no duplicate when the server copy differs from the optimistic one', async () => {
+      const d = deferred<{ entryId: string }>();
+      const api: TimetableApi = { saveEntry: vi.fn(() => d.promise), deleteEntry: vi.fn() };
+      render(<Live api={api}><Probe /></Live>);
+      let p!: Promise<boolean>;
+      act(() => {
+        p = latest.save(draft);
+      });
+      act(() => setServer([...entries6B, { ...serverCopy, groupKey: 'normalised' }]));
+      await act(async () => {
+        d.resolve({ entryId: 'srv-1' });
+        await p;
+      });
+      expect(latest.entries.filter((e) => e.id === 'srv-1' || e.id.startsWith('tmp-'))).toHaveLength(1);
+    });
 
     it('no duplicate when snapshot arrives before the callable resolves', async () => {
       const d = deferred<{ entryId: string }>();

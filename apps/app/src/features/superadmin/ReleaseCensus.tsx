@@ -59,10 +59,11 @@ export function ReleaseCensusButton({ school, release }: { school: School; relea
         title={t('releaseCensus.title', { censusNo })}
         width={480}
         onClose={() => !busy && close()}
+        busy={busy}
         footer={
           <>
             <Button disabled={busy} onClick={close}>{t('buttons.cancel', { ns: 'common' })}</Button>
-            <Button variant="dangerSolid" disabled={busy} onClick={() => void apply()}>
+            <Button variant="dangerSolid" loading={busy} onClick={() => void apply()}>
               {t('releaseCensus.confirm', { censusNo })}
             </Button>
           </>

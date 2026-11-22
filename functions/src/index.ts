@@ -15,3 +15,4 @@ export { reportSchool } from './reportSchool';
 export { sendAuthEmail } from './sendAuthEmail';
 export { syncDirectory } from './syncDirectory';
 export { sendMail } from './email/sendMail';
+export { recordSignIn } from './recordSignIn';

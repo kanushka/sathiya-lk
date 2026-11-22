@@ -1,15 +1,17 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
 // Copyright (C) 2026 Kanushka Gayan
 import { pickName, teacherDisplayName, type Lang, type Teacher } from '@sathiya/core';
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
+import { useSearchParams } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { useSchool } from '../../app/SchoolProvider';
-import { Badge } from '../../ui/Badge';
 import { useReadOnly } from '../../ui/AdminLayout';
 import { Button } from '../../ui/Button';
 import { EmptyState } from '../../ui/EmptyState';
 import { inputClass } from '../../ui/Field';
 import { Table, TBody, Td, Th, THead, Tr } from '../../ui/Table';
+import { Badge } from '../../ui/Badge';
+import { PageHeader } from '../../ui/PageHeader';
 import { useToast } from '../../ui/Toast';
 import { DeleteSetupModal } from './DeleteSetupModal';
 import { usePrintLabels } from './LoginSlip';
@@ -33,7 +35,11 @@ export function TeachersPage() {
   const { passwords } = useSessionPasswords();
   const printLabels = usePrintLabels();
   const [search, setSearch] = useState('');
-  const [dialog, setDialog] = useState<Dialog>(null);
+  const [params, setParams] = useSearchParams();
+  const [dialog, setDialog] = useState<Dialog>(() => (params.get('new') === '1' && !readOnly ? { kind: 'edit' } : null));
+  useEffect(() => {
+    if (params.has('new')) setParams((p) => (p.delete('new'), p), { replace: true });
+  }, [params, setParams]);
 
   const subjectName = useMemo(() => new Map(subjects.map((s) => [s.id, pickName(s, lang)])), [subjects, lang]);
   const sorted = useMemo(() => [...teachers].sort((a, b) => a.staffId.localeCompare(b.staffId)), [teachers]);
@@ -60,10 +66,11 @@ export function TeachersPage() {
 
   return (
     <div>
-      <div className="mb-5 flex flex-wrap items-center gap-3">
-        <h1 className="m-0 text-2xl font-bold text-ink">{t('page.title')}</h1>
-        <Badge>{teachers.length}</Badge>
-        <div className="ml-auto flex flex-wrap items-center gap-2">
+      <PageHeader
+        title={t('page.title')}
+        count={teachers.length}
+        actions={
+          <>
           <div className="w-[220px]">
             <input
               type="search"
@@ -78,8 +85,9 @@ export function TeachersPage() {
             {t('page.printAll')}
           </Button>
           {!readOnly && add}
-        </div>
-      </div>
+          </>
+        }
+      />
 
       {teachers.length === 0 ? (
         <EmptyState icon="teachers" title={t('page.empty')} body={t('page.emptyBody')} action={readOnly ? undefined : add} />

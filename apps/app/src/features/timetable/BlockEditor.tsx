@@ -53,7 +53,7 @@ function BlockEditorBody({ onClose, baseClassId, day, period, mode, entry, entri
   const { lang } = useLang();
   const readOnly = useReadOnly();
   const ctx = useSchool();
-  const [busy, setBusy] = useState(false);
+  const [busy, setBusy] = useState<'save' | 'remove' | null>(null);
 
   const findClass = (id: string) => ctx.classes.find((c) => c.id === id);
   const gradeOf = (c: SchoolClass) => ctx.grades.find((g) => g.id === c.gradeId);
@@ -122,7 +122,7 @@ function BlockEditorBody({ onClose, baseClassId, day, period, mode, entry, entri
   const toggle = (id: string) => setClassIds((ids) => (ids.includes(id) ? ids.filter((x) => x !== id) : [...ids, id]));
 
   async function onSave() {
-    setBusy(true);
+    setBusy('save');
     const draft: EntryDraft = {
       ...(entry ? { id: entry.id } : {}),
       day,
@@ -133,15 +133,15 @@ function BlockEditorBody({ onClose, baseClassId, day, period, mode, entry, entri
     };
     const ok = await save(draft);
     if (ok && replacesEntryId) await remove(replacesEntryId);
-    setBusy(false);
+    setBusy(null);
     if (ok) onClose();
   }
 
   async function onRemove() {
     if (!entry) return;
-    setBusy(true);
+    setBusy('remove');
     const ok = await remove(entry.id);
-    setBusy(false);
+    setBusy(null);
     if (ok) onClose();
   }
 
@@ -156,15 +156,16 @@ function BlockEditorBody({ onClose, baseClassId, day, period, mode, entry, entri
       title={title}
       subtitle={t('block.subtitle', { day: tc(`days.long.${day}`), n: period })}
       width={620}
+      busy={busy !== null}
       footer={
         <>
           {entry && !readOnly && (
-            <Button variant="danger" className="mr-auto" disabled={busy} onClick={onRemove}>
+            <Button variant="danger" className="mr-auto" loading={busy === 'remove'} loadingLabel={t('busy.deleting', { ns: 'common' })} disabled={busy === 'save'} onClick={onRemove}>
               {t('block.remove')}
             </Button>
           )}
           {!readOnly && (
-            <Button variant="primary" disabled={busy || blocked || tooFew} onClick={onSave}>
+            <Button variant="primary" loading={busy === 'save'} loadingLabel={t('busy.saving', { ns: 'common' })} disabled={busy === 'remove' || blocked || tooFew} onClick={onSave}>
               {t('block.save')}
             </Button>
           )}

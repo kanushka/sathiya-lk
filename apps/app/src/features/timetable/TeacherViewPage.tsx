@@ -18,9 +18,9 @@ import {
   type Teacher,
   type TemplateRow,
 } from '@sathiya/core';
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { Navigate, useNavigate, useParams } from 'react-router-dom';
+import { Navigate, useNavigate, useParams, useSearchParams } from 'react-router-dom';
 import { useLang } from '../../app/LangProvider';
 import { useSchool, useYear } from '../../app/SchoolProvider';
 import { useReadOnly } from '../../ui/AdminLayout';
@@ -28,6 +28,7 @@ import { Button } from '../../ui/Button';
 import { Combobox } from '../../ui/Combobox';
 import { cx } from '../../ui/cx';
 import { EmptyState } from '../../ui/EmptyState';
+import { LinkButton } from '../../ui/LinkButton';
 import { Icon } from '../../ui/Icon';
 import { IconButton } from '../../ui/IconButton';
 import { LoadingState } from '../../ui/LoadingState';
@@ -36,7 +37,7 @@ import { BlockEditor } from './BlockEditor';
 import { blockKey, blockStateFor, isBlock, type BlockState } from './blockState';
 import type { CellView } from './Cell';
 import { classNames } from './labels';
-import { useAdminBase } from './paths';
+import { pickInitial, rememberLast, useAdminBase } from './paths';
 import { PinHeader, PinSection } from './PinPanel';
 import { pinOverlayCell } from './pinOverlay';
 import { TeacherAssignPicker } from './TeacherAssignPicker';
@@ -54,14 +55,22 @@ export function sortedTeachers(ctx: SchoolContext): Teacher[] {
 
 function NoTeachers() {
   const { t } = useTranslation('timetable');
-  return <EmptyState icon="teacherView" title={t('teacherView.noTeachersTitle')} body={t('teacherView.noTeachersBody')} />;
+  const readOnly = useReadOnly();
+  const base = useAdminBase();
+  const action = readOnly ? undefined : (
+    <LinkButton variant="primary" to={`${base}/teachers?new=1`}>
+      {t('teacherView.addTeacher')}
+    </LinkButton>
+  );
+  return <EmptyState icon="teacherView" title={t('teacherView.noTeachersTitle')} body={t('teacherView.noTeachersBody')} action={action} />;
 }
 
 export function TeacherIndexRedirect() {
+  const [params] = useSearchParams();
   const ctx = useSchool();
   const base = useAdminBase();
   if (ctx.loading) return <LoadingState />;
-  const first = sortedTeachers(ctx)[0];
+  const first = pickInitial('teacher', sortedTeachers(ctx), params, ['teacher', 't']);
   if (!first) return <NoTeachers />;
   return <Navigate to={`${base}/timetable/teacher/${first.id}`} replace />;
 }
@@ -69,6 +78,8 @@ export function TeacherIndexRedirect() {
 export function TeacherViewPage() {
   const { t } = useTranslation('timetable');
   const { teacherId } = useParams();
+  const readOnly = useReadOnly();
+  const base = useAdminBase();
   const ctx = useSchool();
   const year = useYear();
   const teachers = useMemo(() => sortedTeachers(ctx), [ctx]);
@@ -77,7 +88,14 @@ export function TeacherViewPage() {
   const teacher = teachers.find((x) => x.id === teacherId);
   if (!teacher) return <EmptyState icon="teacherView" title={t('teacherView.notFoundTitle')} body={t('teacherView.notFoundBody')} />;
   const template = ctx.templates.find((x) => x.isDefault);
-  if (!template) return <EmptyState icon="teacherView" title={t('teacherView.noDefaultTitle')} body={t('teacherView.noDefaultBody')} />;
+  if (!template) {
+    const action = readOnly ? undefined : (
+      <LinkButton variant="primary" to={`${base}/templates`}>
+        {t('teacherView.goTemplates')}
+      </LinkButton>
+    );
+    return <EmptyState icon="teacherView" title={t('teacherView.noDefaultTitle')} body={t('teacherView.noDefaultBody')} action={action} />;
+  }
   return <TeacherView key={teacher.id} teacher={teacher} teachers={teachers} template={template} />;
 }
 
@@ -139,7 +157,8 @@ function TeacherView({ teacher, teachers, template }: { teacher: Teacher; teache
   const at = (day: DayIndex, period: number) => bySlot.get(`${day}-${period}`) ?? [];
 
   const index = teachers.findIndex((x) => x.id === teacher.id);
-  const go = (x: Teacher | undefined) => x && navigate(`${base}/timetable/teacher/${x.id}`);
+  const go = (x: Teacher | undefined) => x && navigate(`${base}/timetable/teacher/${x.id}`, { replace: true });
+  useEffect(() => rememberLast('teacher', teacher.id), [teacher.id]);
 
   const subjectOf = (e: Entry) => {
     const id = (e.lessons.find((l) => l.teacherId === teacher.id) ?? e.lessons[0])?.subjectId;

@@ -305,8 +305,8 @@ function TeacherAssignPickerBody({ teacherId, slot, entries, onClose, onSave, on
         back={{ text: t('teacherAssign.back'), label: t('teacherAssign.backLabel') }}
         onConfirm={confirmGroup}
       >
-        {({ body, footer }) => (
-          <Modal open onClose={onClose} title={t('assign.groupTitle', { group: pickName(item, lang) })} subtitle={subtitle} width={560} footer={footer}>
+        {({ body, footer, busy: groupBusy }) => (
+          <Modal open onClose={onClose} busy={groupBusy} title={t('assign.groupTitle', { group: pickName(item, lang) })} subtitle={subtitle} width={560} footer={footer}>
             {body}
           </Modal>
         )}
@@ -317,14 +317,14 @@ function TeacherAssignPickerBody({ teacherId, slot, entries, onClose, onSave, on
   const footer = subjectId ? (
     <>
       <span className={cx('flex-1 text-xs font-semibold', tone === 'ok' ? 'text-success' : tone === 'need' ? 'text-warning' : 'text-danger')}>{note}</span>
-      <Button variant="primary" disabled={!action || busy} onClick={run}>
+      <Button variant="primary" loading={busy} disabled={!action} onClick={run}>
         {label}
       </Button>
     </>
   ) : undefined;
 
   return (
-    <Modal open onClose={onClose} title={subjectId ? t('teacherPicker.titleClass') : t('picker.titleSubject')} subtitle={subtitle} width={540} footer={footer}>
+    <Modal open onClose={onClose} title={subjectId ? t('teacherPicker.titleClass') : t('picker.titleSubject')} subtitle={subtitle} width={540} busy={busy} footer={footer}>
       {!subjectId ? (
         <>
           <input

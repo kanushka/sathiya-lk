@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
 // Copyright (C) 2026 Kanushka Gayan
 import { ctx, entries } from '@sathiya/core/fixtures';
-import { screen, within } from '@testing-library/react';
+import { screen, waitFor, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { call } from '../../lib/callable';
@@ -23,6 +23,11 @@ beforeEach(() => {
 const render = () => renderWithSchool(<SubjectsPage />, { ctx, entries });
 
 describe('subjects page', () => {
+  it('header actions end with the primary + Add subject', () => {
+    render();
+    expect(within(screen.getByTestId('page-header')).getAllByRole('button').map((b) => b.textContent)).toEqual(['Load standard Sri Lankan list', '+ Add subject']);
+  });
+
   it('add requires the English name', async () => {
     const user = userEvent.setup();
     render();
@@ -37,9 +42,57 @@ describe('subjects page', () => {
     expect(api.addSubject).toHaveBeenCalledWith('siripura', {
       nameEn: 'Agriculture',
       nameSi: '',
-      short: 'Agricultur',
+      short: 'Agri',
       color: '#E2EEE0',
     });
+  });
+
+  it('save shows the loading state while pending, then closes', async () => {
+    let resolve!: () => void;
+    vi.mocked(api.addSubject).mockReturnValue(new Promise<void>((r) => { resolve = r; }));
+    const user = userEvent.setup();
+    render();
+    await user.click(screen.getByRole('button', { name: '+ Add subject' }));
+    const dialog = screen.getByRole('dialog');
+    await user.type(within(dialog).getByLabelText('Name in English'), 'Agriculture');
+    await user.click(within(dialog).getByRole('button', { name: 'Add subject' }));
+    const saving = await within(dialog).findByRole('button', { name: 'Saving…' });
+    expect(saving).toHaveAttribute('aria-busy', 'true');
+    expect(saving).toBeDisabled();
+    resolve();
+    await waitFor(() => expect(screen.queryByRole('dialog')).not.toBeInTheDocument());
+  });
+
+  it('suggests a unique short name from the English name until the user edits it', async () => {
+    const user = userEvent.setup();
+    render();
+    await user.click(screen.getByRole('button', { name: '+ Add subject' }));
+    const dialog = screen.getByRole('dialog');
+    const short = within(dialog).getByLabelText('Short name');
+    await user.type(within(dialog).getByLabelText('Name in English'), 'Information & Communication Technology');
+    expect(short).toHaveValue('ICT');
+    await user.clear(within(dialog).getByLabelText('Name in English'));
+    await user.type(within(dialog).getByLabelText('Name in English'), 'English Literature');
+    expect(short).toHaveValue('ELit');
+    await user.clear(short);
+    await user.type(short, 'EngLit');
+    await user.type(within(dialog).getByLabelText('Name in English'), ' A');
+    expect(short).toHaveValue('EngLit');
+  });
+
+  it('makes the suggestion unique and flags a short name that already exists', async () => {
+    const user = userEvent.setup();
+    render();
+    await user.click(screen.getByRole('button', { name: '+ Add subject' }));
+    const dialog = screen.getByRole('dialog');
+    const short = within(dialog).getByLabelText('Short name');
+    await user.type(within(dialog).getByLabelText('Name in English'), 'Bud');
+    expect(short).toHaveValue('Bud2');
+    await user.clear(short);
+    await user.type(short, 'maths');
+    expect(within(dialog).getByText('Another subject already uses this short name')).toBeInTheDocument();
+    await user.click(within(dialog).getByRole('button', { name: 'Add subject' }));
+    expect(api.addSubject).not.toHaveBeenCalled();
   });
 
   it('load standard skips subjects already present and reports the count', async () => {

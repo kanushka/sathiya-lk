@@ -2,7 +2,7 @@
 // Copyright (C) 2026 Kanushka Gayan
 
 import { describe, expect, it } from 'vitest';
-import { pickName, splitTitle, TEACHER_TITLE_LABELS, teacherDisplayName } from './names';
+import { normalizeTeacher, pickName, splitTitle, TEACHER_TITLE_LABELS, teacherDisplayName } from './names';
 import { TEACHER_TITLES } from './types';
 
 describe('pickName', () => {
@@ -37,9 +37,24 @@ describe('splitTitle', () => {
   });
 });
 
+describe('normalizeTeacher', () => {
+  it('reads a legacy Thero title as Ven. with Thero after the name', () => {
+    expect(normalizeTeacher({ name: 'Ananda', title: 'Thero' })).toEqual({ name: 'Ananda Thero', title: 'Ven.' });
+    expect(normalizeTeacher({ name: 'Ananda Thero', title: 'Thero' })).toEqual({ name: 'Ananda Thero', title: 'Ven.' });
+    expect(normalizeTeacher({ name: ' Ananda thero ', title: 'Thero' })).toEqual({ name: 'Ananda thero', title: 'Ven.' });
+  });
+  it('leaves other teachers untouched and keeps extra fields', () => {
+    const t = { id: 'x', name: 'N. Perera', title: 'Mrs' as const };
+    expect(normalizeTeacher(t)).toBe(t);
+  });
+  it('displays a legacy Thero record as Ven. <name> Thero', () => {
+    expect(teacherDisplayName({ name: 'Ananda', title: 'Thero' as never })).toBe('Ven. Ananda Thero');
+  });
+});
+
 describe('teacherDisplayName', () => {
   it('lists the titles in a fixed order', () => {
-    expect(TEACHER_TITLES).toEqual(['Mr', 'Mrs', 'Miss', 'Ms', 'Dr', 'Rev', 'Ven.', 'Thero']);
+    expect(TEACHER_TITLES).toEqual(['Mr', 'Mrs', 'Miss', 'Ms', 'Dr', 'Rev', 'Ven.']);
   });
   it.each([
     ['Mr', 'Mr. N. Perera'],
@@ -49,7 +64,6 @@ describe('teacherDisplayName', () => {
     ['Dr', 'Dr. N. Perera'],
     ['Rev', 'Rev. N. Perera'],
     ['Ven.', 'Ven. N. Perera'],
-    ['Thero', 'N. Perera Thero'],
   ] as const)('en %s', (title, expected) => {
     expect(teacherDisplayName({ name: 'N. Perera', title })).toBe(expected);
     expect(teacherDisplayName({ name: 'N. Perera', title }, 'en')).toBe(expected);

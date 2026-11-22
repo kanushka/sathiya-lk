@@ -14,6 +14,7 @@ export interface ModalProps {
   footer?: ReactNode;
   width?: number;
   zoom?: number;
+  busy?: boolean;
   children: ReactNode;
 }
 
@@ -31,14 +32,14 @@ export function Modal(props: ModalProps) {
   return createPortal(<ModalPanel {...props} />, document.body);
 }
 
-function ModalPanel({ title, subtitle, onClose, footer, width = 560, zoom, children }: ModalProps) {
+function ModalPanel({ title, subtitle, onClose, footer, width = 560, zoom, busy = false, children }: ModalProps) {
   const { t } = useTranslation('shell');
   const titleId = useId();
   const panelRef = useRef<HTMLElement>(null);
   const bodyRef = useRef<HTMLDivElement>(null);
   const pressedOnBackdrop = useRef(false);
   const onCloseRef = useRef(onClose);
-  onCloseRef.current = onClose;
+  onCloseRef.current = busy ? () => undefined : onClose;
 
   useEffect(() => {
     const id = Symbol('modal');
@@ -85,11 +86,17 @@ function ModalPanel({ title, subtitle, onClose, footer, width = 560, zoom, child
     };
   }, []);
 
+  // A loading button is disabled, which drops focus to <body>; keep it in the dialog.
+  useEffect(() => {
+    const panel = panelRef.current;
+    if (busy && panel && !panel.contains(document.activeElement)) panel.focus();
+  }, [busy]);
+
   const onBackdropDown = (e: MouseEvent) => {
     pressedOnBackdrop.current = e.target === e.currentTarget;
   };
   const onBackdropClick = (e: MouseEvent) => {
-    if (e.target === e.currentTarget && pressedOnBackdrop.current) onClose();
+    if (e.target === e.currentTarget && pressedOnBackdrop.current) onCloseRef.current();
     pressedOnBackdrop.current = false;
   };
 
@@ -105,6 +112,7 @@ function ModalPanel({ title, subtitle, onClose, footer, width = 560, zoom, child
         ref={panelRef}
         role="dialog"
         aria-modal="true"
+        aria-busy={busy || undefined}
         aria-labelledby={titleId}
         tabIndex={-1}
         style={{ maxWidth: width }}
@@ -121,6 +129,7 @@ function ModalPanel({ title, subtitle, onClose, footer, width = 560, zoom, child
             icon="close"
             label={t('modal.close')}
             variant="subtle"
+            disabled={busy}
             onClick={onClose}
           />
         </header>

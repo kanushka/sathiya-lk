@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
 // Copyright (C) 2026 Kanushka Gayan
-import { SCHOOL_TYPES, type SchoolType } from '@sathiya/core';
+import { SCHOOL_TYPES, suggestStaffPrefix, type SchoolType } from '@sathiya/core';
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Button } from '../../ui/Button';
@@ -25,6 +25,7 @@ export function StepSchool({ value, onChange, onNext, censusTaken, onReport }: S
   const { t } = useTranslation('register');
   const set = <K extends keyof SchoolDraft>(k: K, v: SchoolDraft[K]) => onChange({ ...value, [k]: v });
   const [cityTouched, setCityTouched] = useState(false);
+  const [prefixTouched, setPrefixTouched] = useState(() => value.staffPrefix !== '' && value.staffPrefix !== suggestStaffPrefix(value.nameEn));
   const prefixInvalid = value.staffPrefix !== '' && !prefixOk(value.staffPrefix);
   const censusMsg = censusTaken ? (
     <Trans
@@ -74,7 +75,11 @@ export function StepSchool({ value, onChange, onNext, censusTaken, onReport }: S
           label={t('school.noCensus')}
         />
         <Field label={t('school.nameEn')}>
-          <input className={inputClass} value={value.nameEn} onChange={(e) => set('nameEn', e.target.value)} />
+          <input
+            className={inputClass}
+            value={value.nameEn}
+            onChange={(e) => onChange({ ...value, nameEn: e.target.value, ...(prefixTouched ? {} : { staffPrefix: suggestStaffPrefix(e.target.value) }) })}
+          />
         </Field>
         <Field label={t('school.nameSi')}>
           <input
@@ -141,7 +146,12 @@ export function StepSchool({ value, onChange, onNext, censusTaken, onReport }: S
             maxLength={5}
             spellCheck={false}
             value={value.staffPrefix}
-            onChange={(e) => set('staffPrefix', e.target.value.toUpperCase().replace(/[^A-Z]/g, ''))}
+            placeholder={suggestStaffPrefix(value.nameEn)}
+            onChange={(e) => {
+              const staffPrefix = e.target.value.toUpperCase().replace(/[^A-Z]/g, '');
+              setPrefixTouched(staffPrefix !== '');
+              set('staffPrefix', staffPrefix);
+            }}
           />
         </Field>
       </div>

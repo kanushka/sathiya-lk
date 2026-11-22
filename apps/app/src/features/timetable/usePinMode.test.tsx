@@ -62,6 +62,33 @@ describe('usePinMode', () => {
     expect(pin.message).toBe('Science pinned to Wednesday, period 4.');
   });
 
+  it('announces the last pin even when an earlier save finishes after it', async () => {
+    const resolvers: Array<(v: { entryId: string }) => void> = [];
+    setup({ saveEntry: vi.fn(() => new Promise<{ entryId: string }>((r) => resolvers.push(r))) });
+    act(() => pin.start(science));
+    const free: Array<[DayIndex, number]> = [];
+    for (const d of [0, 1, 2, 3, 4] as DayIndex[]) for (let p = 1; p <= 8; p++) if (cell(d, p) === 'free') free.push([d, p]);
+    const [a, b] = [free[0]!, free.find(([d]) => d !== free[0]![0])!];
+    let first!: Promise<void>;
+    let second!: Promise<void>;
+    act(() => {
+      first = pin.toggle(...a);
+    });
+    act(() => {
+      second = pin.toggle(...b);
+    });
+    await act(async () => {
+      resolvers[1]!({ entryId: 'b' });
+      await second;
+    });
+    await act(async () => {
+      resolvers[0]!({ entryId: 'a' });
+      await first;
+    });
+    const days = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday'];
+    expect(pin.message).toBe(`Science pinned to ${days[b[0]]}, period ${b[1]}.`);
+  });
+
   it('unpins a pinned slot', async () => {
     const api = setup();
     act(() => pin.start(science));

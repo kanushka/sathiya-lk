@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
 // Copyright (C) 2026 Kanushka Gayan
 import { assertFails, assertSucceeds, type RulesTestEnvironment } from '@firebase/rules-unit-testing';
-import { paths } from '@sathiya/core';
+import { paths, STANDARD_SUBJECTS } from '@sathiya/core';
 import { afterAll, beforeAll, beforeEach, describe, it } from 'vitest';
 import { as, initEnv, type Role } from './setup';
 
@@ -223,6 +223,12 @@ describe('teachers', () => {
       await assertSucceeds(update('admin', t2, { title: 'Ven.' }));
       await assertFails(update('admin', t1, { title: 'King' }));
       await assertFails(update('admin', t1, { title: 3 }));
+      await assertFails(update('admin', t1, { title: 'Thero' }));
+    });
+
+    it('leaves lastLoginAt to the recordSignIn callable', async () => {
+      await assertFails(update('admin', t1, { lastLoginAt: 1 }));
+      await assertFails(update('teacher', t1, { lastLoginAt: 1 }));
     });
     deny(
       [['teacher', t1], ['super', t1], ['otherAdmin', t1], ['anon', t1], ['disabledAdmin', `${paths.teachers('sd')}/td`]],
@@ -255,12 +261,7 @@ describe.each(['subjects', 'periodTemplates', 'classes', 'grades'] as const)('se
       (r, p) => set(r, p, { name: 'x' }),
     );
     deny([['teacher', d], ['super', d]], (r, p) => update(r, p, { name: 'changed' }));
-    if (coll === 'grades') {
-      allow([['admin', d]], del);
-      deny([['teacher', d], ['super', d], ['otherAdmin', d]], del);
-    } else {
-      deny([['admin', d], ['super', d]], del);
-    }
+    deny([['admin', d], ['adminTid', d], ['super', d], ['teacher', d], ['otherAdmin', d]], del);
   });
 });
 
@@ -513,6 +514,21 @@ describe('users/{uid}', () => {
     });
     deny([['teacher', ua], ['super', ua], ['anon', un]], (r, p) => set(r, p, { lang: 'en' }));
     deny([['admin', ua]], del);
+  });
+});
+
+describe('load standard subjects', () => {
+  it('admin can batch-add the standard list to a school', async () => {
+    const fs = db('admin');
+    const batch = fs.batch();
+    for (const s of STANDARD_SUBJECTS) batch.set(fs.collection(paths.subjects('s1')).doc(), { ...s });
+    await assertSucceeds(batch.commit());
+  });
+  it('a disabled school cannot', async () => {
+    const fs = db('disabledAdmin');
+    const batch = fs.batch();
+    batch.set(fs.collection(paths.subjects('sd')).doc(), { ...STANDARD_SUBJECTS[0] });
+    await assertFails(batch.commit());
   });
 });
 

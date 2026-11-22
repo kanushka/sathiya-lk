@@ -4,6 +4,7 @@
     "long": { "0": "Monday", "1": "Tuesday", "2": "Wednesday", "3": "Thursday", "4": "Friday" }
   },
   "periods": { "period": "Period", "periodN": "P{{n}}", "interval": "Interval", "free": "Free" },
+  "busy": { "saving": "Saving…", "deleting": "Deleting…", "publishing": "Publishing…", "working": "Working…", "stillWorking": "Still working…" },
   "buttons": {
     "save": "Save", "cancel": "Cancel", "close": "Close", "add": "Add",
     "delete": "Delete", "print": "Print", "edit": "Edit"

@@ -1,14 +1,14 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
 // Copyright (C) 2026 Kanushka Gayan
 
-import type { Entry, SchoolContext } from '@sathiya/core';
+import { teacherDisplayName, type Entry, type SchoolContext } from '@sathiya/core';
 import { C, ctx, entries, entry, S, T } from '@sathiya/core/fixtures';
-import { fireEvent, screen, waitFor, within } from '@testing-library/react';
+import { cleanup, fireEvent, screen, waitFor, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { Route, Routes } from 'react-router-dom';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { renderWithSchool } from '../../test/renderWithSchool';
-import { TeacherIndexRedirect, TeacherViewPage } from './TeacherViewPage';
+import { sortedTeachers, TeacherIndexRedirect, TeacherViewPage } from './TeacherViewPage';
 import { TimetableApiContext, type TimetableApi } from './useTimetable';
 
 const ro = vi.hoisted(() => ({ value: false }));
@@ -59,9 +59,38 @@ async function chooseSubject(name: string) {
 
 beforeEach(() => {
   ro.value = false;
+  sessionStorage.clear();
 });
 
 describe('TeacherViewPage', () => {
+  it('reopens the last viewed teacher and honours ?teacher=', () => {
+    sessionStorage.clear();
+    setup(T.perera);
+    expect(teacherButton()).toHaveTextContent('Mrs. N. Perera');
+    cleanup();
+    setup(T.ananda, { route: '/admin/timetable/teacher' });
+    expect(teacherButton()).toHaveTextContent('Mrs. N. Perera');
+    cleanup();
+    setup(T.ananda, { route: `/admin/timetable/teacher?teacher=${T.ananda}` });
+    expect(teacherButton()).toHaveTextContent('Ven. Ananda Thero');
+    cleanup();
+    sessionStorage.clear();
+    setup(T.ananda, { route: '/admin/timetable/teacher?teacher=nope' });
+    expect(teacherButton()).toHaveTextContent(teacherDisplayName(sortedTeachers(ctx)[0]!));
+    sessionStorage.clear();
+  });
+
+  it('links an empty teacher list to Add teacher', () => {
+    setup(T.ananda, { ctx: { ...ctx, teachers: [] }, route: '/admin/timetable/teacher' });
+    expect(screen.getByText('No teachers yet')).toBeInTheDocument();
+    expect(screen.getByRole('link', { name: '+ Add teacher' })).toHaveAttribute('href', '/admin/teachers?new=1');
+  });
+
+  it('links a missing default template to Period templates', () => {
+    setup(T.ananda, { ctx: { ...ctx, templates: [] } });
+    expect(screen.getByRole('link', { name: 'Go to period templates' })).toHaveAttribute('href', '/admin/templates');
+  });
+
   it('shows the teacher header and their lessons on default-template rows', () => {
     setup();
     expect(teacherButton()).toHaveTextContent('Ven. Ananda Thero · SCC042');

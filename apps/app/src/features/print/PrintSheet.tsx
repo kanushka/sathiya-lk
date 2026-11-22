@@ -22,15 +22,6 @@ function periodNumber(rows: TemplateRow[], index: number): number {
   return rows.slice(0, index + 1).filter((r) => r.type === 'period').length;
 }
 
-function Shield() {
-  return (
-    <svg width="56" height="56" viewBox="0 0 64 64" aria-hidden="true">
-      <path d="M32 4 L58 14 V32 C58 46 46 56 32 60 C18 56 6 46 6 32 V14 Z" fill="var(--brand)" />
-      <path d="M32 12 L50 19 V32 C50 42 42 49 32 52 C22 49 14 42 14 32 V19 Z" fill="none" stroke="var(--brand-2)" strokeWidth="2" />
-    </svg>
-  );
-}
-
 export function PrintSheet(props: Props) {
   const { t } = useTranslation('print');
   const { t: tc } = useTranslation('common');
@@ -146,7 +137,7 @@ export function PrintSheet(props: Props) {
   return (
     <div className="print-sheet">
       <header style={{ display: 'flex', alignItems: 'center', gap: 16, paddingBottom: 14, borderBottom: '3px solid var(--brand)' }}>
-        {logoUrl ? <img src={logoUrl} alt="" width={56} height={56} style={{ objectFit: 'contain' }} /> : <Shield />}
+        {logoUrl && <img data-testid="school-logo" src={logoUrl} alt="" width={56} height={56} style={{ objectFit: 'contain' }} />}
         <div style={{ flex: 1 }}>
           <p style={{ margin: 0, fontSize: 20, fontWeight: 800 }}>{snapshot.schoolName.nameEn}</p>
           {snapshot.schoolName.nameSi && <p style={{ margin: '2px 0 0', fontSize: 14, color: '#3B4560' }}>{snapshot.schoolName.nameSi}</p>}

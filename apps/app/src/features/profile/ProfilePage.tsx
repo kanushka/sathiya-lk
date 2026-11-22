@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
 // Copyright (C) 2026 Kanushka Gayan
-import type { School } from '@sathiya/core';
+import { suggestStaffPrefix, type School } from '@sathiya/core';
 import { useEffect, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useSchool } from '../../app/SchoolProvider';
@@ -9,6 +9,7 @@ import { useReadOnly } from '../../ui/AdminLayout';
 import { Alert } from '../../ui/Alert';
 import { Button } from '../../ui/Button';
 import { Field, inputClass } from '../../ui/Field';
+import { PageHeader } from '../../ui/PageHeader';
 import { useToast } from '../../ui/Toast';
 import { uploadLogo } from '../register/api';
 import { BrandPreview } from '../register/BrandPreview';
@@ -37,6 +38,7 @@ export function ProfilePage() {
     primary: school.colors.primary,
     second: school.colors.second,
   }));
+  const [prefixTouched, setPrefixTouched] = useState(true);
   const [logo, setLogo] = useState<File | null>(null);
   const [logoUrl, setLogoUrl] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
@@ -83,8 +85,7 @@ export function ProfilePage() {
 
   return (
     <div>
-      <h1 className="mb-1.5 mt-0 text-2xl font-bold text-ink">{t('page.title')}</h1>
-      <p className="mb-5 text-sm text-ink-soft">{t('page.subtitle')}</p>
+      <PageHeader title={t('page.title')} subtitle={t('page.subtitle')} />
       <form
         className="flex flex-wrap gap-6 rounded-[14px] border border-line-soft bg-white p-6"
         onSubmit={(e) => {
@@ -94,7 +95,14 @@ export function ProfilePage() {
       >
         <fieldset disabled={readOnly} className="m-0 flex min-w-[300px] flex-[1_1_320px] flex-col gap-3.5 border-0 p-0">
           <Field label={t('fields.nameEn')} error={nameOk ? undefined : t('fields.required')}>
-            <input className={inputClass} value={draft.nameEn} onChange={(e) => set('nameEn', e.target.value)} />
+            <input
+              className={inputClass}
+              value={draft.nameEn}
+              onChange={(e) => {
+                const nameEn = e.target.value;
+                setDraft((d) => ({ ...d, nameEn, ...(prefixTouched ? {} : { staffPrefix: suggestStaffPrefix(nameEn) }) }));
+              }}
+            />
           </Field>
           <Field label={t('fields.nameSi')}>
             <input lang="si" className={inputClass} value={draft.nameSi} onChange={(e) => set('nameSi', e.target.value)} />
@@ -123,7 +131,12 @@ export function ProfilePage() {
               maxLength={5}
               spellCheck={false}
               value={draft.staffPrefix}
-              onChange={(e) => set('staffPrefix', e.target.value.toUpperCase().replace(/[^A-Z]/g, ''))}
+              placeholder={suggestStaffPrefix(draft.nameEn)}
+              onChange={(e) => {
+                const staffPrefix = e.target.value.toUpperCase().replace(/[^A-Z]/g, '');
+                setPrefixTouched(staffPrefix !== '');
+                set('staffPrefix', staffPrefix);
+              }}
             />
           </Field>
           <LogoUpload value={logo} currentUrl={school.logoUrl ?? null} onChange={setLogo} onPreview={setLogoUrl} />
@@ -136,8 +149,8 @@ export function ProfilePage() {
         <div className="flex flex-[1_1_260px] flex-col gap-4">
           <BrandPreview name={draft.nameEn} nameSi={draft.nameSi} primary={draft.primary} second={draft.second} logoUrl={logoUrl} />
           {!readOnly && (
-            <Button variant="primary" size="lg" type="submit" disabled={!canSave}>
-              {saving ? t('page.saving') : t('page.save')}
+            <Button variant="primary" size="lg" type="submit" loading={saving} loadingLabel={t('page.saving')} disabled={!canSave}>
+              {t('page.save')}
             </Button>
           )}
         </div>

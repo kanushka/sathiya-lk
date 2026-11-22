@@ -27,6 +27,18 @@ describe('Sidebar', () => {
     expect(document.querySelector('label[for]')).toBeNull();
   });
 
+  it('shows only the school name when no logo was uploaded', () => {
+    renderSidebar();
+    expect(screen.getByText('Siripura Central College')).toBeInTheDocument();
+    expect(screen.queryByTestId('school-logo')).toBeNull();
+    expect(document.querySelector('nav svg text')).toBeNull();
+  });
+
+  it('shows the uploaded logo', () => {
+    renderWithSchool(<Sidebar />, { ctx: { ...ctx, school: { ...ctx.school, logoUrl: 'https://example.test/logo.png' } }, years: twoYears, route: '/admin' });
+    expect(screen.getByTestId('school-logo')).toHaveAttribute('src', 'https://example.test/logo.png');
+  });
+
   it('lists the admin nav paths', () => {
     expect(navItems.map((i) => i.path)).toEqual([
       '/admin',
@@ -66,10 +78,17 @@ describe('Sidebar', () => {
     await user.click(screen.getByRole('button', { name: 'Collapse menu' }));
     expect(localStorage.getItem('sathiya.sidebar')).toBe('collapsed');
     expect(screen.getByRole('navigation')).toHaveAttribute('data-collapsed', 'true');
-    expect(screen.queryByText('Siripura Central College')).not.toBeInTheDocument();
+    expect(screen.getByText('Siripura Central College')).toHaveClass('sr-only');
     expect(screen.getByRole('link', { name: 'Subjects' })).toHaveAttribute('title', 'Subjects');
     await user.click(screen.getByRole('button', { name: 'Expand menu' }));
     expect(localStorage.getItem('sathiya.sidebar')).toBe('expanded');
+  });
+
+  it('keeps the school name for screen readers when collapsed without a logo', () => {
+    localStorage.setItem('sathiya.sidebar', 'collapsed');
+    renderSidebar();
+    expect(screen.getByText('Siripura Central College')).toHaveClass('sr-only');
+    expect(screen.queryByTestId('school-logo')).toBeNull();
   });
 
   it('starts collapsed from storage', () => {
