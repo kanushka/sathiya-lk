@@ -59,7 +59,7 @@ describe('pinOverlayCell', () => {
   it('greys out a row with no period of the class', () => {
     const o = overlay({ kind: 'none' });
     expect(o.disabled).toBe(true);
-    expect(o.className).toContain('bg-[#F6F7F9]');
+    expect(o.className).toContain('bg-surface-2');
     expect(o.label).toBe('Wednesday, period 4, 10:00–10:40: no 6B period at this time');
     renderWithI18n(<>{o.content}</>);
     expect(screen.getByText('No 6B period')).toBeInTheDocument();

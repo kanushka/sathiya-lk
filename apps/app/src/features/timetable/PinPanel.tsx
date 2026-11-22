@@ -22,7 +22,7 @@ export function PinHeader({ pin, hint, readOnly }: { pin: PinMode; hint: string;
       />
     );
   }
-  return readOnly ? null : <p className="mb-3.5 rounded-[10px] border border-line bg-white px-3.5 py-2.5 text-[13px] text-ink-soft">{hint}</p>;
+  return readOnly ? null : <p className="mb-3.5 rounded-lg border border-line bg-white px-3.5 py-2.5 text-[13px] text-ink-soft">{hint}</p>;
 }
 
 export interface PinSectionProps {
@@ -50,7 +50,7 @@ export function PinSection({ pin, teacher, teacherRows, className, children, foo
         />
       )}
       {children}
-      <p role="status" className="mx-1 mb-0 mt-3 min-h-[1px] text-[13px] font-semibold text-[#1F6B34] empty:mt-0">
+      <p role="status" className="mx-1 mb-0 mt-3 min-h-[1px] text-[13px] font-semibold text-success empty:mt-0">
         {pin.message}
       </p>
       {footer}
