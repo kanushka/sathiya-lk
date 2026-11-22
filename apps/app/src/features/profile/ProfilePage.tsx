@@ -6,6 +6,7 @@ import { useTranslation } from 'react-i18next';
 import { useSchool } from '../../app/SchoolProvider';
 import { applyBrand } from '../../lib/theme';
 import { useReadOnly } from '../../ui/AdminLayout';
+import { Alert } from '../../ui/Alert';
 import { Button } from '../../ui/Button';
 import { Field, inputClass } from '../../ui/Field';
 import { useToast } from '../../ui/Toast';
@@ -128,9 +129,7 @@ export function ProfilePage() {
           <LogoUpload value={logo} currentUrl={school.logoUrl ?? null} onChange={setLogo} onPreview={setLogoUrl} />
           <ColorSwatches label={tr('brand.primary')} swatches={PRIMARY_SWATCHES} value={draft.primary} onChange={(hex) => pick('primary', hex)} />
           {isLowContrast(draft.primary) && (
-            <p role="alert" className="m-0 rounded-lg border border-[#E8C3C3] bg-[#FBEFEF] px-3 py-2 text-sm font-semibold text-danger">
-              {t('contrast.low', { ratio: contrastWithWhite(draft.primary).toFixed(1) })}
-            </p>
+            <Alert tone="danger">{t('contrast.low', { ratio: contrastWithWhite(draft.primary).toFixed(1) })}</Alert>
           )}
           <ColorSwatches label={tr('brand.second')} swatches={SECOND_SWATCHES} value={draft.second} onChange={(hex) => pick('second', hex)} />
         </fieldset>

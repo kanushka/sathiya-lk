@@ -7,6 +7,7 @@ import { Button } from '../../ui/Button';
 import { Field, inputClass } from '../../ui/Field';
 import { Modal } from '../../ui/Modal';
 import { useToast } from '../../ui/Toast';
+import { FormError } from '../../ui/FormError';
 import { ColorSwatches } from '../register/ColorSwatches';
 import * as api from './api';
 import { DEFAULT_SUBJECT_COLOR, SHORT_MAX, SUBJECT_SWATCHES } from './palette';
@@ -52,9 +53,7 @@ export function SubjectModal({ onClose }: { onClose: () => void }) {
       footer={
         <>
           {saveError && (
-            <p role="alert" className="mr-auto text-sm font-medium text-danger">
-              {t('modal.saveFailed')}
-            </p>
+            <FormError className="mr-auto">{t('modal.saveFailed')}</FormError>
           )}
           <Button onClick={onClose}>{t('modal.cancel')}</Button>
           <Button variant="primary" type="submit" form="subject-form" disabled={saving}>
