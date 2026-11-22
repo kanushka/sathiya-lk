@@ -3,6 +3,7 @@
 import { useId, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { inputClass } from '../../ui/Field';
+import { FormError } from '../../ui/FormError';
 import { cx } from '../../ui/cx';
 
 export const PRIMARY_SWATCHES = ['#7A1F3D', '#1D3E7A', '#0E6B6A', '#2F6B2A', '#5B2C83', '#14213D'];
@@ -75,9 +76,7 @@ export function ColorSwatches({ label, swatches, value, onChange, hint }: ColorS
           className={cx(inputClass, 'h-9 w-32 font-mono')}
         />
         {customInvalid && (
-          <span role="alert" className="text-xs font-medium text-danger">
-            {t('brand.customError')}
-          </span>
+          <FormError>{t('brand.customError')}</FormError>
         )}
       </div>
       {hint && <p className="m-0 text-xs text-ink-muted">{hint}</p>}

@@ -3,6 +3,7 @@
 import { useEffect, useId, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Button } from '../../ui/Button';
+import { FormError } from '../../ui/FormError';
 
 export const MAX_LOGO_BYTES = 1024 * 1024;
 const ACCEPT = ['image/png', 'image/svg+xml'];
@@ -82,9 +83,7 @@ export function LogoUpload({ value, currentUrl, onChange, onPreview }: LogoUploa
         </div>
       </div>
       {error && (
-        <p role="alert" className="m-0 text-xs font-medium text-danger">
-          {error}
-        </p>
+        <FormError>{error}</FormError>
       )}
     </div>
   );
