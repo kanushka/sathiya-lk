@@ -71,8 +71,8 @@ export function useTimetable(): UseTimetable {
 
   const entries = useMemo(() => {
     const base = serverEntries.filter((e) => !overlay.removed.has(e.id) && !overlay.added.has(e.id));
-    const ids = new Set(base.map((e) => e.id));
-    const slots = new Set(base.map(sameSlotKey));
+    const ids = new Set(serverEntries.map((e) => e.id));
+    const slots = new Set(serverEntries.map(sameSlotKey));
     const added = [...overlay.added.entries()].filter(([id, v]) =>
       v.serverId ? !ids.has(v.serverId) : !id.startsWith('tmp-') || !slots.has(sameSlotKey(v.entry)),
     );
@@ -127,7 +127,7 @@ export function useTimetable(): UseTimetable {
         setOverlay((o) => {
           if (o.added.get(id) !== rec) return o;
           const added = new Map(o.added);
-          if (alreadyOnServer) added.delete(id);
+          if (alreadyOnServer || o.removed.has(res.entryId)) added.delete(id);
           else added.set(id, { ...rec, settled: true, serverId: res.entryId });
           return { ...o, added };
         });
@@ -161,10 +161,13 @@ export function useTimetable(): UseTimetable {
         return true;
       }
       const targetId = pendingAdd?.serverId ?? id;
+      const server = serverRef.current.find((e) => e.id === targetId);
+      const twin = server && sameSlotKey(server);
       const rec: RemovedRec = { settled: false };
       setOverlay((o) => {
         const added = new Map(o.added);
         added.delete(id);
+        if (twin) for (const [k, v] of o.added) if (!v.settled && k.startsWith('tmp-') && sameSlotKey(v.entry) === twin) added.delete(k);
         return { added, removed: new Map(o.removed).set(targetId, rec) };
       });
       setInflight((n) => n + 1);
