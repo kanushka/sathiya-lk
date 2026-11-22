@@ -17,7 +17,7 @@ Production deploys only from `main`, after the same build was checked on staging
 5. Hosting: add two sites, `sathiya-lk-staging-web` and `sathiya-lk-staging-app` (these ids are what `.firebaserc` maps; if the console gives different ids, update `.firebaserc`).
 6. Project settings → add two web apps (website and app). Copy their config into `stagingWebConfig` / `stagingAppConfig` in `packages/firebase-config/src/index.ts` (replace the `REPLACE_WITH_...` placeholders; these are public values, not secrets). The app picks them when built with `VITE_FIREBASE_ENV=staging` (already set in `apps/app/.env.staging`).
 7. App Check: follow "App Check" below for `sathiya-lk-staging`, with a key for `app.staging.sathiya.kanushka.com`, committed in `apps/app/.env.staging`. For a debug token (local testing against staging): App Check → Apps → Manage debug tokens; put it in `apps/app/.env.staging.local` (git-ignored) as `VITE_APPCHECK_DEBUG_TOKEN`. Staging-mode builds honour it because `.env.staging` sets `VITE_APPCHECK_ALLOW_DEBUG=true`; production-mode builds never use it.
-8. Email: install the Trigger Email from Firestore extension in the staging project and set up Resend as in `docs/email/setup.md` (use a sender on a domain Resend has verified). Functions params for staging live in `functions/.env.sathiya-lk-staging` (URLs and `MAIL_SUBJECT_PREFIX=[staging]`, so test mails are marked). Authentication → Templates → Customize action URL → `https://app.staging.sathiya.kanushka.com/auth/action` (required: verify/reset links use this setting, see `docs/email/setup.md` §4).
+8. Email: install the Trigger Email from Firestore extension in the staging project and set up Resend as in `docs/email/setup.md` (use a sender on a domain Resend has verified). Functions params for staging live in `functions/.env.sathiya-lk-staging` (URLs and `MAIL_SUBJECT_PREFIX=[staging]`, so test mails are marked). Authentication → Settings → Authorized domains → add `app.staging.sathiya.kanushka.com`. No custom action URL is needed: `sendAuthEmail` puts verify/reset links on `APP_URL/auth/action` itself (see `docs/email/setup.md` §4).
 9. Custom domains: Hosting → connect `staging.sathiya.kanushka.com` to the staging `web` site and `app.staging.sathiya.kanushka.com` to the staging `app` site; add the DNS records shown.
 10. Deploy rules/indexes once with the commands below.
 
@@ -31,7 +31,7 @@ firebase deploy -P staging --only hosting,functions,firestore,storage
 The same can be run from GitHub Actions: Actions → "Deploy staging" → Run workflow. It needs the repository secret `FIREBASE_SERVICE_ACCOUNT_STAGING` (JSON key of a service account in the staging project with Firebase Admin and Cloud Functions Admin roles; also Service Account User on the default compute service account).
 
 ## 3. Deploy to production
-From `main`, after checking the change on staging. Before the first production deploy, do "App Check" below for `sathiya-lk` and the console steps in `docs/email/setup.md` (including the custom Auth action URL `https://app.sathiya.kanushka.com/auth/action`).
+From `main`, after checking the change on staging. Before the first production deploy, do "App Check" below for `sathiya-lk` and the console steps in `docs/email/setup.md` (no custom Auth action URL is needed).
 ```bash
 pnpm install --frozen-lockfile
 pnpm --filter functions build
