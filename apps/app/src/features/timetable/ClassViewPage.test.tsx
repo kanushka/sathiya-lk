@@ -459,7 +459,7 @@ describe('ClassViewPage', () => {
       }
 
       it('assigns a group at the slot and enters group pin mode', async () => {
-        const api = setup();
+        const api = setupWith(entries6B.filter((e) => e.id !== 'e-religion-3-6'));
         await activate('Wednesday', 4);
         await userEvent.click(within(screen.getByRole('dialog')).getByRole('option', { name: /^Religion/ }));
         await userEvent.click(within(screen.getByRole('dialog')).getByRole('button', { name: 'Assign' }));
@@ -471,7 +471,7 @@ describe('ClassViewPage', () => {
         });
         expect(pinBar()).toHaveTextContent('Religion · 6A+6B');
         expect(pinBar()).toHaveTextContent('Buddhism – Ven. Ananda Thero · Catholicism – Rev. Fr. M. Silva · Islam – Mr. A. Rizan');
-        expect(pinBar()).toHaveTextContent('4 of 3 placed');
+        expect(pinBar()).toHaveTextContent('3 of 3 placed');
         expect(screen.getByLabelText('Pin mode legend')).toHaveTextContent('Free for all 3 teachers and 6A+6B');
         expect(cellNamed(/^Wednesday, period 4, 09:50–10:30: Religion 6A\+6B, pinned, click to unpin$/)).toBeInTheDocument();
         expect(cellNamed(/^Thursday, period 7, 12:10–12:50: pin Religion for 6A\+6B, over plan$/)).toBeInTheDocument();

@@ -180,7 +180,7 @@ describe('TeacherAssignPicker', () => {
   });
 
   it('moves a group class to the group step with the teacher locked and saves the group', async () => {
-    const h = setup(T.rizan, { day: 4, row: 5 });
+    const h = setup(T.rizan, { day: 4, row: 5 }, entries.filter((e) => e.id !== 'e-religion-3-6'));
     await pickSubject('Islam');
     const row = classOption(/^6B · Religion \(Islam\)/);
     await userEvent.click(row);

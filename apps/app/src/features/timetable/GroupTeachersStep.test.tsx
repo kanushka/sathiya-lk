@@ -14,6 +14,7 @@ const religion = ctx.grades.find((g) => g.id === G.g6)!.plan.find((p): p is Grou
 const extra: Teacher = { id: 't-extra', staffId: 'SCC099', title: 'Mr', name: 'B. Perera', isPrimary: false, subjectIds: [S.buddhism, S.catholicism], grades: [6], maxPerDay: 7 };
 const ctx2: SchoolContext = { ...ctx, teachers: [...ctx.teachers, extra] };
 const noReligion = entries6B.filter((e) => e.groupKey !== 'religion');
+const roomy = entries6B.filter((e) => e.id !== 'e-religion-3-6');
 
 const spec = (classIds: string[], teachers: [string, string, string] = [T.ananda, T.mSilva, T.rizan]): PinSpec => ({
   classIds,
@@ -25,7 +26,7 @@ const spec = (classIds: string[], teachers: [string, string, string] = [T.ananda
   groupKey: 'religion',
 });
 
-function setup(props: Partial<GroupTeachersStepProps> = {}, list: Entry[] = entries6B, school: SchoolContext = ctx) {
+function setup(props: Partial<GroupTeachersStepProps> = {}, list: Entry[] = roomy, school: SchoolContext = ctx) {
   const onConfirm = vi.fn();
   const onBack = vi.fn();
   renderWithSchool(<GroupTeachersStep classId={C.c6b} item={religion} slot={{ day: 2, period: 4 }} entries={list} onBack={onBack} onConfirm={onConfirm} {...props} />, {
@@ -42,7 +43,7 @@ describe('GroupTeachersStep', () => {
     const h = setup();
     const back = screen.getByRole('button', { name: 'Back to subjects' });
     expect(back).toHaveTextContent('Religion');
-    expect(back).toHaveTextContent('group · 3 options · 3/3');
+    expect(back).toHaveTextContent('group · 3 options · needs 1');
     await userEvent.click(back);
     expect(h.onBack).toHaveBeenCalled();
   });
@@ -94,7 +95,15 @@ describe('GroupTeachersStep', () => {
     expect(mate).toHaveAttribute('aria-pressed', 'false');
   });
 
-  it('keeps a mate already in the latest lesson removable even when at target', async () => {
+  it('leaves a mate that already has the target out of the latest lesson’s classes', async () => {
+    const h = setup({}, entries6B);
+    const mate = screen.getByRole('button', { name: '6A already has 3/3' });
+    expect(mate).toBeDisabled();
+    await userEvent.click(screen.getByRole('button', { name: 'Assign' }));
+    expect(h.onConfirm).toHaveBeenCalledWith(spec([C.c6b]), true);
+  });
+
+  it('keeps a preselected mate with room removable', async () => {
     setup();
     const mate = screen.getByRole('button', { name: /6A/ });
     expect(mate).toBeEnabled();
@@ -103,7 +112,7 @@ describe('GroupTeachersStep', () => {
   });
 
   it('flags a mate busy at the slot', () => {
-    setup({}, entries);
+    setup({}, entries.filter((e) => e.id !== 'e-religion-3-6'));
     expect(screen.getByRole('button', { name: /6A/ })).toHaveTextContent('✓ 6A · busy Wed P4');
   });
 
@@ -117,7 +126,7 @@ describe('GroupTeachersStep', () => {
   });
 
   it('opens an option as a searchable listbox, preferred first, and picking closes it', async () => {
-    setup({}, entries6B, ctx2);
+    setup({}, roomy, ctx2);
     await userEvent.click(optionRow('Buddhism'));
     expect(optionRow('Buddhism')).toHaveAttribute('aria-expanded', 'true');
     const input = screen.getByRole('combobox', { name: 'Search Buddhism teachers' });
@@ -137,7 +146,7 @@ describe('GroupTeachersStep', () => {
   });
 
   it('moves with arrows, picks with Enter and ignores IME composing', async () => {
-    setup({}, entries6B, ctx2);
+    setup({}, roomy, ctx2);
     await userEvent.click(optionRow('Buddhism'));
     const input = screen.getByRole('combobox', { name: 'Search Buddhism teachers' });
     const options = within(screen.getByRole('listbox')).getAllByRole('option');
@@ -152,7 +161,7 @@ describe('GroupTeachersStep', () => {
   });
 
   it('filters teachers by name or staff ID', async () => {
-    setup({}, entries6B, ctx2);
+    setup({}, roomy, ctx2);
     await userEvent.click(optionRow('Buddhism'));
     await userEvent.type(screen.getByRole('combobox', { name: 'Search Buddhism teachers' }), 'scc099');
     const options = within(screen.getByRole('listbox')).getAllByRole('option');
@@ -161,7 +170,7 @@ describe('GroupTeachersStep', () => {
   });
 
   it('blocks the same teacher on two options', async () => {
-    setup({}, entries6B, ctx2);
+    setup({}, roomy, ctx2);
     await userEvent.click(optionRow('Buddhism'));
     await userEvent.click(within(screen.getByRole('listbox')).getByRole('option', { name: /B\. Perera/ }));
     await userEvent.click(optionRow('Catholicism'));
@@ -172,7 +181,7 @@ describe('GroupTeachersStep', () => {
   });
 
   it('names the blockers and offers pinning other slots when the slot is busy', async () => {
-    const h = setup({}, [...entries6B, entry('x', 2, 4, [C.c12a], [[S.buddhism, T.ananda]])]);
+    const h = setup({}, [...roomy, entry('x', 2, 4, [C.c12a], [[S.buddhism, T.ananda]])]);
     expect(optionRow('Buddhism')).toHaveTextContent('⚠ busy');
     expect(screen.getByText('Ven. Ananda Thero · Teaching 12A · Buddhism on Wed P4. Pin the other free slots instead.')).toBeInTheDocument();
     expect(screen.queryByRole('button', { name: 'Assign' })).not.toBeInTheDocument();
@@ -196,7 +205,7 @@ describe('GroupTeachersStep', () => {
   });
 
   it('shows a busy note on a busy candidate', async () => {
-    setup({}, [...entries6B, entry('x', 2, 4, [C.c12a], [[S.buddhism, T.ananda]])], ctx2);
+    setup({}, [...roomy, entry('x', 2, 4, [C.c12a], [[S.buddhism, T.ananda]])], ctx2);
     await userEvent.click(optionRow('Buddhism'));
     expect(within(screen.getByRole('listbox')).getByRole('option', { name: /Ananda/ })).toHaveTextContent('SCC042 · busy Wed P4 · Teaching 12A · Buddhism');
   });

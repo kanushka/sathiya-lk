@@ -9,6 +9,8 @@ import { describe, expect, it, vi } from 'vitest';
 import { renderWithSchool } from '../../test/renderWithSchool';
 import { AssignPicker, type AssignPickerProps } from './AssignPicker';
 
+const roomy = entries6B.filter((e) => e.id !== 'e-religion-3-6');
+
 function setup(props: Partial<AssignPickerProps> = {}, entries: Entry[] = entries6B) {
   const handlers = {
     onClose: vi.fn(),
@@ -191,7 +193,7 @@ describe('AssignPicker', () => {
     });
 
     it('Assign saves one group entry at the slot, then starts pin mode and closes', async () => {
-      const h = setup();
+      const h = setup({}, roomy);
       await pickSubject('Religion');
       await userEvent.click(screen.getByRole('button', { name: 'Assign' }));
       expect(h.onSave).toHaveBeenCalledWith({ day: 2, period: 4, ...religionSpec([C.c6b, C.c6a]) });
@@ -211,7 +213,7 @@ describe('AssignPicker', () => {
     });
 
     it('pins other slots without saving when the slot is busy', async () => {
-      const h = setup({}, [...entries6B, entry('x', 2, 4, [C.c12a], [[S.buddhism, T.ananda]])]);
+      const h = setup({}, [...roomy, entry('x', 2, 4, [C.c12a], [[S.buddhism, T.ananda]])]);
       await pickSubject('Religion');
       expect(screen.getByText(/Ven\. Ananda Thero · Teaching 12A · Buddhism on Wed P4/)).toBeInTheDocument();
       await userEvent.click(screen.getByRole('button', { name: 'Pin other slots' }));
@@ -221,7 +223,7 @@ describe('AssignPicker', () => {
     });
 
     it('whole week: lists groups and starts pinning without saving', async () => {
-      const h = setup({ slot: null });
+      const h = setup({ slot: null }, roomy);
       expect(screen.getByText('Needed first · 11 subjects')).toBeInTheDocument();
       await pickSubject('Religion');
       expect(screen.getByRole('dialog', { name: 'Set teachers for Religion' })).toHaveTextContent('Whole week');

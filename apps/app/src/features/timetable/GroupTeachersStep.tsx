@@ -29,6 +29,7 @@ import { isComposing } from '../../ui/composing';
 import { cx } from '../../ui/cx';
 import { inputClass } from '../../ui/Field';
 import { Icon } from '../../ui/Icon';
+import { FullMateChip } from './FullMateChip';
 import { blockerText, classNames } from './conflictLabel';
 import { limitWarning, planItemColor, teacherReason } from './labels';
 import { initials, type GroupItem } from './pickerData';
@@ -79,8 +80,10 @@ export function GroupTeachersStep(props: GroupTeachersStepProps) {
     Object.fromEntries(options.map((s) => [s, s === lockedSubjectId ? (lockedTeacherId ?? null) : (preferred.get(s) ?? null)])),
   );
   const [classIds, setClassIds] = useState<string[]>(() => {
-    const init = initialClassIds ?? latestGroupSpec({ ctx, entries, classId, groupKey: item.key })?.classIds ?? [classId];
-    return [classId, ...mates.filter((m) => init.includes(m.id)).map((m) => m.id)];
+    if (initialClassIds) return [classId, ...mates.filter((m) => initialClassIds.includes(m.id)).map((m) => m.id)];
+    const latest = latestGroupSpec({ ctx, entries, classId, groupKey: item.key })?.classIds ?? [classId];
+    const hasRoom = (id: string) => classRemaining({ ctx, entries, classId: id, item: { groupKey: item.key } }).left > 0;
+    return [classId, ...mates.filter((m) => latest.includes(m.id) && hasRoom(m.id)).map((m) => m.id)];
   });
   const [open, setOpen] = useState<string | null>(null);
   const [query, setQuery] = useState('');
@@ -428,11 +431,7 @@ export function GroupTeachersStep(props: GroupTeachersStepProps) {
               const on = classIds.includes(m.id);
               const room = classRemaining({ ctx, entries, classId: m.id, item: { groupKey: item.key } });
               if (!on && room.left === 0) {
-                return (
-                  <ToggleChip key={m.id} pressed={false} disabled onToggle={() => {}}>
-                    {t('pin.classFull', { class: m.name, placed: room.placed, needed: room.needed })}
-                  </ToggleChip>
-                );
+                return <FullMateChip key={m.id} name={m.name} placed={room.placed} needed={room.needed} />;
               }
               const busy = !!slot && entries.some((e) => e.day === slot.day && e.period === slot.period && e.classIds.includes(m.id));
               return (

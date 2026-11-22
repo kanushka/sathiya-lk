@@ -33,6 +33,7 @@ import { inputClass } from '../../ui/Field';
 import { Icon } from '../../ui/Icon';
 import { Modal } from '../../ui/Modal';
 import { busyLabel } from './conflictLabel';
+import { FullMateChip } from './FullMateChip';
 import { GroupTeachersStep } from './GroupTeachersStep';
 import { placeThenPin } from './placeThenPin';
 import { teacherSubjects, type GroupItem } from './pickerData';
@@ -471,11 +472,7 @@ function TeacherAssignPickerBody({ teacherId, slot, entries, onClose, onSave, on
                   const on = mates.includes(m.id);
                   const room = classRemaining({ ctx, entries, classId: m.id, item: { subjectId: selected.option.subjectId } });
                   if (!on && room.left === 0) {
-                    return (
-                      <ToggleChip key={m.id} pressed={false} disabled onToggle={() => {}}>
-                        {t('pin.classFull', { class: m.name, placed: room.placed, needed: room.needed })}
-                      </ToggleChip>
-                    );
+                    return <FullMateChip key={m.id} name={m.name} placed={room.placed} needed={room.needed} />;
                   }
                   return (
                     <ToggleChip key={m.id} pressed={on} onToggle={() => setMates((cur) => (on ? cur.filter((x) => x !== m.id) : [...cur, m.id]))}>
