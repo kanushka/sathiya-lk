@@ -24,6 +24,8 @@ export interface MultiSelectProps<V extends string = string> {
   searchable?: boolean;
   searchPlaceholder?: string;
   maxChips?: number;
+  wrap?: boolean;
+  getRemoveLabel?: (option: SelectOption<V>) => string;
   selectAll?: boolean;
   id?: string;
   name?: string;
@@ -44,6 +46,8 @@ export function MultiSelect<V extends string = string>({
   searchable = options.length > 8,
   searchPlaceholder,
   maxChips = 3,
+  wrap = false,
+  getRemoveLabel,
   selectAll = true,
   id,
   name,
@@ -208,7 +212,8 @@ export function MultiSelect<V extends string = string>({
         className={cx(
           fieldBoxClass,
           fieldFocusWithinClass,
-          'flex min-h-10 cursor-pointer flex-nowrap items-center gap-1 overflow-hidden py-1 pl-1.5 pr-2.5',
+          'flex min-h-10 cursor-pointer items-center gap-1 py-1 pl-1.5 pr-2.5',
+          wrap ? 'flex-wrap' : 'flex-nowrap overflow-hidden',
         )}
       >
         {chips.map((o) => (
@@ -216,7 +221,7 @@ export function MultiSelect<V extends string = string>({
             key={o.value}
             disabled={disabled}
             removeTabIndex={-1}
-            removeLabel={t('multi.remove', { label: o.label })}
+            removeLabel={getRemoveLabel ? getRemoveLabel(o) : t('multi.remove', { label: o.label })}
             onRemove={() => remove(o.value)}
             className="min-w-0 max-w-[10rem]"
           >

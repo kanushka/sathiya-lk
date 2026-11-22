@@ -70,6 +70,20 @@ describe('MultiSelect', () => {
     expect(screen.getByText('0 of 6 selected')).toBeInTheDocument();
   });
 
+  it('wrap lets every chip show and flow onto more lines', () => {
+    setup({ value: ['g11', 'g6', 'g10', 'g9'], maxChips: Infinity, wrap: true });
+    expect(screen.getAllByRole('button', { name: /^Remove / })).toHaveLength(4);
+    expect(screen.queryByText(/^\+\d+$/)).toBeNull();
+    const box = screen.getByRole('combobox', { name: /^Grades/ }).parentElement!;
+    expect(box).toHaveClass('flex-wrap');
+    expect(box).not.toHaveClass('overflow-hidden');
+  });
+
+  it('uses getRemoveLabel for chip remove buttons', () => {
+    setup({ value: ['g6'], getRemoveLabel: (o) => `Drop ${o.label} here` });
+    expect(screen.getByRole('button', { name: 'Drop Grade 6 here' })).toBeInTheDocument();
+  });
+
   it('shows chips for the first maxChips values in option order and a +N chip for the rest', () => {
     setup({ value: ['g11', 'g6', 'g10', 'g9'], maxChips: 2 });
     const chips = screen.getAllByRole('button', { name: /^Remove / });
