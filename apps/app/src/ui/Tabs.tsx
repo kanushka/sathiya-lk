@@ -2,6 +2,7 @@
 // Copyright (C) 2026 Kanushka Gayan
 
 import type { ReactNode } from 'react';
+import { focusRingClass } from './Button';
 import { cx } from './cx';
 import { rovingKeyDown } from './roving';
 
@@ -46,7 +47,7 @@ export function Tabs<V extends string = string>({
             onClick={() => onChange(item.value)}
             className={cx(
               'relative -mb-px h-10 rounded-t-lg px-3 text-sm font-semibold transition-colors',
-              'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand focus-visible:ring-offset-2',
+              focusRingClass,
               selected
                 ? 'text-ink after:absolute after:inset-x-0 after:bottom-0 after:h-0.5 after:bg-brand'
                 : 'text-ink-muted hover:text-ink',

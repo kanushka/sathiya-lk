@@ -4,6 +4,9 @@
 import { forwardRef, type ButtonHTMLAttributes } from 'react';
 import { cx } from './cx';
 
+export const focusRingClass =
+  'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand focus-visible:ring-offset-2';
+
 export type ButtonVariant = 'primary' | 'secondary' | 'danger' | 'dangerSolid' | 'ghost' | 'onBrand' | 'subtle' | 'link';
 export type ButtonSize = 'sm' | 'md' | 'lg';
 
@@ -43,7 +46,7 @@ export function buttonClass({
 }: { variant?: ButtonVariant; size?: ButtonSize; square?: boolean } = {}): string {
   return cx(
     'inline-flex items-center justify-center gap-2 font-semibold transition-colors',
-    'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand focus-visible:ring-offset-2',
+    focusRingClass,
     'disabled:cursor-not-allowed disabled:opacity-[.45]',
     variants[variant],
     variant === 'link' ? 'text-sm' : (square ? squareSizes : sizes)[size],

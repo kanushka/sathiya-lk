@@ -2,6 +2,7 @@
 // Copyright (C) 2026 Kanushka Gayan
 
 import type { ReactNode } from 'react';
+import { focusRingClass } from './Button';
 import { cx } from './cx';
 
 export interface SwitchProps {
@@ -24,7 +25,7 @@ export function Switch({ checked, onChange, label, disabled, id, className }: Sw
       onClick={() => onChange(!checked)}
       className={cx(
         'inline-flex items-center gap-2.5 rounded-lg text-left text-sm',
-        'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand focus-visible:ring-offset-2',
+        focusRingClass,
         'disabled:cursor-not-allowed disabled:opacity-[.45]',
         'text-ink',
         className,

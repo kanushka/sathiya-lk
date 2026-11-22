@@ -2,6 +2,7 @@
 // Copyright (C) 2026 Kanushka Gayan
 
 import type { ReactNode } from 'react';
+import { focusRingClass } from './Button';
 import { cx } from './cx';
 import { Icon } from './Icon';
 
@@ -40,7 +41,7 @@ export function Chip({ children, onRemove, removeLabel, removeTabIndex, color, d
           }}
           className={cx(
             'flex h-5 w-5 shrink-0 items-center justify-center rounded text-ink-muted transition-colors hover:bg-black/10 hover:text-ink',
-            'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand focus-visible:ring-offset-2',
+            focusRingClass,
             'disabled:cursor-not-allowed disabled:hover:bg-transparent',
           )}
         >
@@ -68,7 +69,7 @@ export function ToggleChip({ pressed, onToggle, children, disabled, className }:
       onClick={onToggle}
       className={cx(
         'h-8 rounded-lg border px-3 text-[13px] font-semibold transition-colors',
-        'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand focus-visible:ring-offset-2',
+        focusRingClass,
         'disabled:cursor-not-allowed disabled:opacity-[.45]',
         pressed ? 'border-brand bg-brand/10 text-brand' : 'border-line-strong bg-white text-ink-soft hover:bg-surface',
         className,
