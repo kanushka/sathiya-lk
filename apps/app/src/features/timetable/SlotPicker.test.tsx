@@ -66,12 +66,12 @@ describe('SlotPicker', () => {
   });
 
   it('lists a busy teacher under Not available with the reason, not clickable', async () => {
-    setup({}, [...entries6B, entry('x', 2, 4, [C.c6a], [[S.science, T.gunasekara]])]);
+    setup({}, [...entries6B, entry('x', 2, 4, [C.c6a], [[S.science, T.perera]])]);
     await chooseSubject('Science');
     expect(screen.getByText('Not available (1)')).toBeInTheDocument();
-    expect(screen.queryByRole('button', { name: /Gunasekara/ })).not.toBeInTheDocument();
-    const item = screen.getByText('Mrs. S. Gunasekara').closest('li')!;
-    expect(item).toHaveTextContent('Busy · 6A Science');
+    expect(screen.queryByRole('button', { name: /Perera/ })).not.toBeInTheDocument();
+    const item = screen.getByText('Mrs. N. Perera').closest('li')!;
+    expect(item).toHaveTextContent('Teaching 6A · Science');
   });
 
   it('warns about a limit-reached teacher but still lets them be assigned', async () => {
@@ -119,5 +119,42 @@ describe('SlotPicker', () => {
   it('renders nothing for a slot outside the class template', () => {
     setup({ classId: C.c6c, day: 4, period: 8 });
     expect(screen.queryByRole('dialog')).not.toBeInTheDocument();
+  });
+
+  describe('preferred teacher', () => {
+    const before = (a: Element, b: Element) => !!(a.compareDocumentPosition(b) & Node.DOCUMENT_POSITION_FOLLOWING);
+
+    it('lists the teacher who already teaches the subject to the class first, tagged and preselected', async () => {
+      setup();
+      await chooseSubject('Sinhala');
+      const silva = screen.getByRole('button', { name: /Mr. R. Silva/ });
+      const others = within(screen.getByRole('dialog')).getAllByRole('button', { name: /Assign$/ });
+      expect(others[0]).toBe(silva);
+      expect(silva).toHaveTextContent('Teaches 6B Sinhala');
+      expect(screen.getByRole('button', { name: /Mrs. J. Ranasinghe/ })).not.toHaveTextContent('Teaches');
+      await waitFor(() => expect(silva).toHaveFocus());
+    });
+
+    it('prefers the teacher with the most periods of the subject in the class', async () => {
+      const more = [1, 2, 3, 5, 6, 7].map((p) => entry(`r${p}`, 4, p, [C.c6b], [[S.sinhala, T.ranasinghe]]));
+      setup({}, [...entries6B, ...more]);
+      await chooseSubject('Sinhala');
+      const ranasinghe = screen.getByRole('button', { name: /Mrs. J. Ranasinghe/ });
+      expect(within(screen.getByRole('dialog')).getAllByRole('button', { name: /Assign$/ })[0]).toBe(ranasinghe);
+      expect(ranasinghe).toHaveTextContent('Teaches 6B Sinhala');
+      expect(screen.getByRole('button', { name: /Mr. R. Silva/ })).not.toHaveTextContent('Teaches');
+    });
+
+    it('keeps a busy preferred teacher first with the busy detail, not selectable', async () => {
+      setup({}, [...entries6B, entry('x', 2, 4, [C.c6a], [[S.sinhala, T.rSilva]])]);
+      await chooseSubject('Sinhala');
+      expect(screen.queryByRole('button', { name: /Mr. R. Silva/ })).not.toBeInTheDocument();
+      const silva = screen.getByText('Mr. R. Silva').closest('li')!;
+      expect(silva).toHaveTextContent('Teaches 6B Sinhala');
+      expect(silva).toHaveTextContent('Teaching 6A · Sinhala');
+      expect(before(silva, screen.getByText('Available (1)'))).toBe(true);
+      expect(screen.getByText('Not available (0)')).toBeInTheDocument();
+      expect(screen.getByRole('button', { name: /Mrs. J. Ranasinghe/ })).not.toHaveFocus();
+    });
   });
 });

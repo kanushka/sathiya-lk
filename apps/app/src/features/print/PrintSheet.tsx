@@ -58,17 +58,18 @@ export function PrintSheet(props: Props) {
       return { title: classes, sub: showTime ? t('sheet.cellTime', { subject, time: `${c.start}–${c.end}` }) : subject };
     }
     const others = c.otherClasses ?? [];
+    const teacher = (lang === 'si' && c.subSi) || c.sub;
     if (c.isGroup) return { title, sub: others.length ? t('sheet.groupWith', { classes: others.join('+') }) : t('sheet.group') };
     if (others.length) {
       const classes = [className, ...others].sort((a, b) => a.localeCompare(b, undefined, { numeric: true })).join('+');
-      return { title, sub: c.sub ? t('sheet.joinedWithTeacher', { classes, teacher: c.sub }) : t('sheet.joined', { classes }) };
+      return { title, sub: teacher ? t('sheet.joinedWithTeacher', { classes, teacher }) : t('sheet.joined', { classes }) };
     }
-    return { title, sub: c.sub };
+    return { title, sub: teacher };
   }
 
   const groupNames = kind === 'class' ? [...new Set(snapshot.cells.filter((c) => c.isGroup).map((c) => (lang === 'si' && c.titleSi ? c.titleSi : c.title)))] : [];
-  const title = kind === 'class' ? t('sheet.classTitle', { grade: props.snapshot.gradeNumber, name: props.snapshot.className }) : t('sheet.teacherTitle', { name: props.snapshot.name, staffId: props.snapshot.staffId });
-  const classTeacher = kind === 'class' ? props.snapshot.classTeacher : undefined;
+  const title = kind === 'class' ? t('sheet.classTitle', { grade: props.snapshot.gradeNumber, name: props.snapshot.className }) : t('sheet.teacherTitle', { name: (lang === 'si' && props.snapshot.nameSi) || props.snapshot.name, staffId: props.snapshot.staffId });
+  const classTeacher = kind === 'class' ? (lang === 'si' && props.snapshot.classTeacherSi) || props.snapshot.classTeacher : undefined;
   const subtitle = [t('sheet.subtitle', { year: snapshot.yearLabel }), classTeacher ? t('sheet.classTeacher', { name: classTeacher }) : ''].filter(Boolean).join(' · ');
 
   const grid = [];

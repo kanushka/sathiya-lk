@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
 // Copyright (C) 2026 Kanushka Gayan
-import { paths, syntheticEmail, type Entry } from '@sathiya/core';
+import { paths, syntheticEmail, teacherDisplayName, type Entry } from '@sathiya/core';
 import { ctx, entries, school, subjects } from '@sathiya/core/fixtures';
 import { getApps, initializeApp } from 'firebase-admin/app';
 import { getAuth } from 'firebase-admin/auth';
@@ -24,7 +24,7 @@ export const TEACHER_PASSWORD = 'teach234';
 export const teacherLogin = (tid: string) => {
   const t = ctx.teachers.find((x) => x.id === tid);
   if (!t) throw new Error(`unknown teacher ${tid}`);
-  return { uid: `seed-${t.id}`, staffId: t.staffId, email: syntheticEmail(t.staffId, SID), password: TEACHER_PASSWORD, name: t.name };
+  return { uid: `seed-${t.id}`, staffId: t.staffId, email: syntheticEmail(t.staffId, SID), password: TEACHER_PASSWORD, name: teacherDisplayName(t) };
 };
 
 function useEmulators(): void {
@@ -87,7 +87,7 @@ async function writeAccounts(db: Firestore, auth: ReturnType<typeof getAuth>): P
   batch.set(db.doc(paths.user(ADMIN.uid)), { schoolId: SID });
   for (const t of ctx.teachers) {
     const login = teacherLogin(t.id);
-    await auth.createUser({ uid: login.uid, email: login.email, password: login.password, displayName: t.name });
+    await auth.createUser({ uid: login.uid, email: login.email, password: login.password, displayName: login.name });
     await auth.setCustomUserClaims(login.uid, { sid: SID, role: 'teacher', tid: t.id });
     batch.set(db.doc(`${paths.members(SID)}/${login.uid}`), { uid: login.uid, role: 'teacher', teacherId: t.id });
   }

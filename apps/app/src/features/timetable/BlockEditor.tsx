@@ -5,6 +5,7 @@ import {
   effectivePlan,
   joinableClasses,
   pickName,
+  teacherDisplayName,
   teacherOptionsForSlot,
   windowOf,
   type DayIndex,
@@ -99,8 +100,8 @@ function BlockEditorBody({ onClose, baseClassId, day, period, mode, entry, entri
   const reasonText = (o: TeacherOption) => teacherReason(t, o, ctx, lang, gradeOf(base)?.number ?? '');
   const optionLabel = (o: TeacherOption) =>
     o.reason
-      ? `${o.teacher.name} · ${o.teacher.staffId} · ${reasonText(o)}`
-      : `${o.teacher.name} · ${o.teacher.staffId} · ${t('block.load', { load: o.loadToday, max: o.teacher.maxPerDay })} ${t('block.free')}`;
+      ? `${teacherDisplayName(o.teacher, lang)} · ${o.teacher.staffId} · ${reasonText(o)}`
+      : `${teacherDisplayName(o.teacher, lang)} · ${o.teacher.staffId} · ${t('block.load', { load: o.loadToday, max: o.teacher.maxPerDay })} ${t('block.free')}`;
 
   const chosen = optionIds.map((id) => teachers[id] ?? null);
   const problems = optionIds.map((id) => {

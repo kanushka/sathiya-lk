@@ -128,4 +128,38 @@ describe('TimetableGrid', () => {
     expect(btn).toBeEmptyDOMElement();
     expect(btn.getAttribute('aria-label')).not.toMatch(/Add lesson/);
   });
+
+  describe('overlay', () => {
+    const overlay = (d: DayIndex, p: number) =>
+      d === 1 && p === 1
+        ? { label: 'Tue busy', className: 'ov-busy', content: <span>Busy</span>, disabled: true }
+        : d === 2 && p === 1
+          ? { label: 'Wed pin', className: 'ov-free', content: <span>Free</span> }
+          : null;
+
+    it('replaces the label, look and content of a slot', () => {
+      setup({ overlay });
+      const busy = screen.getByRole('button', { name: 'Tue busy' });
+      expect(busy).toHaveTextContent('Busy');
+      expect(busy).toHaveClass('ov-busy');
+      expect(busy).toHaveAttribute('aria-disabled', 'true');
+      expect(screen.getByRole('button', { name: 'Wed pin' })).not.toHaveAttribute('aria-disabled');
+    });
+
+    it('activates on a single click when activateOnClick is set, but not a disabled slot', () => {
+      const onActivate = vi.fn();
+      setup({ overlay, activateOnClick: true, onActivate });
+      fireEvent.click(screen.getByRole('button', { name: 'Wed pin' }));
+      expect(onActivate).toHaveBeenCalledWith(2, 1);
+      fireEvent.click(screen.getByRole('button', { name: 'Tue busy' }));
+      fireEvent.keyDown(screen.getByRole('button', { name: 'Tue busy' }), { key: 'Enter' });
+      expect(onActivate).toHaveBeenCalledTimes(1);
+    });
+
+    it('keeps arrow-key navigation through a disabled slot', () => {
+      const { onSelect } = setup({ overlay, activateOnClick: true });
+      fireEvent.keyDown(screen.getByRole('button', { name: 'Tue busy' }), { key: 'ArrowRight' });
+      expect(onSelect).toHaveBeenLastCalledWith(2, 1);
+    });
+  });
 });

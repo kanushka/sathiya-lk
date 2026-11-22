@@ -1,7 +1,8 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
 // Copyright (C) 2026 Kanushka Gayan
-import { weekCapacity, type PeriodTemplate, type SchoolClass, type Teacher } from '@sathiya/core';
+import { teacherDisplayName, weekCapacity, type PeriodTemplate, type SchoolClass, type Teacher } from '@sathiya/core';
 import { useTranslation } from 'react-i18next';
+import { useLang } from '../../app/LangProvider';
 import { Button } from '../../ui/Button';
 import { Select } from '../../ui/Select';
 
@@ -18,6 +19,7 @@ export interface ClassCardProps {
 
 export function ClassCard({ cls, teachers, templates, readOnly, onTeacher, onTemplate, onCustomPlan, onRemove }: ClassCardProps) {
   const { t } = useTranslation('grades');
+  const { lang } = useLang();
   const label = 'mb-1 mt-2.5 block text-xs font-semibold text-ink-soft';
   return (
     <div data-testid="class-card" className="rounded-xl border border-line-soft p-3.5">
@@ -40,7 +42,7 @@ export function ClassCard({ cls, teachers, templates, readOnly, onTeacher, onTem
           <option value="">{t('classes.noTeacher')}</option>
           {teachers.map((x) => (
             <option key={x.id} value={x.id}>
-              {x.name}
+              {teacherDisplayName(x, lang)}
             </option>
           ))}
         </Select>

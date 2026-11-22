@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
 // Copyright (C) 2026 Kanushka Gayan
 
-import { withTeacherIds, type Conflict, type Entry, type EntryDraft, type SchoolContext } from '@sathiya/core';
+import { teacherDisplayName, withTeacherIds, type Conflict, type Entry, type EntryDraft, type SchoolContext } from '@sathiya/core';
 import { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useSchool, useYear } from '../../app/SchoolProvider';
@@ -47,7 +47,7 @@ export function useTimetable(): UseTimetable {
   const { entries: serverEntries, yearId } = useYear();
   const api = useContext(TimetableApiContext);
   const toast = useToast();
-  const { t } = useTranslation('timetable');
+  const { t, i18n } = useTranslation('timetable');
   const [overlay, setOverlay] = useState<Overlay>(emptyOverlay);
   const [inflight, setInflight] = useState(0);
   const tempId = useRef(0);
@@ -78,7 +78,7 @@ export function useTimetable(): UseTimetable {
         const items = conflictsOf(e).map((c) => {
           if (c.kind === 'teacher') {
             const teacher = ctx.teachers.find((x) => x.id === c.id);
-            return t('errors.conflict.teacher', { name: teacher?.name ?? c.id });
+            return t('errors.conflict.teacher', { name: teacher ? teacherDisplayName(teacher, i18n.language === 'si' ? 'si' : 'en') : c.id });
           }
           const cls = ctx.classes.find((x) => x.id === c.id);
           return t('errors.conflict.class', { name: cls?.name ?? c.id });

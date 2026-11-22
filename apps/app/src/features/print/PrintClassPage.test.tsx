@@ -65,6 +65,7 @@ describe('PrintClassPage', () => {
     expect(mon2).toHaveTextContent('කණ්ඩායම');
     expect(screen.getByRole('button', { name: 'මුද්‍රණය' })).toBeInTheDocument();
     expect(screen.getByText(/සිරිපුර මධ්‍ය විද්‍යාලය/)).toBeInTheDocument();
+    expect(screen.getAllByText(/N\. Perera මහත්මිය/).length).toBeGreaterThan(1);
   });
 
   it('prints once when auto=1', async () => {

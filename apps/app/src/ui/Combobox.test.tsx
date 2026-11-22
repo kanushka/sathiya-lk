@@ -1,11 +1,12 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
 // Copyright (C) 2026 Kanushka Gayan
 
-import { screen, within } from '@testing-library/react';
+import { fireEvent, screen, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { describe, expect, it, vi } from 'vitest';
 import { renderWithI18n } from '../test/render';
 import { Combobox } from './Combobox';
+import { Modal } from './Modal';
 
 interface Subj { id: string; name: string; group: string }
 const items: Subj[] = [
@@ -64,6 +65,14 @@ describe('Combobox', () => {
     expect(screen.queryByRole('listbox')).not.toBeInTheDocument();
   });
 
+  it('ignores Enter while an IME is composing', async () => {
+    const onChange = vi.fn();
+    setup(onChange);
+    await userEvent.click(screen.getByRole('button'));
+    fireEvent.keyDown(screen.getByPlaceholderText('Search subject…'), { key: 'Enter', isComposing: true });
+    expect(onChange).not.toHaveBeenCalled();
+  });
+
   it('supports arrows, Enter and Escape', async () => {
     const { user, onChange } = setup();
     await user.click(screen.getByRole('button', { name: /click to search/i }));
@@ -94,5 +103,90 @@ describe('Combobox', () => {
     await user.click(screen.getByRole('button', { name: 'History' }));
     expect(screen.getByRole('option', { name: 'History' })).toHaveAttribute('aria-selected', 'true');
     expect(screen.getByRole('option', { name: 'Mathematics' })).toHaveAttribute('aria-selected', 'false');
+  });
+
+  it('renders the listbox in document.body, outside a modal body, and keeps the modal open on pick and Escape', async () => {
+    const user = userEvent.setup();
+    const onClose = vi.fn();
+    const onChange = vi.fn();
+    renderWithI18n(
+      <Modal open title="Choose a subject" onClose={onClose}>
+        <Combobox
+          items={items}
+          getKey={(s) => s.id}
+          getLabel={(s) => s.name}
+          onChange={onChange}
+          placeholder="Click to search a subject"
+          searchPlaceholder="Search subject…"
+        />
+      </Modal>,
+    );
+    await user.click(screen.getByRole('button', { name: /click to search/i }));
+    const listbox = screen.getByRole('listbox');
+    expect(screen.getByRole('dialog').contains(listbox)).toBe(false);
+    expect(listbox.closest('[data-combobox-popover]')?.parentElement).toBe(document.body);
+
+    await user.keyboard('{Escape}');
+    expect(screen.queryByRole('listbox')).not.toBeInTheDocument();
+    expect(onClose).not.toHaveBeenCalled();
+
+    await user.click(screen.getByRole('button', { name: /click to search/i }));
+    await user.click(screen.getByRole('option', { name: 'Science' }));
+    expect(onChange).toHaveBeenCalledWith(items[1]);
+    expect(onClose).not.toHaveBeenCalled();
+    expect(screen.getByRole('dialog')).toBeInTheDocument();
+  });
+
+  it('keeps focus and the parent modal open when pressing popover padding or a group header', async () => {
+    const user = userEvent.setup();
+    const onClose = vi.fn();
+    renderWithI18n(
+      <Modal open title="Choose a subject" onClose={onClose}>
+        <Combobox
+          items={items}
+          getKey={(s) => s.id}
+          getLabel={(s) => s.name}
+          groupBy={(s) => s.group}
+          onChange={vi.fn()}
+          placeholder="Click to search a subject"
+          searchPlaceholder="Search subject…"
+        />
+      </Modal>,
+    );
+    await user.click(screen.getByRole('button', { name: /click to search/i }));
+    const input = screen.getByRole('combobox');
+    expect(input).toHaveFocus();
+    const popover = input.closest('[data-combobox-popover]') as HTMLElement;
+    await user.pointer({ keys: '[MouseLeft>]', target: popover });
+    await user.pointer({ keys: '[/MouseLeft]', target: popover });
+    await user.click(screen.getByText('Still needed'));
+    expect(input).toHaveFocus();
+    await user.keyboard('{Escape}');
+    expect(onClose).not.toHaveBeenCalled();
+  });
+
+  it('keeps the popover position when the list itself scrolls', async () => {
+    const { user } = setup();
+    await user.click(screen.getByRole('button', { name: /click to search/i }));
+    const popover = screen.getByRole('listbox').closest('[data-combobox-popover]') as HTMLElement;
+    const spy = vi.spyOn(screen.getByRole('button', { name: /click to search/i }), 'getBoundingClientRect');
+    spy.mockClear();
+    screen.getByRole('listbox').dispatchEvent(new Event('scroll'));
+    expect(spy).not.toHaveBeenCalled();
+    document.dispatchEvent(new Event('scroll'));
+    expect(spy).toHaveBeenCalled();
+    expect(popover).toBeInTheDocument();
+  });
+
+  it('clears aria-activedescendant when nothing matches, then restores it', async () => {
+    const { user } = setup();
+    await user.click(screen.getByRole('button', { name: /click to search/i }));
+    const input = screen.getByRole('combobox');
+    await user.type(input, 'zzz');
+    await user.keyboard('{ArrowDown}');
+    expect(input).not.toHaveAttribute('aria-activedescendant');
+    await user.clear(input);
+    await user.keyboard('{ArrowDown}');
+    expect(input).toHaveAttribute('aria-activedescendant');
   });
 });

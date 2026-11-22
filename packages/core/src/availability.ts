@@ -9,7 +9,41 @@ import type { DayIndex, Entry, SchoolClass, SchoolContext, Teacher } from './typ
 
 export type UnavailableReason = 'busy' | 'limit' | 'not-qualified';
 export interface TeacherOption { teacher: Teacher; loadToday: number; reason?: UnavailableReason; busyWith?: { classIds: string[]; subjectId: string } }
-export interface ClassOption { cls: SchoolClass; period: number; free: boolean }
+export interface BusyDetail { kind: 'teacher' | 'class'; entryId: string; classIds: string[]; subjectId: string; teacherId: string | null; groupKey?: string }
+export interface ClassOption { cls: SchoolClass; period: number; free: boolean; busy?: BusyDetail }
+
+export function busyDetail(e: Entry, kind: BusyDetail['kind'], teacherId: string): BusyDetail {
+  if (kind === 'teacher') {
+    const lesson = e.lessons.find((l) => l.teacherId === teacherId);
+    return { kind, entryId: e.id, classIds: e.classIds, subjectId: lesson?.subjectId ?? '', teacherId };
+  }
+  const first = e.lessons[0];
+  if (e.groupKey !== undefined) return { kind, entryId: e.id, classIds: e.classIds, subjectId: first?.subjectId ?? '', teacherId: null, groupKey: e.groupKey };
+  return { kind, entryId: e.id, classIds: e.classIds, subjectId: first?.subjectId ?? '', teacherId: first?.teacherId ?? null };
+}
+
+export function preferredTeacherFor(args: { entries: Entry[]; classId: string; subjectId: string; excludeEntryId?: string }): string | null {
+  const { classId, subjectId, excludeEntryId } = args;
+  const stats = new Map<string, { count: number; first: number }>();
+  for (const e of args.entries) {
+    if (e.id === excludeEntryId || !e.classIds.includes(classId)) continue;
+    const order = e.day * 100 + e.period;
+    for (const l of e.lessons) {
+      if (l.subjectId !== subjectId || l.teacherId === null) continue;
+      const s = stats.get(l.teacherId) ?? { count: 0, first: order };
+      stats.set(l.teacherId, { count: s.count + 1, first: Math.min(s.first, order) });
+    }
+  }
+  let best: string | null = null;
+  let bestStat = { count: 0, first: Infinity };
+  for (const [id, s] of stats) {
+    if (s.count > bestStat.count || (s.count === bestStat.count && s.first < bestStat.first)) {
+      best = id;
+      bestStat = s;
+    }
+  }
+  return best;
+}
 
 export function teachesSubject(t: Teacher, subjectId: string, grade: number): boolean {
   if (!t.grades.includes(grade)) return false;
@@ -75,9 +109,15 @@ export function classOptionsForTeacherSlot(args: { ctx: SchoolContext; entries: 
     if (!inPlan) continue;
     const period = matchClassPeriod(cls, ctx, day, window);
     if (period === null) continue;
-    const free = findConflicts({ day, period, classIds: [cls.id], lessons: [{ subjectId, teacherId }] }, entries, ctx).length === 0;
-    out.push({ cls, period, free, gradeNumber: grade.number });
+    const conflicts = findConflicts({ day, period, classIds: [cls.id], lessons: [{ subjectId, teacherId }] }, entries, ctx);
+    const entryOf = (id: string) => entries.find((e) => e.id === id);
+    const classHit = conflicts.map((c) => (c.kind === 'class' ? entryOf(c.entryId) : undefined)).find((e) => e !== undefined);
+    const teacherHit = conflicts.map((c) => (c.kind === 'teacher' ? entryOf(c.entryId) : undefined)).find((e) => e !== undefined);
+    const busy = classHit
+      ? busyDetail(classHit, classHit.lessons.some((l) => l.teacherId === teacherId) ? 'teacher' : 'class', teacherId)
+      : teacherHit && busyDetail(teacherHit, 'teacher', teacherId);
+    out.push({ cls, period, free: conflicts.length === 0, ...(busy ? { busy } : {}), gradeNumber: grade.number });
   }
   out.sort((a, b) => a.gradeNumber - b.gradeNumber || a.cls.name.localeCompare(b.cls.name));
-  return out.map(({ cls, period, free }) => ({ cls, period, free }));
+  return out.map(({ gradeNumber: _, ...o }) => o);
 }

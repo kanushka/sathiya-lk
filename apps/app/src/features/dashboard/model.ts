@@ -5,6 +5,7 @@ import {
   effectivePlan,
   findConflicts,
   pickName,
+  teacherDisplayName,
   teacherDayLoad,
   warnings,
   weekCapacity,
@@ -110,7 +111,7 @@ export function attentionItems(ctx: SchoolContext, entries: Entry[], lang: Lang)
         severity: 'high',
         to: `/timetable/teacher?t=${encodeURIComponent(teacher.id)}`,
         day: w.day,
-        params: { teacher: teacher.name, n: teacherDayLoad(teacher.id, w.day, entries), max: teacher.maxPerDay, day: w.day },
+        params: { teacher: teacherDisplayName(teacher, lang), n: teacherDayLoad(teacher.id, w.day, entries), max: teacher.maxPerDay, day: w.day },
       });
     } else if (w.kind === 'over-target') {
       const cls = ctx.classes.find((c) => c.id === w.refId);

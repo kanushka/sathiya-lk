@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
 // Copyright (C) 2026 Kanushka Gayan
-import { pickName, type Lang, type Teacher } from '@sathiya/core';
+import { pickName, teacherDisplayName, type Lang, type Teacher } from '@sathiya/core';
 import { useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useSchool } from '../../app/SchoolProvider';
@@ -37,14 +37,14 @@ export function TeachersPage() {
   const subjectName = useMemo(() => new Map(subjects.map((s) => [s.id, pickName(s, lang)])), [subjects, lang]);
   const sorted = useMemo(() => [...teachers].sort((a, b) => a.staffId.localeCompare(b.staffId)), [teachers]);
   const q = search.trim().toLowerCase();
-  const rows = q ? sorted.filter((x) => x.name.toLowerCase().includes(q) || x.staffId.toLowerCase().includes(q)) : sorted;
+  const rows = q ? sorted.filter((x) => teacherDisplayName(x, lang).toLowerCase().includes(q) || x.staffId.toLowerCase().includes(q)) : sorted;
 
   async function printAll() {
     const url = teacherLoginUrl(window.location.origin, school.id);
     const slips = sorted.map((x) => ({
       schoolName: pickName(school, lang),
       staffId: x.staffId,
-      name: x.name,
+      name: teacherDisplayName(x, lang),
       password: passwords[x.id],
       url,
     }));
@@ -102,7 +102,7 @@ export function TeachersPage() {
             {rows.map((x) => (
               <Tr key={x.id}>
                 <Td className="font-mono text-[13px]">{x.staffId}</Td>
-                <Td className="font-semibold">{x.name}</Td>
+                <Td className="font-semibold">{teacherDisplayName(x, lang)}</Td>
                 <Td>
                   {x.isPrimary ? (
                     <span className="inline-block rounded-md bg-[#FBF1DC] px-2 py-0.5 text-xs font-semibold text-[#7A5410]">
@@ -146,7 +146,7 @@ export function TeachersPage() {
           schoolId={school.id}
           kind="teacher"
           id={dialog.teacher.id}
-          name={dialog.teacher.name}
+          name={teacherDisplayName(dialog.teacher, lang)}
           onClose={() => setDialog(null)}
         />
       )}

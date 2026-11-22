@@ -56,7 +56,7 @@ describe('BlockEditor', () => {
     setup({ baseClassId: C.c6b }, { entries: busy });
     const opt = within(screen.getByLabelText(/Buddhism/)).getByRole('option', { name: /Ananda/ });
     expect(opt).toBeDisabled();
-    expect(opt).toHaveTextContent('Busy · 6A Sinhala');
+    expect(opt).toHaveTextContent('Teaching 6A · Sinhala');
   });
 
   it("lists only teachers of the option's subject; a subject teacher outside the grade is shown as not teaching it", () => {

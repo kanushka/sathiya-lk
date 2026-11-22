@@ -4,6 +4,7 @@
 import type { DayIndex, TemplateRow } from '@sathiya/core';
 import { useRef, type KeyboardEvent, type ReactNode } from 'react';
 import { useTranslation } from 'react-i18next';
+import { isComposing } from '../../ui/composing';
 import { cx } from '../../ui/cx';
 import { CellBody, type CellView } from './Cell';
 
@@ -12,6 +13,13 @@ export type { CellView } from './Cell';
 export interface Slot {
   day: DayIndex;
   period: number;
+}
+
+export interface GridOverlay {
+  label: string;
+  className: string;
+  content: ReactNode;
+  disabled?: boolean;
 }
 
 export interface TimetableGridProps {
@@ -23,6 +31,8 @@ export interface TimetableGridProps {
   onClear?(day: DayIndex, period: number): void;
   readOnly?: boolean;
   headerExtra?(day: DayIndex): ReactNode;
+  overlay?(day: DayIndex, period: number): GridOverlay | null;
+  activateOnClick?: boolean;
 }
 
 const DAYS: DayIndex[] = [0, 1, 2, 3, 4];
@@ -36,7 +46,7 @@ function periodTimes(rows: TemplateRow[]): Map<number, { start: string; end: str
   return map;
 }
 
-export function TimetableGrid({ rows, cellsFor, selected, onSelect, onActivate, onClear, readOnly, headerExtra }: TimetableGridProps) {
+export function TimetableGrid({ rows, cellsFor, selected, onSelect, onActivate, onClear, readOnly, headerExtra, overlay, activateOnClick }: TimetableGridProps) {
   const { t } = useTranslation('timetable');
   const { t: tc } = useTranslation('common');
   const root = useRef<HTMLDivElement>(null);
@@ -73,8 +83,8 @@ export function TimetableGrid({ rows, cellsFor, selected, onSelect, onActivate, 
       }
       return;
     }
-    if (readOnly) return;
-    if (e.key === 'Enter' && onActivate) {
+    if (readOnly || overlay?.(day, period)?.disabled) return;
+    if (e.key === 'Enter' && onActivate && !isComposing(e)) {
       e.preventDefault();
       onActivate(day, period);
     } else if ((e.key === 'Delete' || e.key === 'Backspace') && onClear) {
@@ -84,6 +94,11 @@ export function TimetableGrid({ rows, cellsFor, selected, onSelect, onActivate, 
   }
 
   function onClick(day: DayIndex, period: number) {
+    if (activateOnClick) {
+      onSelect(day, period);
+      if (!readOnly && !overlay?.(day, period)?.disabled) onActivate?.(day, period);
+      return;
+    }
     if (selected && selected.day === day && selected.period === period) {
       if (!readOnly) onActivate?.(day, period);
     } else onSelect(day, period);
@@ -123,6 +138,7 @@ export function TimetableGrid({ rows, cellsFor, selected, onSelect, onActivate, 
               const raw = cellsFor(d, r.n);
               const cells = raw === null ? [] : Array.isArray(raw) ? raw : [raw];
               const on = selected?.day === d && selected.period === r.n;
+              const ov = overlay?.(d, r.n) ?? null;
               const label = {
                 day: tc(`days.long.${d}`),
                 n: r.n,
@@ -137,17 +153,22 @@ export function TimetableGrid({ rows, cellsFor, selected, onSelect, onActivate, 
                   data-period={r.n}
                   tabIndex={tabSlot && tabSlot.day === d && tabSlot.period === r.n ? 0 : -1}
                   aria-pressed={on}
-                  aria-label={cells.length ? t('grid.cell', label) : t(readOnly ? 'grid.cellEmpty' : 'grid.cellAdd', label)}
+                  aria-disabled={ov?.disabled || undefined}
+                  aria-label={ov ? ov.label : cells.length ? t('grid.cell', label) : t(readOnly ? 'grid.cellEmpty' : 'grid.cellAdd', label)}
                   onClick={() => onClick(d, r.n)}
                   onKeyDown={(e) => onKeyDown(e, d, r.n)}
                   className={cx(
-                    'box-border flex min-h-[58px] flex-col justify-center rounded-[10px] border p-1 text-left text-ink',
-                    cells.length === 0 ? 'border-[1.5px] border-dashed border-[#C9CDD6] bg-white text-[#8A91A3] px-2.5 items-center' : 'border-transparent',
+                    'box-border flex min-h-[58px] flex-col justify-center rounded-[10px] border p-1 text-left',
+                    ov
+                      ? ov.className
+                      : cells.length === 0
+                        ? 'border-[1.5px] border-dashed border-[#C9CDD6] bg-white text-[#8A91A3] px-2.5 items-center'
+                        : 'border-transparent text-ink',
                     on && 'shadow-[0_0_0_2px_#fff,0_0_0_4px_var(--brand)]',
-                    readOnly ? 'cursor-default' : 'cursor-pointer',
+                    readOnly || ov?.disabled ? 'cursor-default' : 'cursor-pointer',
                   )}
                 >
-                  <CellBody cells={cells} readOnly={readOnly} />
+                  {ov ? ov.content : <CellBody cells={cells} readOnly={readOnly} />}
                 </button>
               );
             }),

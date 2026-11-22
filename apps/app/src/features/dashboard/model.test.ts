@@ -54,5 +54,7 @@ describe('dashboard model', () => {
     const target = items.find((i) => i.kind === 'over-target')!;
     expect(target.to).toMatch(/^\/timetable\/class\?c=c-6a/);
     expect(JSON.stringify(items)).not.toMatch(/periods on|outside the class/);
+    const si = attentionItems(ctx, [...entries, ...over], 'si').find((i) => i.kind === 'over-limit')!;
+    expect(si.params.teacher).toBe('S. Kumara මහතා');
   });
 });

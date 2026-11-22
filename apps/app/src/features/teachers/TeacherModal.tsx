@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
 // Copyright (C) 2026 Kanushka Gayan
-import { formatStaffId, isValidStaffId, nextStaffNumber, pickName, type Lang, type Teacher } from '@sathiya/core';
+import { formatStaffId, isValidStaffId, nextStaffNumber, pickName, splitTitle, TEACHER_TITLE_LABELS, TEACHER_TITLES, teacherDisplayName, type Lang, type Teacher, type TeacherTitle } from '@sathiya/core';
 import { useState, type FormEvent } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useReadOnly } from '../../ui/AdminLayout';
@@ -8,6 +8,7 @@ import { Button } from '../../ui/Button';
 import { cx } from '../../ui/cx';
 import { Field, inputClass } from '../../ui/Field';
 import { Modal } from '../../ui/Modal';
+import { Select } from '../../ui/Select';
 import { useToast } from '../../ui/Toast';
 import { useSchool } from '../../app/SchoolProvider';
 import * as api from './api';
@@ -22,6 +23,7 @@ export interface TeacherModalProps {
 
 interface Form {
   staffId: string;
+  title: TeacherTitle | '';
   name: string;
   isPrimary: boolean;
   subjectIds: string[];
@@ -29,6 +31,13 @@ interface Form {
   maxPerDay: string;
   phone: string;
   email: string;
+}
+
+function initialName(teacher: Teacher | undefined): { title: TeacherTitle | ''; name: string } {
+  if (!teacher) return { title: '', name: '' };
+  const split = splitTitle(teacher.name);
+  if (teacher.title) return { title: teacher.title, name: split.title === teacher.title ? split.name : teacher.name };
+  return { title: split.title ?? '', name: split.name };
 }
 
 const toggle = <T,>(list: T[], v: T): T[] => (list.includes(v) ? list.filter((x) => x !== v) : [...list, v]);
@@ -42,7 +51,7 @@ export function TeacherModal({ teacher, onClose }: TeacherModalProps) {
   const { passwords, set: setSessionPassword } = useSessionPasswords();
   const [form, setForm] = useState<Form>(() => ({
     staffId: teacher?.staffId ?? formatStaffId(school.staffPrefix, nextStaffNumber(teachers.map((x) => x.staffId), school.staffPrefix)),
-    name: teacher?.name ?? '',
+    ...initialName(teacher),
     isPrimary: teacher?.isPrimary ?? false,
     subjectIds: teacher?.subjectIds ?? [],
     grades: teacher?.grades ?? [],
@@ -58,7 +67,7 @@ export function TeacherModal({ teacher, onClose }: TeacherModalProps) {
   const [resetError, setResetError] = useState(false);
 
   const teacherId = teacher?.id ?? savedId;
-  const locked = readOnly || savedId !== null;
+  const locked = readOnly;
   const set = <K extends keyof Form>(key: K, value: Form[K]) => setForm((f) => ({ ...f, [key]: value }));
 
   const maxPerDay = Number(form.maxPerDay);
@@ -68,7 +77,7 @@ export function TeacherModal({ teacher, onClose }: TeacherModalProps) {
       ? null
       : !isValidStaffId(school.staffPrefix, form.staffId)
         ? t('modal.errors.staffId', { example: formatStaffId(school.staffPrefix, 24) })
-        : teachers.some((x) => x.staffId === form.staffId)
+        : teachers.some((x) => x.staffId === form.staffId && x.id !== teacherId)
           ? t('modal.errors.staffIdTaken')
           : null,
     subjects: form.isPrimary || form.subjectIds.length > 0 ? null : t('modal.errors.subjects'),
@@ -84,6 +93,7 @@ export function TeacherModal({ teacher, onClose }: TeacherModalProps) {
     if (!valid || saving) return;
     const input: api.TeacherInput = {
       staffId: form.staffId,
+      ...(form.title ? { title: form.title } : {}),
       name: form.name.trim(),
       isPrimary: form.isPrimary,
       subjectIds: form.isPrimary ? [] : form.subjectIds,
@@ -135,7 +145,7 @@ export function TeacherModal({ teacher, onClose }: TeacherModalProps) {
       open
       width={900}
       title={teacher ? t('modal.titleEdit') : t('modal.titleAdd')}
-      subtitle={teacher ? `${teacher.name} · ${teacher.staffId}` : undefined}
+      subtitle={teacher ? `${teacherDisplayName(teacher, lang)} · ${teacher.staffId}` : undefined}
       onClose={onClose}
       footer={
         savedId ? (
@@ -159,10 +169,11 @@ export function TeacherModal({ teacher, onClose }: TeacherModalProps) {
         )
       }
     >
-      <div className="grid gap-8 md:grid-cols-[1fr_300px]">
+      <div className={savedId ? 'mx-auto max-w-[340px]' : 'grid gap-8 md:grid-cols-[1fr_300px]'}>
+        {!savedId && (
         <form id="teacher-form" onSubmit={save} noValidate className="flex flex-col gap-4">
           <fieldset disabled={locked} className="m-0 flex min-w-0 flex-col gap-4 border-0 p-0">
-            <div className="grid grid-cols-[140px_1fr] gap-3">
+            <div className="grid grid-cols-[140px_110px_1fr] gap-3">
               <Field label={t('modal.staffId')} error={show('staffId')}>
                 <input
                   className={inputClass}
@@ -170,6 +181,16 @@ export function TeacherModal({ teacher, onClose }: TeacherModalProps) {
                   disabled={locked || !!teacher}
                   onChange={(e) => set('staffId', e.target.value.toUpperCase())}
                 />
+              </Field>
+              <Field label={t('modal.title')}>
+                <Select value={form.title} onChange={(e) => set('title', e.target.value as Form['title'])}>
+                  <option value="">{t('modal.noTitle')}</option>
+                  {TEACHER_TITLES.map((x) => (
+                    <option key={x} value={x}>
+                      {TEACHER_TITLE_LABELS[lang === 'si' ? 'si' : 'en'][x]}
+                    </option>
+                  ))}
+                </Select>
               </Field>
               <Field label={t('modal.name')} error={show('name')}>
                 <input className={inputClass} value={form.name} onChange={(e) => set('name', e.target.value)} />
@@ -247,15 +268,17 @@ export function TeacherModal({ teacher, onClose }: TeacherModalProps) {
             </div>
           </fieldset>
         </form>
+        )}
         <LoginSlip
           slip={{
             schoolName: pickName(school, lang),
             staffId: form.staffId,
-            name: form.name,
+            name: teacherDisplayName({ name: form.name, ...(form.title ? { title: form.title } : {}) }, lang),
             password: teacherId ? passwords[teacherId] : undefined,
             url: teacherLoginUrl(window.location.origin, school.id),
           }}
           hasStaffId={!!teacherId}
+          focusPrint={!!savedId}
           onReset={teacherId && !readOnly ? reset : undefined}
           resetting={resetting}
           resetError={resetError}

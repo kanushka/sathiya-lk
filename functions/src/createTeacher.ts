@@ -1,12 +1,18 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
 // Copyright (C) 2026 Kanushka Gayan
-import { isValidStaffId, paths, syntheticEmail, type CreateTeacherRes, type Teacher } from '@sathiya/core';
+import { isValidStaffId, paths, syntheticEmail, TEACHER_TITLES, teacherDisplayName, type CreateTeacherRes, type Teacher, type TeacherTitle } from '@sathiya/core';
 import { onCall } from 'firebase-functions/v2/https';
 import { auth, db } from './lib/admin';
 import { callOpts } from './lib/callOptions';
 import { setSchoolClaims } from './lib/claims';
 import { bool, docIdList, email, fail, int, intList, invalid, obj, optStr, requireSchoolAdmin, str } from './lib/guards';
 import { newPassword } from './lib/password';
+
+const optTitle = (v: unknown): TeacherTitle | undefined => {
+  if (v === undefined || v === null || v === '') return undefined;
+  if (!(TEACHER_TITLES as readonly unknown[]).includes(v)) invalid(`title must be one of ${TEACHER_TITLES.join(', ')}`);
+  return v as TeacherTitle;
+};
 
 const duplicate = (staffId: string): never => fail('already-exists', 'invalid', `Staff ID ${staffId} is already used`, { field: 'staffId' });
 
@@ -18,6 +24,7 @@ export const createTeacher = onCall(callOpts, async (req): Promise<CreateTeacher
   if (!isValidStaffId(school.staffPrefix, staffId)) invalid(`staffId must look like ${school.staffPrefix}001`);
   const teacher: Omit<Teacher, 'id'> = {
     staffId,
+    title: optTitle(t.title),
     name: str(t.name, 'name'),
     isPrimary: bool(t.isPrimary, 'isPrimary'),
     subjectIds: docIdList(t.subjectIds, 'subjectIds'),
@@ -33,7 +40,7 @@ export const createTeacher = onCall(callOpts, async (req): Promise<CreateTeacher
   const password = newPassword();
   // The synthetic email is unique in Auth, so a concurrent create of the same staff ID fails here.
   const user = await auth
-    .createUser({ email: syntheticEmail(staffId, sid), password, displayName: teacher.name })
+    .createUser({ email: syntheticEmail(staffId, sid), password, displayName: teacherDisplayName(teacher) })
     .catch((e: { code?: string }) => (e.code === 'auth/email-already-exists' ? duplicate(staffId) : Promise.reject(e)));
 
   const ref = teachers.doc();

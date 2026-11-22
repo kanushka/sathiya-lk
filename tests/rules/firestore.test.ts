@@ -210,6 +210,12 @@ describe('teachers', () => {
       await assertFails(update('admin', t2, { uid: 'u-new' }));
       await assertFails(update('admin', t1, { staffId: 'SCC099' }));
     });
+    it('lets admin set a known title and refuses any other', async () => {
+      await assertSucceeds(update('admin', t1, { title: 'Mrs', name: 'N. Perera' }));
+      await assertSucceeds(update('admin', t2, { title: 'Ven.' }));
+      await assertFails(update('admin', t1, { title: 'King' }));
+      await assertFails(update('admin', t1, { title: 3 }));
+    });
     deny(
       [['teacher', t1], ['super', t1], ['otherAdmin', t1], ['anon', t1], ['disabledAdmin', `${paths.teachers('sd')}/td`]],
       (r, p) => update(r, p, { name: 'x' }),

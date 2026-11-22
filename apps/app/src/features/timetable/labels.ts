@@ -1,9 +1,12 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
 // Copyright (C) 2026 Kanushka Gayan
 
-import { pickName, type Entry, type Lang, type PlanItem, type SchoolContext, type Subject, type TeacherOption } from '@sathiya/core';
+import { pickName, teacherDisplayName, type Entry, type Lang, type PlanItem, type SchoolContext, type Subject, type TeacherOption } from '@sathiya/core';
 import type { TFunction } from 'i18next';
 import type { CellView } from './Cell';
+import { busyLabel, classNames } from './conflictLabel';
+
+export { classNames };
 
 export function subjectShort(s: Subject, lang: Lang): string {
   return lang === 'si' ? pickName(s, lang) : s.short;
@@ -20,17 +23,10 @@ export function planItemName(item: PlanItem, ctx: SchoolContext, lang: Lang): st
   return s ? pickName(s, lang) : item.subjectId;
 }
 
-export function classNames(ctx: SchoolContext, ids: string[]): string {
-  return ids
-    .map((id) => ctx.classes.find((c) => c.id === id)?.name ?? id)
-    .sort((a, b) => a.localeCompare(b, undefined, { numeric: true }))
-    .join('+');
-}
 
 export function teacherReason(t: TFunction, o: TeacherOption, ctx: SchoolContext, lang: Lang, grade: number | string): string {
   if (o.reason === 'busy') {
-    const s = ctx.subjects.find((x) => x.id === o.busyWith?.subjectId);
-    return t('block.busy', { classes: classNames(ctx, o.busyWith?.classIds ?? []), subject: s ? pickName(s, lang) : '' }).trim();
+    return busyLabel(t, { kind: 'teacher', classIds: o.busyWith?.classIds ?? [], subjectId: o.busyWith?.subjectId ?? '', teacherId: o.teacher.id }, ctx, lang);
   }
   if (o.reason === 'limit') return t('block.limit', { load: o.loadToday, max: o.teacher.maxPerDay });
   return t('block.notQualified', { grade });
@@ -45,7 +41,10 @@ export function teachesAtAll(o: TeacherOption, subjectId: string): boolean {
 }
 
 export function classCellView(e: Entry, ctx: SchoolContext, lang: Lang, t: TFunction, plan: PlanItem[] = []): CellView {
-  const teacherName = (id: string | null | undefined) => (id ? ctx.teachers.find((x) => x.id === id)?.name : undefined) ?? t('cell.noTeacher');
+  const teacherName = (id: string | null | undefined) => {
+    const teacher = id ? ctx.teachers.find((x) => x.id === id) : undefined;
+    return teacher ? teacherDisplayName(teacher, lang) : t('cell.noTeacher');
+  };
   const joined = e.classIds.length > 1 ? classNames(ctx, e.classIds) : null;
   if (e.groupKey !== undefined) {
     const group = plan

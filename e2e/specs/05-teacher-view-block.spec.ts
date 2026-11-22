@@ -19,7 +19,7 @@ test('teacher view: build a religion block through the block editor', async ({ p
   await page.getByRole('dialog').getByRole('button', { name: 'Subject' }).click();
   await page.getByRole('option', { name: 'Buddhism' }).click();
   const classes = page.getByRole('dialog', { name: 'Choose a class' });
-  await expect(classes.getByRole('button', { name: /^6B Religion block · Busy/ })).toBeDisabled();
+  await expect(classes.getByRole('button', { name: /^6B Religion block · 6B · Mathematics · Mrs\. N\. Perera/ })).toBeDisabled();
   await classes.getByRole('button', { name: /^6C Religion block/ }).click();
 
   const block = page.getByRole('dialog', { name: 'Religion' });
