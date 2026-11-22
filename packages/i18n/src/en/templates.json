@@ -27,6 +27,8 @@
     "usedBy_other": "Used by {{count}} classes",
     "same": "Same every day",
     "perDay": "Different per day",
+    "modeLabel": "Schedule type",
+    "dayTabs": "Day",
     "start": "Start, row {{n}}",
     "end": "End, row {{n}}",
     "minutes": "{{n}} min",

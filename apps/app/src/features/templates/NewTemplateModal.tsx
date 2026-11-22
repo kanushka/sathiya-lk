@@ -5,6 +5,7 @@ import { useTranslation } from 'react-i18next';
 import { Button } from '../../ui/Button';
 import { Field, inputClass } from '../../ui/Field';
 import { Modal } from '../../ui/Modal';
+import { FormError } from '../../ui/FormError';
 
 export interface NewTemplateModalProps {
   onCreate: (name: string) => Promise<void>;
@@ -40,9 +41,7 @@ export function NewTemplateModal({ onCreate, onClose }: NewTemplateModalProps) {
       footer={
         <>
           {failed && (
-            <p role="alert" className="mr-auto text-sm font-medium text-danger">
-              {t('page.saveFailed')}
-            </p>
+            <FormError className="mr-auto">{t('page.saveFailed')}</FormError>
           )}
           <Button onClick={onClose}>{t('new.cancel')}</Button>
           <Button variant="primary" type="submit" form="template-form" disabled={saving || name.trim() === ''}>

@@ -41,7 +41,7 @@ describe('templates page', () => {
 
   it('per-day switch copies rows to every day', async () => {
     const user = setup();
-    await user.click(screen.getByRole('button', { name: 'Different per day' }));
+    await user.click(screen.getByRole('radio', { name: 'Different per day' }));
     expect(screen.getAllByRole('tab')).toHaveLength(5);
     await user.click(screen.getByRole('tab', { name: 'Fri' }));
     expect(screen.getAllByLabelText(/^Start, row/)).toHaveLength(9);

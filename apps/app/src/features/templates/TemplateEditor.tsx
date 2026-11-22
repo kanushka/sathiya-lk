@@ -6,6 +6,10 @@ import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Button } from '../../ui/Button';
 import { cx } from '../../ui/cx';
+import { inputBareClass } from '../../ui/Field';
+import { IconButton } from '../../ui/IconButton';
+import { SegmentedControl } from '../../ui/SegmentedControl';
+import { Tabs } from '../../ui/Tabs';
 import { appendRow, DAY_INDEXES, toPerDay, type TemplateDraft, type ValidationError } from './model';
 
 export interface TemplateEditorProps {
@@ -15,8 +19,7 @@ export interface TemplateEditorProps {
   onChange: (draft: TemplateDraft) => void;
 }
 
-const timeClass =
-  'box-border h-[38px] w-24 rounded-lg border border-line-strong bg-white text-center text-[15px] tabular-nums focus:border-brand focus:outline-none focus:ring-2 focus:ring-brand/30 disabled:bg-slate-50';
+const timeClass = `${inputBareClass} h-10 w-24 text-center tabular-nums`;
 
 export function TemplateEditor({ draft, errors, readOnly, onChange }: TemplateEditorProps) {
   const { t } = useTranslation('templates');
@@ -39,40 +42,28 @@ export function TemplateEditor({ draft, errors, readOnly, onChange }: TemplateEd
   const rowErrors = (i: number) => errors.some((e) => e.row === i && (e.day === null || e.day === day));
 
   let periodNo = 0;
-  const modeBtn = (mode: TemplateDraft['mode'], label: string) => (
-    <button
-      type="button"
-      aria-pressed={draft.mode === mode}
-      disabled={readOnly}
-      onClick={() => setMode(mode)}
-      className={cx('px-3 py-2 text-[13px] font-semibold', draft.mode === mode ? 'bg-ink text-white' : 'text-ink-soft')}
-    >
-      {label}
-    </button>
-  );
-
   return (
     <div>
-      <div className="mb-4 inline-flex overflow-hidden rounded-lg border border-line-strong">
-        {modeBtn('same', t('editor.same'))}
-        {modeBtn('perDay', t('editor.perDay'))}
-      </div>
+      <SegmentedControl
+        aria-label={t('editor.modeLabel')}
+        className="mb-4"
+        disabled={readOnly}
+        value={draft.mode}
+        onChange={setMode}
+        options={[
+          { value: 'same', label: t('editor.same') },
+          { value: 'perDay', label: t('editor.perDay') },
+        ]}
+      />
 
       {perDay && (
-        <div role="tablist" className="mb-3 flex gap-1.5">
-          {DAY_INDEXES.map((d) => (
-            <button
-              key={d}
-              type="button"
-              role="tab"
-              aria-selected={d === day}
-              onClick={() => setDay(d)}
-              className={cx('rounded-lg px-3.5 py-1.5 text-sm font-semibold', d === day ? 'bg-brand/10 text-brand' : 'text-ink-soft hover:bg-slate-50')}
-            >
-              {tc(`days.short.${d}`)}
-            </button>
-          ))}
-        </div>
+        <Tabs
+          aria-label={t('editor.dayTabs')}
+          className="mb-3"
+          value={String(day)}
+          onChange={(v) => setDay(Number(v) as DayIndex)}
+          items={DAY_INDEXES.map((d) => ({ value: String(d), label: tc(`days.short.${d}`) }))}
+        />
       )}
 
       <div className="flex flex-col gap-2">
@@ -105,9 +96,12 @@ export function TemplateEditor({ draft, errors, readOnly, onChange }: TemplateEd
               />
               <span className="flex-1 text-[13px] text-ink-soft">{/^\d\d:\d\d$/.test(r.start) && /^\d\d:\d\d$/.test(r.end) ? t('editor.minutes', { n: Math.max(toMinutes(r.end) - toMinutes(r.start), 0) }) : ''}</span>
               {!readOnly && (
-                <button type="button" aria-label={t('editor.remove', { n })} className="border-0 bg-transparent text-base text-ink-muted" onClick={() => setRows(rows.filter((_, j) => j !== i))}>
-                  ×
-                </button>
+                <IconButton
+                  icon="close"
+                  size="sm"
+                  label={t('editor.remove', { n })}
+                  onClick={() => setRows(rows.filter((_, j) => j !== i))}
+                />
               )}
             </div>
           );
