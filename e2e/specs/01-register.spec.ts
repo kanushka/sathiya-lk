@@ -28,7 +28,7 @@ test('register a government school: census checks, email verification gate, land
   await page.getByLabel('City', { exact: true }).fill('Nugegoda');
   await page.getByLabel('District').fill('Colombo');
   await page.getByLabel('Staff ID prefix').fill('NCC');
-  await expect(page.getByLabel('School type')).toHaveValue('government');
+  await expect(page.getByRole('combobox', { name: 'School type' })).toContainText('Government');
   await expect(next).toBeDisabled();
   await expect(page.getByRole('checkbox', { name: /No census number/ })).toBeDisabled();
   await page.getByLabel('Census number', { exact: true }).fill('12');

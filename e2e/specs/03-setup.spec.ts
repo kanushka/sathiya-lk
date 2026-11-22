@@ -2,7 +2,7 @@
 // Copyright (C) 2026 Kanushka Gayan
 import { expect, test } from '@playwright/test';
 import { subjects } from '@sathiya/core/fixtures';
-import { freshSchoolAdmin, loginAdmin, shot } from '../helpers';
+import { freshSchoolAdmin, loginAdmin, pick, shot } from '../helpers';
 
 test('new school setup: subjects, grade plan and period templates', async ({ page }) => {
   const admin = await freshSchoolAdmin('setup');
@@ -26,16 +26,16 @@ test('new school setup: subjects, grade plan and period templates', async ({ pag
   await page.getByRole('link', { name: 'Grades & classes' }).click();
   await page.getByRole('button', { name: '+ Add grade' }).first().click();
   const grade = page.getByRole('dialog', { name: 'Add grade' });
-  await grade.getByLabel('Grade').selectOption({ label: 'Grade 6' });
+  await pick(grade, 'Grade', 'Grade 6');
   await grade.getByRole('button', { name: 'Add grade' }).click();
   await expect(page.getByRole('heading', { name: 'Grade 6 settings' })).toBeVisible();
   await page.getByRole('button', { name: '+ Add class 6A' }).click();
   await expect(page.getByText('6A', { exact: true })).toBeVisible();
-  await page.getByRole('combobox', { name: '+ Add subject' }).selectOption({ label: 'Mathematics' });
+  await pick(page, '+ Add subject', 'Mathematics');
   const maths = page.getByRole('spinbutton', { name: 'Periods per week for Mathematics' });
   await maths.fill('6');
   await maths.blur();
-  await page.getByRole('combobox', { name: '+ Add subject' }).selectOption({ label: 'Agriculture' });
+  await pick(page, '+ Add subject', 'Agriculture');
   await expect(page.getByRole('spinbutton', { name: 'Periods per week for Agriculture' })).toBeVisible();
   await expect(page.getByText(/\/ 40 periods in the week/)).toBeVisible();
   await shot(page, 'admin-grades');

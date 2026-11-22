@@ -1,9 +1,8 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
 // Copyright (C) 2026 Kanushka Gayan
 import { expect, test } from '@playwright/test';
-import { T } from '@sathiya/core/fixtures';
 import { ADMIN } from '../../scripts/seed';
-import { loginAdmin, shot } from '../helpers';
+import { loginAdmin, pick, shot } from '../helpers';
 
 test('teacher view: build a religion block through the block editor', async ({ page }) => {
   await loginAdmin(page, ADMIN.email, ADMIN.password);
@@ -23,10 +22,13 @@ test('teacher view: build a religion block through the block editor', async ({ p
   await classes.getByRole('button', { name: /^6C Religion block/ }).click();
 
   const block = page.getByRole('dialog', { name: 'Religion' });
-  await expect(block.getByRole('combobox', { name: 'Buddhism' })).toHaveValue(T.ananda);
-  await expect(block.getByRole('combobox', { name: 'Buddhism' }).getByRole('option', { name: /M\. Silva/ })).toHaveCount(0);
-  await block.getByRole('combobox', { name: 'Catholicism' }).selectOption(T.mSilva);
-  await block.getByRole('combobox', { name: 'Islam' }).selectOption(T.rizan);
+  const buddhism = block.getByRole('combobox', { name: 'Buddhism' });
+  await expect(buddhism).toContainText(/Ananda/);
+  await buddhism.click();
+  await expect(page.getByRole('option', { name: /M\. Silva/ })).toHaveCount(0);
+  await page.keyboard.press('Escape');
+  await pick(block, 'Catholicism', /M\. Silva/);
+  await pick(block, 'Islam', /Rizan/);
   await shot(page, 'block-editor');
   await block.getByRole('button', { name: 'Save' }).click();
   await expect(block).toBeHidden();
