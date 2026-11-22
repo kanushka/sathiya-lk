@@ -4,6 +4,7 @@ import { pickName, type Lang, type PlanItem, type Subject } from '@sathiya/core'
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Button } from '../../ui/Button';
+import { Chip } from '../../ui/Chip';
 import { MultiSelect } from '../../ui/MultiSelect';
 import { Select } from '../../ui/Select';
 import { GroupModal } from './GroupModal';
@@ -105,15 +106,28 @@ export function PlanEditor({ plan, capacity, subjects, readOnly, onChange }: Pla
                     <span className="ml-2 rounded-full bg-[#FBF1DC] px-2 py-0.5 text-[11px] font-bold uppercase tracking-wide text-[#7A5410]">
                       {t('plan.group')}
                     </span>
-                    <MultiSelect
-                      className="mt-2 max-w-md"
-                      aria-label={t('plan.addOption', { group: name })}
-                      disabled={readOnly}
-                      value={p.optionSubjectIds}
-                      onChange={(ids) => setGroupOptions(i, p, ids)}
-                      placeholder={t('plan.optionPlaceholder')}
-                      options={subjects.map((s) => ({ value: s.id, label: pickName(s, lang) }))}
-                    />
+                    {readOnly ? (
+                      <div className="mt-2 flex flex-wrap items-center gap-1.5">
+                        {p.optionSubjectIds.map((id) => (
+                          <Chip key={id}>{subjectName(id)}</Chip>
+                        ))}
+                      </div>
+                    ) : (
+                      <MultiSelect
+                        className="mt-2 max-w-md"
+                        aria-label={t('plan.addOption', { group: name })}
+                        value={p.optionSubjectIds}
+                        onChange={(ids) => setGroupOptions(i, p, ids)}
+                        placeholder={t('plan.optionPlaceholder')}
+                        maxChips={Infinity}
+                        wrap
+                        getRemoveLabel={(o) => t('plan.removeOption', { name: o.label, group: name })}
+                        options={[
+                          ...subjects.map((s) => ({ value: s.id, label: pickName(s, lang) })),
+                          ...p.optionSubjectIds.filter((id) => !byId.has(id)).map((id) => ({ value: id, label: id })),
+                        ]}
+                      />
+                    )}
                   </>
                 )}
               </div>

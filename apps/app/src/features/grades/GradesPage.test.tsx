@@ -64,7 +64,7 @@ describe('grades page', () => {
 
   it('group option remove and add', async () => {
     const user = await openGrade6();
-    await user.click(screen.getByRole('button', { name: 'Remove Music' }));
+    await user.click(screen.getByRole('button', { name: 'Remove Music from Aesthetic' }));
     const afterRemove = vi.mocked(api.saveGradePlan).mock.calls[0]![2];
     const aesthetic = afterRemove.find((p) => p.kind === 'group' && p.key === 'aesthetic');
     expect(aesthetic).toMatchObject({ optionSubjectIds: [S.dancing, S.art] });
@@ -127,6 +127,40 @@ describe('grades page', () => {
     expect(english).toHaveValue(Number((grade6.plan.find((p) => p.kind === 'subject' && p.subjectId === S.english) as { perWeek: number }).perWeek));
   });
 
+  it('read-only lists every option subject of a group in stored order, with no picker', async () => {
+    flags.readOnly = true;
+    const ids = [S.music, S.dancing, S.art, S.pali, S.tamil, 's-gone'];
+    const wide = {
+      ...ctx,
+      grades: ctx.grades.map((g) =>
+        g.id === G.g6 ? { ...g, plan: g.plan.map((p) => (p.kind === 'group' && p.key === 'aesthetic' ? { ...p, optionSubjectIds: ids } : p)) } : g,
+      ),
+    };
+    const user = userEvent.setup();
+    renderWithSchool(<GradesPage />, { ctx: wide, entries });
+    await user.click(screen.getByRole('button', { name: /^Grade 6\b/ }));
+    expect(screen.queryByRole('combobox', { name: /Add option/ })).toBeNull();
+    const chips = screen.getAllByText(/^(Music|Dancing|Art|Pali|Tamil \(2nd language\)|s-gone)$/, { selector: 'span.truncate' });
+    expect(chips.map((c) => c.textContent)).toEqual(['Music', 'Dancing', 'Art', 'Pali', 'Tamil (2nd language)', 's-gone']);
+  });
+
+  it('shows all option chips and keeps unknown subject ids removable when editable', async () => {
+    const ids = [S.music, S.dancing, S.art, S.pali, 's-gone'];
+    const wide = {
+      ...ctx,
+      grades: ctx.grades.map((g) =>
+        g.id === G.g6 ? { ...g, plan: g.plan.map((p) => (p.kind === 'group' && p.key === 'aesthetic' ? { ...p, optionSubjectIds: ids } : p)) } : g,
+      ),
+    };
+    const user = userEvent.setup();
+    renderWithSchool(<GradesPage />, { ctx: wide, entries });
+    await user.click(screen.getByRole('button', { name: /^Grade 6\b/ }));
+    expect(screen.queryByText(/^\+\d+$/)).toBeNull();
+    await user.click(screen.getByRole('button', { name: 'Remove s-gone from Aesthetic' }));
+    const saved = vi.mocked(api.saveGradePlan).mock.calls[0]![2];
+    expect(saved.find((p) => p.kind === 'group' && p.key === 'aesthetic')).toMatchObject({ optionSubjectIds: [S.music, S.dancing, S.art, S.pali] });
+  });
+
   it('read-only hides every write control', async () => {
     flags.readOnly = true;
     const user = await openGrade6();
@@ -135,8 +169,9 @@ describe('grades page', () => {
     expect(screen.queryByRole('button', { name: /Add subject|Add group/ })).toBeNull();
     expect(screen.queryByRole('button', { name: 'Remove' })).toBeNull();
     expect(screen.queryByRole('button', { name: 'Custom plan' })).toBeNull();
-    expect(screen.getByRole('combobox', { name: /^Add option to Aesthetic/ })).toBeDisabled();
-    screen.getAllByRole('button', { name: /^Remove (Music|Dancing|Art)$/ }).forEach((b) => expect(b).toBeDisabled());
+    expect(screen.queryByRole('combobox', { name: /^Add option to Aesthetic/ })).toBeNull();
+    expect(screen.queryByRole('button', { name: /^Remove .* from Aesthetic/ })).toBeNull();
+    ['Music', 'Dancing', 'Art'].forEach((n) => expect(screen.getByText(n, { selector: 'span.truncate' })).toBeInTheDocument());
     expect(screen.getByLabelText('Periods per week for Mathematics')).toBeDisabled();
     await user.click(screen.getByRole('button', { name: /^Grade 1\b/ }));
     expect(api.saveGradePlan).not.toHaveBeenCalled();

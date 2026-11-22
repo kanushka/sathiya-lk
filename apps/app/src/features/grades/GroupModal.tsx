@@ -27,6 +27,7 @@ export function GroupModal({ initial, subjects, newKey, onSave, onClose }: Group
   const [options, setOptions] = useState<string[]>(initial?.optionSubjectIds ?? []);
   const [submitted, setSubmitted] = useState(false);
 
+  const byId = new Map(subjects.map((s) => [s.id, s]));
   const nameError = nameEn.trim() ? null : t('group.errors.name');
   const optionsError = options.length > 0 ? null : t('group.errors.options');
 
@@ -81,7 +82,13 @@ export function GroupModal({ initial, subjects, newKey, onSave, onClose }: Group
             value={options}
             onChange={setOptions}
             placeholder={t('group.addOptionPlaceholder')}
-            options={subjects.map((s) => ({ value: s.id, label: pickName(s, lang) }))}
+            maxChips={Infinity}
+            wrap
+            getRemoveLabel={(o) => t('group.removeOption', { name: o.label })}
+            options={[
+              ...subjects.map((s) => ({ value: s.id, label: pickName(s, lang) })),
+              ...options.filter((id) => !byId.has(id)).map((id) => ({ value: id, label: id })),
+            ]}
           />
         </Field>
       </form>
