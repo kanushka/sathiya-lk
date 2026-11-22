@@ -46,7 +46,7 @@ describe('SubjectProgress', () => {
     renderWithSchool(<SubjectProgress cls={cls6B} entries={entries6B} onPin={vi.fn()} onStop={onStop} activeSubjectId={S.sinhala} />, { ctx, entries: entries6B });
     expect(row('Sinhala')).toHaveAttribute('data-active', 'true');
     expect(row('Science')).not.toHaveAttribute('data-active');
-    await userEvent.click(within(row('Sinhala')).getByRole('button', { name: 'Stop pinning Sinhala' }));
+    await userEvent.click(within(row('Sinhala')).getByRole('button', { name: 'Done pinning Sinhala' }));
     expect(onStop).toHaveBeenCalled();
   });
 

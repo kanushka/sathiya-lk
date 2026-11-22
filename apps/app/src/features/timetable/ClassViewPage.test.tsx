@@ -246,7 +246,7 @@ describe('ClassViewPage', () => {
       expect(pinBar()).toHaveTextContent('Science · Mrs. S. Gunasekara');
       expect(pinBar()).toHaveTextContent('4 of 5 placed · 1 to go');
       expect(grid().closest('section')).toHaveAttribute('data-pin-mode', 'true');
-      expect(screen.getByRole('button', { name: 'Stop pinning Science' }).closest('li')).toHaveAttribute('data-active', 'true');
+      expect(screen.getByRole('button', { name: 'Done pinning Science' }).closest('li')).toHaveAttribute('data-active', 'true');
       await waitFor(() => expect(slot('Wednesday', 4)).toHaveFocus());
     });
 
@@ -323,7 +323,7 @@ describe('ClassViewPage', () => {
     it.each([
       ['Done', async () => userEvent.click(within(pinBar()).getByRole('button', { name: 'Done' }))],
       ['Escape', async () => userEvent.keyboard('{Escape}')],
-      ['the active subject row', async () => userEvent.click(screen.getByRole('button', { name: 'Stop pinning Science' }))],
+      ['the active subject row', async () => userEvent.click(screen.getByRole('button', { name: 'Done pinning Science' }))],
     ])('exits with %s, keeping the pins', async (_, exit) => {
       const api = await assignScience();
       await exit();

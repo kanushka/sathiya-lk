@@ -29,6 +29,7 @@ import { Combobox } from '../../ui/Combobox';
 import { cx } from '../../ui/cx';
 import { EmptyState } from '../../ui/EmptyState';
 import { Icon } from '../../ui/Icon';
+import { IconButton } from '../../ui/IconButton';
 import { LoadingState } from '../../ui/LoadingState';
 import { Modal } from '../../ui/Modal';
 import { BlockEditor } from './BlockEditor';
@@ -217,7 +218,6 @@ function TeacherView({ teacher, teachers, template }: { teacher: Teacher; teache
     .join(' · ');
 
   const teacherLabel = (x: Teacher) => t('teacherView.teacherOption', { name: teacherDisplayName(x, lang), staffId: x.staffId });
-  const navBtn = 'flex h-10 w-10 items-center justify-center rounded-lg border border-line-strong bg-white text-ink-soft hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-40';
   const describe = (e: Entry) => {
     const time = entryTime(e, ctx);
     return t('teacherView.outsideItem', {
@@ -232,9 +232,7 @@ function TeacherView({ teacher, teachers, template }: { teacher: Teacher; teache
     <div>
       <div className="mb-[18px] flex flex-wrap items-center justify-between gap-3">
         <div className="flex flex-wrap items-center gap-2.5">
-          <button type="button" aria-label={t('teacherView.prev')} className={navBtn} disabled={index <= 0} onClick={() => go(teachers[index - 1])}>
-            <Icon name="chevronLeft" size={16} />
-          </button>
+          <IconButton icon="chevronLeft" variant="secondary" label={t('teacherView.prev')} disabled={index <= 0} onClick={() => go(teachers[index - 1])} />
           <label htmlFor="teacher-view-select" className="sr-only">
             {t('teacherView.teacherLabel')}
           </label>
@@ -250,15 +248,13 @@ function TeacherView({ teacher, teachers, template }: { teacher: Teacher; teache
               searchPlaceholder={t('teacherView.teacherSearch')}
             />
           </div>
-          <button
-            type="button"
-            aria-label={t('teacherView.next')}
-            className={navBtn}
+          <IconButton
+            icon="chevronRight"
+            variant="secondary"
+            label={t('teacherView.next')}
             disabled={index >= teachers.length - 1}
             onClick={() => go(teachers[index + 1])}
-          >
-            <Icon name="chevronRight" size={16} />
-          </button>
+          />
           <span className="ml-1.5 text-sm text-ink-muted">{summary}</span>
         </div>
         <Button onClick={print}>

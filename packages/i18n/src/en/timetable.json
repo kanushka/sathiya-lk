@@ -195,7 +195,7 @@
     "pinnedMany_other": "Pinned {{count}} {{subject}} lessons.",
     "hint": "Click + to add a lesson. After Assign, Pin mode keeps the same subject and teacher so you can pin more periods. Use the pin button in the list to start from a subject.",
     "listPin": "Pin {{subject}}",
-    "listStop": "Stop pinning {{subject}}",
+    "listStop": "Done pinning {{subject}}",
     "noteSuggested": "suggested",
     "noteOver": "over plan",
     "noteLimit": "at daily limit {{load}}/{{max}}",

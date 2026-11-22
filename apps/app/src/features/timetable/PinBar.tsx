@@ -71,8 +71,8 @@ export function PinBar({ subject, teacher, color, progress, suggestedCount, onSu
             {t('pin.pinSuggested', { count: suggestedCount })}
           </Button>
         )}
-        <Button variant="danger" onClick={onDone}>
-          <Icon name="stop" size={12} />
+        <Button variant="onBrand" onClick={onDone}>
+          <Icon name="check" size={16} strokeWidth={2} />
           {t('pin.done')}
         </Button>
       </div>

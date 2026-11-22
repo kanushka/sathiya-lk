@@ -21,7 +21,7 @@ import { useLang } from '../../app/LangProvider';
 import { useSchool } from '../../app/SchoolProvider';
 import { useReadOnly } from '../../ui/AdminLayout';
 import { Button } from '../../ui/Button';
-import { cx } from '../../ui/cx';
+import { ToggleChip } from '../../ui/Chip';
 import { Modal } from '../../ui/Modal';
 import { Select, type SelectOption } from '../../ui/Select';
 import { limitWarning, teacherReason, teachesAtAll } from './labels';
@@ -174,26 +174,16 @@ function BlockEditorBody({ onClose, baseClassId, day, period, mode, entry, entri
       <div className="mt-2 flex flex-wrap gap-2">
         <span
           aria-label={t('block.baseClass', { name: base.name })}
-          className="inline-flex h-8 items-center rounded-full bg-brand px-3 text-[13px] font-semibold text-on-brand"
+          className="inline-flex h-8 items-center rounded-lg bg-brand px-3 text-[13px] font-semibold text-on-brand"
         >
           {base.name}
         </span>
         {chipClasses.map((c) => {
           const on = classIds.includes(c.id);
           return (
-            <button
-              key={c.id}
-              type="button"
-              aria-pressed={on}
-              disabled={readOnly}
-              onClick={() => toggle(c.id)}
-              className={cx(
-                'inline-flex h-8 items-center rounded-full border px-3 text-[13px] font-semibold disabled:cursor-not-allowed',
-                on ? 'border-brand bg-brand/10 text-brand' : 'border-line-strong bg-white text-ink-soft hover:bg-slate-50',
-              )}
-            >
+            <ToggleChip key={c.id} pressed={on} disabled={readOnly} onToggle={() => toggle(c.id)}>
               {c.name}
-            </button>
+            </ToggleChip>
           );
         })}
       </div>

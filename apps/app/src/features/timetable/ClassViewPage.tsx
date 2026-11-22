@@ -25,6 +25,7 @@ import { useReadOnly } from '../../ui/AdminLayout';
 import { Button } from '../../ui/Button';
 import { EmptyState } from '../../ui/EmptyState';
 import { Icon } from '../../ui/Icon';
+import { IconButton } from '../../ui/IconButton';
 import { LoadingState } from '../../ui/LoadingState';
 import { Modal } from '../../ui/Modal';
 import { Select } from '../../ui/Select';
@@ -273,15 +274,12 @@ function ClassView({ cls, classes }: { cls: SchoolClass; classes: SchoolClass[] 
     setFill(null);
   }
 
-  const navBtn = 'flex h-10 w-10 items-center justify-center rounded-lg border border-line-strong bg-white text-ink-soft hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-40';
 
   return (
     <div>
       <div className="mb-[18px] flex flex-wrap items-center justify-between gap-3">
         <div className="flex flex-wrap items-center gap-2.5">
-          <button type="button" aria-label={t('classView.prev')} className={navBtn} disabled={index <= 0} onClick={() => go(classes[index - 1])}>
-            <Icon name="chevronLeft" size={16} />
-          </button>
+          <IconButton icon="chevronLeft" variant="secondary" label={t('classView.prev')} disabled={index <= 0} onClick={() => go(classes[index - 1])} />
           <Select
             aria-label={t('classView.classLabel')}
             value={cls.id}
@@ -292,9 +290,7 @@ function ClassView({ cls, classes }: { cls: SchoolClass; classes: SchoolClass[] 
               label: t('classView.classOption', { grade: gradeNumber(c), name: c.name }),
             }))}
           />
-          <button type="button" aria-label={t('classView.next')} className={navBtn} disabled={index >= classes.length - 1} onClick={() => go(classes[index + 1])}>
-            <Icon name="chevronRight" size={16} />
-          </button>
+          <IconButton icon="chevronRight" variant="secondary" label={t('classView.next')} disabled={index >= classes.length - 1} onClick={() => go(classes[index + 1])} />
           <span className="ml-1.5 text-sm text-ink-muted">
             {classTeacher ? (
               <>

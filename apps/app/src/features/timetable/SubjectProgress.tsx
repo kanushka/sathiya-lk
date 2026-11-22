@@ -4,7 +4,7 @@
 import { classProgress, effectivePlan, weekCapacity, windowOf, type Entry, type SchoolClass } from '@sathiya/core';
 import { useTranslation } from 'react-i18next';
 import { cx } from '../../ui/cx';
-import { Icon } from '../../ui/Icon';
+import { IconButton } from '../../ui/IconButton';
 import { useLang } from '../../app/LangProvider';
 import { useSchool } from '../../app/SchoolProvider';
 import { planItemColor, planItemName } from './labels';
@@ -62,19 +62,15 @@ export function SubjectProgress({ cls, entries, onPin, onStop, activeSubjectId }
               {onPin && (
                 <span className="flex w-9 shrink-0 justify-end">
                   {subjectId !== null && (
-                    <button
-                      type="button"
+                    <IconButton
                       data-pin-subject={subjectId}
-                      aria-label={active ? t('pin.listStop', { subject: name }) : t('pin.listPin', { subject: name })}
-                      title={active ? t('pin.listStop', { subject: name }) : t('pin.listPin', { subject: name })}
+                      icon={active ? 'check' : 'pin'}
+                      label={active ? t('pin.listStop', { subject: name }) : t('pin.listPin', { subject: name })}
+                      variant={active ? 'primary' : 'secondary'}
+                      size="sm"
+                      pressed={active}
                       onClick={() => (active ? onStop?.() : onPin(subjectId))}
-                      className={cx(
-                        'flex h-8 w-9 items-center justify-center rounded-lg focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-1 focus-visible:outline-brand',
-                        active ? 'border-0 bg-danger text-white hover:brightness-110' : 'border border-line-strong bg-white text-brand hover:bg-brand/5',
-                      )}
-                    >
-                      <Icon name={active ? 'stop' : 'pin'} size={active ? 14 : 16} strokeWidth={2} />
-                    </button>
+                    />
                   )}
                 </span>
               )}
