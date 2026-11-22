@@ -7,6 +7,7 @@ export * from './names';
 export * from './directory';
 export * from './directoryDoc';
 export * from './census';
+export * from './yearLabel';
 export * from './staff';
 export * from './standardSubjects';
 export * from './subjectShort';

@@ -160,6 +160,7 @@ export function DashboardPage() {
 
       {dialog === 'new' && (
         <NewYearModal
+          existingLabels={years.map((y) => y.label)}
           onClose={() => setDialog(null)}
           onCreate={async (label) => {
             setYearId(await api.createYear(sid, label));

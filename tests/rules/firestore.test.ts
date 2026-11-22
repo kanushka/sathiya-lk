@@ -358,6 +358,12 @@ describe('years', () => {
       await assertFails(set('admin', y3, { label: '  ', status: 'draft' }));
       await assertFails(set('admin', y3, { label: 2028, status: 'draft' }));
     });
+    it('denies admin creating a year whose label is not a 4-digit year', async () => {
+      for (const label of ['abc', '28', '20288', ' 2028', '2028 ', '1999', '2101', '2028a']) {
+        await assertFails(set('admin', y3, { label, status: 'draft' }));
+      }
+      await assertSucceeds(set('admin', y3, { label: '2000', status: 'draft' }));
+    });
     deny([['teacher', y3], ['super', y3], ['otherAdmin', y3], ['anon', y3]], (r, p) => set(r, p, { label: '2028', status: 'draft' }));
   });
   describe('update', () => {

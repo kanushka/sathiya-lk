@@ -13,6 +13,10 @@
     "newTitle": "New timetable year",
     "label": "Year label",
     "labelHint": "For example 2027. It starts as an empty draft.",
+    "errors": {
+      "format": "Enter a 4-digit year, for example 2027",
+      "duplicate": "{{label}} already exists"
+    },
     "create": "Create year",
     "cancel": "Cancel",
     "created": "Year created",

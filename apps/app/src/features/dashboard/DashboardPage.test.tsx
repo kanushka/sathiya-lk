@@ -108,6 +108,24 @@ describe('dashboard page', () => {
     expect(api.createYear).toHaveBeenCalledWith('siripura', '2027');
   });
 
+  it('rejects a malformed or duplicate year label', async () => {
+    const user = setup();
+    await user.click(screen.getByRole('button', { name: 'New year' }));
+    const dialog = screen.getByRole('dialog');
+    const create = within(dialog).getByRole('button', { name: 'Create year' });
+    await user.type(within(dialog).getByLabelText('Year label'), 'abc');
+    expect(within(dialog).getByText('Enter a 4-digit year, for example 2027')).toBeInTheDocument();
+    expect(create).toBeDisabled();
+    await user.clear(within(dialog).getByLabelText('Year label'));
+    await user.type(within(dialog).getByLabelText('Year label'), '2026');
+    expect(within(dialog).getByText('2026 already exists')).toBeInTheDocument();
+    expect(create).toBeDisabled();
+    await user.clear(within(dialog).getByLabelText('Year label'));
+    await user.type(within(dialog).getByLabelText('Year label'), '2027');
+    expect(create).toBeEnabled();
+    expect(api.createYear).not.toHaveBeenCalled();
+  });
+
   it('hides write actions when read-only', () => {
     flags.readOnly = true;
     setup();
