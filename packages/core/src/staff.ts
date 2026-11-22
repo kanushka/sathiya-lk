@@ -20,3 +20,26 @@ export function nextStaffNumber(existing: string[], prefix: string): number {
   }
   return max + 1;
 }
+
+const isInitial = (w: string) => /^([A-Za-z]\.?)+$/.test(w) && w.replace(/\./g, '').length <= (w.includes('.') ? 4 : 1);
+
+export function suggestStaffPrefix(name: string): string {
+  const words = name
+    .trim()
+    .replace(/^[A-Za-z]{1,4}\s*\/\s*/, '')
+    .split(/\s+/)
+    .filter((w) => /^[A-Za-z]/.test(w) && !isInitial(w));
+  if (words.length === 0) return '';
+  const prefix =
+    words.length === 1
+      ? words[0]!.replace(/[^A-Za-z]/g, '').slice(0, 3)
+      : words
+          .slice(0, 4)
+          .map((w) => w[0])
+          .join('');
+  return prefix.length >= 2 ? prefix.toUpperCase() : '';
+}
+
+export function followPrefix(prevName: string, nextName: string, prefix: string): string {
+  return prefix === '' || prefix === suggestStaffPrefix(prevName) ? suggestStaffPrefix(nextName) : prefix;
+}
