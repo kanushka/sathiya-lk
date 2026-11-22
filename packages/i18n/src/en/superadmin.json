@@ -83,6 +83,17 @@
     "enabled": "{{name}} enabled",
     "failed": "Could not change status: {{message}}"
   },
+  "releaseCensus": {
+    "button": "Release census number",
+    "title": "Release census number {{censusNo}}?",
+    "body": "This removes census number {{censusNo}} from {{name}} so another school can register with it. {{name}} keeps its data but will have no census number. Usually done after suspending a fake or squatting registration.",
+    "confirm": "Release {{censusNo}}",
+    "toast": {
+      "released": "Census number {{censusNo}} released from {{name}}",
+      "cleared": "Census number {{censusNo}} cleared from {{name}} (it was not reserved for this school)",
+      "failed": "Could not release census number: {{message}}"
+    }
+  },
   "detail": {
     "back": "All schools",
     "notFound": "School not found",
@@ -91,6 +102,8 @@
     "city": "City",
     "type": "School type",
     "censusNo": "Census number",
+    "censusReleased": "Census number released",
+    "censusReleasedValue": "{{censusNo}} on {{date}}",
     "district": "District",
     "address": "Address",
     "phone": "Phone",

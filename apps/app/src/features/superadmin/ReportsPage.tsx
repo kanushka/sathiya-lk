@@ -15,6 +15,7 @@ import { useToast } from '../../ui/Toast';
 import { errorMessage } from './errors';
 import { formatDate } from './format';
 import { firestoreReportWriter, useOpenReports, type ReportWriter } from './reports';
+import { defaultReleaseCensus, ReleaseCensusButton, type ReleaseCensusFn } from './ReleaseCensus';
 import { StatusPill } from './StatusControl';
 import { defaultSetStatus, type SetStatusFn } from './status';
 
@@ -23,6 +24,7 @@ export interface ReportsPageProps {
   schools?: CollectionState<School>;
   writer?: ReportWriter;
   setStatus?: SetStatusFn;
+  releaseCensus?: ReleaseCensusFn;
 }
 
 export function ReportsPage({
@@ -30,6 +32,7 @@ export function ReportsPage({
   schools: injectedSchools,
   writer = firestoreReportWriter,
   setStatus = defaultSetStatus,
+  releaseCensus = defaultReleaseCensus,
 }: ReportsPageProps) {
   const { t } = useTranslation('superadmin');
   const { lang } = useLang();
@@ -95,6 +98,7 @@ export function ReportsPage({
                     <div className="flex flex-wrap gap-2">
                       <CloseButton report={r} writer={writer} />
                       {school && school.status === 'active' && <SuspendButton school={school} setStatus={setStatus} />}
+                      {school && <ReleaseCensusButton school={school} release={releaseCensus} />}
                     </div>
                   </Td>
                 </Tr>

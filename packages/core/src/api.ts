@@ -16,6 +16,7 @@ export const callables = {
   deleteSetupItem: 'deleteSetupItem',
   reportSchool: 'reportSchool',
   sendAuthEmail: 'sendAuthEmail',
+  releaseCensusNo: 'releaseCensusNo',
 } as const;
 
 export interface RegisterSchoolReq { school: Omit<School, 'id' | 'status' | 'createdAt' | 'activeYearId'>; adminName: string; acceptedTermsVersion: string }
@@ -42,6 +43,9 @@ export interface ReportSchoolReq { schoolId: string; reason: ReportReason; detai
 export interface ReportSchoolRes { ok: true }
 export interface SendAuthEmailReq { kind: AuthEmailKind; email?: string; lang: Lang }
 export interface SendAuthEmailRes { ok: true }
+export interface ReleaseCensusNoReq { schoolId: string }
+// freed: false when the index entry was already gone or belongs to another school; the school's own field is cleared either way.
+export interface ReleaseCensusNoRes { censusNo: string; freed: boolean }
 interface CallableMap {
   registerSchool: { req: RegisterSchoolReq; res: RegisterSchoolRes };
   createTeacher: { req: CreateTeacherReq; res: CreateTeacherRes };
@@ -55,6 +59,7 @@ interface CallableMap {
   deleteSetupItem: { req: DeleteSetupItemReq; res: DeleteSetupItemRes };
   reportSchool: { req: ReportSchoolReq; res: ReportSchoolRes };
   sendAuthEmail: { req: SendAuthEmailReq; res: SendAuthEmailRes };
+  releaseCensusNo: { req: ReleaseCensusNoReq; res: ReleaseCensusNoRes };
 }
 export type CallableName = keyof typeof callables;
 export type CallableTypes = { [K in CallableName]: CallableMap[K] };

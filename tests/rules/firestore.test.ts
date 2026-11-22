@@ -115,6 +115,11 @@ describe('schools/{sid} doc', () => {
     deny([['otherAdmin', s1], ['otherTeacher', s1], ['teacher', paths.school('s2')], ['noClaims', s1], ['anon', s1]], read);
   });
 
+  describe('census number is functions only', () => {
+    deny([['super', s1], ['teacher', s1]], (r, p) => update(r, p, { censusNo: '54321' }));
+    deny([['super', s1]], (r, p) => update(r, p, { censusReleasedAt: 2, censusReleasedBy: 'u-super' }));
+  });
+
   describe('update', () => {
     it.each([
       ['nameEn', 'New name'],
@@ -140,6 +145,9 @@ describe('schools/{sid} doc', () => {
       ['createdAt', 2],
       ['type', 'private'],
       ['censusNo', '54321'],
+      ['releasedCensusNo', '12345'],
+      ['censusReleasedAt', 2],
+      ['censusReleasedBy', 'u-admin'],
       ['somethingElse', 1],
     ])('denies admin changing %s', async (k, v) => {
       await assertFails(update('admin', s1, { [k]: v }));
@@ -427,7 +435,9 @@ describe('censusIndex (functions only)', () => {
   deny([['admin', c], ['super', c], ['noClaims', c], ['anon', c]], read);
   deny([['admin', 'censusIndex'], ['super', 'censusIndex']], list);
   deny([['noClaims', n], ['admin', n], ['super', n], ['anon', n]], (r, p) => set(r, p, { schoolId: 'x' }));
-  deny([['admin', c], ['super', c]], del);
+  deny([['admin', c], ['super', c], ['teacher', c]], del);
+  deny([['teacher', c]], read);
+  deny([['admin', c], ['super', c], ['teacher', c]], (r, p) => update(r, p, { schoolId: 'x' }));
 });
 
 describe('mail (functions only)', () => {
