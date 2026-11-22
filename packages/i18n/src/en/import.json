@@ -9,7 +9,7 @@
   "templateHint": "The Excel template has a Subjects sheet, a Teachers sheet and instructions. Use the CSV files if you prefer one list at a time.",
   "chooseFile": "Choose file",
   "reading": "Reading the file…",
-  "help": "Upload the filled .xlsx or .csv file. You'll see what will be added before anything is saved.",
+  "help": "Upload the filled .xlsx or .csv file. You'll see what will be added before anything is saved. If you save a CSV from Excel, choose \"CSV UTF-8\" so Sinhala text is kept.",
   "file": "File: {{name}}",
   "summary": "{{subjects}}, {{teachers}} to add",
   "subjectCount_one": "{{count}} subject",
@@ -20,6 +20,8 @@
   "nothing": "The file has no rows to import.",
   "errorsTitle_one": "Fix {{count}} problem in the file, then choose it again",
   "errorsTitle_other": "Fix {{count}} problems in the file, then choose it again",
+  "errorsMore_one": "…and {{count}} more problem",
+  "errorsMore_other": "…and {{count}} more problems",
   "cols": {
     "sheet": "Sheet",
     "row": "Row",
@@ -48,7 +50,7 @@
   "errors": {
     "noSheets": "No Subjects or Teachers sheet found. Use the template's column headings.",
     "unknownHeader": "Unknown column heading \"{{header}}\"",
-    "missingHeader": "Missing column \"{{header}}\"",
+    "missingHeader": "Missing column \"{{name}}\"",
     "duplicateSheet": "This sheet appears more than once",
     "tooManyRows": "More than {{max}} rows. Split the file and import it in parts.",
     "required": "Required",
@@ -70,7 +72,9 @@
     "email": "Not a valid email: {{value}}",
     "subjectsRequired": "Add at least one subject, or mark as a primary teacher",
     "gradesRequired": "Add at least one grade",
-    "tooLong": "Too long (max {{max}} characters)"
+    "tooLong": "Too long (max {{max}} characters)",
+    "excelDate": "Excel changed this to a date. Format the column as Plain text and type it again.",
+    "excelNumber": "Excel changed this to a number and may have dropped a leading 0. Format the column as Plain text and type it again."
   },
   "fileErrors": {
     "unsupported": "Choose an .xlsx or .csv file.",
@@ -96,8 +100,10 @@
     "1. Subjects sheet: one subject per row. The English name is required. Leave Short name blank to get a suggested one.",
     "2. Teachers sheet: one teacher per row. Full name and Grades are required, and Subjects too unless Primary teacher is Yes.",
     "3. Staff ID: leave blank to number teachers automatically.",
-    "4. Subjects: separate with commas. Use the English, Sinhala or short name of a subject in this file or already in Sathiya.",
+    "4. Subjects: separate with commas, or with semicolons (;) if a subject name has a comma. Use the English, Sinhala or short name of a subject in this file or already in Sathiya.",
     "5. Grades: e.g. 6-9, 11. Max periods/day: blank means 7. Primary teacher: Yes or No.",
-    "6. Don't change the column headings. Up to 200 rows per sheet."
+    "6. Staff ID, Phone and Grades are formatted as Plain text so Excel doesn't turn 6-9 into a date or drop a phone's leading 0. Keep that formatting; if you paste data, use Paste Values or format those columns as Plain text.",
+    "7. Don't change the column headings. Up to 200 rows per sheet.",
+    "8. Save as .xlsx. If you save a CSV instead, choose \"CSV UTF-8\" so Sinhala text is kept."
   ]
 }

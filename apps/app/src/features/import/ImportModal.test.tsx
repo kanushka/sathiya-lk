@@ -87,6 +87,25 @@ describe('ImportModal preview', () => {
     expect(within(dialog).getByRole('button', { name: 'Import' })).toBeDisabled();
   });
 
+  it('shows at most 100 errors and counts the rest', async () => {
+    const user = userEvent.setup();
+    const dialog = open();
+    const rows = Array.from({ length: 103 }, (_, i) => `,Mr,T ${i},Astrology,6\n`).join('');
+    await choose(user, dialog, csv(`${TEACHERS_HEAD}${rows}`, 'teachers.csv'));
+    const table = await within(dialog).findByRole('table');
+    expect(within(table).getAllByRole('row')).toHaveLength(1 + 100);
+    expect(within(dialog).getByText('Fix 103 problems in the file, then choose it again')).toBeInTheDocument();
+    expect(within(dialog).getByText('…and 3 more problems')).toBeInTheDocument();
+  });
+
+  it('names a missing column in the current language', async () => {
+    const user = userEvent.setup();
+    renderWithSchool(<ImportModal onClose={vi.fn()} />, { ctx, entries, lang: 'si' });
+    const dialog = screen.getByRole('dialog');
+    await user.upload(within(dialog).getByLabelText('ගොනුව තෝරන්න'), csv('Staff ID\nSCC001\n', 'teachers.csv'));
+    expect(await within(dialog).findByText('"සම්පූර්ණ නම" තීරුව නැත')).toBeInTheDocument();
+  });
+
   it('replaces the preview when another file is chosen', async () => {
     const user = userEvent.setup();
     const dialog = open();

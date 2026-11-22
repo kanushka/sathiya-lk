@@ -8,6 +8,7 @@ import {
   type ImportError,
   type ImportKind,
   type ImportPlan,
+  type ImportRow,
   type ImportSetupRes,
   type Lang,
   type ParsedSheets,
@@ -39,8 +40,15 @@ function isImportErrors(details: unknown): details is { errors: ImportError[] } 
   return Array.isArray((details as { errors?: unknown } | null | undefined)?.errors);
 }
 
+const MAX_SHOWN_ERRORS = 100;
+
 function ErrorTable({ errors }: { errors: ImportError[] }) {
   const { t } = useTranslation('import');
+  const message = (e: ImportError) =>
+    e.code === 'missingHeader' && typeof e.params?.column === 'string'
+      ? t('errors.missingHeader', { name: t(`columns.${e.params.column}`) })
+      : t(`errors.${e.code}`, { ...e.params });
+  const hidden = errors.length - MAX_SHOWN_ERRORS;
   return (
     <div className="flex flex-col gap-2">
       <FormError>{t('errorsTitle', { count: errors.length })}</FormError>
@@ -55,17 +63,18 @@ function ErrorTable({ errors }: { errors: ImportError[] }) {
             </tr>
           </THead>
           <TBody>
-            {errors.map((e, i) => (
+            {errors.slice(0, MAX_SHOWN_ERRORS).map((e, i) => (
               <Tr key={i}>
                 <Td>{t(`sheets.${e.sheet}`)}</Td>
                 <Td className="tabular-nums">{e.row ?? '—'}</Td>
                 <Td>{e.column ? t(`columns.${e.column}`) : '—'}</Td>
-                <Td>{t(`errors.${e.code}`, { ...e.params })}</Td>
+                <Td>{message(e)}</Td>
               </Tr>
             ))}
           </TBody>
         </Table>
       </div>
+      {hidden > 0 && <p className="m-0 text-sm text-ink-soft">{t('errorsMore', { count: hidden })}</p>}
     </div>
   );
 }
@@ -144,7 +153,8 @@ export function ImportModal({ onClose }: { onClose: () => void }) {
     setImporting(true);
     setFailure(null);
     try {
-      const res = await importSetup({ schoolId: school.id, subjects: view.parsed.subjects, teachers: view.parsed.teachers });
+      const strip = <C extends string>(rows: ImportRow<C>[]) => rows.map(({ row, cells }) => ({ row, cells }));
+      const res = await importSetup({ schoolId: school.id, subjects: strip(view.parsed.subjects), teachers: strip(view.parsed.teachers) });
       for (const x of res.teachers) setSessionPassword(x.teacherId, x.password);
       setView({ kind: 'done', res });
     } catch (err) {
