@@ -13,6 +13,7 @@ import { Table, TBody, Td, Th, THead, Tr } from '../../ui/Table';
 import { Badge } from '../../ui/Badge';
 import { PageHeader } from '../../ui/PageHeader';
 import { useToast } from '../../ui/Toast';
+import { ImportModal } from '../import/ImportModal';
 import { DeleteSetupModal } from './DeleteSetupModal';
 import { usePrintLabels } from './LoginSlip';
 import { PrintAllModal } from './PrintAllModal';
@@ -22,7 +23,7 @@ import { useSessionPasswords } from './sessionPasswords';
 import { teacherLoginUrl } from './slip';
 import { TeacherModal } from './TeacherModal';
 
-type Dialog = { kind: 'edit'; teacher?: Teacher } | { kind: 'printAll' } | { kind: 'delete'; teacher: Teacher } | null;
+type Dialog = { kind: 'edit'; teacher?: Teacher } | { kind: 'import' } | { kind: 'printAll' } | { kind: 'delete'; teacher: Teacher } | null;
 
 function formatLogin(ts: number | undefined, lang: string, never: string): string {
   return ts ? new Date(ts).toLocaleDateString(lang, { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' }) : never;
@@ -102,6 +103,7 @@ export function TeachersPage() {
           <Button onClick={() => setDialog({ kind: 'printAll' })} disabled={teachers.length === 0}>
             {t('page.printAll')}
           </Button>
+          {!readOnly && <Button onClick={() => setDialog({ kind: 'import' })}>{t('import:open')}</Button>}
           {!readOnly && add}
           </>
         }
@@ -168,6 +170,7 @@ export function TeachersPage() {
       )}
 
       {dialog?.kind === 'edit' && <TeacherModal key={dialog.teacher?.id ?? 'new'} teacher={dialog.teacher} onClose={() => setDialog(null)} />}
+      {dialog?.kind === 'import' && <ImportModal onClose={() => setDialog(null)} />}
       {dialog?.kind === 'printAll' && (
         <PrintAllModal
           total={sorted.length}

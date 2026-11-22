@@ -5,22 +5,6 @@ import { describe, expect, it } from 'vitest';
 import { ImportFileError, readImportFile } from './readFile';
 import { templateXlsx } from './template';
 
-const readAs = (blob: Blob, read: (r: FileReader) => void) =>
-  new Promise<any>((resolve, reject) => {
-    const r = new FileReader();
-    r.onload = () => resolve(r.result);
-    r.onerror = () => reject(r.error);
-    read(r);
-  });
-
-// jsdom's Blob lacks text()/arrayBuffer(), which browsers and read-excel-file rely on
-Blob.prototype.text ??= function (this: Blob) {
-  return readAs(this, (r) => r.readAsText(this));
-};
-Blob.prototype.arrayBuffer ??= function (this: Blob) {
-  return readAs(this, (r) => r.readAsArrayBuffer(this));
-};
-
 const asFile = (parts: BlobPart[], name: string) => new File(parts, name);
 
 describe('readImportFile', () => {
@@ -49,6 +33,7 @@ describe('readImportFile', () => {
       staffPrefix: 'T',
       grades: [6, 7],
       instructions: { en: ['Fill in rows'], si: ['පේළි පුරවන්න'] },
+      labels: { titles: 'Titles', grades: 'Grades', staffId: 'Staff ID' },
     });
     const sheets = await readImportFile(asFile([blob], 't.xlsx'));
     expect(sheets.map((s) => s.name)).toEqual(['Subjects', 'Teachers', 'How to fill']);

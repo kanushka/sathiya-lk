@@ -34,6 +34,22 @@ for (const name of ['localStorage', 'sessionStorage'] as const) {
   }
 }
 
+const readBlob = <T>(blob: Blob, read: (r: FileReader) => void) =>
+  new Promise<T>((resolve, reject) => {
+    const r = new FileReader();
+    r.onload = () => resolve(r.result as T);
+    r.onerror = () => reject(r.error);
+    read(r);
+  });
+
+// jsdom's Blob lacks text()/arrayBuffer(), which browsers and read-excel-file rely on
+Blob.prototype.text ??= function (this: Blob) {
+  return readBlob<string>(this, (r) => r.readAsText(this));
+};
+Blob.prototype.arrayBuffer ??= function (this: Blob) {
+  return readBlob<ArrayBuffer>(this, (r) => r.readAsArrayBuffer(this));
+};
+
 if (!Element.prototype.scrollIntoView) Element.prototype.scrollIntoView = () => undefined;
 
 afterEach(() => {

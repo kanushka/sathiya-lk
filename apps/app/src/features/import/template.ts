@@ -14,6 +14,7 @@ export async function templateXlsx(opts: {
   staffPrefix: string;
   grades: number[];
   instructions: { en: string[]; si: string[] };
+  labels: { titles: string; grades: string; staffId: string };
 }): Promise<Blob> {
   const { default: writeXlsxFile } = await import('write-excel-file/browser');
   const bold = (value: string) => ({ value, fontWeight: 'bold' as const });
@@ -23,9 +24,9 @@ export async function templateXlsx(opts: {
     ...opts.instructions.en,
     ...opts.instructions.si,
     '',
-    `Titles: ${TEACHER_TITLES.join(', ')}`,
-    `Grades: ${opts.grades.join(', ')}`,
-    `Staff ID: ${formatStaffId(opts.staffPrefix, 1)}`,
+    `${opts.labels.titles}: ${TEACHER_TITLES.join(', ')}`,
+    `${opts.labels.grades}: ${opts.grades.join(', ')}`,
+    `${opts.labels.staffId}: ${formatStaffId(opts.staffPrefix, 1)}`,
   ].map((line) => [line]);
   return writeXlsxFile([
     { sheet: 'Subjects', data: [headerRow('subjects')], columns: widths('subjects'), stickyRowsCount: 1 },

@@ -10,6 +10,7 @@ import { EmptyState } from '../../ui/EmptyState';
 import { PageHeader } from '../../ui/PageHeader';
 import { Table, TBody, Td, Th, THead, Tr } from '../../ui/Table';
 import { useToast } from '../../ui/Toast';
+import { ImportModal } from '../import/ImportModal';
 import { DeleteSetupModal } from '../teachers/DeleteSetupModal';
 import * as api from './api';
 import { InlineInput } from './InlineInput';
@@ -17,7 +18,7 @@ import { SHORT_MAX } from './palette';
 import { missingDefaults } from './standard';
 import { SubjectModal } from './SubjectModal';
 
-type Dialog = { kind: 'add' } | { kind: 'delete'; subject: Subject } | null;
+type Dialog = { kind: 'add' } | { kind: 'import' } | { kind: 'delete'; subject: Subject } | null;
 
 export function SubjectsPage() {
   const { t, i18n } = useTranslation('subjects');
@@ -79,6 +80,7 @@ export function SubjectsPage() {
               <Button onClick={() => void loadStandard()} loading={loading}>
                 {t('page.loadStandard')}
               </Button>
+              <Button onClick={() => setDialog({ kind: 'import' })}>{t('import:open')}</Button>
               {add}
             </>
           )
@@ -154,6 +156,7 @@ export function SubjectsPage() {
       <p className="mt-3 text-[13px] text-ink-soft">{t('page.footnote')}</p>
 
       {dialog?.kind === 'add' && <SubjectModal onClose={() => setDialog(null)} />}
+      {dialog?.kind === 'import' && <ImportModal onClose={() => setDialog(null)} />}
       {dialog?.kind === 'delete' && (
         <DeleteSetupModal
           schoolId={school.school.id}
