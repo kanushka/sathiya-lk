@@ -17,6 +17,7 @@ export type ImportColumn = SubjectColumn | TeacherColumn;
 
 export type ImportErrorCode =
   | 'noSheets'
+  | 'ambiguousSheet'
   | 'unknownHeader'
   | 'missingHeader'
   | 'duplicateSheet'
@@ -184,11 +185,11 @@ function buildLookup(defs: readonly AnyDef[]) {
 
 const isBlankRow = (cells: string[]) => cells.every((c) => c === '');
 
-function detectKind(headers: string[]): ImportKind | null {
+function detectKind(headers: string[]): ImportKind | 'ambiguous' | null {
   const score = (k: ImportKind) => headers.filter((h) => LOOKUP[k].has(normHeader(h))).length;
   const s = score('subjects');
   const t = score('teachers');
-  if (s === t) return null;
+  if (s === t) return s === 0 ? null : 'ambiguous';
   return s > t ? 'subjects' : 'teachers';
 }
 
@@ -200,6 +201,10 @@ export function readSheets(sheets: RawSheet[]): ParsedSheets {
     const headerRow = (sheet.rows[0] ?? []).map(cellText);
     const kind = detectKind(headerRow);
     if (!kind) continue;
+    if (kind === 'ambiguous') {
+      out.errors.push({ sheet: 'file', row: null, column: null, code: 'ambiguousSheet', params: { name: sheet.name } });
+      continue;
+    }
     if (seen.has(kind)) {
       out.errors.push({ sheet: kind, row: null, column: null, code: 'duplicateSheet' });
       continue;
@@ -256,6 +261,6 @@ export function readSheets(sheets: RawSheet[]): ParsedSheets {
     else out.teachers = rows as ImportRow<TeacherColumn>[];
   }
 
-  if (seen.size === 0) out.errors.push({ sheet: 'file', row: null, column: null, code: 'noSheets' });
+  if (seen.size === 0 && out.errors.length === 0) out.errors.push({ sheet: 'file', row: null, column: null, code: 'noSheets' });
   return out;
 }

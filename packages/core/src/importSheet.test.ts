@@ -104,6 +104,17 @@ describe('readSheets', () => {
     ]);
   });
 
+  it('reports a sheet whose headings fit subjects and teachers equally', () => {
+    const r = readSheets([
+      { name: 'Mixed', rows: [['Full name', 'Short name'], ['A', 'B']] },
+      { name: 'Subjects', rows: [['Name (English)'], ['Maths']] },
+    ]);
+    expect(r.errors).toEqual([{ sheet: 'file', row: null, column: null, code: 'ambiguousSheet', params: { name: 'Mixed' } }]);
+    expect(r.subjects).toEqual([{ row: 2, cells: { nameEn: 'Maths' } }]);
+    expect(r.teachers).toEqual([]);
+    expect(readSheets([{ name: 'Mixed', rows: [['Full name', 'Short name']] }]).errors.map((e) => e.code)).toEqual(['ambiguousSheet']);
+  });
+
   it('reports noSheets', () => {
     expect(readSheets([{ name: 'Help', rows: [['How to fill']] }]).errors).toEqual([
       { sheet: 'file', row: null, column: null, code: 'noSheets' },

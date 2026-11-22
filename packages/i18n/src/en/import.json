@@ -49,6 +49,7 @@
   },
   "errors": {
     "noSheets": "No Subjects or Teachers sheet found. Use the template's column headings.",
+    "ambiguousSheet": "Sheet \"{{name}}\" has both Subjects and Teachers column headings. Keep each list on its own sheet.",
     "unknownHeader": "Unknown column heading \"{{header}}\"",
     "missingHeader": "Missing column \"{{name}}\"",
     "duplicateSheet": "This sheet appears more than once",
