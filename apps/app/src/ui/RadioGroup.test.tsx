@@ -60,4 +60,15 @@ describe('RadioGroup', () => {
     await userEvent.click(screen.getByText('Beta'));
     expect(onChange).not.toHaveBeenCalled();
   });
+
+  it('draws the checked radio with a 5.5px border and never the 1.5px one', () => {
+    render(<Controlled />);
+    const visual = (name: string) => screen.getByRole('radio', { name }).nextElementSibling;
+    expect(visual('Alpha')).toHaveClass('border-[5.5px]');
+    expect(visual('Alpha')).not.toHaveClass('border-[1.5px]');
+    expect(visual('Gamma')).toHaveClass('border-[1.5px]');
+    expect(visual('Gamma')).not.toHaveClass('border-[5.5px]');
+    expect(visual('Beta')).toHaveClass('bg-surface-2');
+    expect(visual('Beta')).not.toHaveClass('bg-white');
+  });
 });

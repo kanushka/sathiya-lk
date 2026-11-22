@@ -57,17 +57,17 @@ export function RadioGroup<V extends string = string>({
               <span
                 aria-hidden="true"
                 className={cx(
-                  'h-[18px] w-[18px] shrink-0 rounded-full border-[1.5px] bg-white transition-all',
+                  'h-[18px] w-[18px] shrink-0 rounded-full transition-all',
                   'peer-focus-visible:ring-[3px] peer-focus-visible:ring-brand/30',
                   o.disabled
                     ? checked
                       ? 'border-[5.5px] border-line bg-surface-2'
-                      : 'border-line bg-surface-2'
+                      : 'border-[1.5px] border-line bg-surface-2'
                     : checked
-                      ? 'border-[5.5px] border-brand'
+                      ? 'border-[5.5px] border-brand bg-white'
                       : ariaInvalid
-                        ? 'border-danger'
-                        : 'border-line-hover',
+                        ? 'border-[1.5px] border-danger bg-white'
+                        : 'border-[1.5px] border-line-hover bg-white',
                 )}
               />
               <span className={cx('text-sm', o.disabled ? 'text-ink-muted' : 'text-ink')}>{o.label}</span>

@@ -50,4 +50,10 @@ describe('Tabs', () => {
     await user.keyboard('{Home}');
     expect(screen.getByRole('tab', { name: 'Classes' })).toHaveAttribute('aria-selected', 'true');
   });
+
+  it('makes the first tab tabbable when value matches none', () => {
+    render(<Tabs aria-label="Views" items={items} value="zzz" onChange={() => {}} />);
+    expect(screen.getByRole('tab', { name: 'Classes' })).toHaveAttribute('tabindex', '0');
+    expect(screen.getByRole('tab', { name: 'Teachers' })).toHaveAttribute('tabindex', '-1');
+  });
 });

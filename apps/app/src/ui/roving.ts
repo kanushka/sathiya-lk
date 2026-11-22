@@ -3,14 +3,24 @@
 
 import type { KeyboardEvent } from 'react';
 
-export function rovingKeyDown<V extends string>(
-  e: KeyboardEvent<HTMLElement>,
-  values: V[],
-  current: V,
-  select: (v: V) => void,
-  itemRole: string,
+export interface RovingOptions<V extends string> {
+  event: KeyboardEvent<HTMLElement>;
+  values: V[];
+  current: V;
+  select: (v: V) => void;
+  itemRole: string;
+  vertical?: boolean;
+}
+
+export function rovingKeyDown<V extends string>({
+  event: e,
+  values,
+  current,
+  select,
+  itemRole,
   vertical = false,
-) {
+}: RovingOptions<V>) {
+  if (values.length === 0) return;
   const prev = vertical ? ['ArrowLeft', 'ArrowUp'] : ['ArrowLeft'];
   const next = vertical ? ['ArrowRight', 'ArrowDown'] : ['ArrowRight'];
   const at = Math.max(0, values.indexOf(current));

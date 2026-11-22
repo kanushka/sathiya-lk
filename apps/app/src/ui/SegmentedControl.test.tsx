@@ -53,4 +53,15 @@ describe('SegmentedControl', () => {
     expect(screen.getByRole('radiogroup')).toHaveClass('bg-black/15');
     expect(screen.getByRole('radio', { name: 'Week' })).toHaveClass('h-7', 'text-on-brand');
   });
+
+  it('makes the first radio tabbable when value matches none', () => {
+    render(<SegmentedControl aria-label="Range" options={options} value="zzz" onChange={() => {}} />);
+    expect(screen.getByRole('radio', { name: 'Day' })).toHaveAttribute('tabindex', '0');
+    expect(screen.getByRole('radio', { name: 'Week' })).toHaveAttribute('tabindex', '-1');
+  });
+
+  it('uses a white focus ring on brand tone', () => {
+    render(<Controlled tone="onBrand" />);
+    expect(screen.getByRole('radio', { name: 'Day' })).toHaveClass('focus-visible:ring-white');
+  });
 });

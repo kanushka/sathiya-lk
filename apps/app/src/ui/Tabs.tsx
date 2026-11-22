@@ -3,7 +3,7 @@
 
 import type { ReactNode } from 'react';
 import { cx } from './cx';
-import { rovingKeyDown } from './useRovingKeys';
+import { rovingKeyDown } from './roving';
 
 export interface TabItem<V extends string = string> {
   value: V;
@@ -26,14 +26,15 @@ export function Tabs<V extends string = string>({
   className,
 }: TabsProps<V>) {
   const values = items.map((i) => i.value);
+  const hasSelection = values.includes(value);
   return (
     <div
       role="tablist"
       aria-label={ariaLabel}
-      onKeyDown={(e) => rovingKeyDown(e, values, value, onChange, 'tab')}
+      onKeyDown={(e) => rovingKeyDown({ event: e, values, current: value, select: onChange, itemRole: 'tab' })}
       className={cx('flex gap-1 border-b border-line', className)}
     >
-      {items.map((item) => {
+      {items.map((item, i) => {
         const selected = item.value === value;
         return (
           <button
@@ -41,7 +42,7 @@ export function Tabs<V extends string = string>({
             type="button"
             role="tab"
             aria-selected={selected}
-            tabIndex={selected ? 0 : -1}
+            tabIndex={selected || (!hasSelection && i === 0) ? 0 : -1}
             onClick={() => onChange(item.value)}
             className={cx(
               'relative -mb-px h-10 rounded-t-lg px-3 text-sm font-semibold transition-colors',

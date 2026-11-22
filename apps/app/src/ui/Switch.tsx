@@ -26,7 +26,7 @@ export function Switch({ checked, onChange, label, disabled, id, className }: Sw
         'inline-flex items-center gap-2.5 rounded-lg text-left text-sm',
         'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand focus-visible:ring-offset-2',
         'disabled:cursor-not-allowed disabled:opacity-[.45]',
-        disabled ? 'text-ink-muted' : 'text-ink',
+        'text-ink',
         className,
       )}
     >

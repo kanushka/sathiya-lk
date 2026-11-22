@@ -226,7 +226,7 @@ export function MultiSelect<V extends string = string>({
         {overflow > 0 && (
           <span
             className={cx(
-              'inline-flex h-7 shrink-0 items-center rounded-md bg-surface-3 px-2 text-[13px] font-semibold',
+              'inline-flex h-[26px] shrink-0 items-center rounded-md bg-surface-3 px-2 text-[13px] font-semibold',
               disabled ? 'text-ink-muted' : 'text-ink-soft',
             )}
           >
