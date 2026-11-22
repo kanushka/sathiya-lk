@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
 // Copyright (C) 2026 Kanushka Gayan
 import { spawn } from 'node:child_process';
-import { existsSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
+import { closeSync, ftruncateSync, openSync, readFileSync, rmSync, writeSync } from 'node:fs';
 
 const APP_PORT = 5173;
 const WEB_PORT = 4321;
@@ -14,9 +14,25 @@ let stopping = false;
 // A file whose first line is the marker is ours, possibly left behind by a crash, so it is safe to overwrite.
 const ENV_LOCAL = new URL('../functions/.env.local', import.meta.url);
 const MARKER = '# dev-local';
-const wroteEnvLocal = !existsSync(ENV_LOCAL) || readFileSync(ENV_LOCAL, 'utf8').split('\n', 1)[0] === MARKER;
-if (wroteEnvLocal) writeFileSync(ENV_LOCAL, `${MARKER}\nAPP_URL=${APP_URL}\nWEB_URL=${WEB_URL}\n`);
-else console.warn('functions/.env.local already exists; mail links use its values');
+function claimEnvLocal() {
+  let fd;
+  try {
+    fd = openSync(ENV_LOCAL, 'wx');
+  } catch (e) {
+    if (e.code !== 'EEXIST') throw e;
+    fd = openSync(ENV_LOCAL, 'r+');
+    if (readFileSync(fd, 'utf8').split('\n', 1)[0] !== MARKER) {
+      closeSync(fd);
+      return false;
+    }
+    ftruncateSync(fd);
+  }
+  writeSync(fd, `${MARKER}\nAPP_URL=${APP_URL}\nWEB_URL=${WEB_URL}\n`, 0);
+  closeSync(fd);
+  return true;
+}
+const wroteEnvLocal = claimEnvLocal();
+if (!wroteEnvLocal) console.warn('functions/.env.local already exists; mail links use its values');
 
 function run(name, args, { env = {}, onLine } = {}) {
   // Own process group, so stopping reaches the grandchildren (java emulators, vite, astro).
