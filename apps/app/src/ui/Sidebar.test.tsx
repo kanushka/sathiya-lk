@@ -27,6 +27,18 @@ describe('Sidebar', () => {
     expect(document.querySelector('label[for]')).toBeNull();
   });
 
+  it('shows only the school name when no logo was uploaded', () => {
+    renderSidebar();
+    expect(screen.getByText('Siripura Central College')).toBeInTheDocument();
+    expect(screen.queryByTestId('school-logo')).toBeNull();
+    expect(document.querySelector('nav svg text')).toBeNull();
+  });
+
+  it('shows the uploaded logo', () => {
+    renderWithSchool(<Sidebar />, { ctx: { ...ctx, school: { ...ctx.school, logoUrl: 'https://example.test/logo.png' } }, years: twoYears, route: '/admin' });
+    expect(screen.getByTestId('school-logo')).toHaveAttribute('src', 'https://example.test/logo.png');
+  });
+
   it('lists the admin nav paths', () => {
     expect(navItems.map((i) => i.path)).toEqual([
       '/admin',

@@ -72,12 +72,8 @@ export function TeacherFrame({ view, now: nowFn, snapshot, changePassword, child
     <div className="mx-auto flex min-h-screen w-full max-w-[560px] flex-col overflow-x-hidden bg-[#F6F6F4] text-ink">
       <header className="bg-brand px-[18px] pb-14 pt-5 text-on-brand">
         <div className="flex items-center gap-2.5">
-          {school.logoUrl ? (
-            <img src={school.logoUrl} alt="" className="h-[34px] w-[34px] rounded-lg bg-white object-contain" />
-          ) : (
-            <span aria-hidden="true" className="flex h-[34px] w-[34px] items-center justify-center rounded-lg bg-white text-xs font-extrabold text-brand">
-              {school.staffPrefix}
-            </span>
+          {school.logoUrl && (
+            <img data-testid="school-logo" src={school.logoUrl} alt="" className="h-[34px] w-[34px] rounded-lg bg-white object-contain" />
           )}
           <div className="min-w-0 flex-1">
             <strong className="block truncate text-sm">{schoolName}</strong>

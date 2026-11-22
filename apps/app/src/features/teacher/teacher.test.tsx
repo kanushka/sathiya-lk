@@ -112,6 +112,17 @@ describe('TeacherFrame chrome', () => {
     expect(screen.getByRole('link', { name: 'School admin' })).toHaveAttribute('href', '/admin');
   });
 
+  it('shows no badge in place of a missing logo', () => {
+    renderWithSchool(<TodayPage now={wed0920} snapshot={snap()} />, { ctx, claims: claims(T.perera) });
+    expect(screen.queryByTestId('school-logo')).toBeNull();
+    expect(screen.queryByText(ctx.school.staffPrefix)).toBeNull();
+  });
+
+  it('shows the uploaded logo', () => {
+    renderWithSchool(<TodayPage now={wed0920} snapshot={snap()} />, { ctx: { ...ctx, school: { ...ctx.school, logoUrl: 'https://example.test/logo.png' } }, claims: claims(T.perera) });
+    expect(screen.getByTestId('school-logo')).toHaveAttribute('src', 'https://example.test/logo.png');
+  });
+
   it('hides the admin link for a plain teacher', () => {
     renderWithSchool(<TodayPage now={wed0920} snapshot={snap()} />, { ctx, claims: claims(T.perera) });
     expect(screen.queryByRole('link', { name: 'School admin' })).toBeNull();

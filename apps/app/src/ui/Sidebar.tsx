@@ -54,50 +54,17 @@ function writeCollapsed(collapsed: boolean): void {
   }
 }
 
-function initials(name: string): string {
-  return name
-    .split(/\s+/)
-    .filter((w) => /^\p{Lu}/u.test(w))
-    .slice(0, 3)
-    .map((w) => w[0])
-    .join('') || name.slice(0, 2).toUpperCase();
-}
-
 function SchoolLogo({ school, name, decorative }: { school: School; name: string; decorative: boolean }) {
-  if (school.logoUrl) {
-    return (
-      <img
-        src={school.logoUrl}
-        alt={decorative ? '' : name}
-        width={36}
-        height={36}
-        className="h-9 w-9 shrink-0 rounded-lg object-contain"
-      />
-    );
-  }
+  if (!school.logoUrl) return null;
   return (
-    <svg
-      width="36"
-      height="36"
-      viewBox="0 0 64 64"
-      className="shrink-0"
-      role={decorative ? undefined : 'img'}
-      aria-label={decorative ? undefined : name}
-      aria-hidden={decorative ? true : undefined}
-    >
-      <path d="M32 4 L58 14 V32 C58 46 46 56 32 60 C18 56 6 46 6 32 V14 Z" fill="var(--brand)" />
-      <text
-        x="32"
-        y="38"
-        textAnchor="middle"
-        fontFamily="Inter, sans-serif"
-        fontWeight="800"
-        fontSize="14"
-        fill="var(--brand-2)"
-      >
-        {initials(school.nameEn)}
-      </text>
-    </svg>
+    <img
+      data-testid="school-logo"
+      src={school.logoUrl}
+      alt={decorative ? '' : name}
+      width={36}
+      height={36}
+      className="h-9 w-9 shrink-0 rounded-lg object-contain"
+    />
   );
 }
 

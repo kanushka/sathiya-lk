@@ -21,11 +21,7 @@ export function BrandPreview({ name, nameSi, primary, second, logoUrl, year }: B
       <span className="text-[13px] font-semibold text-ink-soft">{t('brand.preview')}</span>
       <div data-testid="brand-preview" className="overflow-hidden rounded-xl border border-line">
         <div className="flex items-center gap-2.5 p-3.5" style={{ background: primary, color: on }}>
-          {logoUrl ? (
-            <img src={logoUrl} alt="" className="h-9 w-9 rounded-lg bg-white object-contain" />
-          ) : (
-            <span aria-hidden="true" className="h-9 w-9 rounded-lg" style={{ background: second }} />
-          )}
+          {logoUrl && <img data-testid="school-logo" src={logoUrl} alt="" className="h-9 w-9 rounded-lg bg-white object-contain" />}
           <div>
             <strong className="block text-sm">{pickName({ nameEn: name, nameSi }, i18n.language as Lang)}</strong>
             <span className="text-xs opacity-80">{t('brand.previewTimetable', { year: year ?? new Date().getFullYear() })}</span>
