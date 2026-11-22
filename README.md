@@ -18,7 +18,7 @@ Free timetable web app for Sri Lankan schools.
 pnpm install
 pnpm typecheck
 pnpm test
-pnpm test:emulators   # needs Java 17+
+pnpm test:emulators   # needs Java 21+
 pnpm emulators
 ```
 
