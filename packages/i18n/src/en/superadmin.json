@@ -86,7 +86,7 @@
   "releaseCensus": {
     "button": "Release census number",
     "title": "Release census number {{censusNo}}?",
-    "body": "This removes census number {{censusNo}} from {{name}} so another school can register with it. {{name}} keeps its data but will have no census number. Usually done after suspending a fake or squatting registration.",
+    "body": "This removes census number {{censusNo}} from {{name}} so another school can register with it. {{name}} keeps its data but will have no census number. This cannot be undone. Usually done after disabling a fake or squatting registration.",
     "confirm": "Release {{censusNo}}",
     "toast": {
       "released": "Census number {{censusNo}} released from {{name}}",

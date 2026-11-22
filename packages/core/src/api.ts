@@ -44,7 +44,6 @@ export interface ReportSchoolRes { ok: true }
 export interface SendAuthEmailReq { kind: AuthEmailKind; email?: string; lang: Lang }
 export interface SendAuthEmailRes { ok: true }
 export interface ReleaseCensusNoReq { schoolId: string }
-// freed: false when the index entry was already gone or belongs to another school; the school's own field is cleared either way.
 export interface ReleaseCensusNoRes { censusNo: string; freed: boolean }
 interface CallableMap {
   registerSchool: { req: RegisterSchoolReq; res: RegisterSchoolRes };

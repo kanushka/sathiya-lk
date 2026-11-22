@@ -117,7 +117,7 @@ describe('schools/{sid} doc', () => {
 
   describe('census number is functions only', () => {
     deny([['super', s1], ['teacher', s1]], (r, p) => update(r, p, { censusNo: '54321' }));
-    deny([['super', s1]], (r, p) => update(r, p, { censusReleasedAt: 2, censusReleasedBy: 'u-super' }));
+    deny([['super', s1]], (r, p) => update(r, p, { releasedCensusNo: '12345', censusReleasedAt: 2, censusReleasedBy: 'u-super' }));
   });
 
   describe('update', () => {

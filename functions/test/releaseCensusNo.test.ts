@@ -32,6 +32,8 @@ describe('releaseCensusNo', () => {
     expect(school.censusReleasedAt).toBeGreaterThanOrEqual(before);
     expect(school.releasedCensusNo).toBe(censusNo);
 
+    await expectFnError(sup.call('releaseCensusNo', { schoolId: sid }), 'failed-precondition', 'invalid');
+
     const other = await signUp();
     await expect(other.call('registerSchool', schoolReq({ type: 'government', censusNo }))).resolves.toMatchObject({ schoolId: expect.any(String) });
   });

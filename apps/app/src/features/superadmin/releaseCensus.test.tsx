@@ -93,6 +93,24 @@ describe('Release census number on ReportsPage', () => {
     expect(dialog).toHaveTextContent('Fake College');
     await userEvent.click(within(dialog).getByRole('button', { name: 'Release 54321' }));
     await waitFor(() => expect(release).toHaveBeenCalledWith({ schoolId: 'a' }));
+    expect(await screen.findByText('Census number 54321 released from Fake College')).toBeInTheDocument();
+  });
+
+  it('cannot confirm twice while the release is running', async () => {
+    let finish!: (v: unknown) => void;
+    const release = vi.fn(() => new Promise((r) => (finish = r)));
+    renderWithSchool(
+      <ReportsPage reports={{ loading: false, data: [report] }} schools={{ loading: false, data: [school()] }} writer={{ closeReport: vi.fn() }} setStatus={vi.fn()} releaseCensus={release as never} />,
+      opts,
+    );
+    await userEvent.click(screen.getByRole('button', { name: 'Release census number' }));
+    const dialog = screen.getByRole('dialog');
+    await userEvent.click(within(dialog).getByRole('button', { name: 'Release 54321' }));
+    expect(within(dialog).getByRole('button', { name: 'Release 54321' })).toBeDisabled();
+    expect(within(dialog).getByRole('button', { name: 'Cancel' })).toBeDisabled();
+    expect(release).toHaveBeenCalledTimes(1);
+    finish({ censusNo: '54321', freed: true });
+    await waitFor(() => expect(screen.queryByRole('dialog')).toBeNull());
   });
 
   it('is not offered when the school has no census number', () => {

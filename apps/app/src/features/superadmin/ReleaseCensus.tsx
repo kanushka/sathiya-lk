@@ -20,9 +20,20 @@ export function ReleaseCensusButton({ school, release }: { school: School; relea
   const toast = useToast();
   const [confirming, setConfirming] = useState(false);
   const [busy, setBusy] = useState(false);
-  const censusNo = school.censusNo;
+  const [pending, setPending] = useState<string>();
+  const censusNo = pending ?? school.censusNo;
   if (!censusNo) return null;
   const name = pickName(school, lang);
+
+  function open() {
+    setPending(school.censusNo);
+    setConfirming(true);
+  }
+
+  function close() {
+    setConfirming(false);
+    setPending(undefined);
+  }
 
   async function apply() {
     setBusy(true);
@@ -34,22 +45,23 @@ export function ReleaseCensusButton({ school, release }: { school: School; relea
     } finally {
       setBusy(false);
       setConfirming(false);
+      setPending(undefined);
     }
   }
 
   return (
     <>
-      <Button size="sm" variant="danger" disabled={busy} onClick={() => setConfirming(true)}>
+      <Button size="sm" variant="danger" disabled={busy} onClick={open}>
         {t('releaseCensus.button')}
       </Button>
       <Modal
         open={confirming}
         title={t('releaseCensus.title', { censusNo })}
         width={480}
-        onClose={() => setConfirming(false)}
+        onClose={() => !busy && close()}
         footer={
           <>
-            <Button onClick={() => setConfirming(false)}>{t('buttons.cancel', { ns: 'common' })}</Button>
+            <Button disabled={busy} onClick={close}>{t('buttons.cancel', { ns: 'common' })}</Button>
             <Button variant="dangerSolid" disabled={busy} onClick={() => void apply()}>
               {t('releaseCensus.confirm', { censusNo })}
             </Button>
