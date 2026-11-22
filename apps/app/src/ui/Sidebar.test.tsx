@@ -6,6 +6,7 @@ import { ctx } from '@sathiya/core/fixtures';
 import { screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { describe, expect, it } from 'vitest';
+import { pickOption } from '../test/pickOption';
 import { renderWithSchool } from '../test/renderWithSchool';
 import { Sidebar, navItems } from './Sidebar';
 
@@ -43,14 +44,17 @@ describe('Sidebar', () => {
   it('switches the selected year', async () => {
     const user = userEvent.setup();
     renderSidebar();
-    await user.selectOptions(screen.getByLabelText('Timetable year'), 'y26');
-    expect(screen.getByLabelText('Timetable year')).toHaveValue('y26');
+    await pickOption(user, screen.getByLabelText('Timetable year'), '2026 · published');
+    expect(screen.getByLabelText('Timetable year')).toHaveTextContent('2026 · published');
   });
 
-  it('shows school name, year select and active link', () => {
+  it('shows school name, year select and active link', async () => {
+    const user = userEvent.setup();
     renderSidebar();
     expect(screen.getByText('Siripura Central College')).toBeInTheDocument();
-    expect(screen.getByLabelText('Timetable year')).toHaveValue('y27');
+    const year = screen.getByLabelText('Timetable year');
+    expect(year).toHaveTextContent('2027 · draft');
+    await user.click(year);
     expect(screen.getByRole('option', { name: '2026 · published' })).toBeInTheDocument();
     expect(screen.getByRole('link', { name: 'Teachers' })).toHaveAttribute('aria-current', 'page');
     expect(screen.getByRole('link', { name: 'Dashboard' })).not.toHaveAttribute('aria-current');
