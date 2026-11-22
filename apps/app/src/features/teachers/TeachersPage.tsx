@@ -118,8 +118,10 @@ export function TeachersPage() {
                 <Td>{[...x.grades].sort((a, b) => a - b).join(', ')}</Td>
                 <Td>{x.maxPerDay}</Td>
                 <Td>{classes.filter((c) => c.classTeacherId === x.id).map((c) => c.name).join(', ')}</Td>
-                <Td className={x.lastLoginAt ? 'text-ink-soft' : 'text-danger'}>
-                  {formatLogin(x.lastLoginAt, lang, t('page.neverLoggedIn'))}
+                <Td>
+                  <span className={x.lastLoginAt ? 'text-ink-soft' : 'text-danger'}>
+                    {formatLogin(x.lastLoginAt, lang, t('page.neverLoggedIn'))}
+                  </span>
                 </Td>
                 {!readOnly && (
                   <Td>

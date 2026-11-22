@@ -43,6 +43,13 @@ describe('teachers page', () => {
     expect(screen.queryByText('Mrs. N. Perera')).not.toBeInTheDocument();
   });
 
+  it('colours the never-logged-in cell red', () => {
+    render();
+    const reds = document.querySelectorAll('td span.text-danger');
+    expect(reds.length).toBeGreaterThan(0);
+    expect(reds[0]!.closest('td')).not.toHaveClass('text-danger');
+  });
+
   it('hides the subject picker for a primary teacher', async () => {
     const user = userEvent.setup();
     render();
