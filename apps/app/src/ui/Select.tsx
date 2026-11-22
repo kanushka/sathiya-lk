@@ -212,6 +212,7 @@ export function Select<V extends string = string>({
         <MenuPanel
           ref={popRef}
           pos={pos}
+          anchorRef={triggerRef}
           onMouseDown={(e) => {
             if (e.target !== searchRef.current) e.preventDefault();
           }}

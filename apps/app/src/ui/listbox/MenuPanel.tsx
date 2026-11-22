@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
 // Copyright (C) 2026 Kanushka Gayan
 
-import { forwardRef, type HTMLAttributes, type InputHTMLAttributes, type ReactNode } from 'react';
+import { forwardRef, type HTMLAttributes, type InputHTMLAttributes, type ReactNode, type RefObject } from 'react';
 import { createPortal } from 'react-dom';
 import { CheckboxBox } from '../CheckboxBox';
 import { cx } from '../cx';
@@ -11,15 +11,17 @@ import type { Placement } from '../popoverPlacement';
 
 export interface MenuPanelProps extends HTMLAttributes<HTMLDivElement> {
   pos: Placement | null;
+  anchorRef: RefObject<HTMLElement>;
 }
 
 export const MenuPanel = forwardRef<HTMLDivElement, MenuPanelProps>(function MenuPanel(
-  { pos, className, style, children, ...rest },
+  { pos, anchorRef, className, style, children, ...rest },
   ref,
 ) {
   return createPortal(
     <div
       ref={ref}
+      data-menu-panel=""
       {...rest}
       style={{
         position: 'fixed',
@@ -36,7 +38,7 @@ export const MenuPanel = forwardRef<HTMLDivElement, MenuPanelProps>(function Men
     >
       {children}
     </div>,
-    document.body,
+    anchorRef.current?.closest('[role="dialog"]') ?? document.body,
   );
 });
 

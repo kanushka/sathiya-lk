@@ -95,8 +95,10 @@ export function MultiSelect<V extends string = string>({
     if (open) listRef.current?.querySelector('[data-active="true"]')?.scrollIntoView?.({ block: 'nearest' });
   }, [open, active]);
 
+  const isDisabled = () => !!disabled || !!triggerRef.current?.matches(':disabled');
+
   function openList() {
-    if (disabled) return;
+    if (isDisabled()) return;
     const sel = ordered.findIndex((o) => selectedSet.has(o.value) && !o.disabled);
     setQuery('');
     setActive(sel >= 0 ? sel : firstEnabled(ordered, 0, 1));
@@ -200,12 +202,12 @@ export function MultiSelect<V extends string = string>({
         data-disabled={disabled || undefined}
         data-invalid={ariaInvalid || undefined}
         onMouseDown={(e) => {
-          if (disabled || e.target === triggerRef.current) return;
+          if (isDisabled() || e.target === triggerRef.current) return;
           e.preventDefault();
           triggerRef.current?.focus();
         }}
         onClick={() => {
-          if (disabled) return;
+          if (isDisabled()) return;
           if (open) close();
           else openList();
         }}
@@ -284,6 +286,7 @@ export function MultiSelect<V extends string = string>({
         <MenuPanel
           ref={popRef}
           pos={pos}
+          anchorRef={triggerRef}
           onMouseDown={(e) => {
             if (e.target !== searchRef.current) e.preventDefault();
           }}

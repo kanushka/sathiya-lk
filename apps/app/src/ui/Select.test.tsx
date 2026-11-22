@@ -187,7 +187,7 @@ describe('Select', () => {
     const trigger = screen.getByRole('combobox', { name: 'Fruit' });
     await user.click(trigger);
     const listbox = screen.getByRole('listbox');
-    expect(screen.getByRole('dialog').contains(listbox)).toBe(false);
+    expect(screen.getByRole('dialog').contains(listbox)).toBe(true);
     await user.keyboard('{Escape}');
     expect(screen.queryByRole('listbox')).not.toBeInTheDocument();
     expect(onClose).not.toHaveBeenCalled();
@@ -210,6 +210,23 @@ describe('Select', () => {
     expect(screen.queryByRole('listbox')).not.toBeInTheDocument();
     expect(onClose).not.toHaveBeenCalled();
     expect(screen.getByRole('combobox', { name: 'Subject' })).toHaveFocus();
+  });
+
+  it('closes the menu and refocuses the trigger on Tab from the search box inside a Modal', async () => {
+    const user = userEvent.setup();
+    const onClose = vi.fn();
+    renderWithI18n(
+      <Modal open title="Pick" onClose={onClose}>
+        <Controlled options={many} aria-label="Subject" />
+      </Modal>,
+    );
+    const trigger = screen.getByRole('combobox', { name: 'Subject' });
+    await user.click(trigger);
+    expect(screen.getByRole('combobox', { name: 'Search' })).toHaveFocus();
+    await user.keyboard('{Tab}');
+    expect(screen.queryByRole('listbox')).not.toBeInTheDocument();
+    expect(screen.getByRole('dialog').contains(document.activeElement)).toBe(true);
+    expect(onClose).not.toHaveBeenCalled();
   });
 
   it('shows a search box above 8 options that filters, picks and reports no matches', async () => {

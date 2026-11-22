@@ -22,7 +22,7 @@ const focusable =
 const stack: symbol[] = [];
 
 function focusables(root: HTMLElement): HTMLElement[] {
-  return Array.from(root.querySelectorAll<HTMLElement>(focusable));
+  return Array.from(root.querySelectorAll<HTMLElement>(focusable)).filter((el) => !el.closest('[data-menu-panel]'));
 }
 
 export function Modal(props: ModalProps) {

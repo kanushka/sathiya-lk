@@ -259,13 +259,24 @@ describe('MultiSelect', () => {
     );
     const trigger = screen.getByRole('combobox', { name: 'Subjects' });
     await user.click(trigger);
-    expect(screen.getByRole('dialog').contains(screen.getByRole('listbox'))).toBe(false);
+    expect(screen.getByRole('dialog').contains(screen.getByRole('listbox'))).toBe(true);
     await user.keyboard('{Escape}');
     expect(screen.queryByRole('listbox')).not.toBeInTheDocument();
     expect(onClose).not.toHaveBeenCalled();
     expect(trigger).toHaveFocus();
     await user.keyboard('{Escape}');
     expect(onClose).toHaveBeenCalledTimes(1);
+  });
+
+  it('ignores clicks inside a disabled fieldset', async () => {
+    const user = userEvent.setup();
+    renderWithI18n(
+      <fieldset disabled>
+        <Controlled value={['g6']} />
+      </fieldset>,
+    );
+    await user.click(screen.getByText('Grade 6', visible));
+    expect(screen.queryByRole('listbox')).not.toBeInTheDocument();
   });
 
   it('is disabled: no menu, no chip removal', async () => {

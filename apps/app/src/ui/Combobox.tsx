@@ -163,6 +163,7 @@ export function Combobox<T>({
         <MenuPanel
           ref={popRef}
           pos={pos}
+          anchorRef={triggerRef}
           data-combobox-popover=""
           onMouseDown={(e) => {
             if (e.target !== searchRef.current) e.preventDefault();

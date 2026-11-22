@@ -106,7 +106,7 @@ describe('Combobox', () => {
     expect(screen.getByRole('option', { name: 'Mathematics' })).toHaveAttribute('aria-selected', 'false');
   });
 
-  it('renders the listbox in document.body, outside a modal body, and keeps the modal open on pick and Escape', async () => {
+  it('renders the listbox inside the dialog and keeps the modal open on pick and Escape', async () => {
     const user = userEvent.setup();
     const onClose = vi.fn();
     const onChange = vi.fn();
@@ -124,8 +124,7 @@ describe('Combobox', () => {
     );
     await user.click(screen.getByRole('button', { name: /click to search/i }));
     const listbox = screen.getByRole('listbox');
-    expect(screen.getByRole('dialog').contains(listbox)).toBe(false);
-    expect(listbox.closest('[data-combobox-popover]')?.parentElement).toBe(document.body);
+    expect(screen.getByRole('dialog').contains(listbox)).toBe(true);
 
     await user.keyboard('{Escape}');
     expect(screen.queryByRole('listbox')).not.toBeInTheDocument();
