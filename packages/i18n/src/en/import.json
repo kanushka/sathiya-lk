@@ -76,7 +76,8 @@
     "tooLong": "Too long (max {{max}} characters)",
     "excelDate": "Excel changed this to a date. Format the column as Plain text and type it again.",
     "excelNumber": "Excel changed this to a number and may have dropped a leading 0. Format the column as Plain text and type it again.",
-    "subjectsChanged": "Subjects changed since you chose this file. Choose the file again to re-check."
+    "subjectsChanged": "Subjects changed since you chose this file. Choose the file again to re-check.",
+    "alreadyImported": "This file was already imported in the last 24 hours. Check the Teachers list; reset passwords there if slips are missing."
   },
   "fileErrors": {
     "unsupported": "Choose an .xlsx or .csv file.",

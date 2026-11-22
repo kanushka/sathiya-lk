@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
 // Copyright (C) 2026 Kanushka Gayan
-import { paths, subjectsFingerprint, syntheticEmail, type ImportRow, type SubjectColumn, type TeacherColumn } from '@sathiya/core';
+import { importFingerprint, paths, subjectsFingerprint, syntheticEmail, type ImportRow, type SubjectColumn, type TeacherColumn } from '@sathiya/core';
 import { describe, expect, it } from 'vitest';
 import { adminAuth, adminDb, adminWithSchool, expectFnError, signIn, signUp, teacherInput } from './helpers';
 
@@ -121,6 +121,33 @@ describe('importSetup', () => {
       );
     expect(err?.details?.errors).toEqual([{ sheet: 'file', row: null, column: null, code: 'subjectsChanged' }]);
     expect((await adminDb.collection(paths.teachers(sid)).get()).size).toBe(0);
+  });
+
+  it('refuses the same file again within 24 hours', async () => {
+    const { admin, sid } = await adminWithSchool();
+    const body = { schoolId: sid, subjectsVersion: NONE, subjects: [], teachers: [tch(2, { name: 'A', grades: '6', isPrimary: 'yes' }), tch(3, { name: 'B', grades: '6', isPrimary: 'yes' })] };
+    expect((await admin.call('importSetup', body)).teachers).toHaveLength(2);
+    const err = await admin.call('importSetup', body).then(
+      () => null,
+      (e: { code?: string; details?: { code?: string; errors?: unknown[] } }) => e,
+    );
+    expect(err?.code).toBe('functions/invalid-argument');
+    expect(err?.details?.code).toBe('invalid');
+    expect(err?.details?.errors).toEqual([{ sheet: 'file', row: null, column: null, code: 'alreadyImported' }]);
+    expect((await adminDb.collection(paths.teachers(sid)).get()).size).toBe(2);
+    const markers = await adminDb.collection(paths.imports(sid)).get();
+    expect(markers.docs.map((d) => d.id)).toEqual([importFingerprint(body)]);
+    expect(markers.docs[0]!.data()).toMatchObject({ createdAt: expect.any(Number), subjects: 0, teachers: 2 });
+  });
+
+  it('imports the same file again once the marker is over 24 hours old', async () => {
+    const { admin, sid } = await adminWithSchool();
+    const body = { schoolId: sid, subjectsVersion: NONE, subjects: [], teachers: [tch(2, { name: 'A', grades: '6', isPrimary: 'yes' })] };
+    const marker = adminDb.doc(`${paths.imports(sid)}/${importFingerprint(body)}`);
+    const old = Date.now() - 25 * 60 * 60 * 1000;
+    await marker.set({ createdAt: old, createdBy: 'someone', subjects: 0, teachers: 1 });
+    expect((await admin.call('importSetup', body)).teachers).toHaveLength(1);
+    expect((await marker.get()).data()!.createdAt).toBeGreaterThan(old);
   });
 
   it('refuses non-admins, oversized and empty imports, unknown columns', async () => {

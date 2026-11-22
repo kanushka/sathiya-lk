@@ -194,6 +194,19 @@ describe('ImportModal import', () => {
     expect(within(dialog).getByRole('button', { name: 'Import' })).toBeDisabled();
   });
 
+  it('explains a file that was already imported', async () => {
+    const user = userEvent.setup();
+    vi.mocked(call).mockRejectedValue(
+      new ApiError('invalid', 'Already imported', { code: 'invalid', errors: [{ sheet: 'file', row: null, column: null, code: 'alreadyImported' }] }),
+    );
+    const dialog = open();
+    await choose(user, dialog, csv(SUBJECTS_CSV, 'subjects.csv'));
+    await user.click(await within(dialog).findByRole('button', { name: 'Import' }));
+    const table = await within(dialog).findByRole('table');
+    expect(within(table).getByText(/already imported in the last 24 hours/)).toBeInTheDocument();
+    expect(within(dialog).getByRole('button', { name: 'Import' })).toBeDisabled();
+  });
+
   it('asks to choose the file again when subjects changed', async () => {
     const user = userEvent.setup();
     vi.mocked(call).mockRejectedValue(

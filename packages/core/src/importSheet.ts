@@ -44,7 +44,8 @@ export type ImportErrorCode =
   | 'tooLong'
   | 'excelDate'
   | 'excelNumber'
-  | 'subjectsChanged';
+  | 'subjectsChanged'
+  | 'alreadyImported';
 
 export interface ImportError {
   sheet: ImportKind | 'file';

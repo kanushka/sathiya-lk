@@ -1,6 +1,7 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
 // Copyright (C) 2026 Kanushka Gayan
 
+import type { ImportRow } from './importSheet';
 import type { Subject } from './types';
 
 const fnv1a = (s: string, seed: number): string => {
@@ -20,4 +21,10 @@ const cmp = (a: string, b: string) => (a < b ? -1 : a > b ? 1 : 0);
 export function subjectsFingerprint(subjects: Pick<Subject, 'id' | 'nameEn' | 'nameSi' | 'short'>[]): string {
   const rows = [...subjects].sort((a, b) => cmp(a.id, b.id)).map((s) => [s.id, s.nameEn, s.nameSi ?? null, s.short]);
   return hash(JSON.stringify(rows));
+}
+
+export function importFingerprint(req: { subjects: ImportRow<string>[]; teachers: ImportRow<string>[] }): string {
+  const canon = (rows: ImportRow<string>[]) =>
+    rows.map((r) => [r.row, Object.entries(r.cells as Record<string, string>).sort((a, b) => cmp(a[0], b[0]))]);
+  return hash(JSON.stringify([canon(req.subjects), canon(req.teachers)]));
 }

@@ -429,6 +429,14 @@ describe('slotLocks (functions only)', () => {
   deny([['admin', l]], del);
 });
 
+describe('imports (functions only)', () => {
+  const m = `${paths.imports('s1')}/x`;
+  deny([['admin', m], ['super', m], ['teacher', m]], read);
+  deny([['admin', paths.imports('s1')]], list);
+  deny([['admin', m], ['super', m]], (r, p) => set(r, p, { createdAt: 1 }));
+  deny([['admin', m]], del);
+});
+
 describe('publishedClasses', () => {
   const pc = paths.publishedClass('s1', 'y1', 'c1');
   describe('read', () => {

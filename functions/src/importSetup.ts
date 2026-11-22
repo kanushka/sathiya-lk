@@ -4,6 +4,7 @@ import {
   IMPORT_CELL_MAX,
   IMPORT_COLUMNS,
   IMPORT_MAX_ROWS,
+  importFingerprint,
   paths,
   subjectsFingerprint,
   validateImport,
@@ -21,6 +22,7 @@ import { createTeacherAccount } from './lib/teacherAccount';
 
 const CONCURRENCY = 5;
 const MAX_VERSION_LENGTH = 64;
+const REIMPORT_WINDOW_MS = 24 * 60 * 60 * 1000;
 
 function rows<C extends string>(v: unknown, name: string, columns: readonly C[]): ImportRow<C>[] {
   if (!Array.isArray(v) || v.length > IMPORT_MAX_ROWS) invalid(`${name} must be a list of at most ${IMPORT_MAX_ROWS} rows`);
@@ -39,7 +41,7 @@ function rows<C extends string>(v: unknown, name: string, columns: readonly C[])
 
 export const importSetup = onCall({ ...callOpts, timeoutSeconds: 300 }, async (req): Promise<ImportSetupRes> => {
   const data = obj(req.data, 'request');
-  const { sid, school } = await requireSchoolAdmin(req, data.schoolId);
+  const { sid, school, uid } = await requireSchoolAdmin(req, data.schoolId);
   if (typeof data.subjectsVersion !== 'string' || data.subjectsVersion.length > MAX_VERSION_LENGTH) {
     invalid(`subjectsVersion must be text up to ${MAX_VERSION_LENGTH} characters`);
   }
@@ -68,13 +70,30 @@ export const importSetup = onCall({ ...callOpts, timeoutSeconds: 300 }, async (r
   );
   if (plan.errors.length > 0) fail('invalid-argument', 'invalid', 'Import has errors', { errors: plan.errors });
 
+  // A retry after a timeout would otherwise create the blank-Staff-ID teachers a second time.
+  const marker = db.doc(`${paths.imports(sid)}/${importFingerprint({ subjects: subjectRows, teachers: teacherRows })}`);
+  await db.runTransaction(async (tx) => {
+    const prev = await tx.get(marker);
+    const at = prev.data()?.createdAt;
+    if (typeof at === 'number' && Date.now() - at < REIMPORT_WINDOW_MS) {
+      const errors: ImportError[] = [{ sheet: 'file', row: null, column: null, code: 'alreadyImported' }];
+      fail('invalid-argument', 'invalid', 'This file was already imported', { errors });
+    }
+    tx.set(marker, { createdAt: Date.now(), createdBy: uid, subjects: subjectRows.length, teachers: teacherRows.length });
+  });
+
   const batch = db.batch();
   const subjectIds = plan.subjects.map((s) => {
     const ref = db.collection(paths.subjects(sid)).doc();
     batch.create(ref, { nameEn: s.nameEn, ...(s.nameSi !== undefined && { nameSi: s.nameSi }), short: s.short, color: s.color });
     return ref.id;
   });
-  await batch.commit();
+  try {
+    await batch.commit();
+  } catch (e) {
+    await marker.delete().catch(() => undefined);
+    throw e;
+  }
 
   // All-or-nothing only up to the first account failure: created subjects and teachers stay.
   const created: (ImportSetupRes['teachers'][number] | undefined)[] = [];
