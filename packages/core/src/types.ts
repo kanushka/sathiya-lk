@@ -5,7 +5,7 @@ export type Lang = 'en' | 'si';
 export type DayIndex = 0 | 1 | 2 | 3 | 4;
 export type Hhmm = string;
 export interface Bilingual { nameEn: string; nameSi?: string }
-export interface School extends Bilingual { id: string; district: string; city: string; address?: string; phone?: string; type: SchoolType; censusNo?: string; grades: number[]; staffPrefix: string; logoUrl?: string; colors: { primary: string; second: string }; status: 'active' | 'disabled'; termsVersion: string; activeYearId?: string; createdAt: number }
+export interface School extends Bilingual { id: string; district: string; city: string; address?: string; phone?: string; type: SchoolType; censusNo?: string; releasedCensusNo?: string; censusReleasedAt?: number; censusReleasedBy?: string; grades: number[]; staffPrefix: string; logoUrl?: string; colors: { primary: string; second: string }; status: 'active' | 'disabled'; termsVersion: string; activeYearId?: string; createdAt: number }
 export const SCHOOL_TYPES = ['government', 'private', 'international'] as const;
 export type SchoolType = (typeof SCHOOL_TYPES)[number];
 export const REPORT_REASONS = ['fake', 'duplicate', 'abuse', 'other'] as const;

@@ -1,0 +1,8 @@
+blank_issues_enabled: false
+contact_links:
+  - name: Report a security vulnerability
+    url: https://github.com/kanushka/sathiya-lk/security/advisories/new
+    about: Report security issues privately, not as a public issue.
+  - name: Questions about using Sathiya at your school
+    url: https://sathiya.kanushka.com/contact/
+    about: Contact the people who run the live service.

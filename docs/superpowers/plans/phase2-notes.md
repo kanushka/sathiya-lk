@@ -36,7 +36,7 @@ Checked on Node 20 / pnpm 9 (frozen-lockfile install, typecheck, build, tests) a
   - It lists admin email and Google name, the terms acceptance version and time, the teacher's `lastLoginAt`, and the public `schoolDirectory` entry (name EN/SI, district, status).
   - It says Google Fonts load from Google before consent.
   - If Phases 1/3/5 collect more fields, update `privacy` in both content files.
-- **Deploy:** the Hosting target `web` serves `apps/web/dist`, which `pnpm --filter web build` produces. `.firebaserc` maps it to site `sathiya-lk-web`, which must exist in the console; the custom domain `sathiya.kanushka.com` (app: `app.sathiya.kanushka.com`) is the owner's to set up.
+- **Deploy:** the Hosting target `web` serves `apps/web/dist`, which `pnpm --filter web build` produces. `.firebaserc` maps it to site `sathiya-lk` (the project's default site; the app target is `sathiya-lk-portal`); the custom domain `sathiya.kanushka.com` (app: `app.sathiya.kanushka.com`) is the owner's to set up.
 
 ## Left open (minor, deliberately not fixed)
 

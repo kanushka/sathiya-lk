@@ -8,6 +8,7 @@ import { useLang } from '../../app/LangProvider';
 import { useDoc, type DocState } from '../../lib/firestore';
 import { EmptyState } from '../../ui/EmptyState';
 import { LoadingState } from '../../ui/LoadingState';
+import { defaultReleaseCensus, ReleaseCensusButton, type ReleaseCensusFn } from './ReleaseCensus';
 import { StatusButton, StatusPill } from './StatusControl';
 import { formatActivity, formatDate } from './format';
 import { useUsageCounts } from './source';
@@ -16,6 +17,7 @@ import { defaultSetStatus, type SetStatusFn } from './status';
 export interface SchoolDetailProps {
   school?: DocState<School>;
   setStatus?: SetStatusFn;
+  releaseCensus?: ReleaseCensusFn;
 }
 
 function Row({ label, children }: { label: string; children: ReactNode }) {
@@ -27,7 +29,7 @@ function Row({ label, children }: { label: string; children: ReactNode }) {
   );
 }
 
-export function SchoolDetail({ school: injected, setStatus = defaultSetStatus }: SchoolDetailProps) {
+export function SchoolDetail({ school: injected, setStatus = defaultSetStatus, releaseCensus = defaultReleaseCensus }: SchoolDetailProps) {
   const { t } = useTranslation('superadmin');
   const { lang } = useLang();
   const { sid } = useParams();
@@ -59,6 +61,7 @@ export function SchoolDetail({ school: injected, setStatus = defaultSetStatus }:
             {t('detail.openReadOnly')}
           </Link>
           <StatusButton school={school} setStatus={setStatus} />
+          <ReleaseCensusButton school={school} release={releaseCensus} />
         </div>
       </div>
       <dl className="m-0 rounded-[14px] border border-line bg-white px-5">
@@ -67,6 +70,11 @@ export function SchoolDetail({ school: injected, setStatus = defaultSetStatus }:
         <Row label={t('detail.city')}>{school.city || t('usage.noData')}</Row>
         <Row label={t('detail.type')}>{school.type ? t(`schoolTypes.${school.type}`) : t('usage.noData')}</Row>
         <Row label={t('detail.censusNo')}>{school.censusNo || t('usage.noData')}</Row>
+        {school.releasedCensusNo && school.censusReleasedAt && (
+          <Row label={t('detail.censusReleased')}>
+            {t('detail.censusReleasedValue', { censusNo: school.releasedCensusNo, date: formatDate(school.censusReleasedAt, lang) })}
+          </Row>
+        )}
         <Row label={t('detail.district')}>{school.district}</Row>
         {school.address && <Row label={t('detail.address')}>{school.address}</Row>}
         {school.phone && <Row label={t('detail.phone')}>{school.phone}</Row>}

@@ -1,0 +1,29 @@
+name: Feature request
+description: Suggest an improvement for Sathiya
+labels: [enhancement]
+body:
+  - type: textarea
+    id: problem
+    attributes:
+      label: The school problem
+      description: What is hard or missing today? Who runs into it (admin, teacher, super admin)?
+    validations:
+      required: true
+  - type: textarea
+    id: idea
+    attributes:
+      label: Your idea
+      description: How could Sathiya help? Sketches or examples welcome.
+    validations:
+      required: true
+  - type: textarea
+    id: alternatives
+    attributes:
+      label: How you handle it now
+      description: Workarounds or other tools you use.
+  - type: checkboxes
+    id: help
+    attributes:
+      label: Contributing
+      options:
+        - label: I'd like to work on this myself

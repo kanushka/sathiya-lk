@@ -28,6 +28,11 @@ describe('paths', () => {
     expectTypeOf<CallableTypes['sendAuthEmail']['req']>().toEqualTypeOf<SendAuthEmailReq>();
     expectTypeOf<CallableTypes['sendAuthEmail']['res']>().toEqualTypeOf<{ ok: true }>();
   });
+  it('releaseCensusNo callable and types', () => {
+    expect(callables.releaseCensusNo).toBe('releaseCensusNo');
+    expectTypeOf<CallableTypes['releaseCensusNo']['req']>().toEqualTypeOf<{ schoolId: string }>();
+    expectTypeOf<CallableTypes['releaseCensusNo']['res']>().toEqualTypeOf<{ censusNo: string; freed: boolean }>();
+  });
   it('CallableTypes covers every callable', () => {
     expectTypeOf<keyof CallableTypes>().toEqualTypeOf<keyof typeof callables>();
     expectTypeOf<CallableTypes['publishYear']['res']>().toEqualTypeOf<{ classes: number; teachers: number }>();
