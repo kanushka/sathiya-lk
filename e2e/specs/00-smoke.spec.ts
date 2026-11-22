@@ -18,6 +18,15 @@ test('login switches between admin and teacher forms', async ({ page }) => {
   await expect(page.getByRole('tab', { name: 'School admin' })).toBeFocused();
 });
 
+test('signed-out /me opens the teacher tab and ?school= alone selects it', async ({ page }) => {
+  await page.goto('/me');
+  await expect(page).toHaveURL(/\/login\?as=teacher$/);
+  await expect(page.getByRole('tab', { name: 'Teacher' })).toHaveAttribute('aria-selected', 'true');
+  await page.goto('/login?school=nope-not-a-school');
+  await expect(page.getByRole('tab', { name: 'Teacher' })).toHaveAttribute('aria-selected', 'true');
+  await expect(page.getByText("We couldn't find that school")).toBeVisible();
+});
+
 test('seeded admin, teacher and super can sign in', async ({ page, browser }) => {
   await page.goto('/login');
   await shot(page, 'login');

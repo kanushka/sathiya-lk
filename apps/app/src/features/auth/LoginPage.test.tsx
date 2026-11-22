@@ -133,6 +133,28 @@ describe('teacher login', () => {
     expect(localStorage.getItem('sathiya.school')).toBeNull();
   });
 
+  it('opens the teacher tab with the school preselected for ?school= alone', async () => {
+    vi.mocked(api.getDirectorySchool).mockResolvedValue(siripura);
+    renderAuth(<LoginPage />, { route: '/login?school=siripura' });
+    expect(screen.getByRole('heading', { name: 'Teacher login' })).toBeInTheDocument();
+    await waitFor(() => expect(screen.getByLabelText('School')).toHaveValue('Siripura Central College, Peradeniya'));
+  });
+
+  it('keeps the admin tab reachable when ?school= is present', async () => {
+    const user = userEvent.setup();
+    renderAuth(<LoginPage />, { route: '/login?school=siripura' });
+    await user.click(screen.getByRole('tab', { name: 'School admin' }));
+    expect(screen.getByRole('heading', { name: 'Admin login' })).toBeInTheDocument();
+    expect(screen.getByTestId('location')).toHaveTextContent('as=admin');
+  });
+
+  it('says when ?school= matches no school', async () => {
+    vi.mocked(api.getDirectorySchool).mockResolvedValue(null);
+    renderAuth(<LoginPage />, { route: '/login?as=teacher&school=bogus' });
+    expect(await screen.findByText("We couldn't find that school. Choose it from the list.")).toBeInTheDocument();
+    expect(screen.getByLabelText('School')).toHaveValue('');
+  });
+
   it('requires a school before submitting', async () => {
     const user = userEvent.setup();
     renderAuth(<LoginPage />, { route: AS_TEACHER });

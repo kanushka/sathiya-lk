@@ -44,4 +44,26 @@ describe('AdminLoginForm password reset', () => {
     expect(await screen.findByText(/Too many requests/)).toBeInTheDocument();
     expect(screen.queryByText("If an account exists, we've sent a link.")).not.toBeInTheDocument();
   });
+
+  it('shows the missing-email error under Email, not Password, and clears it on typing', async () => {
+    const user = userEvent.setup();
+    renderAuth(<AdminLoginForm />);
+    await user.click(screen.getByRole('button', { name: 'Forgot password?' }));
+    expect(authEmail.sendAuthEmail).not.toHaveBeenCalled();
+    expect(screen.getByLabelText('Email')).toHaveAccessibleDescription('Enter your email above first.');
+    expect(screen.getByLabelText('Email')).toBeInvalid();
+    expect(screen.getByLabelText('Password')).not.toBeInvalid();
+    await user.type(screen.getByLabelText('Email'), 'a');
+    expect(screen.queryByText('Enter your email above first.')).not.toBeInTheDocument();
+  });
+
+  it('clears the missing-email error after a successful send', async () => {
+    const user = userEvent.setup();
+    renderAuth(<AdminLoginForm />);
+    await user.click(screen.getByRole('button', { name: 'Forgot password?' }));
+    await user.type(screen.getByLabelText('Email'), 'amara@siripura.lk');
+    await user.click(screen.getByRole('button', { name: 'Forgot password?' }));
+    expect(await screen.findByText("If an account exists, we've sent a link.")).toBeInTheDocument();
+    expect(screen.queryByText('Enter your email above first.')).not.toBeInTheDocument();
+  });
 });

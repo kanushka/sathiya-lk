@@ -14,7 +14,13 @@ const { RequireRole } = await import('./RequireRole');
 
 function LoginPage() {
   const from = (useLocation().state as { from?: { pathname: string } } | null)?.from?.pathname;
-  return <p>login page from {from}</p>;
+  const { search } = useLocation();
+  return (
+    <>
+      <p>login page from {from}</p>
+      <p data-testid="search">{search}</p>
+    </>
+  );
 }
 
 function renderAt(role: 'admin' | 'teacher' | 'super') {
@@ -35,6 +41,19 @@ describe('RequireRole', () => {
     renderAt('admin');
     expect(screen.getByText('login page from /protected')).toBeInTheDocument();
     expect(screen.queryByText('secret')).not.toBeInTheDocument();
+  });
+
+  it('sends signed-out visitors of teacher routes to the teacher tab', () => {
+    state.auth = { user: null, claims: {}, loading: false };
+    renderAt('teacher');
+    expect(screen.getByText('login page from /protected')).toBeInTheDocument();
+    expect(screen.getByTestId('search')).toHaveTextContent('?as=teacher');
+  });
+
+  it('keeps the admin tab for admin routes', () => {
+    state.auth = { user: null, claims: {}, loading: false };
+    renderAt('admin');
+    expect(screen.getByTestId('search')).toBeEmptyDOMElement();
   });
 
   it('shows a loading state while auth resolves', () => {

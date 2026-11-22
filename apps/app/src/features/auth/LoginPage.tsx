@@ -18,7 +18,8 @@ export function LoginPage() {
   const { t } = useTranslation('auth');
   const [params, setParams] = useSearchParams();
   const [reporting, setReporting] = useState(() => params.get('report') === '1');
-  const as: LoginAs = params.get('as') === 'teacher' ? 'teacher' : 'admin';
+  const asParam = params.get('as');
+  const as: LoginAs = asParam === 'teacher' || (asParam !== 'admin' && params.has('school')) ? 'teacher' : 'admin';
   const [focusField, setFocusField] = useState(as === 'teacher');
   // Arrow-key switching keeps focus on the tab (APG tabs pattern); clicks move it to the first field.
   const keyboardSwitch = useRef(false);
@@ -30,6 +31,7 @@ export function LoginPage() {
       (prev) => {
         const p = new URLSearchParams(prev);
         if (next === 'teacher') p.set('as', 'teacher');
+        else if (p.has('school')) p.set('as', 'admin');
         else p.delete('as');
         return p;
       },
