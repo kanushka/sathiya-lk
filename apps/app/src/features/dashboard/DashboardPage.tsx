@@ -111,7 +111,7 @@ export function DashboardPage() {
           </div>
 
           <div className="flex flex-wrap items-start gap-5">
-            <section className="min-w-[420px] flex-[2_1_480px] rounded-[14px] border border-line-soft bg-white p-5">
+            <section className="min-w-0 flex-[2_1_480px] md:min-w-[420px] rounded-[14px] border border-line-soft bg-white p-5">
               <div className="mb-3 flex items-center justify-between">
                 <h2 className="m-0 text-[17px] font-bold">{t('classes.title')}</h2>
                 <span className="text-[13px] text-ink-soft">{t('classes.legend')}</span>
