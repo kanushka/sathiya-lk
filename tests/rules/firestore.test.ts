@@ -518,13 +518,15 @@ describe('users/{uid}', () => {
 
 describe('load standard subjects', () => {
   it('admin can batch-add the standard list to a school', async () => {
-    const batch = db('admin').batch();
-    for (const s of STANDARD_SUBJECTS) batch.set(db('admin').collection(paths.subjects('s1')).doc(), { ...s });
+    const fs = db('admin');
+    const batch = fs.batch();
+    for (const s of STANDARD_SUBJECTS) batch.set(fs.collection(paths.subjects('s1')).doc(), { ...s });
     await assertSucceeds(batch.commit());
   });
   it('a disabled school cannot', async () => {
-    const batch = db('disabledAdmin').batch();
-    batch.set(db('disabledAdmin').collection(paths.subjects('sd')).doc(), { ...STANDARD_SUBJECTS[0] });
+    const fs = db('disabledAdmin');
+    const batch = fs.batch();
+    batch.set(fs.collection(paths.subjects('sd')).doc(), { ...STANDARD_SUBJECTS[0] });
     await assertFails(batch.commit());
   });
 });
