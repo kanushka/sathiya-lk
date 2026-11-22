@@ -2,7 +2,7 @@
 // Copyright (C) 2026 Kanushka Gayan
 import { useTranslation } from 'react-i18next';
 import { useLang } from '../../app/LangProvider';
-import { cx } from '../../ui/cx';
+import { SegmentedControl } from '../../ui/SegmentedControl';
 
 export function BrandMark({ size = 34 }: { size?: number }) {
   return (
@@ -16,22 +16,16 @@ export function BrandMark({ size = 34 }: { size?: number }) {
 
 export function LanguageToggle() {
   const { lang, setLang } = useLang();
-  const { t } = useTranslation('common');
-  const base = 'cursor-pointer border-0 px-3 py-1.5 text-[13px]';
+  const { t } = useTranslation(['common', 'shell']);
   return (
-    <div className="inline-flex overflow-hidden rounded-lg border border-[#D9DCE3] bg-white">
-      {(['si', 'en'] as const).map((l) => (
-        <button
-          key={l}
-          type="button"
-          lang={l}
-          aria-pressed={lang === l}
-          onClick={() => setLang(l)}
-          className={cx(base, lang === l ? 'bg-navy text-white' : 'bg-white text-ink-soft')}
-        >
-          {t(`languages.${l}`)}
-        </button>
-      ))}
-    </div>
+    <SegmentedControl
+      aria-label={t('shell:sidebar.language')}
+      value={lang}
+      onChange={setLang}
+      options={(['si', 'en'] as const).map((l) => ({
+        value: l,
+        label: <span lang={l}>{t(`common:languages.${l}`)}</span>,
+      }))}
+    />
   );
 }

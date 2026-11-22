@@ -4,9 +4,11 @@ import { REPORT_REASONS, type ReportReason } from '@sathiya/core';
 import { useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Button } from '../../ui/Button';
-import { Field, inputClass } from '../../ui/Field';
+import { Field, inputClass, textareaClass } from '../../ui/Field';
 import { Modal } from '../../ui/Modal';
+import { RadioGroup } from '../../ui/RadioGroup';
 import { useToast } from '../../ui/Toast';
+import { FormError } from '../../ui/FormError';
 import { getDirectorySchool, reportSchool, type DirectorySchool } from './api';
 import { detailCode } from './errors';
 import { SchoolSearch } from './SchoolSearch';
@@ -88,27 +90,21 @@ export function ReportSchoolModal({ open, onClose, initialSchoolId }: ReportScho
         <Field label={t('report.school')}>
           <SchoolSearch id="report-school" value={school} onChange={setSchool} />
         </Field>
-        <fieldset className="m-0 border-0 p-0">
-          <legend className="mb-1.5 p-0 text-[13px] font-semibold text-ink-soft">{t('report.reason')}</legend>
-          <div className="flex flex-col gap-2">
-            {REPORT_REASONS.map((r) => (
-              <label key={r} className="flex items-center gap-2.5 text-sm">
-                <input type="radio" name="report-reason" checked={reason === r} onChange={() => setReason(r)} />
-                {t(`report.reasons.${r}`)}
-              </label>
-            ))}
-          </div>
-        </fieldset>
+        <RadioGroup
+          name="report-reason"
+          label={t('report.reason')}
+          value={reason}
+          onChange={setReason}
+          options={REPORT_REASONS.map((r) => ({ value: r, label: t(`report.reasons.${r}`) }))}
+        />
         <Field label={t('report.details')}>
-          <textarea className={`${inputClass} h-20 py-2`} value={details} onChange={(e) => setDetails(e.target.value)} />
+          <textarea className={textareaClass} value={details} onChange={(e) => setDetails(e.target.value)} />
         </Field>
         <Field label={t('report.email')}>
           <input type="email" autoComplete="email" className={inputClass} value={email} onChange={(e) => setEmail(e.target.value)} />
         </Field>
         {error && (
-          <p role="alert" className="m-0 text-sm font-medium text-danger">
-            {error}
-          </p>
+          <FormError>{error}</FormError>
         )}
       </div>
     </Modal>

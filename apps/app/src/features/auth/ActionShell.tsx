@@ -4,6 +4,7 @@ import type { ReactNode } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Link } from 'react-router-dom';
 import { BrandMark, LanguageToggle } from './AuthChrome';
+import { FormError } from '../../ui/FormError';
 
 export function ActionShell({ title, children }: { title: string; children: ReactNode }) {
   const { t } = useTranslation('auth');
@@ -27,9 +28,7 @@ export function ActionShell({ title, children }: { title: string; children: Reac
 
 export function ActionError({ message }: { message: string }) {
   return (
-    <p role="alert" className="m-0 text-sm font-medium text-danger">
-      {message}
-    </p>
+    <FormError>{message}</FormError>
   );
 }
 

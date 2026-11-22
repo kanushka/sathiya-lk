@@ -118,9 +118,9 @@ export function AdminLoginForm() {
         />
       </Field>
       <p className="mb-6 mt-2 text-right text-sm">
-        <button type="button" onClick={() => void reset()} className="cursor-pointer border-0 bg-transparent p-0 text-brand underline">
+        <Button variant="link" onClick={() => void reset()} className="underline">
           {t('admin.forgot')}
-        </button>
+        </Button>
       </p>
       <Button
         type="submit"
