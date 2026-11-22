@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
 // Copyright (C) 2026 Kanushka Gayan
 
-import type { Entry } from '@sathiya/core';
+import { singleSpec, type Entry } from '@sathiya/core';
 import { C, ctx, entries6B, entry, S, T } from '@sathiya/core/fixtures';
 import { fireEvent, screen, waitFor, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
@@ -66,7 +66,7 @@ describe('AssignPicker', () => {
     expect(teacherRow(/Mrs\. J\. Ranasinghe/)).toHaveAttribute('aria-selected', 'false');
     await userEvent.click(screen.getByRole('button', { name: 'Assign' }));
     expect(h.onSave).toHaveBeenCalledWith({ day: 2, period: 4, classIds: [C.c6b], lessons: [{ subjectId: S.sinhala, teacherId: T.rSilva }] });
-    await waitFor(() => expect(h.onPin).toHaveBeenCalledWith({ subjectId: S.sinhala, teacherId: T.rSilva }));
+    await waitFor(() => expect(h.onPin).toHaveBeenCalledWith(singleSpec(C.c6b, S.sinhala, T.rSilva)));
     expect(h.onClose).toHaveBeenCalled();
   });
 
@@ -99,7 +99,7 @@ describe('AssignPicker', () => {
     expect(silva).toHaveTextContent('SCC011 · Teaching 6A · Sinhala');
     expect(screen.getByRole('button', { name: 'Assign' })).toBeDisabled();
     await userEvent.click(within(silva).getByRole('button', { name: 'Use for other slots' }));
-    expect(h.onPin).toHaveBeenCalledWith({ subjectId: S.sinhala, teacherId: T.rSilva });
+    expect(h.onPin).toHaveBeenCalledWith(singleSpec(C.c6b, S.sinhala, T.rSilva));
     expect(h.onSave).not.toHaveBeenCalled();
   });
 
@@ -203,7 +203,7 @@ describe('AssignPicker', () => {
       expect(silva).toHaveAttribute('aria-selected', 'true');
       expect(screen.queryByRole('button', { name: 'Combine with other classes' })).not.toBeInTheDocument();
       await userEvent.click(screen.getByRole('button', { name: 'Start pinning' }));
-      expect(h.onPin).toHaveBeenCalledWith({ subjectId: S.sinhala, teacherId: T.rSilva });
+      expect(h.onPin).toHaveBeenCalledWith(singleSpec(C.c6b, S.sinhala, T.rSilva));
       expect(h.onSave).not.toHaveBeenCalled();
       expect(h.onClose).toHaveBeenCalled();
     });

@@ -1,22 +1,25 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
 // Copyright (C) 2026 Kanushka Gayan
 
+import { singleSpec, type Entry } from '@sathiya/core';
 import { C, ctx, entries6B, S, T } from '@sathiya/core/fixtures';
 import { act, screen, waitFor } from '@testing-library/react';
 import { describe, expect, it, vi } from 'vitest';
 import { ApiError } from '../../lib/callable';
 import { renderWithSchool } from '../../test/renderWithSchool';
-import { usePinMode, type PinMode } from './usePinMode';
+import { usePinMode, type PinMode, type PinView } from './usePinMode';
 import { TimetableApiContext, useTimetable, type TimetableApi } from './useTimetable';
 
 let pin: PinMode;
+let viewArg: PinView = { kind: 'class' };
 function Probe() {
   const tt = useTimetable();
-  pin = usePinMode({ ctx: tt.ctx, classId: C.c6b, entries: tt.entries, save: tt.save, remove: tt.remove });
+  pin = usePinMode({ ctx: tt.ctx, entries: tt.entries, save: tt.save, remove: tt.remove, view: viewArg });
   return null;
 }
 
-function setup(api: Partial<TimetableApi> = {}) {
+function setup(api: Partial<TimetableApi> = {}, es: Entry[] = entries6B, view: PinView = { kind: 'class' }) {
+  viewArg = view;
   const full: TimetableApi = {
     saveEntry: vi.fn().mockResolvedValue({ entryId: 'new' }),
     deleteEntry: vi.fn().mockResolvedValue({ ok: true }),
@@ -26,12 +29,12 @@ function setup(api: Partial<TimetableApi> = {}) {
     <TimetableApiContext.Provider value={full}>
       <Probe />
     </TimetableApiContext.Provider>,
-    { ctx, entries: entries6B },
+    { ctx, entries: es },
   );
   return full;
 }
 
-const science = { subjectId: S.science, teacherId: T.gunasekara };
+const science = singleSpec(C.c6b, S.science, T.gunasekara);
 const cell = (day: number, period: number) => pin.slots.find((s) => s.day === day && s.period === period)?.cell.kind;
 
 describe('usePinMode', () => {
@@ -182,5 +185,70 @@ describe('usePinMode', () => {
       await first;
     });
     expect(pin.message).toBe('Science removed from Wednesday, period 4.');
+  });
+
+  it('exposes title, detail and colour for a single spec', () => {
+    setup();
+    expect(pin.names).toBeNull();
+    act(() => pin.start(science));
+    expect(pin.names).toMatchObject({ title: 'Science · Mrs. S. Gunasekara', subject: 'Science', teacher: 'Mrs. S. Gunasekara' });
+    expect(pin.names?.detail).toBeUndefined();
+  });
+});
+
+describe('usePinMode with a group spec', () => {
+  const group = { classIds: [C.c6a, C.c6b], lessons: [{ subjectId: S.buddhism, teacherId: T.ananda }, { subjectId: S.islam, teacherId: T.rizan }], groupKey: 'religion' };
+
+  it('announces the group and writes every lesson and class', async () => {
+    const api = setup({}, []);
+    act(() => pin.start(group));
+    expect(pin.message).toBe('Pin mode on: Religion for 6A+6B. Click free periods to pin, Esc to finish.');
+    expect(pin.names).toMatchObject({ title: 'Religion · 6A+6B', subject: 'Religion' });
+    expect(pin.names?.detail).toContain('Buddhism');
+    await act(async () => {
+      await pin.toggle(0, 1);
+    });
+    expect(api.saveEntry).toHaveBeenCalledWith(
+      expect.objectContaining({ entry: { day: 0, period: 1, classIds: [C.c6a, C.c6b], lessons: group.lessons, groupKey: 'religion' } }),
+    );
+    expect(pin.message).toBe('Religion pinned to Monday, period 1.');
+  });
+});
+
+describe('usePinMode in the teacher view', () => {
+  const spec = singleSpec(C.c1a, S.maths, T.wickramasinghe);
+  const view: PinView = { kind: 'teacher', teacherId: T.wickramasinghe };
+
+  it('reads cells by teacher row and writes the class period', async () => {
+    const api = setup({}, [], view);
+    act(() => pin.start(spec));
+    expect(pin.cellAt(1, 5)?.kind).toBe('free');
+    expect(pin.cellAt(1, 6)?.kind).toBe('none');
+    expect(pin.periodAt(1, 5)).toBe(5);
+    expect(pin.periodAt(1, 6)).toBeNull();
+    await act(async () => {
+      await pin.toggle(1, 5);
+    });
+    expect(api.saveEntry).toHaveBeenCalledWith(expect.objectContaining({ entry: { day: 1, period: 5, classIds: [C.c1a], lessons: [{ subjectId: S.maths, teacherId: T.wickramasinghe }] } }));
+    expect(pin.message).toBe('Mathematics pinned to Tuesday, period 5.');
+  });
+
+  it('ignores rows with no period of the class', async () => {
+    const api = setup({}, [], view);
+    act(() => pin.start(spec));
+    await act(async () => {
+      await pin.toggle(1, 6);
+    });
+    expect(api.saveEntry).not.toHaveBeenCalled();
+  });
+
+  it('maps suggestions to rows', () => {
+    setup({}, [], view);
+    act(() => pin.start(spec));
+    act(() => pin.suggest());
+    expect(pin.suggested.length).toBeGreaterThan(0);
+    const s = pin.suggested[0]!;
+    expect(pin.isSuggested(s.day, s.period)).toBe(true);
+    expect(pin.cellAt(s.day, s.period)?.kind).toBe('free');
   });
 });

@@ -5,7 +5,6 @@ import {
   effectivePlan,
   fillWithClassTeacher,
   periodsFor,
-  pickName,
   rowsFor,
   teacherDisplayName,
   windowOf,
@@ -16,7 +15,7 @@ import {
   type SchoolContext,
   type TemplateRow,
 } from '@sathiya/core';
-import { useEffect, useMemo, useRef, useState, type ReactNode } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Navigate, useNavigate, useParams } from 'react-router-dom';
 import { useLang } from '../../app/LangProvider';
@@ -32,11 +31,10 @@ import { cx } from '../../ui/cx';
 import { AssignPicker } from './AssignPicker';
 import { BlockEditor } from './BlockEditor';
 import { blockKey, blockStateFor, isBlock, type BlockState } from './blockState';
-import { CellBody } from './Cell';
-import { busyLabel } from './conflictLabel';
 import { classCellView } from './labels';
 import { useAdminBase } from './paths';
 import { PinBar } from './PinBar';
+import { PinLegend, pinOverlayCell } from './pinOverlay';
 import { SlotPicker } from './SlotPicker';
 import { SubjectProgress } from './SubjectProgress';
 import { TimetableGrid, type GridOverlay, type Slot } from './TimetableGrid';
@@ -79,31 +77,6 @@ export function ClassViewPage() {
   return <ClassView key={cls.id} cls={cls} classes={classes} />;
 }
 
-const pinCell = 'box-border border-[1.5px] border-dashed items-center px-2.5 text-center';
-const pinFree = `${pinCell} border-[#2E8B4A] bg-[#F5FBF6] text-[#1F6B34]`;
-const pinWarn = `${pinCell} border-[#B7831F] bg-[#FFF6E2] text-[#6B4A0E]`;
-const pinOver = `${pinCell} border-[#C2410C] bg-[#FDECEA] text-[#9A3412]`;
-const pinSuggested = 'items-center border-[1.5px] border-solid border-[#2E8B4A] bg-[#E4F2E7] px-2.5 text-center text-[#1F6B34]';
-const pinBusy = 'border-line bg-[repeating-linear-gradient(135deg,#F1F2F5_0_6px,#E4E6EC_6px_12px)] px-2.5 text-ink-muted';
-
-function PinGlyph({ sub }: { sub: string }) {
-  return (
-    <span className="flex flex-col items-center gap-0.5">
-      <Icon name="pin" size={18} strokeWidth={2} />
-      <span className="text-[11px] font-semibold">{sub}</span>
-    </span>
-  );
-}
-
-function Swatch({ className, children }: { className: string; children: ReactNode }) {
-  return (
-    <span className="inline-flex items-center gap-1.5 text-xs text-ink-soft">
-      <i aria-hidden="true" className={cx('inline-block h-3.5 w-3.5 rounded', className)} />
-      {children}
-    </span>
-  );
-}
-
 function ClassView({ cls, classes }: { cls: SchoolClass; classes: SchoolClass[] }) {
   const { t } = useTranslation('timetable');
   const { t: tc } = useTranslation('common');
@@ -121,7 +94,7 @@ function ClassView({ cls, classes }: { cls: SchoolClass; classes: SchoolClass[] 
   const [selected, setSelected] = useState<Slot | undefined>();
   const [picker, setPicker] = useState<{ day: DayIndex; period: number; editing: Entry } | null>(null);
   const [assign, setAssign] = useState<{ slot: Slot | null; subjectId?: string } | null>(null);
-  const pin = usePinMode({ ctx, classId: cls.id, entries, save, remove });
+  const pin = usePinMode({ ctx, entries, save, remove, view: { kind: 'class' } });
   const { target: pinTarget, stop: stopPin } = pin;
   const pinOrigin = useRef<{ day: DayIndex; period: number } | { subjectId: string } | null>(null);
   const pinWasOn = useRef(false);
@@ -196,66 +169,23 @@ function ClassView({ cls, classes }: { cls: SchoolClass; classes: SchoolClass[] 
     else void remove(e.id);
   }
 
-  const pinSubject = pinTarget && ctx.subjects.find((x) => x.id === pinTarget.subjectId);
-  const pinTeacher = pinTarget && ctx.teachers.find((x) => x.id === pinTarget.teacherId);
-  const pinSubjectName = pinSubject ? pickName(pinSubject, lang) : (pinTarget?.subjectId ?? '');
-  const pinTeacherName = pinTeacher ? teacherDisplayName(pinTeacher, lang) : '';
-
   function pinOverlay(day: DayIndex, period: number): GridOverlay | null {
-    const c = pinTarget && pin.cellAt(day, period);
     const time = periodsFor(template, day).find((p) => p.period === period);
-    if (!c || !time) return null;
-    const where = { day: tc(`days.long.${day}`), n: period, time: `${time.start}–${time.end}` };
-    if (c.kind === 'taken') {
-      const view = classCellView(c.entry, ctx, lang, t, plan);
-      return { label: t('grid.cell', { ...where, title: `${view.title} ${view.sub}` }), className: 'border-transparent text-ink opacity-40', content: <CellBody cells={[view]} />, disabled: true };
-    }
-    if (c.kind === 'pinned') {
-      const view = classCellView(c.entry, ctx, lang, t, plan);
-      return {
-        label: t('pin.cellPinned', { ...where, subject: view.title, teacher: view.sub }),
-        className: 'border-transparent text-ink ring-2 ring-brand ring-offset-2',
-        content: <CellBody cells={[{ ...view, sub: t('pin.clickUnpin') }]} />,
-      };
-    }
-    if (c.kind === 'busy') {
-      const reason = busyLabel(t, c.busy, ctx, lang);
-      return {
-        label: t('pin.cellBusy', { ...where, reason }),
-        className: pinBusy,
-        content: (
-          <span className="flex flex-col gap-0.5">
-            <span className="text-[13px] font-bold">{t('pin.busy')}</span>
-            <span className="text-[11px]">{reason}</span>
-          </span>
-        ),
-        disabled: true,
-      };
-    }
-    const label = t('pin.cellPin', { ...where, subject: pinSubjectName, teacher: pinTeacherName });
-    if (pin.progress && pin.progress.left === 0) {
-      return { label: `${label}, ${t('pin.noteOver')}`, className: pinOver, content: <PinGlyph sub={t('pin.overPlan')} /> };
-    }
-    if (pin.isSuggested(day, period)) {
-      return {
-        label: `${label}, ${t('pin.noteSuggested')}`,
-        className: pinSuggested,
-        content: (
-          <span className="flex flex-col gap-0.5">
-            <span className="text-[13px] font-bold">{t('pin.suggested')}</span>
-            <span className="text-[11px]">{t('pin.clickPin')}</span>
-          </span>
-        ),
-      };
-    }
-    if (c.limit) {
-      return { label: `${label}, ${t('pin.noteLimit', { load: c.load, max: c.max })}`, className: pinWarn, content: <PinGlyph sub={t('pin.limit', { load: c.load, max: c.max })} /> };
-    }
-    if (c.subjectThatDay) {
-      const note = t('pin.subjectDay', { subject: pinSubjectName, day: tc(`days.short.${day}`) });
-      return { label: `${label}, ${note}`, className: pinWarn, content: <PinGlyph sub={note} /> };
-    }
-    return { label, className: pinFree, content: <PinGlyph sub={t('pin.free')} /> };
+    if (!pin.names || !time) return null;
+    return pinOverlayCell({
+      cell: pin.cellAt(day, period),
+      day,
+      n: period,
+      time: `${time.start}–${time.end}`,
+      ctx,
+      lang,
+      t,
+      tc,
+      names: pin.names,
+      progress: pin.progress,
+      suggested: pin.isSuggested(day, period),
+      entryView: (e) => classCellView(e, ctx, lang, t, plan),
+    });
   }
 
   function print() {
@@ -323,9 +253,9 @@ function ClassView({ cls, classes }: { cls: SchoolClass; classes: SchoolClass[] 
 
       {pinTarget && pin.progress ? (
         <PinBar
-          subject={pinSubjectName}
-          teacher={pinTeacherName}
-          color={pinSubject?.color ?? '#E9E9E9'}
+          title={pin.names?.title ?? ''}
+          {...(pin.names?.detail ? { detail: pin.names.detail } : {})}
+          color={pin.names?.color ?? '#E9E9E9'}
           progress={pin.progress}
           suggestedCount={pin.suggested.length}
           onSuggest={pin.suggest}
@@ -344,15 +274,7 @@ function ClassView({ cls, classes }: { cls: SchoolClass; classes: SchoolClass[] 
             pinTarget && 'outline outline-2 outline-offset-2 outline-brand',
           )}
         >
-          {pinTarget && (
-            <div aria-label={t('pin.legendLabel')} className="mb-3 ml-1 flex flex-wrap gap-3.5">
-              <Swatch className="border-[1.5px] border-dashed border-[#2E8B4A] bg-[#F5FBF6]">{t('pin.legendFree', { teacher: pinTeacherName })}</Swatch>
-              <Swatch className="border-[1.5px] border-dashed border-[#B7831F] bg-[#FFF6E2]">{t('pin.legendSubjectDay')}</Swatch>
-              <Swatch className="border-[1.5px] border-dashed border-[#C2410C] bg-[#FDECEA]">{t('pin.legendOver')}</Swatch>
-              <Swatch className="border-[1.5px] border-[#2E8B4A] bg-[#E4F2E7]">{t('pin.legendSuggested')}</Swatch>
-              <Swatch className="bg-[repeating-linear-gradient(135deg,#EEF0F3_0_4px,#DADDE4_4px_8px)]">{t('pin.legendBusy')}</Swatch>
-            </div>
-          )}
+          {pinTarget && <PinLegend teacher={pin.names?.teacher ?? ''} />}
           <TimetableGrid
             rows={rows}
             cellsFor={(d, p) => {
@@ -384,7 +306,7 @@ function ClassView({ cls, classes }: { cls: SchoolClass; classes: SchoolClass[] 
                     setAssign({ slot: null, subjectId });
                   },
                   onStop: stopPin,
-                  ...(pinTarget ? { activeSubjectId: pinTarget.subjectId } : {}),
+                  ...(pinTarget?.lessons[0] ? { activeSubjectId: pinTarget.lessons[0].subjectId } : {}),
                 })}
           />
         </div>

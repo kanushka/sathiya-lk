@@ -13,6 +13,7 @@ import {
   type DayIndex,
   type Entry,
   type EntryDraft,
+  type PinSpec,
   type Teacher,
 } from '@sathiya/core';
 import { useEffect, useId, useMemo, useRef, useState, type KeyboardEvent } from 'react';
@@ -28,11 +29,6 @@ import { Modal } from '../../ui/Modal';
 import { limitWarning, planItemColor, teacherReason, teachesAtAll } from './labels';
 import { initials, usePickItems, type GroupItem, type PickItem } from './pickerData';
 
-export interface PinTarget {
-  subjectId: string;
-  teacherId: string;
-}
-
 export interface AssignPickerProps {
   classId: string;
   slot: { day: DayIndex; period: number } | null;
@@ -40,7 +36,7 @@ export interface AssignPickerProps {
   entries: Entry[];
   onClose(): void;
   onSave(d: EntryDraft): Promise<boolean>;
-  onPin(target: PinTarget): void;
+  onPin(spec: PinSpec): void;
   onGroup(item: GroupItem): void;
   onCombine(subjectId: string): void;
 }
@@ -193,7 +189,7 @@ function AssignPickerBody({ classId, slot, subjectId: initialSubject, entries, o
   async function confirm(teacherId: string | null = selected) {
     if (!subjectId || !teacherId || busy) return;
     if (!slot) {
-      onPin({ subjectId, teacherId });
+      onPin(singleSpec(classId, subjectId, teacherId));
       onClose();
       return;
     }
@@ -201,7 +197,7 @@ function AssignPickerBody({ classId, slot, subjectId: initialSubject, entries, o
     const ok = await onSave({ day: slot.day, period: slot.period, classIds: [classId], lessons: [{ subjectId, teacherId }] });
     setBusy(false);
     if (!ok) return;
-    onPin({ subjectId, teacherId });
+    onPin(singleSpec(classId, subjectId, teacherId));
     onClose();
   }
 
@@ -297,7 +293,7 @@ function AssignPickerBody({ classId, slot, subjectId: initialSubject, entries, o
                 size="sm"
                 className="shrink-0 whitespace-nowrap text-xs"
                 onClick={() => {
-                  onPin({ subjectId, teacherId: c.teacher.id });
+                  onPin(singleSpec(classId, subjectId, c.teacher.id));
                   onClose();
                 }}
               >

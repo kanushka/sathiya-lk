@@ -8,8 +8,8 @@ import { Button } from '../../ui/Button';
 import { Icon } from '../../ui/Icon';
 
 export interface PinBarProps {
-  subject: string;
-  teacher: string;
+  title: string;
+  detail?: string;
   color: string;
   progress: PinProgress;
   suggestedCount: number;
@@ -18,7 +18,7 @@ export interface PinBarProps {
   onDone(): void;
 }
 
-export function PinBar({ subject, teacher, color, progress, suggestedCount, onSuggest, onPinSuggested, onDone }: PinBarProps) {
+export function PinBar({ title, detail, color, progress, suggestedCount, onSuggest, onPinSuggested, onDone }: PinBarProps) {
   const { t } = useTranslation('timetable');
   const titleId = useId();
   const { placed, needed, left, over } = progress;
@@ -38,7 +38,8 @@ export function PinBar({ subject, teacher, color, progress, suggestedCount, onSu
           <Icon name="pin" size={13} strokeWidth={2} />
           {t('pin.mode')}
         </p>
-        <p className="m-0 mt-0.5 text-base font-bold">{t('pin.target', { subject, teacher })}</p>
+        <p className="m-0 mt-0.5 text-base font-bold">{title}</p>
+        {detail && <p className="m-0 mt-0.5 text-xs text-on-brand/80">{detail}</p>}
       </div>
       <div className="flex min-w-[170px] flex-col gap-1">
         <span className="flex flex-wrap items-center gap-1.5 text-[13px] font-bold">

@@ -161,6 +161,7 @@
   "pin": {
     "mode": "Pin mode",
     "target": "{{subject}} · {{teacher}}",
+    "targetGroup": "{{group}} · {{classes}}",
     "progress": "{{placed}} of {{needed}} placed",
     "toGo": "{{count}} to go",
     "complete": "complete",
@@ -186,11 +187,15 @@
     "cellPin": "{{day}}, period {{n}}, {{time}}: pin {{subject}} with {{teacher}}",
     "cellPinned": "{{day}}, period {{n}}, {{time}}: {{subject}} {{teacher}}, pinned, click to unpin",
     "cellBusy": "{{day}}, period {{n}}, {{time}}: busy, {{reason}}",
+    "cellNone": "{{day}}, period {{n}}, {{time}}: no {{class}} period at this time",
+    "noPeriod": "No {{class}} period",
+    "moreBlockers": "+{{count}} more",
     "pinned": "{{subject}} pinned to {{day}}, period {{n}}.",
     "unpinned": "{{subject}} removed from {{day}}, period {{n}}.",
     "suggestedMsg_one": "Suggested {{count}} slot, spread across days.",
     "suggestedMsg_other": "Suggested {{count}} slots, spread across days.",
     "noSuggest": "No free slots left for {{teacher}} this week.",
+    "noSuggestGroup": "No free slots left for {{group}} this week.",
     "pinnedMany_one": "Pinned {{count}} {{subject}} lesson.",
     "pinnedMany_other": "Pinned {{count}} {{subject}} lessons.",
     "hint": "Click + to add a lesson. After Assign, Pin mode keeps the same subject and teacher so you can pin more periods. Use the pin button in the list to start from a subject.",
@@ -201,6 +206,7 @@
     "noteLimit": "at daily limit {{load}}/{{max}}",
     "legendLabel": "Pin mode legend",
     "started": "Pin mode on: {{subject}} with {{teacher}}. Click free periods to pin, Esc to finish.",
+    "startedGroup": "Pin mode on: {{group}} for {{classes}}. Click free periods to pin, Esc to finish.",
     "stopped": "Pin mode off."
   }
 }
