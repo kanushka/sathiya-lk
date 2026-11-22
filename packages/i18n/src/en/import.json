@@ -96,6 +96,11 @@
     "grades": "Grades in this school",
     "staffId": "Staff ID format"
   },
+  "templateSheets": {
+    "subjects": "Subjects",
+    "teachers": "Teachers",
+    "howTo": "How to fill"
+  },
   "instructions": [
     "How to fill this template",
     "1. Subjects sheet: one subject per row. The English name is required. Leave Short name blank to get a suggested one.",

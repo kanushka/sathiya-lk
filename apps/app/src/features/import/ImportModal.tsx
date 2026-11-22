@@ -29,7 +29,7 @@ import { useSessionPasswords } from '../teachers/sessionPasswords';
 import { teacherLoginUrl } from '../teachers/slip';
 import { importSetup } from './api';
 import { ImportFileError, readImportFile } from './readFile';
-import { downloadBlob, templateCsv, templateXlsx } from './template';
+import { downloadBlob, templateCsv, templateSheetNames, templateXlsx } from './template';
 
 type View =
   | { kind: 'start' }
@@ -118,6 +118,7 @@ export function ImportModal({ onClose }: { onClose: () => void }) {
             si: fixed('si')('instructions', { returnObjects: true }) as string[],
           },
           labels: { titles: both('templateLabels.titles'), grades: both('templateLabels.grades'), staffId: both('templateLabels.staffId') },
+          sheetNames: templateSheetNames(i18n),
         });
         downloadBlob(blob, 'sathiya-import-template.xlsx');
       } else {

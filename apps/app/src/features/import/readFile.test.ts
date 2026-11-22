@@ -1,10 +1,11 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
 // Copyright (C) 2026 Kanushka Gayan
 import { readSheets, validateImport } from '@sathiya/core';
+import { createI18n } from '@sathiya/i18n';
 import writeXlsxFile from 'write-excel-file/browser';
 import { describe, expect, it } from 'vitest';
 import { ImportFileError, readImportFile } from './readFile';
-import { templateXlsx } from './template';
+import { templateSheetNames, templateXlsx } from './template';
 
 const asFile = (parts: BlobPart[], name: string) => new File(parts, name);
 
@@ -35,9 +36,10 @@ describe('readImportFile', () => {
       grades: [6, 7],
       instructions: { en: ['Fill in rows'], si: ['පේළි පුරවන්න'] },
       labels: { titles: 'Titles', grades: 'Grades', staffId: 'Staff ID' },
+      sheetNames: templateSheetNames(createI18n('en')),
     });
     const sheets = await readImportFile(asFile([blob], 't.xlsx'));
-    expect(sheets.map((s) => s.name)).toEqual(['Subjects', 'Teachers', 'How to fill']);
+    expect(sheets.map((s) => s.name)).toEqual(['Subjects - විෂයන්', 'Teachers - ගුරුවරු', 'How to fill - පුරවන ආකාරය']);
     const parsed = readSheets(sheets);
     expect(parsed.errors).toEqual([]);
     expect(parsed.subjects).toEqual([]);
