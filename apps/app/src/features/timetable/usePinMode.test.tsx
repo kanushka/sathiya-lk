@@ -284,6 +284,24 @@ describe('usePinMode with a joined class at its target', () => {
     });
     expect(api.saveEntry).toHaveBeenCalledTimes(2);
   });
+
+  it('pins no more suggestions than are still needed after a hand pin', async () => {
+    const api = setup();
+    act(() => pin.start({ classIds: [C.c6a, C.c6b], lessons: [{ subjectId: S.science, teacherId: T.gunasekara }] }));
+    act(() => pin.suggest());
+    expect(pin.suggested).toHaveLength(2);
+    const other = ([0, 1, 2, 3, 4] as DayIndex[])
+      .flatMap((d) => [1, 2, 3, 4, 5, 6, 7, 8].map((p) => [d, p] as [DayIndex, number]))
+      .find(([d, p]) => cell(d, p) === 'free' && !pin.isSuggested(d, p))!;
+    await act(async () => {
+      await pin.toggle(...other);
+    });
+    expect(pin.progress?.left).toBe(1);
+    await act(async () => {
+      await pin.pinSuggested();
+    });
+    expect(api.saveEntry).toHaveBeenCalledTimes(2);
+  });
 });
 
 describe('usePinMode in the teacher view', () => {
