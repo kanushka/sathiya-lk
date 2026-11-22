@@ -32,7 +32,7 @@ describe('verifyEmail', () => {
     expect(screen.getByRole('link', { name: 'Continue registering' })).toHaveAttribute('href', '/register');
   });
 
-  it('reads the link sendAuthEmail builds, with an encoded code and extra params', async () => {
+  it('reads an encoded oobCode and ignores apiKey, lang and continueUrl', async () => {
     vi.mocked(api.applyEmailCode).mockResolvedValue(undefined);
     at(`mode=verifyEmail&oobCode=${encodeURIComponent('a+b/c=')}&apiKey=KEY&lang=si&continueUrl=${encodeURIComponent('https://app.example.test/login')}`);
     expect(await screen.findByRole('heading', { name: 'Email confirmed' })).toBeInTheDocument();

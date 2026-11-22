@@ -3,7 +3,7 @@
 
 const KEPT = ['mode', 'oobCode', 'apiKey', 'lang', 'continueUrl'] as const;
 
-// The console refuses a custom action URL on this project (EMAIL_TEMPLATE_UPDATE_NOT_ALLOWED), so Admin SDK links point at
+// The console can refuse a custom action URL on new projects (EMAIL_TEMPLATE_UPDATE_NOT_ALLOWED), so Admin SDK links point at
 // Firebase's hosted handler; rebuild them on the app's own /auth/action page.
 export function appActionLink(generated: string, appUrl: string): string {
   const params = new URL(generated).searchParams;

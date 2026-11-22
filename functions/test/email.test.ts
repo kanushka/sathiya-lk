@@ -11,6 +11,9 @@ import { sendMail, writeMail } from '../src/email/send';
 import { adminAuth, adminDb, adminWithSchool, client, expectFnError, makeSuper, rawCall, rawErr, schoolReq, signUp, teacherInput, uniq, unverifiedSignUp, type Client } from './helpers';
 
 const APP_URL = 'https://app.sathiya.kanushka.com';
+const esc = (v: string) => v.replace(/[.*+?^${}()|[\]\\/]/g, '\\$&');
+const actionHref = (mode: string) =>
+  new RegExp(`href="${esc(APP_URL)}/auth/action\\?mode=${mode}&amp;oobCode=[^"&]+&amp;apiKey=[^"&]+&amp;lang=en&amp;continueUrl=${esc(encodeURIComponent(`${APP_URL}/login`))}"`);
 const FROM = 'Sathiya <noreply@sathiya.kanushka.com>';
 const REPLY_TO = 'sathiya@kanushka.com';
 
@@ -161,8 +164,8 @@ describe('sendAuthEmail', () => {
     expect(mails).toHaveLength(1);
     expect(mails[0]).toMatchObject({ to: [emailOf(c)], from: FROM });
     expect(mails[0]!.message.subject).toBe('ඔබගේ ඊමේල් තහවුරු කරන්න · Confirm your email for Sathiya');
-    expect(mails[0]!.message.html).toMatch(new RegExp(`href="${APP_URL}/auth/action\\?mode=verifyEmail&amp;oobCode=[^"&]+&amp;apiKey=[^"&]+&amp;lang=en&amp;continueUrl=${encodeURIComponent(`${APP_URL}/login`)}"`));
-    expect(mails[0]!.message.text).toMatch(new RegExp(`Confirm email: ${APP_URL}/auth/action\\?mode=verifyEmail&oobCode=\\S+`));
+    expect(mails[0]!.message.html).toMatch(actionHref('verifyEmail'));
+    expect(mails[0]!.message.text).toMatch(new RegExp(`Confirm email: ${esc(APP_URL)}/auth/action\\?mode=verifyEmail&oobCode=\\S+`));
   });
 
   it('verify refuses signed-out callers, is a no-op for verified users and is rate limited', async () => {
@@ -184,7 +187,7 @@ describe('sendAuthEmail', () => {
     const mails = await mailsTo(emailOf(known));
     expect(mails).toHaveLength(1);
     expect(mails[0]!.message.subject).toBe('Reset your Sathiya password · ඔබගේ මුරපදය යළි සකසන්න');
-    expect(mails[0]!.message.html).toMatch(new RegExp(`href="${APP_URL}/auth/action\\?mode=resetPassword&amp;oobCode=[^"&]+&amp;`));
+    expect(mails[0]!.message.html).toMatch(actionHref('resetPassword'));
     expect(await mailsTo(unknown)).toHaveLength(0);
   });
 
