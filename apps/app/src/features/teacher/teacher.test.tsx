@@ -105,6 +105,21 @@ describe('TodayPage', () => {
     expect(within(screen.getByTestId('now-card')).getAllByText(new RegExp(si as string)).length).toBeGreaterThan(0);
     expect(screen.getByText('N. Perera මහත්මිය · SCC024')).toBeInTheDocument();
   });
+
+  it('shows the date line in the active language', () => {
+    const { unmount } = renderWithSchool(<TodayPage now={wed0920} snapshot={{ loading: false, data: snapshotFor(T.perera) }} />, {
+      ctx,
+      claims: claims(T.perera),
+      lang: 'si',
+    });
+    expect(screen.getByText('බදාදා 25 නොවැම්බර්')).toBeInTheDocument();
+    unmount();
+    renderWithSchool(<TodayPage now={wed0920} snapshot={{ loading: false, data: snapshotFor(T.perera) }} />, {
+      ctx,
+      claims: claims(T.perera),
+    });
+    expect(screen.getByText('Wednesday 25 November')).toBeInTheDocument();
+  });
 });
 
 describe('TeacherFrame chrome', () => {
@@ -172,6 +187,18 @@ describe('WeekPage', () => {
     });
     const cell = screen.getByTestId('week-cell-0-5');
     expect(within(cell).getAllByText('1A')).toHaveLength(2);
+  });
+
+  it('wraps Sinhala subject names instead of truncating them', () => {
+    renderWithSchool(<WeekPage now={wed0920} snapshot={{ loading: false, data: snapshotFor(T.perera) }} />, {
+      ctx,
+      claims: claims(T.perera),
+      lang: 'si',
+    });
+    const si = ctx.subjects.find((s) => s.id === S.maths)?.nameSi as string;
+    const name = within(screen.getByTestId('week-cell-2-3')).getByText(si);
+    expect(name).not.toHaveClass('truncate');
+    expect(name).toHaveClass('break-words');
   });
 });
 

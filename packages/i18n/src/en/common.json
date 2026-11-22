@@ -3,6 +3,8 @@
     "short": { "0": "Mon", "1": "Tue", "2": "Wed", "3": "Thu", "4": "Fri" },
     "long": { "0": "Monday", "1": "Tuesday", "2": "Wednesday", "3": "Thursday", "4": "Friday" }
   },
+  "weekdays": ["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"],
+  "months": ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"],
   "periods": { "period": "Period", "periodN": "P{{n}}", "interval": "Interval", "free": "Free" },
   "busy": { "saving": "Saving…", "deleting": "Deleting…", "publishing": "Publishing…", "working": "Working…", "stillWorking": "Still working…" },
   "buttons": {

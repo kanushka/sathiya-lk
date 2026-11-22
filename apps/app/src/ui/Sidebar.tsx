@@ -11,6 +11,7 @@ import { useSchool, useYear } from '../app/SchoolProvider';
 import { SuperAdminLink } from '../features/superadmin/SuperAdminLink';
 import { cx } from './cx';
 import { Icon, type IconName } from './Icon';
+import { PHONE_QUERY } from './PhoneNotice';
 import { Select } from './Select';
 
 export type NavGroup = 'main' | 'timetable' | 'setup' | 'school';
@@ -40,10 +41,12 @@ const yearLabelClass = 'mx-3 mb-1.5 mt-3.5 block text-[11px] font-bold uppercase
 
 function readCollapsed(): boolean {
   try {
-    return localStorage.getItem(storageKey) === 'collapsed';
+    const stored = localStorage.getItem(storageKey);
+    if (stored) return stored === 'collapsed';
   } catch {
-    return false;
+    // Storage blocked: fall through to the screen-size default.
   }
+  return typeof window.matchMedia === 'function' && window.matchMedia(PHONE_QUERY).matches;
 }
 
 function writeCollapsed(collapsed: boolean): void {

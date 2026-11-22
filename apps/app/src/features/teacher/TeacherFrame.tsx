@@ -49,7 +49,7 @@ export function TeacherFrame({ view, now: nowFn, snapshot, changePassword, child
 
   const target = lang === 'en' ? 'si' : 'en';
   const schoolName = pickName(school, lang);
-  const dateLine = new Intl.DateTimeFormat(lang === 'si' ? 'si-LK' : 'en-GB', { weekday: 'long', day: 'numeric', month: 'long' }).format(now);
+  const dateLine = `${t(`common:weekdays.${now.getDay()}`)} ${now.getDate()} ${t(`common:months.${now.getMonth()}`)}`;
   const fullName = snap && (lang === 'si' && snap.nameSi ? snap.nameSi : snap.name);
 
   let body: ReactNode;

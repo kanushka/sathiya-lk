@@ -5,7 +5,7 @@ import type { Claims, Year } from '@sathiya/core';
 import { ctx } from '@sathiya/core/fixtures';
 import { screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
-import { describe, expect, it } from 'vitest';
+import { afterEach, describe, expect, it, vi } from 'vitest';
 import { pickOption } from '../test/pickOption';
 import { renderWithSchool } from '../test/renderWithSchool';
 import { Sidebar, navItems } from './Sidebar';
@@ -95,6 +95,32 @@ describe('Sidebar', () => {
     localStorage.setItem('sathiya.sidebar', 'collapsed');
     renderSidebar();
     expect(screen.getByRole('button', { name: 'Expand menu' })).toBeInTheDocument();
+  });
+
+  describe('on a phone', () => {
+    const phone = (matches: boolean) => {
+      vi.stubGlobal('matchMedia', (query: string) => ({ matches, media: query, addEventListener: () => {}, removeEventListener: () => {} }));
+    };
+    afterEach(() => vi.unstubAllGlobals());
+
+    it('starts collapsed when nothing is stored', () => {
+      phone(true);
+      renderSidebar();
+      expect(screen.getByRole('navigation')).toHaveAttribute('data-collapsed', 'true');
+    });
+
+    it('lets a stored expanded choice win', () => {
+      phone(true);
+      localStorage.setItem('sathiya.sidebar', 'expanded');
+      renderSidebar();
+      expect(screen.getByRole('navigation')).toHaveAttribute('data-collapsed', 'false');
+    });
+
+    it('starts expanded on larger screens', () => {
+      phone(false);
+      renderSidebar();
+      expect(screen.getByRole('navigation')).toHaveAttribute('data-collapsed', 'false');
+    });
   });
 
   it('shows My timetable only when the admin teaches', () => {
