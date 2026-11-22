@@ -5,6 +5,7 @@ import {
   pickName,
   pinProgress,
   pinSlots,
+  singleSpec,
   suggestPins,
   teacherDisplayName,
   type DayIndex,
@@ -51,8 +52,8 @@ export function usePinMode(args: {
   const [rawSuggested, setRawSuggested] = useState<Slot[]>([]);
   const [message, setMessage] = useState('');
 
-  const slots = useMemo(() => (target ? pinSlots({ ctx, entries, classId, ...target }) : []), [ctx, entries, classId, target]);
-  const progress = useMemo(() => (target ? pinProgress({ ctx, entries, classId, subjectId: target.subjectId }) : null), [ctx, entries, classId, target]);
+  const slots = useMemo(() => (target ? pinSlots({ ctx, entries, spec: singleSpec(classId, target.subjectId, target.teacherId) }) : []), [ctx, entries, classId, target]);
+  const progress = useMemo(() => (target ? pinProgress({ ctx, entries, spec: singleSpec(classId, target.subjectId, target.teacherId) }) : null), [ctx, entries, classId, target]);
   const cellAt = useCallback((day: DayIndex, period: number) => slots.find((s) => s.day === day && s.period === period)?.cell, [slots]);
   const suggested = useMemo(
     () => rawSuggested.filter((s) => cellAt(s.day, s.period)?.kind === 'free').slice(0, progress?.left ?? 0),
@@ -111,7 +112,7 @@ export function usePinMode(args: {
 
   const suggest = useCallback(() => {
     if (!target || !progress) return;
-    const picks = suggestPins({ ctx, entries, classId, ...target, count: progress.left });
+    const picks = suggestPins({ ctx, entries, spec: singleSpec(classId, target.subjectId, target.teacherId), count: progress.left });
     setRawSuggested(picks);
     const teacher = ctx.teachers.find((x) => x.id === target.teacherId);
     setMessage(picks.length > 0 ? t('pin.suggestedMsg', { count: picks.length }) : t('pin.noSuggest', { teacher: teacher ? teacherDisplayName(teacher, lang) : '' }));

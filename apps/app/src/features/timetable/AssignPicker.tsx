@@ -4,6 +4,7 @@
 import {
   pickName,
   pinSlots,
+  singleSpec,
   periodsFor,
   preferredTeacherFor,
   teacherDisplayName,
@@ -97,7 +98,7 @@ function AssignPickerBody({ classId, slot, subjectId: initialSubject, entries, o
     if (!subjectId || !grade) return [];
     const preferredId = preferredTeacherFor({ entries, classId, subjectId });
     const freeWeek = (teacherId: string) =>
-      pinSlots({ ctx, entries, classId, subjectId, teacherId }).filter((s) => s.cell.kind === 'free' && !s.cell.limit).length;
+      pinSlots({ ctx, entries, spec: singleSpec(classId, subjectId, teacherId) }).filter((s) => s.cell.kind === 'free' && !s.cell.limit).length;
     const out: Candidate[] = [];
     if (slot) {
       const options = teacherOptionsForSlot({ ctx, entries, classIds: [classId], day: slot.day, period: slot.period, subjectId });
