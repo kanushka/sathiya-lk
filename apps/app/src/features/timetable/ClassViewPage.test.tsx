@@ -356,6 +356,12 @@ describe('ClassViewPage', () => {
 
     it('does not exit when Escape is pressed in a form control', async () => {
       await assignScience();
+      fireEvent.keyDown(screen.getByRole('combobox', { name: /^Class/ }), { key: 'Escape' });
+      expect(pinBar()).toBeInTheDocument();
+    });
+
+    it('closes the open class menu on Escape without exiting', async () => {
+      await assignScience();
       await userEvent.click(screen.getByRole('combobox', { name: /^Class/ }));
       expect(screen.getByRole('listbox', { name: 'Class' })).toBeInTheDocument();
       await userEvent.keyboard('{Escape}');

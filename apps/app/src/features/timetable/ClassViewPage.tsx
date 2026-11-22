@@ -162,7 +162,7 @@ function ClassView({ cls, classes }: { cls: SchoolClass; classes: SchoolClass[] 
     if (!pinTarget) return;
     function onKey(e: KeyboardEvent) {
       if (e.key !== 'Escape' || e.defaultPrevented || document.querySelector('[role="dialog"]')) return;
-      if (e.target instanceof HTMLElement && e.target.closest('input, select, textarea')) return;
+      if (e.target instanceof HTMLElement && e.target.closest('input, select, textarea, [role="combobox"]')) return;
       stopPin();
     }
     document.addEventListener('keydown', onKey);
