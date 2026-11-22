@@ -45,8 +45,9 @@ function TodayBody({ snap, now }: { snap: TeacherSnapshot; now: Date }) {
             aria-pressed={d === day}
             onClick={() => setPicked(d)}
             className={cx(
-              'h-11 flex-1 rounded-[10px] text-sm font-bold',
-              d === day ? 'border-0 bg-brand text-on-brand' : 'border border-line bg-white text-ink-soft',
+              'h-11 flex-1 rounded-lg text-sm font-bold transition-colors',
+              'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand focus-visible:ring-offset-2',
+              d === day ? 'border border-transparent bg-brand text-on-brand' : 'border border-line-strong bg-white text-ink-soft',
             )}
           >
             {t(`common:days.short.${d}`)}

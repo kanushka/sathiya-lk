@@ -7,6 +7,7 @@ import userEvent from '@testing-library/user-event';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { LangContextProvider } from '../../app/LangProvider';
 import { renderWithSchool } from '../../test/renderWithSchool';
+import tailwindConfig from '../../../tailwind.config';
 import { colomboNow } from './colomboNow';
 import { ChangePasswordModal } from './ChangePasswordModal';
 import { TodayPage } from './TodayPage';
@@ -130,9 +131,11 @@ describe('TeacherFrame chrome', () => {
     expect(setLang).toHaveBeenCalledWith('si');
   });
 
-  it('uses only generated utility classes in the header', () => {
+  it('uses on-brand opacity classes only while the colour token is alpha-capable', () => {
     const { container } = renderWithSchool(<TodayPage now={wed0920} snapshot={snap()} />, { ctx, claims: claims(T.perera) });
-    expect(container.innerHTML).not.toMatch(/on-brand\//);
+    expect(container.innerHTML).toMatch(/on-brand\//);
+    const colors = tailwindConfig.theme?.extend?.colors as unknown as Record<string, string>;
+    expect(colors['on-brand']).toContain('<alpha-value>');
   });
 });
 
