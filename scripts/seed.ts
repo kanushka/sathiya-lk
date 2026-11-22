@@ -1,12 +1,11 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
 // Copyright (C) 2026 Kanushka Gayan
-import { paths, syntheticEmail, teacherDisplayName, type Entry } from '@sathiya/core';
+import { directoryFields, paths, syntheticEmail, teacherDisplayName, type Entry } from '@sathiya/core';
 import { ctx, entries, school, subjects } from '@sathiya/core/fixtures';
 import { getApps, initializeApp } from 'firebase-admin/app';
 import { getAuth } from 'firebase-admin/auth';
 import { getFirestore, type Firestore } from 'firebase-admin/firestore';
 import { pathToFileURL } from 'node:url';
-import { directoryFields } from '../functions/src/lib/directory';
 
 export const PROJECT_ID = process.env.GCLOUD_PROJECT ?? 'sathiya-lk';
 export const HOST = '127.0.0.1';
