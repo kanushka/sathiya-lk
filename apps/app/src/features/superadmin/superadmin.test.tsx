@@ -86,22 +86,24 @@ describe('SchoolsPage', () => {
   });
 
   it('filters by search, status and district', async () => {
+    const user = userEvent.setup();
     renderPage();
     expect(rowNames()).toHaveLength(3);
-    await userEvent.type(screen.getByLabelText('Search schools'), 'lsg');
+    await user.type(screen.getByLabelText('Search schools'), 'lsg');
     expect(rowNames()).toEqual([expect.stringContaining('Lakeside Girls')]);
-    await userEvent.clear(screen.getByLabelText('Search schools'));
-    await userEvent.type(screen.getByLabelText('Search schools'), 'සිරිපුර');
+    await user.clear(screen.getByLabelText('Search schools'));
+    await user.type(screen.getByLabelText('Search schools'), 'සිරිපුර');
     expect(rowNames()).toEqual([expect.stringContaining('Siripura')]);
-    await userEvent.clear(screen.getByLabelText('Search schools'));
-    await pickOption(userEvent.setup(), screen.getByRole('combobox', { name: /^Status/ }), 'Disabled');
+    await user.clear(screen.getByLabelText('Search schools'));
+    await pickOption(user, screen.getByRole('combobox', { name: /^Status/ }), 'Disabled');
     expect(rowNames()).toEqual([expect.stringContaining('Hill View')]);
-    await pickOption(userEvent.setup(), screen.getByRole('combobox', { name: /^Status/ }), 'All statuses');
-    await pickOption(userEvent.setup(), screen.getByRole('combobox', { name: /^District/ }), 'Kandy');
+    await pickOption(user, screen.getByRole('combobox', { name: /^Status/ }), 'All statuses');
+    await pickOption(user, screen.getByRole('combobox', { name: /^District/ }), 'Kandy');
     expect(rowNames()).toHaveLength(2);
   });
 
   it('does not refetch counts for loaded schools when filtering', async () => {
+    const user = userEvent.setup();
     const counts = vi.fn(source.counts);
     renderWithSchool(
       <UsageSourceProvider value={{ counts }}>
@@ -112,8 +114,8 @@ describe('SchoolsPage', () => {
     const row = screen.getByText('Siripura Central College').closest('tr') as HTMLElement;
     await within(row).findByText('58');
     expect(counts).toHaveBeenCalledTimes(3);
-    await userEvent.type(screen.getByLabelText('Search schools'), 'si');
-    await pickOption(userEvent.setup(), screen.getByRole('combobox', { name: /^Status/ }), 'Active');
+    await user.type(screen.getByLabelText('Search schools'), 'si');
+    await pickOption(user, screen.getByRole('combobox', { name: /^Status/ }), 'Active');
     expect(counts).toHaveBeenCalledTimes(3);
     expect(within(row).getByText('58')).toBeInTheDocument();
   });
