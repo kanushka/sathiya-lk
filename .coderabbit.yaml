@@ -17,7 +17,7 @@ reviews:
   path_filters:
     - '!pnpm-lock.yaml'
     - '!**/dist/**'
-    - '!**/lib/**'
+    - '!functions/lib/**'
     - '!**/coverage/**'
     - '!.superpowers/**'
     - '!**/*.canvas'

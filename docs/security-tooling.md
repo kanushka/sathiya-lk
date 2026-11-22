@@ -15,7 +15,7 @@ What runs on this repository, and the GitHub settings and app installs a maintai
 
 Trivy also scans for secrets as a second layer. There is no gitleaks job: GitHub secret scanning is free for public repos, scans the whole history, and push protection stops a leak before it lands, which gitleaks in CI can't.
 
-Trivy is report-only for now because the lockfile already has known HIGH/CRITICAL issues that need major upgrades (astro 4 → 5+, vite 5 → 6+). Once those are cleared, switch it to blocking by setting `exit-code: '1'` and `severity: CRITICAL,HIGH` in `trivy.yml` (keep `ignore-unfixed: true`).
+Trivy is report-only for now because the lockfile already has known HIGH/CRITICAL issues that need major upgrades (astro 4 → 5+, vite 5 → 6+). Once those are cleared, switch it to blocking by setting `exit-code: '1'` and `severity: CRITICAL,HIGH` in `trivy.yml` (keep `ignore-unfixed: true` and `limit-severities-for-sarif: true`). The SARIF upload already runs with `if: ${{ !cancelled() }}`, so findings still reach code scanning when the scan fails the job.
 
 Trivy has no checks for `firebase.json`, `*.rules` or GitHub workflows; the CodeQL `actions` language and the CodeRabbit path instructions cover the workflows, and `tests/rules` covers the security rules.
 
