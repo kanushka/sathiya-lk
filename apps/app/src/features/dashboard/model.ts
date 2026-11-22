@@ -150,3 +150,28 @@ export function attentionItems(ctx: SchoolContext, entries: Entry[], lang: Lang)
   }
   return out;
 }
+
+export interface PublishProblems {
+  incomplete: number;
+  clashes: number;
+  overLimit: number;
+  overTarget: number;
+  orphaned: number;
+  groupNoTeacher: number;
+  total: number;
+}
+
+export function publishProblems(ctx: SchoolContext, entries: Entry[]): PublishProblems {
+  const stats = dashboardStats(ctx, entries);
+  const items = attentionItems(ctx, entries, 'en');
+  const count = (kind: Warning['kind']) => items.filter((i) => i.kind === kind).length;
+  const counts = {
+    incomplete: stats.classCount - stats.classesComplete,
+    clashes: stats.clashes,
+    overLimit: stats.overLimit,
+    overTarget: count('over-target'),
+    orphaned: count('orphaned'),
+    groupNoTeacher: count('group-no-teacher'),
+  };
+  return { ...counts, total: Object.values(counts).reduce((a, b) => a + b, 0) };
+}

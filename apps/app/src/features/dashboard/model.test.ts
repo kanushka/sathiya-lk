@@ -3,7 +3,7 @@
 import { classPlacement, type SchoolContext } from '@sathiya/core';
 import { C, ctx, entries, entry, S, shortFridayTemplate, T, TPL } from '@sathiya/core/fixtures';
 import { describe, expect, it } from 'vitest';
-import { attentionItems, classChips, dashboardStats } from './model';
+import { attentionItems, classChips, dashboardStats, publishProblems } from './model';
 
 const rows = shortFridayTemplate.rows;
 const shrunk: SchoolContext = {
@@ -85,5 +85,11 @@ describe('dashboard model', () => {
 
   it('does not count orphaned entries as filled slots', () => {
     expect(dashboardStats(shrunk, entries).emptySlots).toBe(dashboardStats(shrunk, entries.filter((e) => e.id !== 'e-6c-4-7')).emptySlots);
+  });
+
+  it('counts open problems by kind for the publish summary', () => {
+    expect(publishProblems(ctx, entries)).toEqual({ incomplete: 5, clashes: 0, overLimit: 0, overTarget: 0, orphaned: 0, groupNoTeacher: 0, total: 5 });
+    const over = Array.from({ length: 8 }, (_, i) => entry(`o${i}`, 0, i + 1, [C.c6a], [[S.sinhala, T.kumara]]));
+    expect(publishProblems(shrunk, [...entries, ...over])).toEqual({ incomplete: 5, clashes: 2, overLimit: 1, overTarget: 1, orphaned: 1, groupNoTeacher: 0, total: 10 });
   });
 });

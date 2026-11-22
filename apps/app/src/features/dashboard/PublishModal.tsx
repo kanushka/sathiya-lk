@@ -5,15 +5,18 @@ import { useTranslation } from 'react-i18next';
 import { Button } from '../../ui/Button';
 import { Modal } from '../../ui/Modal';
 import { useToast } from '../../ui/Toast';
+import type { PublishProblems } from './model';
+
+const kinds = ['incomplete', 'clashes', 'overLimit', 'overTarget', 'orphaned', 'groupNoTeacher'] as const;
 
 export interface PublishModalProps {
   yearLabel: string;
-  clashes: number;
+  problems: PublishProblems;
   onPublish: () => Promise<string>;
   onClose: () => void;
 }
 
-export function PublishModal({ yearLabel, clashes, onPublish, onClose }: PublishModalProps) {
+export function PublishModal({ yearLabel, problems, onPublish, onClose }: PublishModalProps) {
   const { t } = useTranslation('dashboard');
   const toast = useToast();
   const [saving, setSaving] = useState(false);
@@ -41,13 +44,22 @@ export function PublishModal({ yearLabel, clashes, onPublish, onClose }: Publish
         <>
           <Button onClick={onClose} disabled={saving}>{t('publish.cancel')}</Button>
           <Button variant="primary" onClick={() => void confirm()} loading={saving} loadingLabel={t('busy.publishing', { ns: 'common' })}>
-            {t('publish.confirm')}
+            {t(problems.total > 0 ? 'publish.confirmAnyway' : 'publish.confirm')}
           </Button>
         </>
       }
     >
       <p className="m-0 text-sm text-ink-soft">{t('publish.body')}</p>
-      {clashes > 0 && <p className="mb-0 mt-3 text-sm font-semibold text-danger">{t('publish.clashes', { n: clashes })}</p>}
+      {problems.total > 0 && (
+        <div className="mt-3 text-sm text-danger">
+          <p className="m-0 font-semibold">{t('publish.problemsTitle', { count: problems.total })}</p>
+          <ul className="mb-0 mt-1 pl-5">
+            {kinds.filter((k) => problems[k] > 0).map((k) => (
+              <li key={k}>{t(`publish.problems.${k}`, { count: problems[k] })}</li>
+            ))}
+          </ul>
+        </div>
+      )}
     </Modal>
   );
 }

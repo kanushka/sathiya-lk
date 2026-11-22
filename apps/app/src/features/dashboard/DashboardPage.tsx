@@ -12,7 +12,7 @@ import { EmptyState } from '../../ui/EmptyState';
 import { Select } from '../../ui/Select';
 import { colomboNow, greetingKey } from '../teacher/colomboNow';
 import * as api from './api';
-import { attentionItems, classChips, dashboardStats, type ChipStatus } from './model';
+import { attentionItems, classChips, dashboardStats, publishProblems, type ChipStatus } from './model';
 import { NewYearModal } from './NewYearModal';
 import { PublishModal } from './PublishModal';
 
@@ -169,7 +169,7 @@ export function DashboardPage() {
       {dialog === 'publish' && year && (
         <PublishModal
           yearLabel={year.label}
-          clashes={stats.clashes}
+          problems={publishProblems(school, entries)}
           onClose={() => setDialog(null)}
           onPublish={async () => {
             const res = await api.publishYear(sid, year.id);
