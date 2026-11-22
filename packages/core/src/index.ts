@@ -27,3 +27,4 @@ export * from './now';
 export * from './pin';
 export * from './importSheet';
 export * from './importValidate';
+export * from './importFingerprint';

@@ -1,5 +1,6 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
 // Copyright (C) 2026 Kanushka Gayan
+import { subjectsFingerprint } from '@sathiya/core';
 import { ctx, entries } from '@sathiya/core/fixtures';
 import { screen, waitFor, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
@@ -56,7 +57,7 @@ describe('ImportModal preview', () => {
 
     expect(call).toHaveBeenCalledWith('importSetup', {
       schoolId: ctx.school.id,
-      knownSubjectIds: ctx.subjects.map((s) => s.id),
+      subjectsVersion: subjectsFingerprint(ctx.subjects),
       subjects: [{ row: 2, cells: { nameEn: 'Drama', nameSi: 'නාට්‍ය', short: 'Drama' } }],
       teachers: [],
     }, { timeout: 310_000 });

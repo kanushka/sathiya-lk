@@ -5,6 +5,7 @@ import {
   IMPORT_COLUMNS,
   IMPORT_MAX_ROWS,
   paths,
+  subjectsFingerprint,
   validateImport,
   type ImportError,
   type ImportRow,
@@ -15,11 +16,11 @@ import { logger } from 'firebase-functions/logger';
 import { onCall } from 'firebase-functions/v2/https';
 import { db } from './lib/admin';
 import { callOpts } from './lib/callOptions';
-import { docIdList, fail, int, invalid, obj, requireSchoolAdmin } from './lib/guards';
+import { fail, int, invalid, obj, requireSchoolAdmin } from './lib/guards';
 import { createTeacherAccount } from './lib/teacherAccount';
 
 const CONCURRENCY = 5;
-const MAX_KNOWN_SUBJECTS = 1000;
+const MAX_VERSION_LENGTH = 64;
 
 function rows<C extends string>(v: unknown, name: string, columns: readonly C[]): ImportRow<C>[] {
   if (!Array.isArray(v) || v.length > IMPORT_MAX_ROWS) invalid(`${name} must be a list of at most ${IMPORT_MAX_ROWS} rows`);
@@ -39,10 +40,9 @@ function rows<C extends string>(v: unknown, name: string, columns: readonly C[])
 export const importSetup = onCall({ ...callOpts, timeoutSeconds: 300 }, async (req): Promise<ImportSetupRes> => {
   const data = obj(req.data, 'request');
   const { sid, school } = await requireSchoolAdmin(req, data.schoolId);
-  if (!Array.isArray(data.knownSubjectIds) || data.knownSubjectIds.length > MAX_KNOWN_SUBJECTS) {
-    invalid(`knownSubjectIds must be a list of at most ${MAX_KNOWN_SUBJECTS} ids`);
+  if (typeof data.subjectsVersion !== 'string' || data.subjectsVersion.length > MAX_VERSION_LENGTH) {
+    invalid(`subjectsVersion must be text up to ${MAX_VERSION_LENGTH} characters`);
   }
-  const knownSubjectIds = new Set(docIdList(data.knownSubjectIds, 'knownSubjectIds'));
   const subjectRows = rows(data.subjects, 'subjects', IMPORT_COLUMNS.subjects.map((c) => c.key));
   const teacherRows = rows(data.teachers, 'teachers', IMPORT_COLUMNS.teachers.map((c) => c.key));
   if (subjectRows.length + teacherRows.length === 0) invalid('Nothing to import');
@@ -51,8 +51,9 @@ export const importSetup = onCall({ ...callOpts, timeoutSeconds: 300 }, async (r
     db.collection(paths.teachers(sid)).select('staffId').get(),
     db.collection(paths.subjects(sid)).get(),
   ]);
+  const subjects = subjectSnap.docs.map((d) => ({ id: d.id, ...(d.data() as Omit<Subject, 'id'>) }));
   // Subject tokens and generated short names were resolved against the client's list; refuse if it is stale.
-  if (subjectSnap.size !== knownSubjectIds.size || subjectSnap.docs.some((d) => !knownSubjectIds.has(d.id))) {
+  if (subjectsFingerprint(subjects) !== data.subjectsVersion) {
     const errors: ImportError[] = [{ sheet: 'file', row: null, column: null, code: 'subjectsChanged' }];
     fail('invalid-argument', 'invalid', 'Subjects changed since the file was checked', { errors });
   }
@@ -61,7 +62,7 @@ export const importSetup = onCall({ ...callOpts, timeoutSeconds: 300 }, async (r
     {
       staffPrefix: school.staffPrefix,
       schoolGrades: school.grades,
-      subjects: subjectSnap.docs.map((d) => ({ id: d.id, ...(d.data() as Omit<Subject, 'id'>) })),
+      subjects,
       staffIds: teacherSnap.docs.map((d) => d.data().staffId as string),
     },
   );

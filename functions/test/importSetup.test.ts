@@ -1,18 +1,19 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
 // Copyright (C) 2026 Kanushka Gayan
-import { paths, syntheticEmail, type ImportRow, type SubjectColumn, type TeacherColumn } from '@sathiya/core';
+import { paths, subjectsFingerprint, syntheticEmail, type ImportRow, type SubjectColumn, type TeacherColumn } from '@sathiya/core';
 import { describe, expect, it } from 'vitest';
 import { adminAuth, adminDb, adminWithSchool, expectFnError, signIn, signUp, teacherInput } from './helpers';
 
 const sub = (row: number, cells: Partial<Record<SubjectColumn, string>>): ImportRow<SubjectColumn> => ({ row, cells });
 const tch = (row: number, cells: Partial<Record<TeacherColumn, string>>): ImportRow<TeacherColumn> => ({ row, cells });
+const NONE = subjectsFingerprint([]);
 
 describe('importSetup', () => {
   it('imports subjects and teachers with resolved subject ids', async () => {
     const { admin, sid } = await adminWithSchool();
     const res = await admin.call('importSetup', {
       schoolId: sid,
-      knownSubjectIds: [],
+      subjectsVersion: NONE,
       subjects: [sub(2, { nameEn: 'Robotics', short: 'ROB' }), sub(3, { nameEn: 'Chess', nameSi: 'චෙස්' })],
       teachers: [
         tch(2, { name: 'Nimal Silva', subjects: 'ROB', grades: '6-7' }),
@@ -48,7 +49,7 @@ describe('importSetup', () => {
     await admin.call('createTeacher', { schoolId: sid, teacher: teacherInput('SCC007') });
     const res = await admin.call('importSetup', {
       schoolId: sid,
-      knownSubjectIds: [],
+      subjectsVersion: NONE,
       subjects: [sub(2, { nameEn: 'Art' })],
       teachers: [tch(2, { name: 'A', grades: '6', subjects: 'Art' }), tch(3, { name: 'B', grades: '6', subjects: 'Art' })],
     });
@@ -60,7 +61,7 @@ describe('importSetup', () => {
     const err = await admin
       .call('importSetup', {
         schoolId: sid,
-        knownSubjectIds: [],
+        subjectsVersion: NONE,
         subjects: [sub(2, { nameEn: 'Music' })],
         teachers: [tch(2, { name: 'X', grades: '6', subjects: 'Nope' })],
       })
@@ -79,7 +80,7 @@ describe('importSetup', () => {
     const { admin, sid } = await adminWithSchool();
     await admin.call('createTeacher', { schoolId: sid, teacher: teacherInput('SCC040') });
     const err = await admin
-      .call('importSetup', { schoolId: sid, knownSubjectIds: [], subjects: [], teachers: [tch(2, { staffId: 'SCC040', name: 'Dup', grades: '6', subjects: 's-maths' })] })
+      .call('importSetup', { schoolId: sid, subjectsVersion: NONE, subjects: [], teachers: [tch(2, { staffId: 'SCC040', name: 'Dup', grades: '6', subjects: 's-maths' })] })
       .then(
         () => null,
         (e: { details?: { errors?: unknown[] } }) => e,
@@ -89,10 +90,11 @@ describe('importSetup', () => {
 
   it('refuses when subjects changed since the client checked the file', async () => {
     const { admin, sid } = await adminWithSchool();
+    const art = { id: 's-new', nameEn: 'Art', short: 'Art' };
     await adminDb.doc(`${paths.subjects(sid)}/s-new`).set({ nameEn: 'Art', short: 'Art', color: '#000000' });
     const body = { schoolId: sid, subjects: [], teachers: [tch(2, { name: 'A', grades: '6', subjects: 'Art' })] };
-    for (const knownSubjectIds of [[], ['s-new', 's-gone']]) {
-      const err = await admin.call('importSetup', { ...body, knownSubjectIds }).then(
+    for (const subjectsVersion of [NONE, subjectsFingerprint([art, { id: 's-gone', nameEn: 'Gone', short: 'Gon' }])]) {
+      const err = await admin.call('importSetup', { ...body, subjectsVersion }).then(
         () => null,
         (e: { code?: string; details?: { code?: string; errors?: unknown[] } }) => e,
       );
@@ -101,19 +103,35 @@ describe('importSetup', () => {
       expect(err?.details?.errors).toEqual([{ sheet: 'file', row: null, column: null, code: 'subjectsChanged' }]);
     }
     expect((await adminDb.collection(paths.teachers(sid)).get()).size).toBe(0);
-    const res = await admin.call('importSetup', { ...body, knownSubjectIds: ['s-new'] });
+    const res = await admin.call('importSetup', { ...body, subjectsVersion: subjectsFingerprint([art]) });
     expect(res.teachers).toHaveLength(1);
+  });
+
+  it('refuses when a subject was renamed since the client checked the file', async () => {
+    const { admin, sid } = await adminWithSchool();
+    const ref = adminDb.doc(`${paths.subjects(sid)}/s-art`);
+    await ref.set({ nameEn: 'Art', short: 'Art', color: '#000000' });
+    const subjectsVersion = subjectsFingerprint([{ id: 's-art', nameEn: 'Art', short: 'Art' }]);
+    await ref.update({ nameEn: 'Drawing', short: 'Drw' });
+    const err = await admin
+      .call('importSetup', { schoolId: sid, subjectsVersion, subjects: [], teachers: [tch(2, { name: 'A', grades: '6', subjects: 'Art' })] })
+      .then(
+        () => null,
+        (e: { details?: { errors?: unknown[] } }) => e,
+      );
+    expect(err?.details?.errors).toEqual([{ sheet: 'file', row: null, column: null, code: 'subjectsChanged' }]);
+    expect((await adminDb.collection(paths.teachers(sid)).get()).size).toBe(0);
   });
 
   it('refuses non-admins, oversized and empty imports, unknown columns', async () => {
     const { admin, sid } = await adminWithSchool();
     const stranger = await signUp();
-    await expectFnError(stranger.call('importSetup', { schoolId: sid, knownSubjectIds: [], subjects: [sub(2, { nameEn: 'X' })], teachers: [] }), 'permission-denied', 'not-allowed');
+    await expectFnError(stranger.call('importSetup', { schoolId: sid, subjectsVersion: NONE, subjects: [sub(2, { nameEn: 'X' })], teachers: [] }), 'permission-denied', 'not-allowed');
     const many = Array.from({ length: 201 }, (_, i) => sub(i + 2, { nameEn: `S${i}` }));
-    await expectFnError(admin.call('importSetup', { schoolId: sid, knownSubjectIds: [], subjects: many, teachers: [] }), 'invalid-argument', 'invalid');
-    await expectFnError(admin.call('importSetup', { schoolId: sid, knownSubjectIds: [], subjects: [], teachers: [] }), 'invalid-argument', 'invalid');
-    await expectFnError(admin.call('importSetup', { schoolId: sid, knownSubjectIds: [], subjects: [{ row: 2, cells: { bogus: 'x' } }] as never, teachers: [] }), 'invalid-argument', 'invalid');
-    await expectFnError(admin.call('importSetup', { schoolId: sid, knownSubjectIds: [], subjects: [{ row: 1, cells: { nameEn: 'x' } }] as never, teachers: [] }), 'invalid-argument', 'invalid');
+    await expectFnError(admin.call('importSetup', { schoolId: sid, subjectsVersion: NONE, subjects: many, teachers: [] }), 'invalid-argument', 'invalid');
+    await expectFnError(admin.call('importSetup', { schoolId: sid, subjectsVersion: NONE, subjects: [], teachers: [] }), 'invalid-argument', 'invalid');
+    await expectFnError(admin.call('importSetup', { schoolId: sid, subjectsVersion: NONE, subjects: [{ row: 2, cells: { bogus: 'x' } }] as never, teachers: [] }), 'invalid-argument', 'invalid');
+    await expectFnError(admin.call('importSetup', { schoolId: sid, subjectsVersion: NONE, subjects: [{ row: 1, cells: { nameEn: 'x' } }] as never, teachers: [] }), 'invalid-argument', 'invalid');
   });
 
   it('stops at the first account failure and reports notCreated', async () => {
@@ -122,7 +140,7 @@ describe('importSetup', () => {
     const ids = Array.from({ length: 8 }, (_, i) => `SCC0${45 + i}`);
     const res = await admin.call('importSetup', {
       schoolId: sid,
-      knownSubjectIds: [],
+      subjectsVersion: NONE,
       subjects: [sub(2, { nameEn: 'Dance' })],
       teachers: ids.map((staffId, i) => tch(i + 2, { staffId, name: `T${i}`, grades: '6', subjects: 'Dance' })),
     });
@@ -136,16 +154,15 @@ describe('importSetup', () => {
 
   it('rejects malformed request shapes', async () => {
     const { admin, sid } = await adminWithSchool();
-    const bad = (body: Record<string, unknown>) => expectFnError(admin.call('importSetup', { schoolId: sid, knownSubjectIds: [], ...body } as never), 'invalid-argument', 'invalid');
+    const bad = (body: Record<string, unknown>) => expectFnError(admin.call('importSetup', { schoolId: sid, subjectsVersion: NONE, ...body } as never), 'invalid-argument', 'invalid');
     await bad({ subjects: [{ row: 2, cells: { nameEn: 5 } }], teachers: [] });
     await bad({ subjects: [{ row: 2, cells: { nameEn: 'x'.repeat(501) } }], teachers: [] });
     await bad({ subjects: [{ row: 2, cells: [] }], teachers: [] });
     await bad({ subjects: [{ row: 2, cells: null }], teachers: [] });
     await bad({ subjects: [sub(2, { nameEn: 'X' })] });
-    await bad({ knownSubjectIds: undefined, subjects: [sub(2, { nameEn: 'X' })], teachers: [] });
-    await bad({ knownSubjectIds: 's1', subjects: [sub(2, { nameEn: 'X' })], teachers: [] });
-    await bad({ knownSubjectIds: ['a/b'], subjects: [sub(2, { nameEn: 'X' })], teachers: [] });
-    await bad({ knownSubjectIds: Array.from({ length: 1001 }, (_, i) => `s${i}`), subjects: [sub(2, { nameEn: 'X' })], teachers: [] });
+    await bad({ subjectsVersion: undefined, subjects: [sub(2, { nameEn: 'X' })], teachers: [] });
+    await bad({ subjectsVersion: ['s1'], subjects: [sub(2, { nameEn: 'X' })], teachers: [] });
+    await bad({ subjectsVersion: 'x'.repeat(65), subjects: [sub(2, { nameEn: 'X' })], teachers: [] });
     await bad({ subjects: [], teachers: Array.from({ length: 201 }, (_, i) => tch(i + 2, { name: `T${i}` })) });
   });
 });

@@ -3,6 +3,7 @@
 import {
   pickName,
   readSheets,
+  subjectsFingerprint,
   teacherDisplayName,
   validateImport,
   type ImportError,
@@ -33,7 +34,7 @@ import { downloadBlob, templateCsv, templateSheetNames, templateXlsx } from './t
 
 type View =
   | { kind: 'start' }
-  | { kind: 'preview'; fileName: string; parsed: ParsedSheets; plan: ImportPlan; errors: ImportError[]; knownSubjectIds: string[] }
+  | { kind: 'preview'; fileName: string; parsed: ParsedSheets; plan: ImportPlan; errors: ImportError[]; subjectsVersion: string }
   | { kind: 'done'; res: ImportSetupRes };
 
 function isImportErrors(details: unknown): details is { errors: ImportError[] } {
@@ -152,7 +153,7 @@ export function ImportModal({ onClose }: { onClose: () => void }) {
         parsed,
         plan,
         errors: [...parsed.errors, ...plan.errors],
-        knownSubjectIds: subjects.map((s) => s.id),
+        subjectsVersion: subjectsFingerprint(subjects),
       });
     } catch (err) {
       if (seq !== readSeq.current) return;
@@ -171,7 +172,7 @@ export function ImportModal({ onClose }: { onClose: () => void }) {
       const strip = <C extends string>(rows: ImportRow<C>[]) => rows.map(({ row, cells }) => ({ row, cells }));
       const res = await importSetup({
         schoolId: school.id,
-        knownSubjectIds: view.knownSubjectIds,
+        subjectsVersion: view.subjectsVersion,
         subjects: strip(view.parsed.subjects),
         teachers: strip(view.parsed.teachers),
       });
