@@ -75,7 +75,7 @@
   },
   "confirmDisable": {
     "title": "Disable {{name}}?",
-    "body": "Everyone at this school, admins and teachers, will be blocked from signing in until you enable it again.",
+    "body": "Admins and teachers can still sign in, but they will only see a \"school suspended\" screen and can't use the app until you enable it again.",
     "confirm": "Disable school"
   },
   "toast": {
