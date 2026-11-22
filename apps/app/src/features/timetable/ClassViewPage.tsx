@@ -19,9 +19,9 @@ import {
   type SchoolContext,
   type TemplateRow,
 } from '@sathiya/core';
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { Navigate, useNavigate, useParams } from 'react-router-dom';
+import { Navigate, useNavigate, useParams, useSearchParams } from 'react-router-dom';
 import { useLang } from '../../app/LangProvider';
 import { useSchool, useYear } from '../../app/SchoolProvider';
 import { useReadOnly } from '../../ui/AdminLayout';
@@ -37,7 +37,7 @@ import { AssignPicker } from './AssignPicker';
 import { BlockEditor } from './BlockEditor';
 import { blockKey, blockStateFor, isBlock, type BlockState } from './blockState';
 import { classCellView } from './labels';
-import { useAdminBase } from './paths';
+import { pickInitial, rememberLast, useAdminBase } from './paths';
 import { PinHeader, PinSection } from './PinPanel';
 import { pinOverlayCell } from './pinOverlay';
 import { SlotPicker } from './SlotPicker';
@@ -67,10 +67,11 @@ function NoClasses() {
 }
 
 export function ClassIndexRedirect() {
+  const [params] = useSearchParams();
   const ctx = useSchool();
   const base = useAdminBase();
   if (ctx.loading) return <LoadingState />;
-  const first = sortedClasses(ctx)[0];
+  const first = pickInitial('class', sortedClasses(ctx), params, ['class', 'c']);
   if (!first) return <NoClasses />;
   return <Navigate to={`${base}/timetable/class/${first.id}`} replace />;
 }
@@ -123,7 +124,8 @@ function ClassView({ cls, classes }: { cls: SchoolClass; classes: SchoolClass[] 
   const fillDrafts = useMemo(() => fillWithClassTeacher({ ctx, entries, classId: cls.id }), [ctx, entries, cls.id]);
 
   const index = classes.findIndex((c) => c.id === cls.id);
-  const go = (c: SchoolClass | undefined) => c && navigate(`${base}/timetable/class/${c.id}`);
+  const go = (c: SchoolClass | undefined) => c && navigate(`${base}/timetable/class/${c.id}`, { replace: true });
+  useEffect(() => rememberLast('class', cls.id), [cls.id]);
   const gradeNumber = (c: SchoolClass) => ctx.grades.find((g) => g.id === c.gradeId)?.number ?? '';
 
   function onActivate(day: DayIndex, period: number) {

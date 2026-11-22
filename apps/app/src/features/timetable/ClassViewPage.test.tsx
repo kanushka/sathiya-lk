@@ -3,7 +3,7 @@
 
 import { fillWithClassTeacher } from '@sathiya/core';
 import { C, ctx, entries6B, entry, G, S, T } from '@sathiya/core/fixtures';
-import { fireEvent, screen, waitFor, within } from '@testing-library/react';
+import { cleanup, fireEvent, screen, waitFor, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { Route, Routes } from 'react-router-dom';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
@@ -45,6 +45,7 @@ async function activate(day: string, n: number) {
 
 beforeEach(() => {
   ro.value = false;
+  sessionStorage.clear();
 });
 
 describe('ClassViewPage', () => {
@@ -201,6 +202,32 @@ describe('ClassViewPage', () => {
     fireEvent.keyDown(slot('Monday', 1), { key: 'Delete' });
     expect(api.deleteEntry).not.toHaveBeenCalled();
     expect(screen.getByText('Mathematics').closest('li')).toHaveTextContent('6/6');
+  });
+
+  describe('remembered selection', () => {
+    const combobox = () => screen.getByRole('combobox', { name: /^Class/ });
+
+    it('reopens the last viewed class from the index route', () => {
+      const first = setup(C.c6c);
+      expect(combobox()).toHaveTextContent('6C');
+      cleanup();
+      setup(C.c6b, first, '/admin/timetable/class');
+      expect(combobox()).toHaveTextContent('Grade 6 · 6C');
+    });
+
+    it('selects the class from ?class= and ?c=', () => {
+      setup(C.c6c, makeApi(), `/admin/timetable/class?class=${C.c6c}`);
+      expect(combobox()).toHaveTextContent('Grade 6 · 6C');
+      cleanup();
+      setup(C.c6b, makeApi(), `/admin/timetable/class?c=${C.c6b}`);
+      expect(combobox()).toHaveTextContent('Grade 6 · 6B');
+    });
+
+    it('falls back to the first class for an unknown id', () => {
+      sessionStorage.setItem('sathiya.timetable.class', 'gone');
+      setup(C.c6b, makeApi(), '/admin/timetable/class?class=nope');
+      expect(combobox()).toHaveTextContent('Grade 1 · 1A');
+    });
   });
 
   it('redirects the index route to the first class', () => {

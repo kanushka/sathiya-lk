@@ -18,9 +18,9 @@ import {
   type Teacher,
   type TemplateRow,
 } from '@sathiya/core';
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { Navigate, useNavigate, useParams } from 'react-router-dom';
+import { Navigate, useNavigate, useParams, useSearchParams } from 'react-router-dom';
 import { useLang } from '../../app/LangProvider';
 import { useSchool, useYear } from '../../app/SchoolProvider';
 import { useReadOnly } from '../../ui/AdminLayout';
@@ -37,7 +37,7 @@ import { BlockEditor } from './BlockEditor';
 import { blockKey, blockStateFor, isBlock, type BlockState } from './blockState';
 import type { CellView } from './Cell';
 import { classNames } from './labels';
-import { useAdminBase } from './paths';
+import { pickInitial, rememberLast, useAdminBase } from './paths';
 import { PinHeader, PinSection } from './PinPanel';
 import { pinOverlayCell } from './pinOverlay';
 import { TeacherAssignPicker } from './TeacherAssignPicker';
@@ -66,10 +66,11 @@ function NoTeachers() {
 }
 
 export function TeacherIndexRedirect() {
+  const [params] = useSearchParams();
   const ctx = useSchool();
   const base = useAdminBase();
   if (ctx.loading) return <LoadingState />;
-  const first = sortedTeachers(ctx)[0];
+  const first = pickInitial('teacher', sortedTeachers(ctx), params, ['teacher', 't']);
   if (!first) return <NoTeachers />;
   return <Navigate to={`${base}/timetable/teacher/${first.id}`} replace />;
 }
@@ -156,7 +157,8 @@ function TeacherView({ teacher, teachers, template }: { teacher: Teacher; teache
   const at = (day: DayIndex, period: number) => bySlot.get(`${day}-${period}`) ?? [];
 
   const index = teachers.findIndex((x) => x.id === teacher.id);
-  const go = (x: Teacher | undefined) => x && navigate(`${base}/timetable/teacher/${x.id}`);
+  const go = (x: Teacher | undefined) => x && navigate(`${base}/timetable/teacher/${x.id}`, { replace: true });
+  useEffect(() => rememberLast('teacher', teacher.id), [teacher.id]);
 
   const subjectOf = (e: Entry) => {
     const id = (e.lessons.find((l) => l.teacherId === teacher.id) ?? e.lessons[0])?.subjectId;
