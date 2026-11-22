@@ -33,7 +33,9 @@ export function TeachersPage() {
   const lang = i18n.language as Lang;
   const state = useSchool();
   const { school, teachers, subjects, classes } = state;
-  const { entries } = useYear();
+  const { entries, years, yearId } = useYear();
+  const latestYearId = [...years].sort((a, b) => b.label.localeCompare(a.label, 'en', { numeric: true }))[0]?.id;
+  const slotUsage = (teacherId: string) => (yearId === latestYearId ? usageCount('teacher', teacherId, state, entries) : 0);
   const readOnly = useReadOnly();
   const toast = useToast();
   const { passwords, set: setSessionPassword } = useSessionPasswords();
@@ -181,7 +183,7 @@ export function TeachersPage() {
           kind="teacher"
           id={dialog.teacher.id}
           name={teacherDisplayName(dialog.teacher, lang)}
-          knownUsedIn={usageCount('teacher', dialog.teacher.id, state, entries) + classes.filter((c) => c.classTeacherId === dialog.teacher.id).length}
+          knownUsedIn={slotUsage(dialog.teacher.id) + classes.filter((c) => c.classTeacherId === dialog.teacher.id).length}
           onClose={() => setDialog(null)}
         />
       )}

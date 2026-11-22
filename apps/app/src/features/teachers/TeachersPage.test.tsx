@@ -302,6 +302,18 @@ describe('teachers page', () => {
     expect(call).not.toHaveBeenCalled();
   });
 
+  it('ignores slots in an older year, which the server does not count', async () => {
+    const user = userEvent.setup();
+    const used = unused.teachers.find((t) => usageCount('teacher', t.id, unused, entries) > 0)!;
+    const years = [
+      { id: 'y2025', label: '2025', status: 'published' as const },
+      { id: 'y2026', label: '2026', status: 'draft' as const },
+    ];
+    renderWithSchool(<TeachersPage />, { ctx: unused, entries, years, yearId: 'y2025' });
+    await user.click(within(screen.getByText(used.staffId).closest('tr')!).getByRole('button', { name: 'Delete' }));
+    expect(within(screen.getByRole('dialog')).getByRole('button', { name: 'Delete' })).toBeInTheDocument();
+  });
+
   it('blocks deleting an in-use teacher and shows the count', async () => {
     const user = userEvent.setup();
     vi.mocked(call).mockResolvedValue({ deleted: false, usedIn: 12 });
