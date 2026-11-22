@@ -147,6 +147,24 @@ describe('useTimetable', () => {
       expect(latest.entries.some((e) => e.id.startsWith('tmp-'))).toBe(false);
     });
 
+    it('no duplicate while the callable is still in flight after the snapshot', async () => {
+      const d = deferred<{ entryId: string }>();
+      const api: TimetableApi = { saveEntry: vi.fn(() => d.promise), deleteEntry: vi.fn() };
+      render(<Live api={api}><Probe /></Live>);
+      let p!: Promise<boolean>;
+      act(() => {
+        p = latest.save(draft);
+      });
+      act(() => setServer([...entries6B, serverCopy]));
+      expect(latest.entries).toHaveLength(entries6B.length + 1);
+      expect(latest.entries.some((e) => e.id === 'srv-1')).toBe(true);
+      await act(async () => {
+        d.resolve({ entryId: 'srv-1' });
+        await p;
+      });
+      expect(latest.entries).toHaveLength(entries6B.length + 1);
+    });
+
     it('no duplicate when callable resolves before the snapshot', async () => {
       const api: TimetableApi = { saveEntry: vi.fn().mockResolvedValue({ entryId: 'srv-1' }), deleteEntry: vi.fn() };
       render(<Live api={api}><Probe /></Live>);

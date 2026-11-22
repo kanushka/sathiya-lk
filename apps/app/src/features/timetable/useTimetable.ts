@@ -37,6 +37,9 @@ interface Overlay {
 
 const emptyOverlay = (): Overlay => ({ added: new Map(), removed: new Map() });
 
+const sameSlotKey = (e: Pick<Entry, 'day' | 'period' | 'classIds' | 'lessons' | 'groupKey'>) =>
+  JSON.stringify([e.day, e.period, [...e.classIds].sort(), e.lessons.map((l) => `${l.subjectId}:${l.teacherId ?? ''}`).sort(), e.groupKey ?? null]);
+
 function conflictsOf(err: ApiError): Conflict[] {
   const c = (err.details as { conflicts?: unknown } | undefined)?.conflicts;
   return Array.isArray(c) ? (c as Conflict[]) : [];
@@ -68,7 +71,12 @@ export function useTimetable(): UseTimetable {
 
   const entries = useMemo(() => {
     const base = serverEntries.filter((e) => !overlay.removed.has(e.id) && !overlay.added.has(e.id));
-    return [...base, ...[...overlay.added.values()].map((v) => v.entry)];
+    const ids = new Set(base.map((e) => e.id));
+    const slots = new Set(base.map(sameSlotKey));
+    const added = [...overlay.added.entries()].filter(([id, v]) =>
+      v.serverId ? !ids.has(v.serverId) : !id.startsWith('tmp-') || !slots.has(sameSlotKey(v.entry)),
+    );
+    return [...base, ...added.map(([, v]) => v.entry)];
   }, [serverEntries, overlay]);
 
   const reportError = useCallback(
