@@ -3,6 +3,7 @@
 import { useEffect, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Button } from '../../ui/Button';
+import { FormError } from '../../ui/FormError';
 import { printSlips, type PrintLabels } from './printSlips';
 import { qrSvgDataUri } from './qr';
 import { slipText, whatsappUrl, type SlipData } from './slip';
@@ -90,9 +91,7 @@ export function LoginSlip({ slip, hasStaffId, onReset, resetting, resetError, fo
         </div>
       )}
       {resetError && (
-        <p role="alert" className="text-xs font-medium text-danger">
-          {t('slip.resetFailed')}
-        </p>
+        <FormError>{t('slip.resetFailed')}</FormError>
       )}
     </section>
   );

@@ -33,6 +33,7 @@
     "primary": "Primary teacher",
     "primaryHint": "Can teach every subject in their grades.",
     "subjects": "Subjects",
+    "subjectsPlaceholder": "Add subjects",
     "grades": "Grades",
     "maxPerDay": "Max periods / day",
     "phone": "Phone (optional)",

@@ -65,8 +65,8 @@ describe('teachers page', () => {
     render();
     const dialog = await openAdd(user);
     await user.type(within(dialog).getByLabelText('Name'), 'Mr. New Teacher');
-    await user.click(within(dialog).getByRole('button', { name: 'Mathematics' }));
-    await user.click(within(dialog).getByRole('button', { name: '6' }));
+    await pickOption(user, within(dialog).getByRole('combobox', { name: 'Subjects' }), 'Mathematics');
+    await user.click(within(dialog).getByRole('button', { name: '6', pressed: false }));
     await user.click(within(dialog).getByRole('button', { name: 'Save teacher' }));
 
     expect(await within(dialog).findByText('k7m4x9pq')).toBeInTheDocument();
@@ -87,8 +87,8 @@ describe('teachers page', () => {
     render();
     const dialog = await openAdd(user);
     await user.type(within(dialog).getByLabelText('Name'), 'New Teacher');
-    await user.click(within(dialog).getByRole('button', { name: 'Mathematics' }));
-    await user.click(within(dialog).getByRole('button', { name: '6' }));
+    await pickOption(user, within(dialog).getByRole('combobox', { name: 'Subjects' }), 'Mathematics');
+    await user.click(within(dialog).getByRole('button', { name: '6', pressed: false }));
     await user.click(within(dialog).getByRole('button', { name: 'Save teacher' }));
 
     expect(await within(dialog).findByText('k7m4x9pq')).toBeInTheDocument();
@@ -105,8 +105,8 @@ describe('teachers page', () => {
     render();
     const dialog = await openAdd(user);
     await user.type(within(dialog).getByLabelText('Name'), 'New Teacher');
-    await user.click(within(dialog).getByRole('button', { name: 'Mathematics' }));
-    await user.click(within(dialog).getByRole('button', { name: '6' }));
+    await pickOption(user, within(dialog).getByRole('combobox', { name: 'Subjects' }), 'Mathematics');
+    await user.click(within(dialog).getByRole('button', { name: '6', pressed: false }));
     await user.click(within(dialog).getByRole('button', { name: 'Save teacher' }));
 
     expect(await within(dialog).findByText('k7m4x9pq')).toBeInTheDocument();
@@ -197,8 +197,8 @@ describe('teachers page', () => {
     expect(screen.getAllByRole('option').map((o) => o.textContent)).toEqual(['—', 'Mr.', 'Mrs.', 'Miss', 'Ms.', 'Dr.', 'Rev.', 'Ven.', 'Thero']);
     await user.click(screen.getByRole('option', { name: 'Thero' }));
     await user.type(within(dialog).getByLabelText('Name'), 'Ananda');
-    await user.click(within(dialog).getByRole('button', { name: 'Mathematics' }));
-    await user.click(within(dialog).getByRole('button', { name: '6' }));
+    await pickOption(user, within(dialog).getByRole('combobox', { name: 'Subjects' }), 'Mathematics');
+    await user.click(within(dialog).getByRole('button', { name: '6', pressed: false }));
     await user.click(within(dialog).getByRole('button', { name: 'Save teacher' }));
     await waitFor(() => expect(api.createTeacher).toHaveBeenCalled());
     expect(api.createTeacher).toHaveBeenCalledWith('siripura', expect.objectContaining({ title: 'Thero', name: 'Ananda' }));
