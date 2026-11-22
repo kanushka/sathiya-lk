@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
 // Copyright (C) 2026 Kanushka Gayan
-import { FieldValue, type DocumentReference } from 'firebase-admin/firestore';
+import { FieldValue, Timestamp, type DocumentReference } from 'firebase-admin/firestore';
 import { logger } from 'firebase-functions/v2';
 import { onDocumentCreated } from 'firebase-functions/v2/firestore';
 import { defineSecret } from 'firebase-functions/params';
@@ -13,6 +13,10 @@ const RESEND_API_KEY = defineSecret('RESEND_API_KEY');
 const MAX_RETRIES = 3;
 const BACKOFF_MS = 1000;
 const TIMEOUT_MS = 15_000;
+// Worst case is 4 × 15 s requests + 7 s backoff = 67 s.
+export const SEND_TIMEOUT_SECONDS = 120;
+// Longer than a run can last, so a live claim is never taken over; an expired one means that run died.
+const LEASE_MS = (SEND_TIMEOUT_SECONDS + 60) * 1000;
 
 export interface DeliverOptions {
   apiKey: string;
@@ -28,7 +32,7 @@ interface MailDoc {
   from?: string;
   replyTo?: string;
   message?: { subject?: string; html?: string; text?: string };
-  delivery?: { state?: string };
+  delivery?: { state?: string; leaseExpireTime?: Timestamp };
 }
 
 type Attempt = { ok: true; id: string | null } | { ok: false; retry: boolean; error: string };
@@ -51,19 +55,29 @@ async function post(body: unknown, key: string, idempotencyKey: string, opts: De
   return { ok: false, retry: res.status === 429 || res.status >= 500, error };
 }
 
-// Extension-compatible `delivery` field. The claim transaction makes a duplicate trigger event a no-op.
-export async function deliverMail(ref: DocumentReference, opts: DeliverOptions): Promise<void> {
-  const mail = await ref.firestore.runTransaction(async (tx) => {
+export type DeliverResult = 'done' | 'skipped' | 'busy';
+
+// Extension-compatible `delivery` field. The claim transaction makes a duplicate trigger event a no-op;
+// 'busy' means another run holds a live claim. Rejects only on Firestore errors, so the event can be retried.
+export async function deliverMail(ref: DocumentReference, opts: DeliverOptions): Promise<DeliverResult> {
+  const claim = await ref.firestore.runTransaction(async (tx): Promise<MailDoc | 'skipped' | 'busy'> => {
     const snap = await tx.get(ref);
     const data = snap.data() as MailDoc | undefined;
-    if (!data || data.delivery?.state) return undefined;
-    tx.update(ref, { delivery: { state: 'PROCESSING', attempts: 0, startTime: FieldValue.serverTimestamp(), endTime: null, error: null, info: null } });
+    if (!data) return 'skipped';
+    const d = data.delivery;
+    if (d?.state && d.state !== 'PROCESSING') return 'skipped';
+    if (d?.state === 'PROCESSING' && (d.leaseExpireTime?.toMillis() ?? 0) > Date.now()) return 'busy';
+    tx.update(ref, {
+      delivery: { state: 'PROCESSING', attempts: 0, startTime: FieldValue.serverTimestamp(), endTime: null, leaseExpireTime: Timestamp.fromMillis(Date.now() + LEASE_MS), error: null, info: null },
+    });
     return data;
   });
-  if (!mail) return;
+  if (typeof claim === 'string') return claim;
+  const mail = claim;
 
-  const finish = async (state: 'SUCCESS' | 'ERROR', attempts: number, info: Record<string, unknown> | null, error: string | null): Promise<void> => {
-    await ref.update({ 'delivery.state': state, 'delivery.attempts': attempts, 'delivery.endTime': FieldValue.serverTimestamp(), 'delivery.info': info, 'delivery.error': error });
+  const finish = async (state: 'SUCCESS' | 'ERROR', attempts: number, info: Record<string, unknown> | null, error: string | null): Promise<DeliverResult> => {
+    await ref.update({ 'delivery.state': state, 'delivery.attempts': attempts, 'delivery.endTime': FieldValue.serverTimestamp(), 'delivery.leaseExpireTime': null, 'delivery.info': info, 'delivery.error': error });
+    return 'done';
   };
 
   const to = (Array.isArray(mail.to) ? mail.to : [mail.to]).filter((t): t is string => typeof t === 'string' && !!t.trim());
@@ -102,10 +116,14 @@ export async function deliverMail(ref: DocumentReference, opts: DeliverOptions):
   }
 }
 
-export const sendMail = onDocumentCreated({ document: `${MAIL}/{id}`, region: REGION, secrets: [RESEND_API_KEY] }, async (event) => {
+// retry: a run that dies (timeout, crash, failed status write) leaves an expired claim; the redelivered event reclaims it,
+// and the doc-id Idempotency-Key stops Resend sending twice. A live claim throws so the event comes back after the lease.
+const triggerOpts = { document: `${MAIL}/{id}`, region: REGION, secrets: [RESEND_API_KEY], timeoutSeconds: SEND_TIMEOUT_SECONDS, retry: true };
+
+export const sendMail = onDocumentCreated(triggerOpts, async (event) => {
   if (!event.data) return;
   const { from, subjectPrefix } = mailConfig();
-  await deliverMail(event.data.ref, {
+  const result = await deliverMail(event.data.ref, {
     apiKey: RESEND_API_KEY.value().trim(),
     dryRun: process.env.FUNCTIONS_EMULATOR === 'true',
     from,
@@ -113,4 +131,5 @@ export const sendMail = onDocumentCreated({ document: `${MAIL}/{id}`, region: RE
     fetch,
     sleep: (ms) => new Promise((r) => setTimeout(r, ms)),
   });
+  if (result === 'busy') throw new Error(`mail ${event.data.id} is claimed by another run; retry after the lease`);
 });

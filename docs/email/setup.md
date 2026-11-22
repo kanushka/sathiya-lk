@@ -38,6 +38,7 @@ Override in `functions/.env.sathiya-lk` (kept out of git if it holds addresses y
 | Field | Meaning |
 |---|---|
 | `state` | `PROCESSING` (claimed, sending), `SUCCESS` or `ERROR` |
+| `leaseExpireTime` | while `PROCESSING`: when the claim lapses (3 min); cleared when done |
 | `attempts` | requests made to Resend (0 for a dry run) |
 | `startTime`, `endTime` | server timestamps |
 | `info.messageId` | Resend email id (look it up in Resend → Emails); `info.dryRun: true` when nothing was sent |
@@ -47,7 +48,8 @@ To read it: Firebase console → Firestore → `mail`, sort or filter by `delive
 
 - Network errors, `429` and `5xx` are retried up to 3 times (1 s, 2 s, 4 s backoff) with the doc id as Resend's `Idempotency-Key`, so a retry can't send twice.
 - Other `4xx` (bad key, unverified domain, invalid address) are not retried: fix the cause; the mail is not resent automatically. To resend one doc, delete its `delivery` field and copy the doc to a new `mail` doc (only creates trigger a send).
-- A doc that already has `delivery.state` is never sent again, so a duplicate trigger event is a no-op.
+- A doc in `SUCCESS` or `ERROR` is never sent again, so a duplicate trigger event is a no-op.
+- The function has a 120 s timeout and event retry on. If a run dies before writing the final state (timeout, crash, failed write), the doc stays `PROCESSING` until its lease lapses; the retried event then reclaims and resends it, and the same `Idempotency-Key` keeps Resend from sending twice.
 
 ## 5. Firebase console (Authentication)
 - No custom action URL is needed. `sendAuthEmail` takes the links from `generateEmailVerificationLink` / `generatePasswordResetLink` (which point at `…firebaseapp.com/__/auth/action`) and rebuilds them as `${APP_URL}/auth/action?mode=…&oobCode=…&apiKey=…&lang=…&continueUrl=…` (`functions/src/email/actionLink.ts`). The console's "Customize action URL" can fail with `EMAIL_TEMPLATE_UPDATE_NOT_ALLOWED` on new projects; leave it at the default. This only covers mails `sendAuthEmail` sends; any email Firebase sends itself (e.g. recoverEmail after an email change, none today) still uses the default handler.

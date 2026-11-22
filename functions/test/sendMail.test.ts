@@ -1,9 +1,10 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
 // Copyright (C) 2026 Kanushka Gayan
+import { Timestamp } from 'firebase-admin/firestore';
 import { logger } from 'firebase-functions/v2';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { writeMail } from '../src/email/send';
-import { deliverMail, RESEND_URL, type DeliverOptions } from '../src/email/sendMail';
+import { deliverMail, RESEND_URL, SEND_TIMEOUT_SECONDS, type DeliverOptions } from '../src/email/sendMail';
 import { adminDb, uniq } from './helpers';
 
 // Not `mail`: the emulated trigger would race these tests for the same docs.
@@ -98,19 +99,52 @@ describe('deliverMail', () => {
     expect(d.error).toContain('fetch failed');
   });
 
-  it('skips a doc that is already processing or delivered', async () => {
-    for (const state of ['PROCESSING', 'SUCCESS', 'ERROR']) {
+  it('skips a delivered doc and reports a live PROCESSING claim as busy', async () => {
+    for (const state of ['SUCCESS', 'ERROR']) {
       const ref = await mailDoc({ delivery: { state, attempts: 1 } });
-      await deliverMail(ref, opts);
+      expect(await deliverMail(ref, opts)).toBe('skipped');
       expect((await delivery(ref)).state).toBe(state);
     }
+    const busy = await mailDoc({ delivery: { state: 'PROCESSING', attempts: 0, leaseExpireTime: Timestamp.fromMillis(Date.now() + 600_000) } });
+    expect(await deliverMail(busy, opts)).toBe('busy');
+    expect((await delivery(busy)).state).toBe('PROCESSING');
     expect(fetchMock).not.toHaveBeenCalled();
+  });
+
+  it('reclaims a PROCESSING doc whose lease expired (run died before finishing) and sends it', async () => {
+    fetchMock.mockResolvedValueOnce(json(200, { id: 'again' }));
+    const ref = await mailDoc({ delivery: { state: 'PROCESSING', attempts: 0, leaseExpireTime: Timestamp.fromMillis(Date.now() - 1000) } });
+    expect(await deliverMail(ref, opts)).toBe('done');
+    expect(fetchMock.mock.calls[0]![1].headers['Idempotency-Key']).toBe(ref.id);
+    expect(await delivery(ref)).toMatchObject({ state: 'SUCCESS', info: { messageId: 'again' } });
+  });
+
+  it('sets a lease on the claim that outlasts the function timeout', async () => {
+    let lease: Timestamp | undefined;
+    fetchMock.mockImplementationOnce(async () => {
+      lease = (await delivery(ref)).leaseExpireTime;
+      return json(200, { id: 'l' });
+    });
+    const ref = await mailDoc();
+    const before = Date.now();
+    await deliverMail(ref, opts);
+    expect(lease!.toMillis()).toBeGreaterThanOrEqual(before + SEND_TIMEOUT_SECONDS * 1000);
+  });
+
+  it('rejects when the final status write fails, so the event is retried', async () => {
+    fetchMock.mockResolvedValueOnce(json(200, { id: 'x' }));
+    const ref = await mailDoc();
+    const update = vi.spyOn(ref, 'update').mockRejectedValueOnce(new Error('unavailable'));
+    await expect(deliverMail(ref, opts)).rejects.toThrow('unavailable');
+    expect(update).toHaveBeenCalled();
   });
 
   it('sends a doc once when the trigger fires twice', async () => {
     fetchMock.mockResolvedValue(json(200, { id: 'once' }));
     const ref = await mailDoc();
-    await Promise.all([deliverMail(ref, opts), deliverMail(ref, opts)]);
+    const results = (await Promise.all([deliverMail(ref, opts), deliverMail(ref, opts)])).sort();
+    expect(results[0]).toBe(results[1] === 'skipped' ? 'done' : 'busy');
+    expect(results).toContain('done');
     expect(fetchMock).toHaveBeenCalledTimes(1);
     expect((await delivery(ref)).state).toBe('SUCCESS');
   });
