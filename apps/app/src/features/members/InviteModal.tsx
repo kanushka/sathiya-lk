@@ -7,7 +7,7 @@ import { useLang } from '../../app/LangProvider';
 import { Button } from '../../ui/Button';
 import { Field, inputClass } from '../../ui/Field';
 import { Modal } from '../../ui/Modal';
-import { NativeSelect } from '../../ui/NativeSelect';
+import { Select } from '../../ui/Select';
 import { useToast } from '../../ui/Toast';
 
 const EMAIL = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
@@ -62,14 +62,14 @@ export function InviteModal({ teachers, onInvite, onClose }: InviteModalProps) {
           <input type="email" className={inputClass} value={email} onChange={(e) => setEmail(e.target.value)} autoFocus />
         </Field>
         <Field label={t('invite.teacher')}>
-          <NativeSelect value={teacherId} onChange={(e) => setTeacherId(e.target.value)}>
-            <option value="">{t('invite.teacherNone')}</option>
-            {teachers.map((x) => (
-              <option key={x.id} value={x.id}>
-                {teacherDisplayName(x, lang)} ({x.staffId})
-              </option>
-            ))}
-          </NativeSelect>
+          <Select
+            value={teacherId}
+            onChange={setTeacherId}
+            options={[
+              { value: '', label: t('invite.teacherNone') },
+              ...teachers.map((x) => ({ value: x.id, label: `${teacherDisplayName(x, lang)} (${x.staffId})` })),
+            ]}
+          />
         </Field>
       </form>
     </Modal>

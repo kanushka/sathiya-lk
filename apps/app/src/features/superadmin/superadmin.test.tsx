@@ -10,6 +10,7 @@ import { describe, expect, it, vi } from 'vitest';
 import { AuthContextProvider, type AuthState } from '../../app/AuthProvider';
 import { LangContextProvider } from '../../app/LangProvider';
 import { ApiError } from '../../lib/callable';
+import { pickOption } from '../../test/pickOption';
 import { renderWithSchool } from '../../test/renderWithSchool';
 import { SchoolDetail } from './SchoolDetail';
 import { SchoolsPage } from './SchoolsPage';
@@ -93,10 +94,10 @@ describe('SchoolsPage', () => {
     await userEvent.type(screen.getByLabelText('Search schools'), 'සිරිපුර');
     expect(rowNames()).toEqual([expect.stringContaining('Siripura')]);
     await userEvent.clear(screen.getByLabelText('Search schools'));
-    await userEvent.selectOptions(screen.getByLabelText('Status'), 'disabled');
+    await pickOption(userEvent.setup(), screen.getByRole('combobox', { name: /^Status/ }), 'Disabled');
     expect(rowNames()).toEqual([expect.stringContaining('Hill View')]);
-    await userEvent.selectOptions(screen.getByLabelText('Status'), 'all');
-    await userEvent.selectOptions(screen.getByLabelText('District'), 'Kandy');
+    await pickOption(userEvent.setup(), screen.getByRole('combobox', { name: /^Status/ }), 'All statuses');
+    await pickOption(userEvent.setup(), screen.getByRole('combobox', { name: /^District/ }), 'Kandy');
     expect(rowNames()).toHaveLength(2);
   });
 
@@ -112,7 +113,7 @@ describe('SchoolsPage', () => {
     await within(row).findByText('58');
     expect(counts).toHaveBeenCalledTimes(3);
     await userEvent.type(screen.getByLabelText('Search schools'), 'si');
-    await userEvent.selectOptions(screen.getByLabelText('Status'), 'active');
+    await pickOption(userEvent.setup(), screen.getByRole('combobox', { name: /^Status/ }), 'Active');
     expect(counts).toHaveBeenCalledTimes(3);
     expect(within(row).getByText('58')).toBeInTheDocument();
   });

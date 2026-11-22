@@ -6,6 +6,7 @@ import { screen, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { call } from '../../lib/callable';
+import { pickOption } from '../../test/pickOption';
 import { renderWithSchool } from '../../test/renderWithSchool';
 import { MembersPage } from './MembersPage';
 
@@ -54,7 +55,7 @@ describe('members page', () => {
     const dialog = screen.getByRole('dialog');
     expect(within(dialog).getByRole('button', { name: 'Send invite' })).toBeDisabled();
     await user.type(within(dialog).getByLabelText('Email'), 'vp@siripura.lk');
-    await user.selectOptions(within(dialog).getByLabelText(/Link to a teacher/), 't-kumari');
+    await pickOption(user, within(dialog).getByRole('combobox', { name: /^Link to a teacher/ }), /D\. Kumari/);
     await user.click(within(dialog).getByRole('button', { name: 'Send invite' }));
     expect(call).toHaveBeenCalledWith('inviteAdmin', { schoolId: 'siripura', email: 'vp@siripura.lk', teacherId: 't-kumari' });
   });
