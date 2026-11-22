@@ -17,7 +17,7 @@ import { ClassPlanModal } from './ClassPlanModal';
 import { nextClassName, planCapacity } from './planModel';
 import { PlanEditor } from './PlanEditor';
 
-type Dialog = { kind: 'addGrade' } | { kind: 'plan'; cls: SchoolClass } | { kind: 'delete'; cls: SchoolClass } | null;
+type Dialog = { kind: 'addGrade' } | { kind: 'deleteGrade' } | { kind: 'plan'; cls: SchoolClass } | { kind: 'delete'; cls: SchoolClass } | null;
 
 export function GradesPage() {
   const { t } = useTranslation('grades');
@@ -88,7 +88,14 @@ export function GradesPage() {
           <EmptyState icon="grades" title={t('page.empty')} body={t('page.emptyBody')} action={addGradeButton || undefined} />
         ) : (
           <>
-            <h2 className="mb-4 mt-0 text-xl font-bold text-ink">{t('page.title', { n: grade.number })}</h2>
+            <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
+              <h2 className="m-0 text-xl font-bold text-ink">{t('page.title', { n: grade.number })}</h2>
+              {!readOnly && (
+                <Button variant="danger" size="sm" onClick={() => setDialog({ kind: 'deleteGrade' })}>
+                  {t('page.deleteGrade')}
+                </Button>
+              )}
+            </div>
 
             <section className="mb-5 rounded-[14px] border border-line-soft bg-white p-5">
               <div className="mb-3.5 flex items-center justify-between">
@@ -144,6 +151,21 @@ export function GradesPage() {
           grade={grade}
           template={school.templates.find((x) => x.id === dialog.cls.templateId) ?? defaultTemplate!}
           subjects={school.subjects}
+          onClose={() => setDialog(null)}
+        />
+      )}
+      {dialog?.kind === 'deleteGrade' && grade && (
+        <DeleteSetupModal
+          schoolId={sid}
+          kind="grade"
+          id={grade.id}
+          name={t('rail.grade', { n: grade.number })}
+          body={
+            gradeClasses.length > 0
+              ? t('deleteGuard.body.grade', { ns: 'teachers', classes: gradeClasses.map((c) => c.name).join(', ') })
+              : t('deleteGuard.body.gradeEmpty', { ns: 'teachers' })
+          }
+          onDeleted={() => setSelectedId(null)}
           onClose={() => setDialog(null)}
         />
       )}

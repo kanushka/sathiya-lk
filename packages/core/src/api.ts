@@ -37,7 +37,7 @@ export interface PublishYearReq { schoolId: string; yearId: string }
 export interface PublishYearRes { classes: number; teachers: number }
 export interface SetSchoolStatusReq { schoolId: string; status: 'active' | 'disabled' }
 export interface SetSchoolStatusRes { ok: true }
-export interface DeleteSetupItemReq { schoolId: string; kind: 'teacher' | 'subject' | 'class' | 'template'; id: string }
+export interface DeleteSetupItemReq { schoolId: string; kind: 'teacher' | 'subject' | 'class' | 'template' | 'grade'; id: string }
 export interface DeleteSetupItemRes { deleted: boolean; usedIn: number }
 export interface ReportSchoolReq { schoolId: string; reason: ReportReason; details?: string; email?: string }
 export interface ReportSchoolRes { ok: true }

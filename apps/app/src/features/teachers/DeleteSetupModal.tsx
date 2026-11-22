@@ -1,5 +1,6 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
 // Copyright (C) 2026 Kanushka Gayan
+import type { ReactNode } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Button } from '../../ui/Button';
 import { Modal } from '../../ui/Modal';
@@ -14,9 +15,10 @@ export interface DeleteSetupModalProps {
   name: string;
   onClose: () => void;
   onDeleted?: () => void;
+  body?: ReactNode;
 }
 
-export function DeleteSetupModal({ schoolId, kind, id, name, onClose, onDeleted }: DeleteSetupModalProps) {
+export function DeleteSetupModal({ schoolId, kind, id, name, onClose, onDeleted, body }: DeleteSetupModalProps) {
   const { t } = useTranslation('teachers');
   const toast = useToast();
   const del = useDeleteSetupItem();
@@ -37,11 +39,12 @@ export function DeleteSetupModal({ schoolId, kind, id, name, onClose, onDeleted 
       width={460}
       title={t('deleteGuard.title', { name })}
       onClose={onClose}
+      busy={del.pending}
       footer={
         <>
-          <Button onClick={onClose}>{blocked ? t('deleteGuard.close') : t('deleteGuard.cancel')}</Button>
+          <Button onClick={onClose} disabled={del.pending}>{blocked ? t('deleteGuard.close') : t('deleteGuard.cancel')}</Button>
           {!blocked && (
-            <Button variant="dangerSolid" onClick={confirm} disabled={del.pending}>
+            <Button variant="dangerSolid" onClick={confirm} loading={del.pending} loadingLabel={t('busy.deleting', { ns: 'common' })}>
               {t('deleteGuard.confirm')}
             </Button>
           )}
@@ -51,7 +54,7 @@ export function DeleteSetupModal({ schoolId, kind, id, name, onClose, onDeleted 
       {blocked ? (
         <FormError>{t(`deleteGuard.inUse.${kind}`, { count: del.usedIn ?? 0 })}</FormError>
       ) : (
-        <p className="text-sm text-ink-soft">{t(`deleteGuard.body.${kind}`)}</p>
+        <p className="text-sm text-ink-soft">{body ?? t(`deleteGuard.body.${kind}`)}</p>
       )}
       {del.failed && (
         <FormError className="mt-3">{t('deleteGuard.failed')}</FormError>

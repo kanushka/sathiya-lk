@@ -1,5 +1,6 @@
 {
   "page": {
+    "deleteGrade": "Delete grade",
     "heading": "Grades & classes",
     "title": "Grade {{n}} settings",
     "empty": "No grades yet",

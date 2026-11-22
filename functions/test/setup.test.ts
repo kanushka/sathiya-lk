@@ -71,10 +71,38 @@ describe('deleteSetupItem', () => {
     await expect(admin.call('createTeacher', { schoolId: sid, teacher: teacherInput('SCC201') })).resolves.toBeTruthy();
   });
 
+  it('refuses a grade whose classes are used by entries in any year', async () => {
+    const { admin, sid } = await seededSchool();
+    await adminDb.doc(`${paths.years(sid)}/zz-old`).set({ label: '2026', status: 'published' });
+    await putEntries(sid, [entry('old', 0, 1, [C.c6a], [[S.maths, T.fonseka]])], 'zz-old');
+    await putEntries(sid, [entry('new', 0, 1, [C.c6b], [[S.maths, T.fonseka]]), entry('new2', 1, 1, [C.c6b], [[S.maths, T.fonseka]])]);
+    expect(await admin.call('deleteSetupItem', { schoolId: sid, kind: 'grade', id: G.g6 })).toEqual({ deleted: false, usedIn: 3 });
+    expect((await adminDb.doc(`${paths.grades(sid)}/${G.g6}`).get()).exists).toBe(true);
+    expect((await adminDb.doc(`${paths.classes(sid)}/${C.c6a}`).get()).exists).toBe(true);
+  });
+
+  it('deletes an unused grade together with its classes', async () => {
+    const { admin, sid } = await seededSchool();
+    await adminDb.doc(`${paths.grades(sid)}/g-new`).set({ number: 9, plan: [] });
+    await adminDb.doc(`${paths.classes(sid)}/c-9a`).set({ gradeId: 'g-new', name: '9A', templateId: 'x' });
+    await adminDb.doc(`${paths.classes(sid)}/c-9b`).set({ gradeId: 'g-new', name: '9B', templateId: 'x' });
+    expect(await admin.call('deleteSetupItem', { schoolId: sid, kind: 'grade', id: 'g-new' })).toEqual({ deleted: true, usedIn: 0 });
+    expect((await adminDb.doc(`${paths.grades(sid)}/g-new`).get()).exists).toBe(false);
+    expect((await adminDb.collection(paths.classes(sid)).where('gradeId', '==', 'g-new').get()).size).toBe(0);
+    expect((await adminDb.doc(`${paths.classes(sid)}/${C.c6a}`).get()).exists).toBe(true);
+  });
+
+  it('only lets an admin of the school delete a grade', async () => {
+    const { sid } = await seededSchool();
+    const { admin: other } = await adminWithSchool();
+    await expectFnError(other.call('deleteSetupItem', { schoolId: sid, kind: 'grade', id: G.g6 }), 'permission-denied', 'not-allowed');
+    expect((await adminDb.doc(`${paths.grades(sid)}/${G.g6}`).get()).exists).toBe(true);
+  });
+
   it('refuses an unknown item and a non-admin', async () => {
     const { admin, sid } = await seededSchool();
     await expectFnError(admin.call('deleteSetupItem', { schoolId: sid, kind: 'subject', id: 'nope' }), 'not-found', 'invalid');
-    await expectFnError(admin.call('deleteSetupItem', { schoolId: sid, kind: 'grade' as never, id: G.g1 }), 'invalid-argument', 'invalid');
+    await expectFnError(admin.call('deleteSetupItem', { schoolId: sid, kind: 'bogus' as never, id: G.g1 }), 'invalid-argument', 'invalid');
     const { admin: other } = await adminWithSchool();
     await expectFnError(other.call('deleteSetupItem', { schoolId: sid, kind: 'subject', id: S.pali }), 'permission-denied', 'not-allowed');
   });

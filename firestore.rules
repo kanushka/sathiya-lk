@@ -58,7 +58,8 @@ service cloud.firestore {
       }
       match /grades/{id} {
         allow read: if adminRead(sid);
-        allow create, update, delete: if adminWrite(sid);
+        // Deletes go through deleteSetupItem, which checks timetable usage first.
+        allow create, update: if adminWrite(sid);
       }
 
       match /members/{uid} {

@@ -3,7 +3,7 @@
 import { useCallback, useState } from 'react';
 import { ApiError, call } from '../../lib/callable';
 
-export type SetupItemKind = 'teacher' | 'subject' | 'class' | 'template';
+export type SetupItemKind = 'teacher' | 'subject' | 'class' | 'template' | 'grade';
 
 export type DeleteOutcome = 'deleted' | 'in-use' | 'error';
 

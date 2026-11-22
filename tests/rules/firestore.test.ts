@@ -255,12 +255,7 @@ describe.each(['subjects', 'periodTemplates', 'classes', 'grades'] as const)('se
       (r, p) => set(r, p, { name: 'x' }),
     );
     deny([['teacher', d], ['super', d]], (r, p) => update(r, p, { name: 'changed' }));
-    if (coll === 'grades') {
-      allow([['admin', d]], del);
-      deny([['teacher', d], ['super', d], ['otherAdmin', d]], del);
-    } else {
-      deny([['admin', d], ['super', d]], del);
-    }
+    deny([['admin', d], ['adminTid', d], ['super', d], ['teacher', d], ['otherAdmin', d]], del);
   });
 });
 

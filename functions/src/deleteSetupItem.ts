@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
 // Copyright (C) 2026 Kanushka Gayan
-import { paths, usageCount, type DeleteSetupItemRes, type Entry, type PlanItem, type SchoolContext } from '@sathiya/core';
+import { paths, usageCount, type DeleteSetupItemReq, type DeleteSetupItemRes, type Entry, type PlanItem, type SchoolContext } from '@sathiya/core';
 import { FieldValue } from 'firebase-admin/firestore';
 import { onCall } from 'firebase-functions/v2/https';
 import { auth, db } from './lib/admin';
@@ -8,8 +8,8 @@ import { callOpts } from './lib/callOptions';
 import { docId, fail, invalid, obj, requireSchoolAdmin } from './lib/guards';
 import { loadContext, loadEntries } from './lib/loadContext';
 
-type Kind = 'teacher' | 'subject' | 'class' | 'template';
-const KINDS: Record<Kind, (sid: string) => string> = { teacher: paths.teachers, subject: paths.subjects, class: paths.classes, template: paths.templates };
+type Kind = DeleteSetupItemReq['kind'];
+const KINDS: Record<Kind, (sid: string) => string> = { teacher: paths.teachers, subject: paths.subjects, class: paths.classes, template: paths.templates, grade: paths.grades };
 
 const planUses = (plan: PlanItem[] | undefined, subjectId: string): number =>
   (plan ?? []).filter((p) => (p.kind === 'subject' ? p.subjectId === subjectId : p.optionSubjectIds.includes(subjectId))).length;
@@ -24,6 +24,7 @@ function setupRefs(kind: Kind, id: string, ctx: SchoolContext): number {
     case 'template':
       return ctx.templates.some((t) => t.id === id && t.isDefault) ? 1 : 0;
     case 'class':
+    case 'grade':
       return 0;
   }
 }
@@ -37,12 +38,38 @@ async function latestYearEntries(sid: string): Promise<Entry[]> {
   return latest ? loadEntries(sid, latest.id) : [];
 }
 
+// A grade goes with its classes, so any year's entries for those classes block it.
+async function deleteGrade(sid: string, id: string): Promise<DeleteSetupItemRes> {
+  return db.runTransaction(async (tx) => {
+    const gradeRef = db.doc(`${paths.grades(sid)}/${id}`);
+    const [grade, classes, years] = await Promise.all([
+      tx.get(gradeRef),
+      tx.get(db.collection(paths.classes(sid)).where('gradeId', '==', id)),
+      tx.get(db.collection(paths.years(sid))),
+    ]);
+    if (!grade.exists) fail('not-found', 'invalid', 'Unknown grade');
+    const classIds = new Set(classes.docs.map((c) => c.id));
+    let usedIn = 0;
+    if (classIds.size > 0) {
+      const perYear = await Promise.all(years.docs.map((y) => tx.get(db.collection(paths.entries(sid, y.id)))));
+      for (const snap of perYear) {
+        for (const e of snap.docs) if ((e.get('classIds') as string[] | undefined)?.some((c) => classIds.has(c))) usedIn++;
+      }
+    }
+    if (usedIn > 0) return { deleted: false, usedIn };
+    tx.delete(gradeRef);
+    for (const c of classes.docs) tx.delete(c.ref);
+    return { deleted: true, usedIn: 0 };
+  });
+}
+
 export const deleteSetupItem = onCall(callOpts, async (req): Promise<DeleteSetupItemRes> => {
   const data = obj(req.data, 'request');
   const { sid } = await requireSchoolAdmin(req, data.schoolId);
   const kind = data.kind as Kind;
-  if (typeof kind !== 'string' || !Object.hasOwn(KINDS, kind)) invalid('kind must be teacher, subject, class or template');
+  if (typeof kind !== 'string' || !Object.hasOwn(KINDS, kind)) invalid('kind must be teacher, subject, class, template or grade');
   const id = docId(data.id, 'id');
+  if (kind === 'grade') return deleteGrade(sid, id);
   const ref = db.doc(`${KINDS[kind](sid)}/${id}`);
   const snap = await ref.get();
   if (!snap.exists) fail('not-found', 'invalid', `Unknown ${kind}`);
