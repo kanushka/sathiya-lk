@@ -21,7 +21,7 @@ School admins register their school, build class and teacher timetables, print t
 - **Teacher mobile view.** Teachers see what they teach now and next, and their week.
 - **Publishing.** A timetable year stays a draft until the admin publishes it.
 - **Super admin.** Moderate school registrations, handle reports of fake or duplicate schools, post announcements, maintain the default subject list and the published terms and privacy policy, and see usage per school.
-- **Email.** Admin invites, school registration, verification and password reset emails (Trigger Email extension + Resend). Teachers never need an email address.
+- **Email.** Admin invites, school registration, verification and password reset emails (sent by a Cloud Function through the Resend API). Teachers never need an email address.
 - **Bilingual.** Every screen and printout in Sinhala and English; each person picks their own language.
 - **Devices.** Admin and super admin screens are made for a laptop or desktop, and tablets work too. Teachers' own timetable, the today view and sign-in work on phones.
 
@@ -37,7 +37,7 @@ School admins register their school, build class and teacher timetables, print t
 
 - **Frontend:** React 18, Vite, Tailwind CSS, react-router, i18next (app); Astro (website).
 - **Backend:** Firebase Auth, Cloud Firestore, Cloud Storage, Cloud Functions v2 (Node 22), App Check with reCAPTCHA Enterprise / Fraud Defense, Firebase Hosting.
-- **Email:** Trigger Email from Firestore extension, sending through Resend.
+- **Email:** a Firestore-triggered Cloud Function that sends through the Resend HTTP API.
 - **Tooling:** pnpm workspaces, TypeScript, Vitest, Testing Library, `@firebase/rules-unit-testing`, Playwright, GitHub Actions.
 
 ## Repository layout

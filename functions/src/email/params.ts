@@ -44,3 +44,8 @@ export function mailConfig(): MailConfig {
     subjectPrefix: val(MAIL_SUBJECT_PREFIX, 'MAIL_SUBJECT_PREFIX').trim(),
   };
 }
+
+// Idempotent, so a subject that writeMail already prefixed is not prefixed twice when sent.
+export function withSubjectPrefix(subject: string, prefix: string): string {
+  return prefix && !subject.startsWith(`${prefix} `) ? `${prefix} ${subject}` : subject;
+}
