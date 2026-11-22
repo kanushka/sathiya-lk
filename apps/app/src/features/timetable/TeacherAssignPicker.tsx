@@ -32,8 +32,7 @@ import { busyLabel } from './conflictLabel';
 import { GroupTeachersStep } from './GroupTeachersStep';
 import { placeThenPin } from './placeThenPin';
 import { planItemColor } from './labels';
-import type { GroupItem } from './pickerData';
-import { teacherSubjects } from './TeacherSlotPicker';
+import { teacherSubjects, type GroupItem } from './pickerData';
 
 export interface TeacherAssignPickerProps {
   teacherId: string;

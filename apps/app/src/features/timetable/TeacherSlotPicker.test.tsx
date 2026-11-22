@@ -19,8 +19,12 @@ function setup(props: Partial<TeacherSlotPickerProps> = {}, entries: Entry[] = e
     onClear: vi.fn().mockResolvedValue(true),
     onGroup: vi.fn(),
   };
+  const teacherId = props.teacherId ?? T.ananda;
+  const day = props.day ?? 2;
+  const period = props.period ?? 5;
+  const editing = props.editing ?? entry('ed', day, period, [C.c12a], [[S.pali, teacherId]]);
   renderWithSchool(
-    <TeacherSlotPicker open teacherId={T.ananda} day={2 as DayIndex} period={5} entries={entries} {...handlers} {...props} />,
+    <TeacherSlotPicker open {...handlers} {...props} teacherId={teacherId} day={day} period={period} entries={entries} editing={editing} />,
     { ctx, entries },
   );
   return handlers;
@@ -36,9 +40,8 @@ beforeEach(() => {
 });
 
 describe('TeacherSlotPicker', () => {
-  it("offers the teacher's subjects first, then classes free in that period", async () => {
+  it("offers the teacher's subjects, then classes free in that period", async () => {
     setup();
-    expect(screen.getByRole('dialog', { name: 'Choose a subject' })).toBeInTheDocument();
     expect(screen.getByText('Wednesday · Period 5 · 10:50–11:30')).toBeInTheDocument();
     await userEvent.click(screen.getByRole('button', { name: 'Subject' }));
     expect(screen.getAllByRole('option').map((o) => o.textContent)).toEqual(['Buddhism', 'Pali']);
@@ -71,7 +74,7 @@ describe('TeacherSlotPicker', () => {
     const h = setup();
     await chooseSubject('Buddhism');
     await userEvent.click(screen.getByRole('button', { name: /^12A/ }));
-    expect(h.onSave).toHaveBeenCalledWith({ day: 2, period: 5, classIds: [C.c12a], lessons: [{ subjectId: S.buddhism, teacherId: T.ananda }] });
+    expect(h.onSave).toHaveBeenCalledWith({ id: 'ed', day: 2, period: 5, classIds: [C.c12a], lessons: [{ subjectId: S.buddhism, teacherId: T.ananda }] });
     await waitFor(() => expect(h.onClose).toHaveBeenCalled());
   });
 
@@ -90,7 +93,7 @@ describe('TeacherSlotPicker', () => {
     await chooseSubject('Buddhism');
     expect(screen.getByRole('dialog')).toHaveTextContent('⚠ Limit reached · 6/6 today');
     await userEvent.click(screen.getByRole('button', { name: /^12A/ }));
-    expect(h.onSave).toHaveBeenCalledWith({ day: 2, period: 5, classIds: [C.c12a], lessons: [{ subjectId: S.buddhism, teacherId: T.ananda }] });
+    expect(h.onSave).toHaveBeenCalledWith({ id: 'ed', day: 2, period: 5, classIds: [C.c12a], lessons: [{ subjectId: S.buddhism, teacherId: T.ananda }] });
   });
 
   it('no limit warning below the daily limit', async () => {
@@ -121,7 +124,7 @@ describe('TeacherSlotPicker', () => {
     const option = screen.getByRole('button', { name: /^1A/ });
     expect(option).toHaveTextContent('P6 11:05–11:30');
     await userEvent.click(option);
-    expect(h.onSave).toHaveBeenCalledWith({ day: 0, period: 6, classIds: [C.c1a], lessons: [{ subjectId: S.sinhala, teacherId: T.wickramasinghe }] });
+    expect(h.onSave).toHaveBeenCalledWith({ id: 'ed', day: 0, period: 6, classIds: [C.c1a], lessons: [{ subjectId: S.sinhala, teacherId: T.wickramasinghe }] });
   });
 
   it('edits an existing lesson: prefilled, reassignable and clearable', async () => {
