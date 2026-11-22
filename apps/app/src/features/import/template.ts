@@ -1,6 +1,9 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
 // Copyright (C) 2026 Kanushka Gayan
-import { formatStaffId, IMPORT_COLUMNS, TEACHER_TITLES, type ImportKind } from '@sathiya/core';
+import { formatStaffId, IMPORT_COLUMNS, IMPORT_MAX_ROWS, TEACHER_TITLES, type ImportKind, type TeacherColumn } from '@sathiya/core';
+
+// Excel turns "6-9" into a date and drops a phone's leading 0 unless the cell is formatted as text.
+const TEXT_COLUMNS: ReadonlySet<TeacherColumn> = new Set(['staffId', 'phone', 'grades']);
 
 const header = (kind: ImportKind) =>
   IMPORT_COLUMNS[kind].map((c) => `${c.en} / ${c.si}${c.required ? ' *' : ''}`);
@@ -20,6 +23,8 @@ export async function templateXlsx(opts: {
   const bold = (value: string) => ({ value, fontWeight: 'bold' as const });
   const headerRow = (kind: ImportKind) => header(kind).map(bold);
   const widths = (kind: ImportKind) => IMPORT_COLUMNS[kind].map(() => ({ width: 28 }));
+  const teacherRow = IMPORT_COLUMNS.teachers.map((c) => (TEXT_COLUMNS.has(c.key) ? { type: String, format: '@' } : null));
+  const teacherRows = Array.from({ length: IMPORT_MAX_ROWS }, () => teacherRow);
   const howTo = [
     ...opts.instructions.en,
     ...opts.instructions.si,
@@ -30,7 +35,7 @@ export async function templateXlsx(opts: {
   ].map((line) => [line]);
   return writeXlsxFile([
     { sheet: 'Subjects', data: [headerRow('subjects')], columns: widths('subjects'), stickyRowsCount: 1 },
-    { sheet: 'Teachers', data: [headerRow('teachers')], columns: widths('teachers'), stickyRowsCount: 1 },
+    { sheet: 'Teachers', data: [headerRow('teachers'), ...teacherRows], columns: widths('teachers'), stickyRowsCount: 1 },
     { sheet: 'How to fill', data: howTo, columns: [{ width: 100 }] },
   ]).toBlob();
 }

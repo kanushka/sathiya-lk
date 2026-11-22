@@ -1,6 +1,7 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
 // Copyright (C) 2026 Kanushka Gayan
-import { readSheets } from '@sathiya/core';
+import { readSheets, validateImport } from '@sathiya/core';
+import writeXlsxFile from 'write-excel-file/browser';
 import { describe, expect, it } from 'vitest';
 import { ImportFileError, readImportFile } from './readFile';
 import { templateXlsx } from './template';
@@ -41,5 +42,32 @@ describe('readImportFile', () => {
     expect(parsed.errors).toEqual([]);
     expect(parsed.subjects).toEqual([]);
     expect(parsed.teachers).toEqual([]);
+  });
+});
+
+describe('xlsx round trip with spreadsheet-typed cells', () => {
+  it('explains grades Excel turned into a date and a phone that lost its leading 0', async () => {
+    const header = ['Full name', 'Subjects', 'Grades', 'Phone', 'Primary teacher?'];
+    const blob = await writeXlsxFile([
+      {
+        sheet: 'Teachers',
+        data: [
+          header,
+          ['K. Perera', null, { value: new Date(Date.UTC(2026, 5, 9)), type: Date, format: 'd-mmm' }, 771234567, true],
+          ['S. Silva', 'Art, Craft; Music', '6-9', '0771234567', false],
+        ],
+      },
+      { sheet: 'Subjects', data: [['Name (English)'], ['Art, Craft'], ['Music']] },
+    ]).toBlob();
+    const parsed = readSheets(await readImportFile(asFile([blob], 'filled.xlsx')));
+    expect(parsed.errors).toEqual([]);
+    const plan = validateImport(parsed, { staffPrefix: 'T', schoolGrades: [6, 7, 8, 9], subjects: [], staffIds: [] });
+    expect(plan.errors).toEqual([
+      { sheet: 'teachers', row: 2, column: 'phone', code: 'excelNumber' },
+      { sheet: 'teachers', row: 2, column: 'grades', code: 'excelDate' },
+    ]);
+    expect(plan.teachers[0]?.teacher.isPrimary).toBe(true);
+    expect(plan.teachers[1]?.teacher).toMatchObject({ grades: [6, 7, 8, 9], phone: '0771234567', isPrimary: false });
+    expect(plan.teachers[1]?.subjectRefs).toEqual([{ newIndex: 0 }, { newIndex: 1 }]);
   });
 });
