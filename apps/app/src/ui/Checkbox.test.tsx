@@ -63,4 +63,13 @@ describe('Checkbox', () => {
     expect(box).toBeInvalid();
     expect(box).toHaveAttribute('name', 'agree');
   });
+
+  it('keeps the native input as a hit target over the box, not sr-only', () => {
+    render(<Controlled />);
+    const input = screen.getByRole('checkbox');
+    expect(input).not.toHaveClass('sr-only');
+    expect(input).toHaveClass('absolute', 'inset-0');
+    expect(input.parentElement).toHaveClass('relative');
+    expect(input.nextElementSibling).toBeInTheDocument();
+  });
 });

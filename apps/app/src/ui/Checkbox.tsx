@@ -43,20 +43,22 @@ export function Checkbox({
       htmlFor={inputId}
       className={cx('inline-flex items-start gap-2.5', disabled ? 'cursor-not-allowed' : 'cursor-pointer', className)}
     >
-      <input
-        ref={ref}
-        id={inputId}
-        name={name}
-        type="checkbox"
-        checked={checked}
-        disabled={disabled}
-        aria-invalid={ariaInvalid}
-        aria-labelledby={`${inputId}-label`}
-        aria-describedby={hint ? `${inputId}-hint` : undefined}
-        onChange={(e) => onChange(e.target.checked)}
-        className="peer sr-only"
-      />
-      <CheckboxBox checked={checked} indeterminate={indeterminate} disabled={disabled} invalid={ariaInvalid} />
+      <span className="relative flex shrink-0">
+        <input
+          ref={ref}
+          id={inputId}
+          name={name}
+          type="checkbox"
+          checked={checked}
+          disabled={disabled}
+          aria-invalid={ariaInvalid}
+          aria-labelledby={`${inputId}-label`}
+          aria-describedby={hint ? `${inputId}-hint` : undefined}
+          onChange={(e) => onChange(e.target.checked)}
+          className={cx('peer absolute inset-0 m-0 h-full w-full opacity-0', disabled ? 'cursor-not-allowed' : 'cursor-pointer')}
+        />
+        <CheckboxBox checked={checked} indeterminate={indeterminate} disabled={disabled} invalid={ariaInvalid} />
+      </span>
       <span className="flex min-w-0 flex-col">
         <span id={`${inputId}-label`} className={cx('text-sm leading-[18px]', disabled ? 'text-ink-muted' : 'text-ink')}>{label}</span>
         {hint && (

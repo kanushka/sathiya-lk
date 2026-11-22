@@ -43,33 +43,35 @@ export function RadioGroup<V extends string = string>({
               htmlFor={id}
               className={cx('inline-flex items-center gap-2.5', o.disabled ? 'cursor-not-allowed' : 'cursor-pointer')}
             >
-              <input
-                id={id}
-                type="radio"
-                name={name}
-                value={o.value}
-                checked={checked}
-                disabled={o.disabled}
-                aria-invalid={ariaInvalid}
-                onChange={() => onChange(o.value)}
-                className="peer sr-only"
-              />
-              <span
-                aria-hidden="true"
-                className={cx(
-                  'h-[18px] w-[18px] shrink-0 rounded-full transition-all',
-                  'peer-focus-visible:ring-[3px] peer-focus-visible:ring-brand/30',
-                  o.disabled
-                    ? checked
-                      ? 'border-[5.5px] border-line bg-surface-2'
-                      : 'border-[1.5px] border-line bg-surface-2'
-                    : checked
-                      ? 'border-[5.5px] border-brand bg-white'
-                      : ariaInvalid
-                        ? 'border-[1.5px] border-danger bg-white'
-                        : 'border-[1.5px] border-line-hover bg-white',
-                )}
-              />
+              <span className="relative flex shrink-0">
+                <input
+                  id={id}
+                  type="radio"
+                  name={name}
+                  value={o.value}
+                  checked={checked}
+                  disabled={o.disabled}
+                  aria-invalid={ariaInvalid}
+                  onChange={() => onChange(o.value)}
+                  className={cx('peer absolute inset-0 m-0 h-full w-full opacity-0', o.disabled ? 'cursor-not-allowed' : 'cursor-pointer')}
+                />
+                <span
+                  aria-hidden="true"
+                  className={cx(
+                    'h-[18px] w-[18px] shrink-0 rounded-full transition-all',
+                    'peer-focus-visible:ring-[3px] peer-focus-visible:ring-brand/30',
+                    o.disabled
+                      ? checked
+                        ? 'border-[5.5px] border-line bg-surface-2'
+                        : 'border-[1.5px] border-line bg-surface-2'
+                      : checked
+                        ? 'border-[5.5px] border-brand bg-white'
+                        : ariaInvalid
+                          ? 'border-[1.5px] border-danger bg-white'
+                          : 'border-[1.5px] border-line-hover bg-white',
+                  )}
+                />
+              </span>
               <span className={cx('text-sm', o.disabled ? 'text-ink-muted' : 'text-ink')}>{o.label}</span>
             </label>
           );

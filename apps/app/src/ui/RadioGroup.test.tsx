@@ -76,4 +76,13 @@ describe('RadioGroup', () => {
     render(<RadioGroup name="letters" label="Letters" options={options} value={null} onChange={() => {}} />);
     expect(screen.getAllByRole('radio').filter((r) => (r as HTMLInputElement).checked)).toHaveLength(0);
   });
+
+  it('keeps each native input as a hit target over its visual, not sr-only', () => {
+    render(<RadioGroup name="letters" label="Letters" options={options} value={null} onChange={() => {}} />);
+    for (const input of screen.getAllByRole('radio')) {
+      expect(input).not.toHaveClass('sr-only');
+      expect(input).toHaveClass('absolute', 'inset-0');
+      expect(input.parentElement).toHaveClass('relative');
+    }
+  });
 });
