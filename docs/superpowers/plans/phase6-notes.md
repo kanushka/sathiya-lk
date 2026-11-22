@@ -45,7 +45,7 @@ Against an already running stack (`pnpm dev:local`): `E2E_BASE_URL=http://localh
 - Per-environment config: `functions/.env.sathiya-lk-staging` (URLs, `MAIL_SUBJECT_PREFIX=[staging]`), `apps/app/.env.staging` (`VITE_FIREBASE_ENV=staging`, `VITE_WEB_URL`, `VITE_APPCHECK_ALLOW_DEBUG`), web `PUBLIC_SITE_URL` / `PUBLIC_APP_URL`. `pnpm build:staging` builds app and web for staging.
 - App Check debug token outside emulators needs both `VITE_APPCHECK_ALLOW_DEBUG=true` and a token (keep it in `apps/app/.env.staging.local`); production builds ignore it.
 - CI (`.github/workflows/ci.yml`): runs on push to `main`, PRs and manual dispatch; one run per ref (older PR runs cancelled; runs on main are never cancelled). `ci-fast` always runs (licence, typecheck, unit tests, app build, web test). `ci-emulators` always reports, but its steps run on PRs only when functions, rules, indexes, `tests/rules` or `packages/core` changed (always on push/dispatch). `ci-e2e` runs on push to `main`, manual dispatch, or PRs labelled `e2e`. Caches: pnpm store, Firebase emulator jars, Playwright browsers.
-- `.github/workflows/deploy-staging.yml`: manual staging deploy using secret `FIREBASE_SERVICE_ACCOUNT_STAGING`. There is no production deploy workflow.
+- `.github/workflows/deploy-staging.yml`: manual staging deploy using secret `FIREBASE_SERVICE_ACCOUNT_STAGING`. `.github/workflows/deploy-prod.yml`: manual production deploy from `main`, gated by the `production` environment (see `docs/deploy.md`).
 
 ## Merge summary
 
@@ -131,10 +131,10 @@ Nothing has been deployed. Do these in the Firebase and Google Cloud consoles, t
 3. **Trigger Email extension:** install it on collection `mail`, with Resend SMTP (`smtps://resend@smtp.resend.com:465`) and the API key stored as the extension secret.
 4. **Auth:**
    - Enable the Email/Password and Google providers.
-   - Templates → customise the action URL to `https://app.sathiya.kanushka.com/auth/action` (required).
+   - No custom action URL is needed: `sendAuthEmail` builds verify/reset links on `APP_URL/auth/action` (see `docs/email/setup.md` §4).
    - Authorised domains: add `sathiya.kanushka.com` and `app.sathiya.kanushka.com`.
 5. **Hosting:**
-   - Create the sites `sathiya-lk-web` and `sathiya-lk-app`.
+   - Create the sites `sathiya-lk` (web, the default site) and `sathiya-lk-portal` (app).
    - Connect the custom domains `sathiya.kanushka.com` (web) and `app.sathiya.kanushka.com` (app), and add their DNS records.
 6. **Storage rules:** the console's test-mode rules are replaced when you deploy `storage.rules` (`--only storage`). Check in the console that test mode is gone.
 7. **Firestore:** deploy rules and indexes. After the first deploy, confirm the TTL policy on `rateLimits.expiresAt` is active.
