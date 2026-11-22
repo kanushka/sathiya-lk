@@ -37,8 +37,8 @@
       "overLimit_other": "දෛනික සීමාව ඉක්මවූ ගුරුවරු {{count}} දෙනෙක්",
       "overTarget_one": "සැලසුම ඉක්මවූ විෂය {{count}} ක්",
       "overTarget_other": "සැලසුම ඉක්මවූ විෂය {{count}} ක්",
-      "orphaned_one": "කාලච්ඡේද සැකිල්ලෙන් පිටත ඇතුළත් කිරීම් {{count}} ක්",
-      "orphaned_other": "කාලච්ඡේද සැකිල්ලෙන් පිටත ඇතුළත් කිරීම් {{count}} ක්",
+      "orphaned_one": "කාලච්ඡේද ආකෘතියෙන් පිටත ඇතුළත් කිරීම් {{count}} ක්",
+      "orphaned_other": "කාලච්ඡේද ආකෘතියෙන් පිටත ඇතුළත් කිරීම් {{count}} ක්",
       "groupNoTeacher_one": "ගුරුවරයකු නොමැති විකල්ප {{count}} ක්",
       "groupNoTeacher_other": "ගුරුවරයකු නොමැති විකල්ප {{count}} ක්"
     },
