@@ -24,6 +24,8 @@ beforeEach(() => {
   vi.mocked(api.claimInvites).mockResolvedValue(undefined);
 });
 
+const AS_TEACHER = '/login?as=teacher';
+
 const teacherCard = () => screen.getByRole('heading', { name: 'Teacher login' }).closest('form') as HTMLElement;
 
 async function pickSchool(user: ReturnType<typeof userEvent.setup>) {
@@ -34,7 +36,7 @@ async function pickSchool(user: ReturnType<typeof userEvent.setup>) {
 describe('school search labels', () => {
   it('shows "Name, City" on each result', async () => {
     const user = userEvent.setup();
-    renderAuth(<LoginPage />);
+    renderAuth(<LoginPage />, { route: AS_TEACHER });
     await user.type(screen.getByLabelText('School'), 'siri');
     expect((await screen.findByRole('option')).textContent).toBe('Siripura Central College, Peradeniya');
   });
@@ -43,7 +45,7 @@ describe('school search labels', () => {
     const user = userEvent.setup();
     const { city: _city, ...noCity } = siripura;
     vi.mocked(api.searchSchools).mockResolvedValue([noCity]);
-    renderAuth(<LoginPage />);
+    renderAuth(<LoginPage />, { route: AS_TEACHER });
     await user.type(screen.getByLabelText('School'), 'siri');
     expect(await screen.findByRole('option', { name: 'Siripura Central College' })).toBeInTheDocument();
   });
@@ -68,7 +70,7 @@ describe('report a school', () => {
   });
 
   it('hints at an 8-character teacher password', () => {
-    renderAuth(<LoginPage />);
+    renderAuth(<LoginPage />, { route: AS_TEACHER });
     expect(screen.getByText('The 8-character password on your login slip.')).toBeInTheDocument();
   });
 });
@@ -76,7 +78,7 @@ describe('report a school', () => {
 describe('teacher login', () => {
   it('signs in with a synthetic email built from school and uppercased staff ID', async () => {
     const user = userEvent.setup();
-    renderAuth(<LoginPage />, { signedIn: true, claimsAfterRefresh: { sid: 'siripura', role: 'teacher', tid: 't1' } });
+    renderAuth(<LoginPage />, { route: AS_TEACHER, signedIn: true, claimsAfterRefresh: { sid: 'siripura', role: 'teacher', tid: 't1' } });
     await pickSchool(user);
     await user.type(screen.getByLabelText('Staff ID'), 'scc024');
     await user.type(within(teacherCard()).getByLabelText('Password'), 'k7m4x9pq');
@@ -90,7 +92,7 @@ describe('teacher login', () => {
   it('shows the wrong-credentials message', async () => {
     const user = userEvent.setup();
     vi.mocked(api.signInWithPassword).mockRejectedValue(authError('auth/invalid-credential'));
-    renderAuth(<LoginPage />);
+    renderAuth(<LoginPage />, { route: AS_TEACHER });
     await pickSchool(user);
     await user.type(screen.getByLabelText('Staff ID'), 'SCC024');
     await user.type(within(teacherCard()).getByLabelText('Password'), 'bad');
@@ -100,24 +102,24 @@ describe('teacher login', () => {
 
   it('remembers the chosen school and restores it', async () => {
     const user = userEvent.setup();
-    const first = renderAuth(<LoginPage />);
+    const first = renderAuth(<LoginPage />, { route: AS_TEACHER });
     await pickSchool(user);
     expect(JSON.parse(localStorage.getItem('sathiya.school') ?? '{}')).toMatchObject({ id: 'siripura' });
     first.unmount();
-    renderAuth(<LoginPage />);
+    renderAuth(<LoginPage />, { route: AS_TEACHER });
     expect(screen.getByLabelText('School')).toHaveValue('Siripura Central College, Peradeniya');
   });
 
   it('preselects the school from ?school=', async () => {
     vi.mocked(api.getDirectorySchool).mockResolvedValue(siripura);
-    renderAuth(<LoginPage />, { route: '/login?school=siripura' });
+    renderAuth(<LoginPage />, { route: '/login?as=teacher&school=siripura' });
     await waitFor(() => expect(screen.getByLabelText('School')).toHaveValue('Siripura Central College, Peradeniya'));
     expect(api.getDirectorySchool).toHaveBeenCalledWith('siripura');
   });
 
   it('requires a school before submitting', async () => {
     const user = userEvent.setup();
-    renderAuth(<LoginPage />);
+    renderAuth(<LoginPage />, { route: AS_TEACHER });
     await user.type(screen.getByLabelText('Staff ID'), 'SCC024');
     await user.type(within(teacherCard()).getByLabelText('Password'), 'k7m4x9pq');
     await user.click(within(teacherCard()).getByRole('button', { name: 'Log in' }));
@@ -128,6 +130,60 @@ describe('teacher login', () => {
   it('focuses the teacher card for ?as=teacher', async () => {
     renderAuth(<LoginPage />, { route: '/login?as=teacher' });
     await waitFor(() => expect(screen.getByLabelText('School')).toHaveFocus());
+  });
+});
+
+describe('admin / teacher switch', () => {
+  it('shows the admin form by default', () => {
+    renderAuth(<LoginPage />);
+    expect(screen.getByRole('tablist', { name: 'Sign in as' })).toBeInTheDocument();
+    expect(screen.getByRole('tab', { name: 'School admin' })).toHaveAttribute('aria-selected', 'true');
+    expect(screen.getByRole('tab', { name: 'Teacher' })).toHaveAttribute('aria-selected', 'false');
+    expect(screen.getByRole('tabpanel', { name: 'School admin' })).toContainElement(
+      screen.getByRole('heading', { name: 'Admin login' }),
+    );
+    expect(screen.queryByRole('heading', { name: 'Teacher login' })).not.toBeInTheDocument();
+    expect(screen.getByLabelText('Email')).not.toHaveFocus();
+  });
+
+  it('opens the teacher form for ?as=teacher', () => {
+    renderAuth(<LoginPage />, { route: AS_TEACHER });
+    expect(screen.getByRole('tab', { name: 'Teacher' })).toHaveAttribute('aria-selected', 'true');
+    expect(screen.getByRole('heading', { name: 'Teacher login' })).toBeInTheDocument();
+    expect(screen.queryByRole('heading', { name: 'Admin login' })).not.toBeInTheDocument();
+  });
+
+  it('updates the URL, keeps other params and focuses the first field on click', async () => {
+    const user = userEvent.setup();
+    renderAuth(<LoginPage />, { route: '/login?report=1' });
+    await user.click(screen.getByRole('button', { name: 'Cancel' }));
+    await user.click(screen.getByRole('tab', { name: 'Teacher' }));
+    expect(screen.getByTestId('location')).toHaveTextContent('/login?report=1&as=teacher');
+    expect(screen.getByLabelText('School')).toHaveFocus();
+    await user.click(screen.getByRole('tab', { name: 'School admin' }));
+    expect(screen.getByTestId('location')).toHaveTextContent(/^\/login\?report=1$/);
+    expect(screen.getByLabelText('Email')).toHaveFocus();
+  });
+
+  it('switches with arrow keys and keeps focus on the tab', async () => {
+    const user = userEvent.setup();
+    renderAuth(<LoginPage />);
+    await user.click(screen.getByRole('tab', { name: 'School admin' }));
+    await user.keyboard('{ArrowRight}');
+    expect(screen.getByRole('tab', { name: 'Teacher' })).toHaveFocus();
+    expect(screen.getByRole('heading', { name: 'Teacher login' })).toBeInTheDocument();
+    expect(screen.getByTestId('location')).toHaveTextContent('/login?as=teacher');
+    await user.keyboard('{ArrowLeft}');
+    expect(screen.getByRole('tab', { name: 'School admin' })).toHaveFocus();
+    expect(screen.getByTestId('location')).toHaveTextContent(/^\/login$/);
+  });
+
+  it('replaces the history entry instead of pushing', async () => {
+    const user = userEvent.setup();
+    renderAuth(<LoginPage />);
+    await user.click(screen.getByRole('tab', { name: 'Teacher' }));
+    expect(screen.getByTestId('location')).toHaveTextContent('/login?as=teacher');
+    expect(screen.getByTestId('location')).toHaveAttribute('data-nav', 'REPLACE');
   });
 });
 
@@ -185,6 +241,13 @@ describe('admin login', () => {
     expect(api.claimInvites).not.toHaveBeenCalled();
   });
 
+  it('renders the four-colour Google logo', () => {
+    renderAuth(<LoginPage />);
+    const logo = within(screen.getByRole('button', { name: 'Continue with Google' })).getByTestId('google-logo');
+    const fills = Array.from(logo.querySelectorAll('path')).map((p) => p.getAttribute('fill'));
+    expect(fills).toEqual(['#EA4335', '#4285F4', '#FBBC05', '#34A853']);
+  });
+
   it('ignores a closed Google popup', async () => {
     const user = userEvent.setup();
     vi.mocked(api.signInWithGoogle).mockRejectedValue(authError('auth/popup-closed-by-user'));
@@ -202,7 +265,7 @@ describe('refreshClaims failure after sign-in', () => {
 
   it('teacher still navigates home without an error', async () => {
     const user = userEvent.setup();
-    renderAuth(<LoginPage />, { signedIn: true, claims: { sid: 's', role: 'teacher', tid: 't' }, refreshClaims: failing });
+    renderAuth(<LoginPage />, { route: AS_TEACHER, signedIn: true, claims: { sid: 's', role: 'teacher', tid: 't' }, refreshClaims: failing });
     await pickSchool(user);
     await user.type(screen.getByLabelText('Staff ID'), 'SCC024');
     await user.type(within(teacherCard()).getByLabelText('Password'), 'k7m4x9pq');

@@ -56,4 +56,11 @@ describe('Tabs', () => {
     expect(screen.getByRole('tab', { name: 'Classes' })).toHaveAttribute('tabindex', '0');
     expect(screen.getByRole('tab', { name: 'Teachers' })).toHaveAttribute('tabindex', '-1');
   });
+
+  it('links tabs to panels when given an idBase', () => {
+    render(<Tabs aria-label="Views" variant="segmented" idBase="v" items={items} value="b" onChange={() => undefined} />);
+    const tab = screen.getByRole('tab', { name: 'Teachers' });
+    expect(tab).toHaveAttribute('id', 'v-tab-b');
+    expect(tab).toHaveAttribute('aria-controls', 'v-panel-b');
+  });
 });

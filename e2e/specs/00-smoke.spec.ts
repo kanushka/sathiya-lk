@@ -5,6 +5,19 @@ import { T } from '@sathiya/core/fixtures';
 import { ADMIN, SUPER, teacherLogin } from '../../scripts/seed';
 import { loginAdmin, loginTeacher, shot } from '../helpers';
 
+test('login switches between admin and teacher forms', async ({ page }) => {
+  await page.goto('/login?report=1');
+  await page.getByRole('dialog', { name: 'Report a school' }).getByRole('button', { name: 'Cancel' }).click();
+  await expect(page.getByRole('tab', { name: 'School admin' })).toHaveAttribute('aria-selected', 'true');
+  await expect(page.getByRole('tabpanel', { name: 'School admin' }).getByRole('button', { name: 'Continue with Google' })).toBeVisible();
+  await page.getByRole('tab', { name: 'Teacher' }).click();
+  await expect(page).toHaveURL(/\/login\?report=1&as=teacher$/);
+  await expect(page.getByRole('tabpanel', { name: 'Teacher' }).getByRole('combobox')).toBeFocused();
+  await page.getByRole('tab', { name: 'Teacher' }).press('ArrowLeft');
+  await expect(page).toHaveURL(/\/login\?report=1$/);
+  await expect(page.getByRole('tab', { name: 'School admin' })).toBeFocused();
+});
+
 test('seeded admin, teacher and super can sign in', async ({ page, browser }) => {
   await page.goto('/login');
   await shot(page, 'login');

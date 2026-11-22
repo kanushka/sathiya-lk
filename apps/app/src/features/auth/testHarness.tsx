@@ -5,7 +5,7 @@ import { render } from '@testing-library/react';
 import type { User } from 'firebase/auth';
 import { useMemo, useState, type ReactElement } from 'react';
 import { I18nextProvider } from 'react-i18next';
-import { MemoryRouter, Route, Routes, useLocation } from 'react-router-dom';
+import { MemoryRouter, Route, Routes, useLocation, useNavigationType } from 'react-router-dom';
 import { AuthContextProvider, type AuthState } from '../../app/AuthProvider';
 import { LangContextProvider } from '../../app/LangProvider';
 import { HomeRedirect } from '../../app/router';
@@ -26,6 +26,12 @@ export interface AuthHarnessOptions {
 function Where() {
   const loc = useLocation();
   return <p data-testid="where">{loc.pathname}</p>;
+}
+
+function LocationProbe() {
+  const loc = useLocation();
+  const nav = useNavigationType();
+  return <p data-testid="location" data-nav={nav} hidden>{`${loc.pathname}${loc.search}`}</p>;
 }
 
 function Harness({ options, children }: { options: AuthHarnessOptions; children: ReactElement }) {
@@ -56,6 +62,7 @@ function Harness({ options, children }: { options: AuthHarnessOptions; children:
       <LangContextProvider value={lang}>
         <I18nextProvider i18n={testI18n}>
           <ToastProvider>
+            <LocationProbe />
             <Routes>
               <Route path={options.at ?? '/login'} element={children} />
               <Route path="/" element={<HomeRedirect />} />
