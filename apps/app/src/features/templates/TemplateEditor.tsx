@@ -6,7 +6,7 @@ import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Button } from '../../ui/Button';
 import { cx } from '../../ui/cx';
-import { inputBareClass } from '../../ui/Field';
+import { inputBareCompactClass } from '../../ui/Field';
 import { IconButton } from '../../ui/IconButton';
 import { SegmentedControl } from '../../ui/SegmentedControl';
 import { Tabs } from '../../ui/Tabs';
@@ -19,7 +19,7 @@ export interface TemplateEditorProps {
   onChange: (draft: TemplateDraft) => void;
 }
 
-const timeClass = `${inputBareClass} h-10 w-24 text-center tabular-nums`;
+const timeClass = `${inputBareCompactClass} h-10 w-24 text-center tabular-nums`;
 
 export function TemplateEditor({ draft, errors, readOnly, onChange }: TemplateEditorProps) {
   const { t } = useTranslation('templates');

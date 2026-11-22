@@ -15,9 +15,9 @@ export interface FieldProps {
 }
 
 const fieldChromeClass =
-  'rounded-lg border border-line-strong bg-white px-3 text-sm text-ink placeholder:text-ink-muted hover:border-line-hover disabled:cursor-not-allowed disabled:border-line disabled:bg-surface-2 disabled:text-ink-muted disabled:hover:border-line aria-[invalid=true]:border-danger';
+  'rounded-lg border border-line-strong bg-white text-sm text-ink placeholder:text-ink-muted hover:border-line-hover disabled:cursor-not-allowed disabled:border-line disabled:bg-surface-2 disabled:text-ink-muted disabled:hover:border-line aria-[invalid=true]:border-danger';
 
-export const fieldBaseClass = `w-full ${fieldChromeClass}`;
+export const fieldBaseClass = `w-full px-3 ${fieldChromeClass}`;
 
 export const fieldFocusClass =
   'focus:border-brand focus:outline-none focus:ring-[3px] focus:ring-brand/30 aria-[invalid=true]:focus:ring-danger/20';
@@ -30,7 +30,9 @@ export const fieldFocusWithinClass =
 
 export const inputClass = `h-10 ${fieldBaseClass} ${fieldFocusClass}`;
 
-export const inputBareClass = `${fieldChromeClass} ${fieldFocusClass}`;
+export const inputBareClass = `px-3 ${fieldChromeClass} ${fieldFocusClass}`;
+
+export const inputBareCompactClass = `px-1.5 ${fieldChromeClass} ${fieldFocusClass}`;
 
 export const textareaClass = `h-auto min-h-[88px] py-2.5 leading-relaxed resize-y ${fieldBaseClass} ${fieldFocusClass}`;
 

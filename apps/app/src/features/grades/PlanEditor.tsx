@@ -6,7 +6,7 @@ import { useTranslation } from 'react-i18next';
 import { cx } from '../../ui/cx';
 import { Button } from '../../ui/Button';
 import { Chip } from '../../ui/Chip';
-import { inputBareClass } from '../../ui/Field';
+import { inputBareCompactClass } from '../../ui/Field';
 import { IconButton } from '../../ui/IconButton';
 import { MultiSelect } from '../../ui/MultiSelect';
 import { Select } from '../../ui/Select';
@@ -42,7 +42,7 @@ function PerWeekInput({ label, value, disabled, onCommit }: { label: string; val
       aria-label={label}
       value={draft ?? value}
       disabled={disabled}
-      className={cx(inputBareClass, 'h-9 w-14 text-center font-bold')}
+      className={cx(inputBareCompactClass, 'h-9 w-14 text-center font-bold')}
       onChange={(e) => setDraft(e.target.value)}
       onBlur={commit}
       onKeyDown={(e) => {
