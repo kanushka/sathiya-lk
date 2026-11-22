@@ -28,15 +28,17 @@ export function TeacherLoginForm({ autoFocus }: { autoFocus?: boolean }) {
   const [error, setError] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
   const searchRef = useRef<HTMLInputElement>(null);
+  const lookup = useRef(0);
 
   useEffect(() => {
     setUnknown(false);
     setSuspended(false);
     if (!schoolParam) return;
-    let live = true;
+    setSchool(null);
+    const id = ++lookup.current;
     void getDirectorySchool(schoolParam)
       .then((s) => {
-        if (!live) return;
+        if (lookup.current !== id) return;
         if (!s) {
           setUnknown(true);
           return;
@@ -50,7 +52,7 @@ export function TeacherLoginForm({ autoFocus }: { autoFocus?: boolean }) {
       })
       .catch(() => undefined);
     return () => {
-      live = false;
+      lookup.current++;
     };
   }, [schoolParam]);
 
@@ -59,6 +61,7 @@ export function TeacherLoginForm({ autoFocus }: { autoFocus?: boolean }) {
   }, [autoFocus]);
 
   function choose(s: DirectorySchool | null) {
+    lookup.current++;
     setSchool(s);
     setSchoolError(false);
     setSuspended(false);

@@ -172,6 +172,39 @@ describe('teacher login', () => {
     expect(screen.queryByText("We couldn't find that school. Choose it from the list.")).not.toBeInTheDocument();
   });
 
+  it('clears the chosen school when ?school= changes to a suspended school', async () => {
+    const user = userEvent.setup();
+    const closed = { ...siripura, id: 'closed', nameEn: 'Closed College', status: 'disabled' as const };
+    vi.mocked(api.getDirectorySchool).mockImplementation(async (id) => (id === 'siripura' ? siripura : closed));
+    renderAuth(
+      <>
+        <LoginPage />
+        <Link to="/login?as=teacher&school=closed">switch</Link>
+      </>,
+      { route: '/login?as=teacher&school=siripura' },
+    );
+    await waitFor(() => expect(screen.getByLabelText('School')).toHaveValue('Siripura Central College, Peradeniya'));
+    await user.click(screen.getByRole('link', { name: 'switch' }));
+    expect(await screen.findByText('This school is currently suspended. Contact your school admin.')).toBeInTheDocument();
+    expect(screen.getByLabelText('School')).toHaveValue('');
+    await user.type(screen.getByLabelText('Staff ID'), 'SCC024');
+    await user.type(within(teacherCard()).getByLabelText('Password'), 'k7m4x9pq');
+    await user.click(within(teacherCard()).getByRole('button', { name: 'Log in' }));
+    expect(api.signInWithPassword).not.toHaveBeenCalled();
+  });
+
+  it('ignores a ?school= lookup that finishes after a school is picked by hand', async () => {
+    const user = userEvent.setup();
+    let finish: (s: null) => void = () => undefined;
+    vi.mocked(api.getDirectorySchool).mockImplementation(() => new Promise((r) => (finish = r)));
+    renderAuth(<LoginPage />, { route: '/login?as=teacher&school=bogus' });
+    await pickSchool(user);
+    finish(null);
+    await new Promise((r) => setTimeout(r, 0));
+    expect(screen.queryByText("We couldn't find that school. Choose it from the list.")).not.toBeInTheDocument();
+    expect(screen.getByLabelText('School')).toHaveValue('Siripura Central College, Peradeniya');
+  });
+
   it('requires a school before submitting', async () => {
     const user = userEvent.setup();
     renderAuth(<LoginPage />, { route: AS_TEACHER });
