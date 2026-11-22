@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
 // Copyright (C) 2026 Kanushka Gayan
 import { assertFails, assertSucceeds, type RulesTestEnvironment } from '@firebase/rules-unit-testing';
-import { paths } from '@sathiya/core';
+import { paths, STANDARD_SUBJECTS } from '@sathiya/core';
 import { afterAll, beforeAll, beforeEach, describe, it } from 'vitest';
 import { as, initEnv, type Role } from './setup';
 
@@ -513,6 +513,19 @@ describe('users/{uid}', () => {
     });
     deny([['teacher', ua], ['super', ua], ['anon', un]], (r, p) => set(r, p, { lang: 'en' }));
     deny([['admin', ua]], del);
+  });
+});
+
+describe('load standard subjects', () => {
+  it('admin can batch-add the standard list to a school', async () => {
+    const batch = db('admin').batch();
+    for (const s of STANDARD_SUBJECTS) batch.set(db('admin').collection(paths.subjects('s1')).doc(), { ...s });
+    await assertSucceeds(batch.commit());
+  });
+  it('a disabled school cannot', async () => {
+    const batch = db('disabledAdmin').batch();
+    batch.set(db('disabledAdmin').collection(paths.subjects('sd')).doc(), { ...STANDARD_SUBJECTS[0] });
+    await assertFails(batch.commit());
   });
 });
 

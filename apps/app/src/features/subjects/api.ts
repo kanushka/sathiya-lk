@@ -3,6 +3,7 @@
 import { paths, type DefaultSubjectsDoc, type Subject } from '@sathiya/core';
 import { addDoc, collection, deleteField, doc, getDoc, updateDoc, writeBatch } from 'firebase/firestore';
 import { db } from '../../lib/firebase';
+import { standardList } from './standard';
 
 export type SubjectInput = Omit<Subject, 'id'>;
 
@@ -26,8 +27,8 @@ export async function updateSubject(schoolId: string, subjectId: string, subject
   await updateDoc(doc(db, paths.subjects(schoolId), subjectId), { ...rest, nameSi: nameSi ?? deleteField() });
 }
 
-export async function fetchDefaultSubjects(): Promise<SubjectInput[]> {
+export async function fetchDefaultSubjects(): Promise<readonly SubjectInput[]> {
   const snap = await getDoc(doc(db, paths.platform.defaultSubjects));
   const list = (snap.data() as Partial<DefaultSubjectsDoc> | undefined)?.subjects;
-  return Array.isArray(list) ? list : [];
+  return standardList(Array.isArray(list) ? list : undefined);
 }
