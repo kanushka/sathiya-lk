@@ -3,8 +3,11 @@
 import { pickName, type Lang, type PlanItem, type Subject } from '@sathiya/core';
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
+import { cx } from '../../ui/cx';
 import { Button } from '../../ui/Button';
 import { Chip } from '../../ui/Chip';
+import { inputBareClass } from '../../ui/Field';
+import { IconButton } from '../../ui/IconButton';
 import { MultiSelect } from '../../ui/MultiSelect';
 import { Select } from '../../ui/Select';
 import { GroupModal } from './GroupModal';
@@ -39,7 +42,7 @@ function PerWeekInput({ label, value, disabled, onCommit }: { label: string; val
       aria-label={label}
       value={draft ?? value}
       disabled={disabled}
-      className="h-9 w-14 rounded-lg border border-line-strong text-center text-[15px] font-bold disabled:bg-slate-50"
+      className={cx(inputBareClass, 'h-9 w-14 text-center font-bold')}
       onChange={(e) => setDraft(e.target.value)}
       onBlur={commit}
       onKeyDown={(e) => {
@@ -56,8 +59,6 @@ const fitColor: Record<PlanFit, string> = {
   mixed: 'text-[#7A5410]',
   over: 'text-danger',
 };
-
-const linkBtn = 'border-0 bg-transparent text-sm font-semibold text-brand hover:underline';
 
 export function PlanEditor({ plan, capacity, subjects, readOnly, onChange }: PlanEditorProps) {
   const { t, i18n } = useTranslation('grades');
@@ -145,9 +146,7 @@ export function PlanEditor({ plan, capacity, subjects, readOnly, onChange }: Pla
                       {t('plan.editGroup')}
                     </Button>
                   )}
-                  <Button size="sm" variant="ghost" aria-label={t('plan.removeItem', { name })} onClick={() => remove(i)}>
-                    ×
-                  </Button>
+                  <IconButton icon="close" size="sm" label={t('plan.removeItem', { name })} onClick={() => remove(i)} />
                 </div>
               )}
             </div>
@@ -165,9 +164,9 @@ export function PlanEditor({ plan, capacity, subjects, readOnly, onChange }: Pla
                 options={unused.map((s) => ({ value: s.id, label: pickName(s, lang) }))}
               />
             )}
-            <button type="button" className={linkBtn} onClick={() => setDialog({ index: null })}>
+            <Button variant="link" onClick={() => setDialog({ index: null })}>
               {t('plan.addGroup')}
-            </button>
+            </Button>
           </div>
         )}
       </div>

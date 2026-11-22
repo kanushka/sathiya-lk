@@ -55,9 +55,9 @@ export function GradesPage() {
   };
 
   const addGradeButton = !readOnly && choices.length > 0 && (
-    <button type="button" className="mx-2 mt-2.5 border-0 bg-transparent text-sm font-semibold text-brand" onClick={() => setDialog({ kind: 'addGrade' })}>
+    <Button variant="link" className="mx-2 mt-2.5" onClick={() => setDialog({ kind: 'addGrade' })}>
       {t('rail.addGrade')}
-    </button>
+    </Button>
   );
 
   return (
