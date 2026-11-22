@@ -111,8 +111,9 @@ export const importSetup = onCall({ ...callOpts, timeoutSeconds: 300 }, async (r
         created[i] = { teacherId, staffId: teacher.staffId, name: teacher.name, ...(teacher.title && { title: teacher.title }), password };
       } catch (e) {
         failed = true;
-        const { code, message } = (e ?? {}) as { code?: unknown; message?: unknown };
-        logger.error('importSetup teacher creation failed', { sid, row: plan.teachers[i]!.row, code: String(code ?? ''), message: String(message ?? e) });
+        // Messages can carry staff IDs, names or emails; the code is enough to diagnose.
+        const { code } = (e ?? {}) as { code?: unknown };
+        logger.error('importSetup teacher creation failed', { sid, row: plan.teachers[i]!.row, code: String(code ?? 'unknown') });
       }
     }
   };
