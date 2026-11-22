@@ -9,6 +9,7 @@ import {
   type ImportSetupRes,
   type Subject,
 } from '@sathiya/core';
+import { logger } from 'firebase-functions/logger';
 import { onCall } from 'firebase-functions/v2/https';
 import { db } from './lib/admin';
 import { callOpts } from './lib/callOptions';
@@ -77,8 +78,9 @@ export const importSetup = onCall({ ...callOpts, timeoutSeconds: 300 }, async (r
           subjectIds: subjectRefs.map((r) => ('existingId' in r ? r.existingId : subjectIds[r.newIndex]!)),
         });
         created[i] = { teacherId, staffId: teacher.staffId, name: teacher.name, ...(teacher.title && { title: teacher.title }), password };
-      } catch {
+      } catch (e) {
         failed = true;
+        logger.error('importSetup teacher creation failed', { sid, staffId: teacher.staffId, row: plan.teachers[i]!.row, error: e });
       }
     }
   };

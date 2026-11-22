@@ -98,15 +98,29 @@ describe('importSetup', () => {
   it('stops at the first account failure and reports notCreated', async () => {
     const { admin, sid } = await adminWithSchool();
     await adminAuth.createUser({ email: syntheticEmail('SCC045', sid), password: 'whatever123' });
+    const ids = Array.from({ length: 8 }, (_, i) => `SCC0${45 + i}`);
     const res = await admin.call('importSetup', {
       schoolId: sid,
       subjects: [sub(2, { nameEn: 'Dance' })],
-      teachers: ['SCC044', 'SCC045', 'SCC046'].map((staffId, i) => tch(i + 2, { staffId, name: `T${i}`, grades: '6', subjects: 'Dance' })),
+      teachers: ids.map((staffId, i) => tch(i + 2, { staffId, name: `T${i}`, grades: '6', subjects: 'Dance' })),
     });
     expect(res.subjectIds).toHaveLength(1);
-    expect(res.teachers.map((t) => t.staffId)).toContain('SCC044');
+    const created = res.teachers.map((t) => t.staffId);
     expect(res.notCreated).toContain('SCC045');
-    expect(res.teachers.map((t) => t.staffId)).not.toContain('SCC045');
-    expect((await adminDb.collection(paths.teachers(sid)).where('staffId', '==', 'SCC045').get()).size).toBe(0);
+    expect(res.notCreated).toContain('SCC052');
+    expect([...created, ...res.notCreated].sort()).toEqual(ids);
+    const docs = await adminDb.collection(paths.teachers(sid)).get();
+    expect(docs.docs.map((d) => d.data().staffId as string).sort()).toEqual([...created].sort());
+  });
+
+  it('rejects malformed request shapes', async () => {
+    const { admin, sid } = await adminWithSchool();
+    const bad = (body: Record<string, unknown>) => expectFnError(admin.call('importSetup', { schoolId: sid, ...body } as never), 'invalid-argument', 'invalid');
+    await bad({ subjects: [{ row: 2, cells: { nameEn: 5 } }], teachers: [] });
+    await bad({ subjects: [{ row: 2, cells: { nameEn: 'x'.repeat(501) } }], teachers: [] });
+    await bad({ subjects: [{ row: 2, cells: [] }], teachers: [] });
+    await bad({ subjects: [{ row: 2, cells: null }], teachers: [] });
+    await bad({ subjects: [sub(2, { nameEn: 'X' })] });
+    await bad({ subjects: [], teachers: Array.from({ length: 201 }, (_, i) => tch(i + 2, { name: `T${i}` })) });
   });
 });
