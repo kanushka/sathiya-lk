@@ -49,9 +49,9 @@ describe('register', () => {
     await user.type(name, 'Royal College');
     expect(prefix).toHaveValue('RC');
     await user.clear(prefix);
-    await user.type(prefix, 'roy');
+    await user.type(prefix, 'rc');
     await user.type(name, ' Kandy');
-    expect(prefix).toHaveValue('ROY');
+    expect(prefix).toHaveValue('RC');
   });
 
   it('blocks step 1 until the school details are valid', async () => {

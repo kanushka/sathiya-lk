@@ -68,7 +68,7 @@ describe('profile page', () => {
       city: 'Kurunegala',
       district: 'Kurunegala',
       phone: '0371234567',
-      staffPrefix: 'SM',
+      staffPrefix: 'SCC',
       colors: { primary: '#1D3E7A', second: '#D9A441' },
     });
   });
@@ -89,16 +89,20 @@ describe('profile page', () => {
     expect(screen.getByRole('button', { name: 'Save changes' })).toBeDisabled();
   });
 
-  it('follows the school name with a suggested prefix only while the prefix is not the user\'s own', async () => {
+  it('keeps the saved prefix on rename and suggests one only after the prefix is cleared', async () => {
     const { user } = setup();
     const name = screen.getByLabelText('School name (English)');
     const prefix = screen.getByLabelText('Staff ID prefix');
     await user.clear(name);
     await user.type(name, 'Royal College');
-    expect(prefix).toHaveValue('RC');
+    expect(prefix).toHaveValue('SCC');
+    await user.clear(prefix);
+    expect(prefix).toHaveAttribute('placeholder', 'RC');
+    await user.type(name, ' Kandy');
+    expect(prefix).toHaveValue('RCK');
     await user.clear(prefix);
     await user.type(prefix, 'xyz');
-    await user.type(name, ' Kandy');
+    await user.type(name, ' Town');
     expect(prefix).toHaveValue('XYZ');
   });
 

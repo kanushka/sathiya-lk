@@ -2,7 +2,7 @@
 // Copyright (C) 2026 Kanushka Gayan
 
 import { describe, expect, it } from 'vitest';
-import { followPrefix, suggestStaffPrefix } from './staff';
+import { suggestStaffPrefix } from './staff';
 
 describe('suggestStaffPrefix', () => {
   it.each([
@@ -24,6 +24,11 @@ describe('suggestStaffPrefix', () => {
     expect(suggestStaffPrefix('P.D.S. Kularathne College')).toBe('KC');
   });
 
+  it('keeps abbreviated words that are not initials', () => {
+    expect(suggestStaffPrefix("St. Joseph's College")).toBe('SJC');
+    expect(suggestStaffPrefix('Rev. Fr. Peiris College')).toBe('RFPC');
+  });
+
   it('caps at four letters', () => {
     expect(suggestStaffPrefix('Sri Rahula National Maha Vidyalaya')).toBe('SRNM');
   });
@@ -35,20 +40,5 @@ describe('suggestStaffPrefix', () => {
   it('gives nothing for a Sinhala-only or empty name', () => {
     expect(suggestStaffPrefix('රාජකීය විද්‍යාලය')).toBe('');
     expect(suggestStaffPrefix('   ')).toBe('');
-  });
-});
-
-describe('followPrefix', () => {
-  it('fills an empty prefix', () => {
-    expect(followPrefix('', 'Royal College', '')).toBe('RC');
-  });
-  it('keeps following while the prefix is the previous suggestion', () => {
-    expect(followPrefix('Royal', 'Royal College', 'ROY')).toBe('RC');
-  });
-  it('keeps a prefix the user typed', () => {
-    expect(followPrefix('Royal', 'Royal College', 'RCK')).toBe('RCK');
-  });
-  it('clears a followed prefix when the name no longer gives one', () => {
-    expect(followPrefix('Ro', 'R', 'RO')).toBe('');
   });
 });

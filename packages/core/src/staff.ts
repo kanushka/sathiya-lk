@@ -21,7 +21,7 @@ export function nextStaffNumber(existing: string[], prefix: string): number {
   return max + 1;
 }
 
-const isInitial = (w: string) => /^([A-Za-z]\.?)+$/.test(w) && w.replace(/\./g, '').length <= (w.includes('.') ? 4 : 1);
+const isInitial = (w: string) => /^[A-Za-z]$/.test(w) || /^([A-Za-z]\.)+[A-Za-z]?$/.test(w);
 
 export function suggestStaffPrefix(name: string): string {
   const words = name
@@ -38,8 +38,4 @@ export function suggestStaffPrefix(name: string): string {
           .map((w) => w[0])
           .join('');
   return prefix.length >= 2 ? prefix.toUpperCase() : '';
-}
-
-export function followPrefix(prevName: string, nextName: string, prefix: string): string {
-  return prefix === '' || prefix === suggestStaffPrefix(prevName) ? suggestStaffPrefix(nextName) : prefix;
 }

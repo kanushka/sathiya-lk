@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
 // Copyright (C) 2026 Kanushka Gayan
-import { followPrefix, type School } from '@sathiya/core';
+import { suggestStaffPrefix, type School } from '@sathiya/core';
 import { useEffect, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useSchool } from '../../app/SchoolProvider';
@@ -37,6 +37,7 @@ export function ProfilePage() {
     primary: school.colors.primary,
     second: school.colors.second,
   }));
+  const [prefixTouched, setPrefixTouched] = useState(true);
   const [logo, setLogo] = useState<File | null>(null);
   const [logoUrl, setLogoUrl] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
@@ -99,7 +100,7 @@ export function ProfilePage() {
               value={draft.nameEn}
               onChange={(e) => {
                 const nameEn = e.target.value;
-                setDraft((d) => ({ ...d, nameEn, staffPrefix: followPrefix(d.nameEn, nameEn, d.staffPrefix) }));
+                setDraft((d) => ({ ...d, nameEn, ...(prefixTouched ? {} : { staffPrefix: suggestStaffPrefix(nameEn) }) }));
               }}
             />
           </Field>
@@ -130,7 +131,12 @@ export function ProfilePage() {
               maxLength={5}
               spellCheck={false}
               value={draft.staffPrefix}
-              onChange={(e) => set('staffPrefix', e.target.value.toUpperCase().replace(/[^A-Z]/g, ''))}
+              placeholder={suggestStaffPrefix(draft.nameEn)}
+              onChange={(e) => {
+                const staffPrefix = e.target.value.toUpperCase().replace(/[^A-Z]/g, '');
+                setPrefixTouched(staffPrefix !== '');
+                set('staffPrefix', staffPrefix);
+              }}
             />
           </Field>
           <LogoUpload value={logo} currentUrl={school.logoUrl ?? null} onChange={setLogo} onPreview={setLogoUrl} />
