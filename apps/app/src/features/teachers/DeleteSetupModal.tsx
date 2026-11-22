@@ -59,7 +59,7 @@ export function DeleteSetupModal({ schoolId, kind, id, name, onClose, onDeleted,
         <p className="text-sm text-ink-soft">{body ?? t(`deleteGuard.body.${kind}`)}</p>
       )}
       {del.failed && (
-        <FormError className="mt-3">{t('deleteGuard.failed')}</FormError>
+        <FormError className="mt-3">{t(del.suspended ? 'shell:suspended.writeBlocked' : 'deleteGuard.failed')}</FormError>
       )}
     </Modal>
   );

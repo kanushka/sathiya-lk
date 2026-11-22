@@ -323,6 +323,16 @@ describe('teachers page', () => {
     expect(await screen.findByText(/Used in 3 slots/)).toBeInTheDocument();
   });
 
+  it('says the school is suspended when a delete is refused for that reason', async () => {
+    const user = userEvent.setup();
+    vi.mocked(call).mockRejectedValue(new ApiError('school-disabled', 'School is suspended'));
+    renderWithSchool(<TeachersPage />, { ctx: unused, entries: [] });
+    const row = screen.getByText('Mrs. N. Perera').closest('tr')!;
+    await user.click(within(row).getByRole('button', { name: 'Delete' }));
+    await user.click(within(screen.getByRole('dialog')).getByRole('button', { name: 'Delete' }));
+    expect(await screen.findByText("This school is suspended, so changes can't be saved.")).toBeInTheDocument();
+  });
+
   it('saves an edit to a teacher whose staff ID uses an old prefix', async () => {
     const user = userEvent.setup();
     vi.mocked(api.updateTeacher).mockResolvedValue(undefined);
