@@ -22,9 +22,12 @@ import { useEffect, useId, useMemo, useRef, useState, type KeyboardEvent, type R
 import { useTranslation } from 'react-i18next';
 import { useLang } from '../../app/LangProvider';
 import { useSchool } from '../../app/SchoolProvider';
-import { Button } from '../../ui/Button';
+import { Badge } from '../../ui/Badge';
+import { Button, focusRingClass } from '../../ui/Button';
+import { ToggleChip } from '../../ui/Chip';
 import { isComposing } from '../../ui/composing';
 import { cx } from '../../ui/cx';
+import { inputClass } from '../../ui/Field';
 import { Icon } from '../../ui/Icon';
 import { blockerText, classNames } from './conflictLabel';
 import { limitWarning, planItemColor, teacherReason } from './labels';
@@ -53,10 +56,7 @@ interface Candidate {
   note: string;
 }
 
-const inputClass =
-  'box-border h-10 w-full rounded-[10px] border border-line-strong px-3 text-sm text-ink focus:border-brand focus:outline-none focus:ring-2 focus:ring-brand/30';
 const capClass = 'm-0 text-[11px] font-bold uppercase tracking-[.06em] text-ink-muted';
-const chipClass = 'rounded-full bg-brand/10 px-[7px] py-0.5 text-[11px] font-bold text-brand';
 
 export function GroupTeachersStep(props: GroupTeachersStepProps) {
   const { classId, item, slot, entries, lockedSubjectId, lockedTeacherId, initialClassIds, classPeriods, onBack, back, onConfirm, children } = props;
@@ -240,7 +240,7 @@ export function GroupTeachersStep(props: GroupTeachersStepProps) {
       {onBack && <span className="text-xs font-semibold text-brand">{back?.text ?? t('assign.back')}</span>}
     </>
   );
-  const headerClass = 'flex min-h-[42px] w-full items-center gap-2.5 rounded-[10px] border border-line-strong bg-white px-3 text-left text-sm text-ink';
+  const headerClass = 'flex min-h-[42px] w-full items-center gap-2.5 rounded-lg border border-line-strong bg-white px-3 text-left text-sm text-ink';
 
   function optionRow(subjectId: string) {
     const name = subjectName(subjectId);
@@ -248,19 +248,19 @@ export function GroupTeachersStep(props: GroupTeachersStepProps) {
     const chosenName = teacherName(chosen);
     const isPref = !!chosen && chosen === preferred.get(subjectId);
     const prefChip = (
-      <span className={chipClass}>
+      <Badge tone="brand">
         <span aria-hidden="true">★ </span>
         {t('picker.teaches', { class: cls!.name, subject: name })}
-      </span>
+      </Badge>
     );
 
     if (subjectId === lockedSubjectId) {
       return (
-        <li key={subjectId} className="flex min-h-[44px] items-center gap-2.5 rounded-xl border border-line bg-[#F6F7F9] px-3 py-1.5 text-sm text-ink">
+        <li key={subjectId} className="flex min-h-[44px] items-center gap-2.5 rounded-xl border border-line bg-surface-2 px-3 py-1.5 text-sm text-ink">
           <b className="w-[104px] shrink-0">{name}</b>
           <span className="flex min-w-0 flex-1 flex-wrap items-center gap-1.5">
             <span className="font-semibold">{chosenName}</span>
-            <span className={chipClass}>{t('assign.thisTeacher')}</span>
+            <Badge tone="brand">{t('assign.thisTeacher')}</Badge>
           </span>
         </li>
       );
@@ -309,7 +309,7 @@ export function GroupTeachersStep(props: GroupTeachersStepProps) {
     }
 
     return (
-      <li key={subjectId} className={cx('rounded-xl', isOpen ? 'border-[1.5px] border-brand bg-[#FFFCFD]' : 'border border-line bg-white')}>
+      <li key={subjectId} className={cx('rounded-xl', isOpen ? 'border-[1.5px] border-brand bg-white' : 'border border-line bg-white')}>
         <button
           ref={(el) => {
             if (el) rowRefs.current.set(subjectId, el);
@@ -319,14 +319,14 @@ export function GroupTeachersStep(props: GroupTeachersStepProps) {
           aria-expanded={isOpen}
           aria-label={t('assign.optionLabel', { subject: name, teacher: chosenName || t('assign.chooseTeacher'), status })}
           onClick={() => toggle(subjectId)}
-          className="flex min-h-[44px] w-full items-center gap-2.5 rounded-xl border-0 bg-transparent px-3 py-1.5 text-left text-sm text-ink focus-visible:outline focus-visible:outline-2 focus-visible:outline-brand"
+          className={cx('flex min-h-[44px] w-full items-center gap-2.5 rounded-xl border-0 bg-transparent px-3 py-1.5 text-left text-sm text-ink', focusRingClass)}
         >
           <b className="w-[104px] shrink-0">{name}</b>
           <span className="flex min-w-0 flex-1 flex-wrap items-center gap-1.5">
-            <span className={cx('font-semibold', chosen ? 'text-ink' : 'text-[#7A5410]')}>{chosenName || t('assign.chooseTeacher')}</span>
+            <span className={cx('font-semibold', chosen ? 'text-ink' : 'text-warning')}>{chosenName || t('assign.chooseTeacher')}</span>
             {isPref && prefChip}
           </span>
-          <span className={cx('text-xs font-bold', bad ? 'text-[#B4441C]' : chosen ? 'text-[#1F6B34]' : 'text-[#7A5410]')}>{status}</span>
+          <span className={cx('text-xs font-bold', bad ? 'text-danger' : chosen ? 'text-success' : 'text-warning')}>{status}</span>
           <span aria-hidden="true" className="text-ink-muted">
             {isOpen ? '▴' : '▾'}
           </span>
@@ -364,8 +364,9 @@ export function GroupTeachersStep(props: GroupTeachersStepProps) {
                     onClick={() => pick(subjectId, c.teacher.id)}
                     onMouseMove={() => i !== activeIndex && setActive(i)}
                     className={cx(
-                      'flex w-full cursor-pointer items-center gap-2.5 rounded-[10px] border px-3 py-2.5 text-left text-ink',
-                      c.ok && !c.warn ? 'border-[#CFE6D4] bg-[#F5FBF6] hover:bg-[#EAF6ED]' : 'border-[#F0DDB0] bg-[#FFF9EC] hover:bg-[#FBF0D6]',
+                      'flex w-full cursor-pointer items-center gap-2.5 rounded-lg border px-3 py-2.5 text-left text-ink',
+                      focusRingClass,
+                      c.ok && !c.warn ? 'border-success-line bg-success-soft/50 hover:bg-success-soft' : 'border-warning-line bg-warning-soft/50 hover:bg-warning-soft',
                       i === activeIndex && 'shadow-[inset_0_0_0_2px_var(--brand)]',
                     )}
                   >
@@ -373,7 +374,7 @@ export function GroupTeachersStep(props: GroupTeachersStepProps) {
                       aria-hidden="true"
                       className={cx(
                         'flex h-8 w-8 shrink-0 items-center justify-center rounded-full text-xs font-extrabold',
-                        c.ok && !c.warn ? 'bg-[#E4F2E7] text-[#1F6B34]' : 'bg-[#FBEAC9] text-[#7A5A12]',
+                        c.ok && !c.warn ? 'bg-success-soft text-success' : 'bg-surface-3 text-ink-muted',
                       )}
                     >
                       {initials(c.teacher.name)}
@@ -383,7 +384,7 @@ export function GroupTeachersStep(props: GroupTeachersStepProps) {
                         <strong className="text-sm">{teacherDisplayName(c.teacher, lang)}</strong>
                         {c.preferred && prefChip}
                       </span>
-                      <span className={cx('mt-0.5 block text-xs', c.warn ? 'font-semibold text-[#7A5A12]' : 'text-ink-muted')}>{c.note}</span>
+                      <span className={cx('mt-0.5 block text-xs', c.warn ? 'font-semibold text-warning' : 'text-ink-muted')}>{c.note}</span>
                     </span>
                     <span
                       aria-hidden="true"
@@ -407,12 +408,7 @@ export function GroupTeachersStep(props: GroupTeachersStepProps) {
   const body = (
     <>
       {onBack ? (
-        <button
-          type="button"
-          aria-label={back?.label ?? t('assign.backLabel')}
-          onClick={onBack}
-          className={cx(headerClass, 'hover:bg-slate-50 focus-visible:outline focus-visible:outline-2 focus-visible:outline-brand')}
-        >
+        <button type="button" aria-label={back?.label ?? t('assign.backLabel')} onClick={onBack} className={cx(headerClass, 'hover:bg-surface', focusRingClass)}>
           {headerBody}
         </button>
       ) : (
@@ -433,18 +429,9 @@ export function GroupTeachersStep(props: GroupTeachersStepProps) {
               const on = classIds.includes(m.id);
               const busy = !!slot && entries.some((e) => e.day === slot.day && e.period === slot.period && e.classIds.includes(m.id));
               return (
-                <button
-                  key={m.id}
-                  type="button"
-                  aria-pressed={on}
-                  onClick={() => toggleMate(m.id)}
-                  className={cx(
-                    'inline-flex h-8 items-center rounded-full px-3 text-[13px] font-bold focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-1 focus-visible:outline-brand',
-                    on ? 'border-[1.5px] border-brand bg-brand/10 text-brand' : 'border-[1.5px] border-dashed border-line-strong bg-white text-ink-soft',
-                  )}
-                >
+                <ToggleChip key={m.id} pressed={on} onToggle={() => toggleMate(m.id)}>
                   {`${on ? '✓' : '+'} ${m.name}${busy && where ? ` · ${t('assign.mateBusy', where)}` : ''}`}
-                </button>
+                </ToggleChip>
               );
             })}
           </div>
@@ -456,7 +443,7 @@ export function GroupTeachersStep(props: GroupTeachersStepProps) {
 
   const footer = (
     <>
-      <span className={cx('flex-1 text-xs font-semibold', tone === 'ok' ? 'text-[#1F6B34]' : tone === 'need' ? 'text-[#7A5410]' : 'text-[#B4441C]')}>{note}</span>
+      <span className={cx('flex-1 text-xs font-semibold', tone === 'ok' ? 'text-success' : tone === 'need' ? 'text-warning' : 'text-danger')}>{note}</span>
       <Button variant="primary" disabled={disabled} onClick={() => void confirm()}>
         {label}
       </Button>

@@ -23,9 +23,12 @@ import { useTranslation } from 'react-i18next';
 import { useLang } from '../../app/LangProvider';
 import { useSchool } from '../../app/SchoolProvider';
 import { useReadOnly } from '../../ui/AdminLayout';
-import { Button } from '../../ui/Button';
+import { Badge } from '../../ui/Badge';
+import { Button, focusRingClass } from '../../ui/Button';
+import { ToggleChip } from '../../ui/Chip';
 import { isComposing } from '../../ui/composing';
 import { cx } from '../../ui/cx';
+import { inputClass } from '../../ui/Field';
 import { Icon } from '../../ui/Icon';
 import { Modal } from '../../ui/Modal';
 import { busyLabel } from './conflictLabel';
@@ -60,10 +63,7 @@ interface ClassRow {
   needed: boolean;
 }
 
-const inputClass =
-  'box-border h-[42px] w-full rounded-[10px] border border-line-strong px-3 text-sm text-ink focus:border-brand focus:outline-none focus:ring-2 focus:ring-brand/30';
 const capClass = 'm-0 text-[11px] font-bold uppercase tracking-[.06em]';
-const chipClass = 'rounded-full bg-brand/10 px-2 py-0.5 text-[11px] font-bold text-brand';
 
 function specFor(o: TeacherClassOption, teacherId: string): PinSpec {
   return o.item.kind === 'group'
@@ -316,7 +316,7 @@ function TeacherAssignPickerBody({ teacherId, slot, entries, onClose, onSave, on
 
   const footer = subjectId ? (
     <>
-      <span className={cx('flex-1 text-xs font-semibold', tone === 'ok' ? 'text-[#1F6B34]' : tone === 'need' ? 'text-[#7A5410]' : 'text-[#B4441C]')}>{note}</span>
+      <span className={cx('flex-1 text-xs font-semibold', tone === 'ok' ? 'text-success' : tone === 'need' ? 'text-warning' : 'text-danger')}>{note}</span>
       <Button variant="primary" disabled={!action || busy} onClick={run}>
         {label}
       </Button>
@@ -358,13 +358,13 @@ function TeacherAssignPickerBody({ teacherId, slot, entries, onClose, onSave, on
                 onMouseMove={() => i !== subjectIndex && setSubjectActive(i)}
                 className={cx(
                   'flex w-full cursor-pointer items-center gap-2.5 rounded-lg px-2 py-[9px] text-left text-sm text-ink',
-                  s.left > 0 && 'bg-[#FFFCF5]',
-                  i === subjectIndex && 'bg-[#FBF1DC] shadow-[inset_0_0_0_1.5px_var(--brand)]',
+                  s.left > 0 && 'bg-warning-soft/40',
+                  i === subjectIndex && 'bg-warning-soft shadow-[inset_0_0_0_1.5px_var(--brand)]',
                 )}
               >
                 <span className="h-3 w-3 shrink-0 rounded-[3px]" style={{ background: s.color }} />
                 <span className="flex-1 font-semibold">{s.name}</span>
-                <span className={cx('text-right text-xs', s.left > 0 ? 'font-bold text-[#7A5410]' : 'text-ink-muted')}>{s.note}</span>
+                <span className={cx('text-right text-xs', s.left > 0 ? 'font-bold text-warning' : 'text-ink-muted')}>{s.note}</span>
               </li>
             ))}
           </ul>
@@ -375,7 +375,7 @@ function TeacherAssignPickerBody({ teacherId, slot, entries, onClose, onSave, on
             type="button"
             aria-label={t('assign.backLabel')}
             onClick={back}
-            className="flex h-[42px] w-full items-center gap-2.5 rounded-[10px] border border-line-strong bg-white px-3 text-left text-sm text-ink hover:bg-slate-50 focus-visible:outline focus-visible:outline-2 focus-visible:outline-brand"
+            className="flex h-10 w-full items-center gap-2.5 rounded-lg border border-line-strong bg-white px-3 text-left text-sm text-ink hover:bg-surface focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand focus-visible:ring-offset-2"
           >
             <span className="h-3 w-3 rounded-[3px]" style={{ background: subject?.color ?? '#E9E9E9' }} />
             <b className="flex-1">{subjectName}</b>
@@ -413,8 +413,9 @@ function TeacherAssignPickerBody({ teacherId, slot, entries, onClose, onSave, on
                   aria-disabled={busy || undefined}
                   onClick={() => !busy && choose(r)}
                   className={cx(
-                    'flex w-full cursor-pointer items-center gap-2.5 rounded-[10px] border px-3 py-2.5 text-left text-ink',
-                    r.ok ? 'border-[#CFE6D4] bg-[#F5FBF6] hover:bg-[#EAF6ED]' : 'border-[#F0DDB0] bg-[#FFF9EC] hover:bg-[#FBF0D6]',
+                    'flex w-full cursor-pointer items-center gap-2.5 rounded-lg border px-3 py-2.5 text-left text-ink',
+                    focusRingClass,
+                    r.ok ? 'border-success-line bg-success-soft/50 hover:bg-success-soft' : 'border-warning-line bg-warning-soft/50 hover:bg-warning-soft',
                     on && 'shadow-[inset_0_0_0_2px_var(--brand)]',
                     busy && 'opacity-60',
                   )}
@@ -423,7 +424,7 @@ function TeacherAssignPickerBody({ teacherId, slot, entries, onClose, onSave, on
                     aria-hidden="true"
                     className={cx(
                       'flex h-8 min-w-8 shrink-0 items-center justify-center rounded-full px-1 text-xs font-extrabold',
-                      r.ok ? 'bg-[#E4F2E7] text-[#1F6B34]' : 'bg-[#FBEAC9] text-[#7A5A12]',
+                      r.ok ? 'bg-success-soft text-success' : 'bg-surface-3 text-ink-muted',
                     )}
                   >
                     {r.option.cls.name}
@@ -432,18 +433,18 @@ function TeacherAssignPickerBody({ teacherId, slot, entries, onClose, onSave, on
                     <span className="flex flex-wrap items-center gap-1.5">
                       <strong className="text-sm">{r.label}</strong>
                       {r.option.preferred && (
-                        <span className={chipClass}>
+                        <Badge tone="brand">
                           <span aria-hidden="true">★ </span>
                           {t('picker.teaches', { class: r.option.cls.name, subject: subjectName })}
-                        </span>
+                        </Badge>
                       )}
                       {!r.option.template.isDefault && (
-                        <span className="rounded-full bg-[#EEF0F3] px-2 py-0.5 text-[11px] font-bold text-ink-soft">{t('teacherAssign.template', { template: r.option.template.name })}</span>
+                        <Badge>{t('teacherAssign.template', { template: r.option.template.name })}</Badge>
                       )}
                     </span>
-                    <span className={cx('mt-0.5 block text-xs', r.ok ? 'text-ink-muted' : 'font-semibold text-[#7A5A12]')}>{r.note}</span>
+                    <span className={cx('mt-0.5 block text-xs', r.ok ? 'text-ink-muted' : 'font-semibold text-warning')}>{r.note}</span>
                   </span>
-                  <span className={cx('text-right text-xs', r.needed ? 'font-bold text-[#7A5410]' : 'text-ink-muted')}>{r.need}</span>
+                  <span className={cx('text-right text-xs', r.needed ? 'font-bold text-warning' : 'text-ink-muted')}>{r.need}</span>
                   <span
                     aria-hidden="true"
                     className={cx(
@@ -468,18 +469,9 @@ function TeacherAssignPickerBody({ teacherId, slot, entries, onClose, onSave, on
                 {mateClasses.map((m) => {
                   const on = mates.includes(m.id);
                   return (
-                    <button
-                      key={m.id}
-                      type="button"
-                      aria-pressed={on}
-                      onClick={() => setMates((cur) => (on ? cur.filter((x) => x !== m.id) : [...cur, m.id]))}
-                      className={cx(
-                        'inline-flex h-8 items-center rounded-full px-3 text-[13px] font-bold focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-1 focus-visible:outline-brand',
-                        on ? 'border-[1.5px] border-brand bg-brand/10 text-brand' : 'border-[1.5px] border-dashed border-line-strong bg-white text-ink-soft',
-                      )}
-                    >
+                    <ToggleChip key={m.id} pressed={on} onToggle={() => setMates((cur) => (on ? cur.filter((x) => x !== m.id) : [...cur, m.id]))}>
                       {`${on ? '✓' : '+'} ${m.name}`}
-                    </button>
+                    </ToggleChip>
                   );
                 })}
               </div>
