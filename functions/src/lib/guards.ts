@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
 // Copyright (C) 2026 Kanushka Gayan
-import { paths, type ApiErrorCode, type Claims, type School } from '@sathiya/core';
+import { EMAIL_RE, paths, type ApiErrorCode, type Claims, type School } from '@sathiya/core';
 import { HttpsError, type CallableRequest, type FunctionsErrorCode } from 'firebase-functions/v2/https';
 import { db } from './admin';
 
@@ -111,6 +111,6 @@ export function docIdList(v: unknown, name: string): string[] {
 
 export function email(v: unknown, name = 'email'): string {
   const e = str(v, name, 254).toLowerCase();
-  if (!/^[^\s@/]+@[^\s@/]+\.[^\s@/]+$/.test(e)) invalid(`${name} is not a valid email`);
+  if (!EMAIL_RE.test(e)) fail('invalid-argument', 'invalid', `${name} is not a valid email`, { field: name });
   return e;
 }

@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
 // Copyright (C) 2026 Kanushka Gayan
-import { teacherDisplayName, type Teacher } from '@sathiya/core';
+import { EMAIL_RE, teacherDisplayName, type Teacher } from '@sathiya/core';
 import { useState, type FormEvent } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useLang } from '../../app/LangProvider';
@@ -9,8 +9,6 @@ import { Field, inputClass } from '../../ui/Field';
 import { Modal } from '../../ui/Modal';
 import { Select } from '../../ui/Select';
 import { useToast } from '../../ui/Toast';
-
-const EMAIL = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
 export interface InviteModalProps {
   teachers: Teacher[];
@@ -25,7 +23,7 @@ export function InviteModal({ teachers, onInvite, onClose }: InviteModalProps) {
   const [email, setEmail] = useState('');
   const [teacherId, setTeacherId] = useState('');
   const [saving, setSaving] = useState(false);
-  const valid = EMAIL.test(email.trim());
+  const valid = EMAIL_RE.test(email.trim());
   const showError = email.trim() !== '' && !valid;
 
   async function submit(e: FormEvent) {

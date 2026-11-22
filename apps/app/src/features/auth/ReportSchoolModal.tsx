@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
 // Copyright (C) 2026 Kanushka Gayan
-import { REPORT_REASONS, type ReportReason } from '@sathiya/core';
+import { EMAIL_RE, REPORT_REASONS, type ReportReason } from '@sathiya/core';
 import { useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Button } from '../../ui/Button';
@@ -13,8 +13,6 @@ import { getDirectorySchool, reportSchool, type DirectorySchool } from './api';
 import { toApiError } from '../../lib/callable';
 import { detailCode } from './errors';
 import { SchoolSearch } from './SchoolSearch';
-
-const EMAIL = /^[^\s@/]+@[^\s@/]+\.[^\s@/]+$/;
 
 export interface ReportSchoolModalProps {
   open: boolean;
@@ -54,7 +52,7 @@ export function ReportSchoolModal({ open, onClose, initialSchoolId }: ReportScho
 
   async function send() {
     if (!school || !reason) return;
-    if (email.trim() && !EMAIL.test(email.trim())) {
+    if (email.trim() && !EMAIL_RE.test(email.trim())) {
       setEmailError(t('report.invalidEmail'));
       return;
     }
@@ -73,7 +71,7 @@ export function ReportSchoolModal({ open, onClose, initialSchoolId }: ReportScho
     } catch (err) {
       const api = toApiError(err);
       if (detailCode(err) === 'rate-limited') setError(t('report.rateLimited'));
-      else if (api.code === 'invalid' && /email/i.test(api.message)) setEmailError(t('report.invalidEmail'));
+      else if (api.code === 'invalid' && (api.details as { field?: unknown } | undefined)?.field === 'email') setEmailError(t('report.invalidEmail'));
       else setError(t('report.error'));
     } finally {
       setBusy(false);
@@ -114,10 +112,16 @@ export function ReportSchoolModal({ open, onClose, initialSchoolId }: ReportScho
           <textarea className={textareaClass} value={details} onChange={(e) => setDetails(e.target.value)} />
         </Field>
         <Field label={t('report.email')} error={emailError}>
-          <input type="email" autoComplete="email" className={inputClass} value={email} onChange={(e) => {
+          <input
+            type="email"
+            autoComplete="email"
+            className={inputClass}
+            value={email}
+            onChange={(e) => {
               setEmail(e.target.value);
               setEmailError(null);
-            }} />
+            }}
+          />
         </Field>
         {error && (
           <FormError>{error}</FormError>
