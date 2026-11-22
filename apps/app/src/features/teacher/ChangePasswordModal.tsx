@@ -7,6 +7,7 @@ import { Field, inputClass } from '../../ui/Field';
 import { Modal } from '../../ui/Modal';
 import { useToast } from '../../ui/Toast';
 import { FormError } from '../../ui/FormError';
+import { passwordLongEnough } from '../../lib/password';
 import { changePasswordWithFirebase, type ChangePasswordFn } from './firebasePassword';
 
 export interface ChangePasswordModalProps {
@@ -16,6 +17,7 @@ export interface ChangePasswordModalProps {
 }
 
 const wrongCodes = new Set(['auth/invalid-credential', 'auth/wrong-password']);
+const weakCodes = new Set(['auth/weak-password', 'auth/password-does-not-meet-requirements']);
 
 function errorCode(e: unknown): string | undefined {
   return typeof e === 'object' && e !== null && 'code' in e ? String((e as { code: unknown }).code) : undefined;
@@ -46,7 +48,7 @@ function PasswordForm({ onClose, changePassword }: { onClose: () => void; change
   async function submit(e: FormEvent) {
     e.preventDefault();
     const found: typeof errors = {};
-    if (next.length < 6) found.next = t('cp.tooShort');
+    if (!passwordLongEnough(next)) found.next = t('cp.tooShort');
     else if (next !== confirm) found.confirm = t('cp.mismatch');
     setErrors(found);
     if (found.next || found.confirm) return;
@@ -57,7 +59,8 @@ function PasswordForm({ onClose, changePassword }: { onClose: () => void; change
       onClose();
     } catch (err) {
       const code = errorCode(err);
-      setErrors(code && wrongCodes.has(code) ? { current: t('cp.wrongCurrent') } : { form: t('cp.failed') });
+      if (code && weakCodes.has(code)) setErrors({ next: t('cp.tooShort') });
+      else setErrors(code && wrongCodes.has(code) ? { current: t('cp.wrongCurrent') } : { form: t('cp.failed') });
     } finally {
       setBusy(false);
     }

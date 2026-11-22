@@ -9,6 +9,7 @@ export function actionErrorKey(err: unknown): ActionErrorKey {
     case 'auth/invalid-action-code':
       return 'invalid';
     case 'auth/weak-password':
+    case 'auth/password-does-not-meet-requirements':
       return 'weak';
     case 'auth/network-request-failed':
       return 'network';

@@ -52,6 +52,15 @@ Per project (production `sathiya-lk` / app domain `app.sathiya.kanushka.com`; st
 6. Debug tokens (local testing against staging only): App Check → Apps → ⋮ → Manage debug tokens → add one; put it in `apps/app/.env.staging.local` as `VITE_APPCHECK_DEBUG_TOKEN`. Never register debug tokens on production; production-mode builds ignore them anyway.
 7. Later, once App Check metrics show (nearly) all requests verified: App Check → APIs → enforce for Authentication, Cloud Firestore and Cloud Storage. Old app versions without App Check stop working at that point.
 
+## Password policy
+The app requires at least 8 characters wherever a password is set (`apps/app/src/lib/password.ts`): admin sign-up, password reset, and a teacher changing their password. Generated teacher passwords are 8 characters from `functions/src/lib/password.ts`. To enforce the same minimum on the server, per project (once, by hand):
+
+1. Firebase console → Authentication → Settings → Password policy (if it is missing, the project needs the Identity Platform upgrade first).
+2. Enforcement mode: **Require enforcement**. Minimum length: **8**.
+3. Leave every character requirement (uppercase, lowercase, numeric, special) **off**: generated passwords are lowercase letters and digits with no guaranteed digit, and Admin SDK writes skip the policy, so a requirement would only bite when a teacher changes it.
+4. Leave "Require users to update password on sign in" **off**, so admins with an older 6–7 character password can still sign in.
+5. Save. Sign-up, reset and change attempts below the minimum now fail with `auth/password-does-not-meet-requirements`, which the app shows as the length rule.
+
 ## Preview channels
 `firebase hosting:channel:deploy <name> -P default` previews frontend changes only. A preview channel still talks to the production database and functions, so use staging for anything that needs backend changes or writes test data.
 

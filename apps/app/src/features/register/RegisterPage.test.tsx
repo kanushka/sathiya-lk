@@ -236,6 +236,19 @@ describe('register', () => {
     expect(api.registerSchool).not.toHaveBeenCalled();
   });
 
+  it('shows a policy rejection on the password field', async () => {
+    const user = userEvent.setup();
+    vi.mocked(api.createAccount).mockRejectedValue(Object.assign(new Error('x'), { code: 'auth/password-does-not-meet-requirements' }));
+    renderAuth(<RegisterPage />, { route: '/register', at: '/register' });
+    await toStep3(user);
+    await user.type(screen.getByLabelText('Your name'), 'Nimal');
+    await user.type(screen.getByLabelText('Email'), 'nimal@siripura.lk');
+    await user.type(screen.getByLabelText('Password'), 'secret12');
+    await user.click(screen.getByRole('checkbox'));
+    await user.click(screen.getByRole('button', { name: 'Create school' }));
+    expect(await screen.findByText('Password must be at least 8 characters')).toBeInTheDocument();
+  });
+
   async function confirmGate(user: ReturnType<typeof userEvent.setup>) {
     await user.click(await screen.findByRole('button', { name: "I've confirmed it" }));
     await user.click(await screen.findByRole('button', { name: 'Create school' }));

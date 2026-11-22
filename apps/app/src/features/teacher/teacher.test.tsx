@@ -207,12 +207,19 @@ describe('ChangePasswordModal', () => {
     expect(change).not.toHaveBeenCalled();
   });
 
-  it('rejects passwords shorter than 6 characters', async () => {
+  it('rejects passwords shorter than 8 characters', async () => {
     const change = vi.fn();
     renderWithSchool(<ChangePasswordModal open onClose={() => undefined} changePassword={change} />, { ctx });
-    await fill('oldpass', 'abc', 'abc');
-    expect(await screen.findByText('Use at least 6 characters')).toBeInTheDocument();
+    await fill('oldpass', 'abcdefg', 'abcdefg');
+    expect(await screen.findByText('Use at least 8 characters')).toBeInTheDocument();
     expect(change).not.toHaveBeenCalled();
+  });
+
+  it('shows the length rule when Firebase rejects the new password', async () => {
+    const change = vi.fn().mockRejectedValue({ code: 'auth/password-does-not-meet-requirements' });
+    renderWithSchool(<ChangePasswordModal open onClose={() => undefined} changePassword={change} />, { ctx });
+    await fill('oldpass', 'newpass1', 'newpass1');
+    expect(await screen.findByText('Use at least 8 characters')).toBeInTheDocument();
   });
 
   it('shows an error when the current password is wrong', async () => {

@@ -64,7 +64,7 @@ export function RegisterPage() {
       setError(
         code === 'auth/email-already-in-use'
           ? { field: 'email', message: t('errors.emailInUse') }
-          : code === 'auth/weak-password'
+          : code === 'auth/weak-password' || code === 'auth/password-does-not-meet-requirements'
             ? { field: 'password', message: t('errors.weakPassword') }
             : code === 'auth/invalid-email'
               ? { field: 'email', message: t('errors.invalidEmail') }
