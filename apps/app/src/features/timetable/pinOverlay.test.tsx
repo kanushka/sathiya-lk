@@ -67,6 +67,35 @@ describe('pinOverlayCell', () => {
   it('appends the class period note to a free cell label', () => {
     const o = overlay({ kind: 'free', load: 1, max: 6, limit: false, teacherId: T.gunasekara, subjectThatDay: false }, { classNote: '6B period 5' });
     expect(o.label).toBe('Wednesday, period 4, 10:00–10:40: pin Science with Mrs. S. Gunasekara, 6B period 5');
+    renderWithI18n(<>{o.content}</>);
+    expect(screen.getByText('6B period 5')).toBeInTheDocument();
+  });
+
+  it('shows the class period note on a suggested cell too', () => {
+    const o = overlay({ kind: 'free', load: 1, max: 6, limit: false, teacherId: T.gunasekara, subjectThatDay: false }, { suggested: true, classNote: '6B P5 · 10:00–10:40' });
+    expect(o.label).toBe('Wednesday, period 4, 10:00–10:40: pin Science with Mrs. S. Gunasekara, 6B P5 · 10:00–10:40, suggested');
+    renderWithI18n(<>{o.content}</>);
+    expect(screen.getByText('6B P5 · 10:00–10:40')).toBeInTheDocument();
+  });
+
+  it('names a pinned group cell by the group, whatever the entry view title', () => {
+    const e = { id: 'g', day: 2 as const, period: 4, classIds: [C.c6c], lessons: [{ subjectId: S.buddhism, teacherId: T.ananda }], teacherIds: [T.ananda], groupKey: 'religion' };
+    const o = pinOverlayCell({
+      cell: { kind: 'pinned', entry: e },
+      day: 2,
+      n: 4,
+      time: '10:00–10:40',
+      ctx,
+      lang: 'en',
+      t,
+      tc,
+      names: { subject: 'Religion', teacher: 'Ven. Ananda Thero', classes: '6C' },
+      progress: null,
+      suggested: false,
+      group: true,
+      entryView: () => ({ title: '⧉ 6C', sub: 'Buddhism', color: '#fff', isGroup: true }),
+    })!;
+    expect(o.label).toBe('Wednesday, period 4, 10:00–10:40: Religion 6C, pinned, click to unpin');
   });
 
   it('flags a suggested cell', () => {
@@ -79,5 +108,13 @@ describe('PinLegend', () => {
   it('lists the teacher in the free swatch', () => {
     renderWithI18n(<PinLegend teacher="Mrs. S. Gunasekara" />);
     expect(screen.getByLabelText('Pin mode legend')).toHaveTextContent('Free for Mrs. S. Gunasekara');
+    expect(screen.getByLabelText('Pin mode legend')).not.toHaveTextContent('in this row');
+  });
+
+  it('names the classes and the no-period swatch on teacher rows', () => {
+    renderWithI18n(<PinLegend teacher="Mr. A. Rizan" teacherRows={{ classes: '6A+6B', base: '6B' }} />);
+    const legend = screen.getByLabelText('Pin mode legend');
+    expect(legend).toHaveTextContent('Free for Mr. A. Rizan and 6A+6B');
+    expect(legend).toHaveTextContent('No 6B period in this row');
   });
 });

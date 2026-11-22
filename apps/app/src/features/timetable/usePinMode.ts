@@ -109,28 +109,37 @@ export function usePinMode(args: {
         const x = ctx.teachers.find((y) => y.id === id);
         return x ? teacherDisplayName(x, lang) : '';
       };
+      const base = ctx.classes.find((c) => c.id === spec.classIds[0]);
+      const template = teacherViewId !== null && base ? ctx.templates.find((x) => x.id === base.templateId) : undefined;
+      const templateNote = base && template && !template.isDefault ? t('pin.otherTemplate', { class: base.name, template: template.name }) : undefined;
       if (spec.groupKey === undefined) {
         const lesson = spec.lessons[0];
         const subject = lesson ? subjectOf(lesson.subjectId) : '';
         const teacher = lesson ? teacherOf(lesson.teacherId) : '';
         const sub = lesson && ctx.subjects.find((x) => x.id === lesson.subjectId);
-        return { title: t('pin.target', { subject, teacher }), subject, teacher, classes, color: sub ? sub.color : '#E9E9E9' };
+        return {
+          title: teacherViewId !== null ? t('pin.teacherTarget', { subject, classes }) : t('pin.target', { subject, teacher }),
+          ...(templateNote ? { detail: templateNote } : {}),
+          subject,
+          teacher,
+          classes,
+          color: sub ? sub.color : '#E9E9E9',
+        };
       }
-      const base = ctx.classes.find((c) => c.id === spec.classIds[0]);
       const grade = base && ctx.grades.find((g) => g.id === base.gradeId);
       const item = base && grade ? effectivePlan(base, grade).find((p) => p.kind === 'group' && p.key === spec.groupKey) : undefined;
       const group = item ? pickName(item as { nameEn: string; nameSi?: string }, lang) : spec.groupKey;
       const teachers = [...new Set(spec.lessons.map((l) => teacherOf(l.teacherId)))].join(', ');
       return {
         title: t('pin.targetGroup', { group, classes }),
-        detail: spec.lessons.map((l) => t('pin.groupLesson', { subject: subjectOf(l.subjectId), teacher: teacherOf(l.teacherId) })).join(' · '),
+        detail: [...spec.lessons.map((l) => t('pin.groupLesson', { subject: subjectOf(l.subjectId), teacher: teacherOf(l.teacherId) })), ...(templateNote ? [templateNote] : [])].join(' · '),
         subject: group,
         teacher: teachers,
         classes,
         color: item ? planItemColor(item, ctx) : '#E9E9E9',
       };
     },
-    [ctx, lang, t],
+    [ctx, lang, t, teacherViewId],
   );
   const names = useMemo(() => (target ? namesFor(target) : null), [target, namesFor]);
 

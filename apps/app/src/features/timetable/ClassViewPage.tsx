@@ -18,7 +18,7 @@ import {
   type SchoolContext,
   type TemplateRow,
 } from '@sathiya/core';
-import { useEffect, useMemo, useRef, useState } from 'react';
+import { useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Navigate, useNavigate, useParams } from 'react-router-dom';
 import { useLang } from '../../app/LangProvider';
@@ -41,6 +41,7 @@ import { PinLegend, pinOverlayCell } from './pinOverlay';
 import { SlotPicker } from './SlotPicker';
 import { SubjectProgress } from './SubjectProgress';
 import { TimetableGrid, type GridOverlay, type Slot } from './TimetableGrid';
+import { usePinExit } from './usePinExit';
 import { usePinMode } from './usePinMode';
 import { useTimetable } from './useTimetable';
 
@@ -99,8 +100,7 @@ function ClassView({ cls, classes }: { cls: SchoolClass; classes: SchoolClass[] 
   const [assign, setAssign] = useState<{ slot: Slot | null; subjectId?: string; groupKey?: string } | null>(null);
   const pin = usePinMode({ ctx, entries, save, remove, view: { kind: 'class' } });
   const { target: pinTarget, stop: stopPin } = pin;
-  const pinOrigin = useRef<{ day: DayIndex; period: number } | { key: string } | null>(null);
-  const pinWasOn = useRef(false);
+  const pinOrigin = usePinExit(pinTarget, stopPin);
   const [block, setBlock] = useState<BlockState | null>(null);
   const [fill, setFill] = useState<{ drafts: EntryDraft[]; done: number; running: boolean } | null>(null);
 
@@ -116,34 +116,6 @@ function ClassView({ cls, classes }: { cls: SchoolClass; classes: SchoolClass[] 
   const index = classes.findIndex((c) => c.id === cls.id);
   const go = (c: SchoolClass | undefined) => c && navigate(`${base}/timetable/class/${c.id}`);
   const gradeNumber = (c: SchoolClass) => ctx.grades.find((g) => g.id === c.gradeId)?.number ?? '';
-
-  useEffect(() => {
-    if (pinTarget) {
-      pinWasOn.current = true;
-      return;
-    }
-    if (!pinWasOn.current) return;
-    pinWasOn.current = false;
-    const active = document.activeElement;
-    if (active && active !== document.body) return;
-    const origin = pinOrigin.current;
-    const el =
-      origin && 'key' in origin
-        ? document.querySelector<HTMLElement>(`[data-pin-key="${origin.key}"]`)
-        : origin && document.querySelector<HTMLElement>(`[data-day="${origin.day}"][data-period="${origin.period}"]`);
-    el?.focus();
-  }, [pinTarget]);
-
-  useEffect(() => {
-    if (!pinTarget) return;
-    function onKey(e: KeyboardEvent) {
-      if (e.key !== 'Escape' || e.defaultPrevented || document.querySelector('[role="dialog"]')) return;
-      if (e.target instanceof HTMLElement && e.target.closest('input, select, textarea')) return;
-      stopPin();
-    }
-    document.addEventListener('keydown', onKey);
-    return () => document.removeEventListener('keydown', onKey);
-  }, [pinTarget, stopPin]);
 
   function onActivate(day: DayIndex, period: number) {
     if (readOnly || windowOf(template, day, period) === null) return;

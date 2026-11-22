@@ -159,6 +159,21 @@ describe('GroupTeachersStep', () => {
     expect(h.onConfirm).toHaveBeenCalledWith(spec([C.c6b, C.c6a]), false);
   });
 
+  it('gives a generic note when the class already has a lesson at the slot', async () => {
+    const h = setup({ slot: { day: 0, period: 1 } });
+    expect(screen.getByText('Mon P1 isn’t free for 6A+6B. Pin the other free slots instead.')).toBeInTheDocument();
+    await userEvent.click(screen.getByRole('button', { name: 'Pin other slots' }));
+    expect(h.onConfirm).toHaveBeenCalledWith(spec([C.c6b, C.c6a]), false);
+  });
+
+  it('uses a custom back label', async () => {
+    const h = setup({ back: { text: '‹ Back to classes', label: 'Back to classes' } });
+    const back = screen.getByRole('button', { name: 'Back to classes' });
+    expect(back).toHaveTextContent('‹ Back to classes');
+    await userEvent.click(back);
+    expect(h.onBack).toHaveBeenCalled();
+  });
+
   it('shows a busy note on a busy candidate', async () => {
     setup({}, [...entries6B, entry('x', 2, 4, [C.c12a], [[S.buddhism, T.ananda]])], ctx2);
     await userEvent.click(optionRow('Buddhism'));

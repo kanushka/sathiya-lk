@@ -18,11 +18,12 @@ const pinSuggested = 'items-center border-[1.5px] border-solid border-[#2E8B4A] 
 const pinBusy = 'border-line bg-[repeating-linear-gradient(135deg,#F1F2F5_0_6px,#E4E6EC_6px_12px)] px-2.5 text-ink-muted';
 const pinNone = 'border-line bg-[#F6F7F9] px-2.5 text-ink-muted';
 
-function PinGlyph({ sub }: { sub: string }) {
+function PinGlyph({ sub, note }: { sub: string; note?: string | undefined }) {
   return (
     <span className="flex flex-col items-center gap-0.5">
       <Icon name="pin" size={18} strokeWidth={2} />
       <span className="text-[11px] font-semibold">{sub}</span>
+      {note && <span className="text-[11px]">{note}</span>}
     </span>
   );
 }
@@ -63,7 +64,7 @@ export function pinOverlayCell(a: PinOverlayInput): GridOverlay | null {
   if (c.kind === 'pinned') {
     const view = entryView(c.entry);
     return {
-      label: group ? t('pin.cellPinnedGroup', { ...where, group: view.title, classes: names.classes }) : t('pin.cellPinned', { ...where, subject: view.title, teacher: view.sub }),
+      label: group ? t('pin.cellPinnedGroup', { ...where, group: names.subject, classes: names.classes }) : t('pin.cellPinned', { ...where, subject: view.title, teacher: view.sub }),
       className: 'border-transparent text-ink ring-2 ring-brand ring-offset-2',
       content: <CellBody cells={[{ ...view, sub: t('pin.clickUnpin') }]} />,
     };
@@ -88,7 +89,7 @@ export function pinOverlayCell(a: PinOverlayInput): GridOverlay | null {
   const base = group ? t('pin.cellPinGroup', { ...where, group: names.subject, classes: names.classes }) : t('pin.cellPin', { ...where, subject: names.subject, teacher: names.teacher });
   const label = classNote ? `${base}, ${classNote}` : base;
   if (progress && progress.left === 0) {
-    return { label: `${label}, ${t('pin.noteOver')}`, className: pinOver, content: <PinGlyph sub={t('pin.overPlan')} /> };
+    return { label: `${label}, ${t('pin.noteOver')}`, className: pinOver, content: <PinGlyph sub={t('pin.overPlan')} note={classNote} /> };
   }
   if (suggested) {
     return {
@@ -98,18 +99,19 @@ export function pinOverlayCell(a: PinOverlayInput): GridOverlay | null {
         <span className="flex flex-col gap-0.5">
           <span className="text-[13px] font-bold">{t('pin.suggested')}</span>
           <span className="text-[11px]">{t('pin.clickPin')}</span>
+          {classNote && <span className="text-[11px]">{classNote}</span>}
         </span>
       ),
     };
   }
   if (c.limit) {
-    return { label: `${label}, ${t('pin.noteLimit', { load: c.load, max: c.max })}`, className: pinWarn, content: <PinGlyph sub={t('pin.limit', { load: c.load, max: c.max })} /> };
+    return { label: `${label}, ${t('pin.noteLimit', { load: c.load, max: c.max })}`, className: pinWarn, content: <PinGlyph sub={t('pin.limit', { load: c.load, max: c.max })} note={classNote} /> };
   }
   if (c.subjectThatDay) {
     const note = t('pin.subjectDay', { subject: names.subject, day: tc(`days.short.${day}`) });
-    return { label: `${label}, ${note}`, className: pinWarn, content: <PinGlyph sub={note} /> };
+    return { label: `${label}, ${note}`, className: pinWarn, content: <PinGlyph sub={note} note={classNote} /> };
   }
-  return { label, className: pinFree, content: <PinGlyph sub={group ? t('pin.freeGroup') : t('pin.free')} /> };
+  return { label, className: pinFree, content: <PinGlyph sub={group ? t('pin.freeGroup') : t('pin.free')} note={classNote} /> };
 }
 
 function Swatch({ className, children }: { className: string; children: string }) {
@@ -121,15 +123,27 @@ function Swatch({ className, children }: { className: string; children: string }
   );
 }
 
-export function PinLegend({ teacher, group }: { teacher: string; group?: { count: number; classes: string } }) {
+export interface PinLegendProps {
+  teacher: string;
+  group?: { count: number; classes: string };
+  teacherRows?: { classes: string; base: string };
+}
+
+export function PinLegend({ teacher, group, teacherRows }: PinLegendProps) {
   const { t } = useTranslation('timetable');
+  const free = group
+    ? t('pin.legendFreeGroup', group)
+    : teacherRows
+      ? t('pin.legendFreeWith', { teacher, classes: teacherRows.classes })
+      : t('pin.legendFree', { teacher });
   return (
     <div aria-label={t('pin.legendLabel')} className="mb-3 ml-1 flex flex-wrap gap-3.5">
-      <Swatch className="border-[1.5px] border-dashed border-[#2E8B4A] bg-[#F5FBF6]">{group ? t('pin.legendFreeGroup', group) : t('pin.legendFree', { teacher })}</Swatch>
+      <Swatch className="border-[1.5px] border-dashed border-[#2E8B4A] bg-[#F5FBF6]">{free}</Swatch>
       <Swatch className="border-[1.5px] border-dashed border-[#B7831F] bg-[#FFF6E2]">{t('pin.legendSubjectDay')}</Swatch>
       <Swatch className="border-[1.5px] border-dashed border-[#C2410C] bg-[#FDECEA]">{t('pin.legendOver')}</Swatch>
       <Swatch className="border-[1.5px] border-[#2E8B4A] bg-[#E4F2E7]">{t('pin.legendSuggested')}</Swatch>
       <Swatch className="bg-[repeating-linear-gradient(135deg,#EEF0F3_0_4px,#DADDE4_4px_8px)]">{t('pin.legendBusy')}</Swatch>
+      {teacherRows && <Swatch className="border border-line bg-[#F6F7F9]">{t('pin.legendNone', { class: teacherRows.base })}</Swatch>}
     </div>
   );
 }

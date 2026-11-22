@@ -40,6 +40,7 @@ export interface GroupTeachersStepProps {
   lockedTeacherId?: string;
   initialClassIds?: string[];
   onBack?(): void;
+  back?: { text: string; label: string };
   onConfirm(spec: PinSpec, placeNow: boolean): void | Promise<unknown>;
   children?(parts: { body: ReactNode; footer: ReactNode }): ReactNode;
 }
@@ -58,7 +59,7 @@ const capClass = 'm-0 text-[11px] font-bold uppercase tracking-[.06em] text-ink-
 const chipClass = 'rounded-full bg-brand/10 px-[7px] py-0.5 text-[11px] font-bold text-brand';
 
 export function GroupTeachersStep(props: GroupTeachersStepProps) {
-  const { classId, item, slot, entries, lockedSubjectId, lockedTeacherId, initialClassIds, onBack, onConfirm, children } = props;
+  const { classId, item, slot, entries, lockedSubjectId, lockedTeacherId, initialClassIds, onBack, back, onConfirm, children } = props;
   const { t } = useTranslation('timetable');
   const { t: tc } = useTranslation('common');
   const { lang } = useLang();
@@ -177,8 +178,10 @@ export function GroupTeachersStep(props: GroupTeachersStepProps) {
       note = t('assign.groupFree', { count: teacherCount, classes: classesLabel, ...where });
       placeNow = true;
     } else {
-      const reasons = cell?.kind === 'busy' ? cell.blockers.map(blockerText).join('; ') : '';
-      note = t('assign.groupBlocked', { reasons, ...where });
+      note =
+        cell?.kind === 'busy'
+          ? t('assign.groupBlocked', { reasons: cell.blockers.map(blockerText).join('; '), ...where })
+          : t('assign.groupNotFree', { classes: classesLabel, ...where });
       tone = 'bad';
       label = t('assign.pinOther');
     }
@@ -236,7 +239,7 @@ export function GroupTeachersStep(props: GroupTeachersStepProps) {
       <b className="flex-1">
         {groupName} <span className="text-xs font-medium text-ink-muted">· {t('assign.groupMeta', { options: t('assign.optionCount', { count: options.length }), need })}</span>
       </b>
-      {onBack && <span className="text-xs font-semibold text-brand">{t('assign.back')}</span>}
+      {onBack && <span className="text-xs font-semibold text-brand">{back?.text ?? t('assign.back')}</span>}
     </>
   );
   const headerClass = 'flex min-h-[42px] w-full items-center gap-2.5 rounded-[10px] border border-line-strong bg-white px-3 text-left text-sm text-ink';
@@ -408,7 +411,7 @@ export function GroupTeachersStep(props: GroupTeachersStepProps) {
       {onBack ? (
         <button
           type="button"
-          aria-label={t('assign.backLabel')}
+          aria-label={back?.label ?? t('assign.backLabel')}
           onClick={onBack}
           className={cx(headerClass, 'hover:bg-slate-50 focus-visible:outline focus-visible:outline-2 focus-visible:outline-brand')}
         >

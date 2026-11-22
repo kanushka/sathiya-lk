@@ -233,6 +233,27 @@ describe('usePinMode in the teacher view', () => {
     expect(pin.message).toBe('Mathematics pinned to Tuesday, period 5.');
   });
 
+  it('titles the bar by subject and classes and explains another template', () => {
+    setup({}, [], view);
+    act(() => pin.start(spec));
+    expect(pin.names?.title).toBe('Mathematics · 1A');
+    expect(pin.names?.detail).toBe('1A runs on the Primary (Gr 1–2) template: cells show its own period and time where they differ');
+  });
+
+  it('has no detail for a class on the default template', () => {
+    setup({}, [], { kind: 'teacher', teacherId: T.rizan });
+    act(() => pin.start(singleSpec(C.c6b, S.english, T.rizan)));
+    expect(pin.names?.title).toBe('English · 6B');
+    expect(pin.names?.detail).toBeUndefined();
+  });
+
+  it('keeps the group title and adds the template note to the group detail', () => {
+    setup({}, [], { kind: 'teacher', teacherId: T.ananda });
+    act(() => pin.start({ classIds: [C.c6c], lessons: [{ subjectId: S.buddhism, teacherId: T.ananda }], groupKey: 'religion' }));
+    expect(pin.names?.title).toBe('Religion · 6C');
+    expect(pin.names?.detail).toBe('Buddhism – Ven. Ananda Thero · 6C runs on the Short Friday template: cells show its own period and time where they differ');
+  });
+
   it('ignores rows with no period of the class', async () => {
     const api = setup({}, [], view);
     act(() => pin.start(spec));

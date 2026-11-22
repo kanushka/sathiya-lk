@@ -36,8 +36,13 @@ import { blockKey, blockStateFor, isBlock, type BlockState } from './blockState'
 import type { CellView } from './Cell';
 import { classNames } from './labels';
 import { useAdminBase } from './paths';
+import { PinBar } from './PinBar';
+import { PinLegend, pinOverlayCell } from './pinOverlay';
+import { TeacherAssignPicker } from './TeacherAssignPicker';
 import { TeacherSlotPicker } from './TeacherSlotPicker';
-import { TimetableGrid, type Slot } from './TimetableGrid';
+import { TimetableGrid, type GridOverlay, type Slot } from './TimetableGrid';
+import { usePinExit } from './usePinExit';
+import { usePinMode } from './usePinMode';
 import { useTimetable } from './useTimetable';
 
 const DAYS: DayIndex[] = [0, 1, 2, 3, 4];
@@ -103,9 +108,13 @@ function TeacherView({ teacher, teachers, template }: { teacher: Teacher; teache
   const { ctx, entries, save, remove } = useTimetable();
 
   const [selected, setSelected] = useState<Slot | undefined>();
-  const [picker, setPicker] = useState<{ day: DayIndex; period: number; editing?: Entry } | null>(null);
+  const [picker, setPicker] = useState<{ day: DayIndex; period: number; editing: Entry } | null>(null);
+  const [assign, setAssign] = useState<{ day: DayIndex; row: number } | null>(null);
   const [block, setBlock] = useState<BlockState | null>(null);
   const [chooser, setChooser] = useState<{ day: DayIndex; period: number; list: Entry[] } | null>(null);
+  const pin = usePinMode({ ctx, entries, save, remove, view: { kind: 'teacher', teacherId: teacher.id } });
+  const { target: pinTarget, stop: stopPin } = pin;
+  const pinOrigin = usePinExit(pinTarget, stopPin);
 
   const rows = useMemo(() => Object.fromEntries(DAYS.map((d) => [d, rowsFor(template, d)])) as Record<DayIndex, TemplateRow[]>, [template]);
   const mine = useMemo(() => entries.filter((e) => e.lessons.some((l) => l.teacherId === teacher.id)), [entries, teacher.id]);
@@ -132,7 +141,7 @@ function TeacherView({ teacher, teachers, template }: { teacher: Teacher; teache
   const go = (x: Teacher | undefined) => x && navigate(`${base}/timetable/teacher/${x.id}`);
 
   const subjectOf = (e: Entry) => {
-    const id = e.lessons.find((l) => l.teacherId === teacher.id)?.subjectId;
+    const id = (e.lessons.find((l) => l.teacherId === teacher.id) ?? e.lessons[0])?.subjectId;
     const s = ctx.subjects.find((x) => x.id === id);
     return { name: s ? pickName(s, lang) : (id ?? ''), color: s?.color ?? '#E9E9E9' };
   };
@@ -159,18 +168,59 @@ function TeacherView({ teacher, teachers, template }: { teacher: Teacher; teache
 
   function onActivate(day: DayIndex, period: number) {
     if (readOnly || windowOf(template, day, period) === null) return;
+    if (pinTarget) {
+      void pin.toggle(day, period);
+      return;
+    }
     const list = at(day, period);
-    if (list.length === 0) setPicker({ day, period });
+    if (list.length === 0) {
+      pinOrigin.current = { day, period };
+      setAssign({ day, row: period });
+    }
     else if (list.length === 1) openEntry({ entry: list[0]!, row: period });
     else setChooser({ day, period, list });
   }
 
   function onClear(day: DayIndex, period: number) {
     if (readOnly) return;
+    if (pinTarget) {
+      if (pin.cellAt(day, period)?.kind === 'pinned') void pin.toggle(day, period);
+      return;
+    }
     const list = at(day, period);
     if (list.length > 1) setChooser({ day, period, list });
     else if (list[0] && list[0].classIds.length > 1) setBlock(blockStateFor(list[0], ctx));
     else if (list[0]) void remove(list[0].id);
+  }
+
+  function pinOverlay(day: DayIndex, row: number): GridOverlay | null {
+    const time = periodsFor(template, day).find((p) => p.period === row);
+    const cell = pin.cellAt(day, row);
+    if (!pin.names || !pinTarget || !time) return null;
+    const base = ctx.classes.find((c) => c.id === pinTarget.classIds[0]);
+    const period = pin.periodAt(day, row);
+    const baseTpl = base && ctx.templates.find((x) => x.id === base.templateId);
+    const classTime = cell?.kind === 'free' && period !== null && baseTpl ? periodsFor(baseTpl, day).find((p) => p.period === period) : undefined;
+    const classNote =
+      base && classTime && period !== null && (classTime.start !== time.start || classTime.end !== time.end)
+        ? t('teacherAssign.classPeriod', { class: base.name, n: period, time: `${classTime.start}–${classTime.end}` })
+        : undefined;
+    return pinOverlayCell({
+      cell,
+      day,
+      n: row,
+      time: `${time.start}–${time.end}`,
+      ctx,
+      lang,
+      t,
+      tc,
+      names: pin.names,
+      progress: pin.progress,
+      suggested: pin.isSuggested(day, row),
+      group: pinTarget.groupKey !== undefined,
+      ...(classNote ? { classNote } : {}),
+      entryView: (e) => cellView(e, row),
+    });
   }
 
   function print() {
@@ -267,7 +317,32 @@ function TeacherView({ teacher, teachers, template }: { teacher: Teacher; teache
         </Button>
       </div>
 
-      <section className="min-w-0 overflow-x-auto rounded-[14px] border border-line bg-white p-4">
+      {pinTarget && pin.progress ? (
+        <PinBar
+          title={pin.names?.title ?? ''}
+          {...(pin.names?.detail ? { detail: pin.names.detail } : {})}
+          color={pin.names?.color ?? '#E9E9E9'}
+          progress={pin.progress}
+          suggestedCount={pin.suggested.length}
+          onSuggest={pin.suggest}
+          onPinSuggested={() => void pin.pinSuggested()}
+          onDone={stopPin}
+        />
+      ) : (
+        !readOnly && <p className="mb-3.5 rounded-[10px] border border-line bg-white px-3.5 py-2.5 text-[13px] text-ink-soft">{t('teacherView.pinHint')}</p>
+      )}
+
+      <section
+        data-pin-mode={pinTarget ? 'true' : undefined}
+        className={cx('min-w-0 overflow-x-auto rounded-[14px] border border-line bg-white p-4', pinTarget && 'outline outline-2 outline-offset-2 outline-brand')}
+      >
+        {pinTarget && (
+          <PinLegend
+            teacher={teacherDisplayName(teacher, lang)}
+            teacherRows={{ classes: pin.names?.classes ?? '', base: ctx.classes.find((c) => c.id === pinTarget.classIds[0])?.name ?? '' }}
+            {...(pinTarget.groupKey === undefined ? {} : { group: { count: new Set(pinTarget.lessons.map((l) => l.teacherId)).size, classes: pin.names?.classes ?? '' } })}
+          />
+        )}
         <TimetableGrid
           rows={rows}
           cellsFor={(d, p) => {
@@ -280,7 +355,12 @@ function TeacherView({ teacher, teachers, template }: { teacher: Teacher; teache
           onClear={onClear}
           readOnly={readOnly}
           headerExtra={loadBar}
+          overlay={pinTarget ? pinOverlay : undefined}
+          activateOnClick={!!pinTarget}
         />
+        <p role="status" className="mx-1 mb-0 mt-3 min-h-[1px] text-[13px] font-semibold text-[#1F6B34] empty:mt-0">
+          {pin.message}
+        </p>
         <p className="mb-0 mt-3 text-xs text-ink-muted">{t('teacherView.hint')}</p>
         {outside.length > 0 && (
           <div className="mt-4 border-t border-line pt-3">
@@ -295,6 +375,10 @@ function TeacherView({ teacher, teachers, template }: { teacher: Teacher; teache
         )}
       </section>
 
+      {assign && (
+        <TeacherAssignPicker teacherId={teacher.id} slot={assign} entries={entries} onClose={() => setAssign(null)} onSave={save} onPin={pin.start} />
+      )}
+
       {picker && (
         <TeacherSlotPicker
           open
@@ -303,7 +387,7 @@ function TeacherView({ teacher, teachers, template }: { teacher: Teacher; teache
           day={picker.day}
           period={picker.period}
           entries={entries}
-          {...(picker.editing ? { editing: picker.editing } : {})}
+          editing={picker.editing}
           onSave={save}
           onClear={remove}
           onGroup={({ classId, period, subjectId, item }) => {
@@ -315,7 +399,7 @@ function TeacherView({ teacher, teachers, template }: { teacher: Teacher; teache
               period,
               mode: { kind: 'group', item },
               preset: { subjectId, teacherId: teacher.id },
-              ...(editing ? (editing.classIds[0] === classId && editing.period === period ? { entry: editing } : { replacesEntryId: editing.id }) : {}),
+              ...(editing.classIds[0] === classId && editing.period === period ? { entry: editing } : { replacesEntryId: editing.id }),
             });
           }}
         />
