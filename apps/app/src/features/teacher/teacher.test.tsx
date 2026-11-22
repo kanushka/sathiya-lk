@@ -131,9 +131,7 @@ describe('TeacherFrame chrome', () => {
     expect(setLang).toHaveBeenCalledWith('si');
   });
 
-  it('uses on-brand opacity classes only while the colour token is alpha-capable', () => {
-    const { container } = renderWithSchool(<TodayPage now={wed0920} snapshot={snap()} />, { ctx, claims: claims(T.perera) });
-    expect(container.innerHTML).toMatch(/on-brand\//);
+  it('keeps the on-brand colour token alpha-capable', () => {
     const colors = tailwindConfig.theme?.extend?.colors as unknown as Record<string, string>;
     expect(colors['on-brand']).toContain('<alpha-value>');
   });

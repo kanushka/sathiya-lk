@@ -274,7 +274,6 @@ function ClassView({ cls, classes }: { cls: SchoolClass; classes: SchoolClass[] 
     setFill(null);
   }
 
-
   return (
     <div>
       <div className="mb-[18px] flex flex-wrap items-center justify-between gap-3">

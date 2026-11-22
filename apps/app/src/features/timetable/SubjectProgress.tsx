@@ -68,7 +68,6 @@ export function SubjectProgress({ cls, entries, onPin, onStop, activeSubjectId }
                       label={active ? t('pin.listStop', { subject: name }) : t('pin.listPin', { subject: name })}
                       variant={active ? 'primary' : 'secondary'}
                       size="sm"
-                      pressed={active}
                       onClick={() => (active ? onStop?.() : onPin(subjectId))}
                     />
                   )}

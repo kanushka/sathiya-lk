@@ -41,7 +41,7 @@ describe('SubjectProgress', () => {
     expect(onPin).toHaveBeenCalledWith(S.sinhala);
   });
 
-  it('tints the row being pinned and turns its button into stop', async () => {
+  it('tints the row being pinned and swaps its button to Done pinning', async () => {
     const onStop = vi.fn();
     renderWithSchool(<SubjectProgress cls={cls6B} entries={entries6B} onPin={vi.fn()} onStop={onStop} activeSubjectId={S.sinhala} />, { ctx, entries: entries6B });
     expect(row('Sinhala')).toHaveAttribute('data-active', 'true');
