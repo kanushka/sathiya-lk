@@ -32,7 +32,7 @@ export function RadioGroup<V extends string = string>({
   const baseId = useId();
   return (
     <fieldset className={cx('m-0 min-w-0 border-0 p-0', className)}>
-      {label && <legend className="mb-1.5 p-0 text-sm font-semibold text-ink">{label}</legend>}
+      {label && <legend className="mb-1.5 p-0 text-[13px] font-semibold text-ink-soft">{label}</legend>}
       <div className="flex flex-col gap-2">
         {options.map((o, i) => {
           const id = `${baseId}-${i}`;
