@@ -13,7 +13,6 @@ import {
   teacherDisplayName,
   teacherOptionsForSlot,
   teachesSubject,
-  type BusyDetail,
   type DayIndex,
   type Entry,
   type PinSpec,
@@ -27,7 +26,7 @@ import { Button } from '../../ui/Button';
 import { isComposing } from '../../ui/composing';
 import { cx } from '../../ui/cx';
 import { Icon } from '../../ui/Icon';
-import { busyLabel, classNames } from './conflictLabel';
+import { blockerText, classNames } from './conflictLabel';
 import { limitWarning, planItemColor, teacherReason } from './labels';
 import { initials, type GroupItem } from './pickerData';
 
@@ -161,9 +160,6 @@ export function GroupTeachersStep(props: GroupTeachersStepProps) {
     missing.length === 0 ? { classIds, lessons: options.map((s) => ({ subjectId: s, teacherId: picked[s]! })), groupKey: item.key } : null;
   const teacherCount = new Set(chosenIds).size;
 
-  const blockerText = (b: BusyDetail) =>
-    b.kind === 'teacher' ? t('assign.blocker', { who: teacherName(b.teacherId), reason: busyLabel(t, b, ctx, lang) }) : busyLabel(t, b, ctx, lang);
-
   let note = '';
   let tone: 'ok' | 'need' | 'bad' = 'ok';
   let label = slot ? t('picker.assign') : t('assign.start');
@@ -182,7 +178,7 @@ export function GroupTeachersStep(props: GroupTeachersStepProps) {
     } else {
       note =
         cell?.kind === 'busy'
-          ? t('assign.groupBlocked', { reasons: cell.blockers.map(blockerText).join('; '), ...where })
+          ? t('assign.groupBlocked', { reasons: cell.blockers.map((b) => blockerText(t, b, ctx, lang)).join('; '), ...where })
           : t('assign.groupNotFree', { classes: classesLabel, ...where });
       tone = 'bad';
       label = t('assign.pinOther');

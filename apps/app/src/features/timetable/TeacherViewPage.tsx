@@ -36,8 +36,8 @@ import { blockKey, blockStateFor, isBlock, type BlockState } from './blockState'
 import type { CellView } from './Cell';
 import { classNames } from './labels';
 import { useAdminBase } from './paths';
-import { PinBar } from './PinBar';
-import { PinLegend, pinOverlayCell } from './pinOverlay';
+import { PinHeader, PinSection } from './PinPanel';
+import { pinOverlayCell } from './pinOverlay';
 import { TeacherAssignPicker } from './TeacherAssignPicker';
 import { TeacherSlotPicker } from './TeacherSlotPicker';
 import { TimetableGrid, type GridOverlay, type Slot } from './TimetableGrid';
@@ -318,32 +318,29 @@ function TeacherView({ teacher, teachers, template }: { teacher: Teacher; teache
         </Button>
       </div>
 
-      {pinTarget && pin.progress ? (
-        <PinBar
-          title={pin.names?.title ?? ''}
-          {...(pin.names?.detail ? { detail: pin.names.detail } : {})}
-          color={pin.names?.color ?? '#E9E9E9'}
-          progress={pin.progress}
-          suggestedCount={pin.suggested.length}
-          onSuggest={pin.suggest}
-          onPinSuggested={() => void pin.pinSuggested()}
-          onDone={stopPin}
-        />
-      ) : (
-        !readOnly && <p className="mb-3.5 rounded-[10px] border border-line bg-white px-3.5 py-2.5 text-[13px] text-ink-soft">{t('teacherView.pinHint')}</p>
-      )}
+      <PinHeader pin={pin} hint={t('teacherView.pinHint')} readOnly={readOnly} />
 
-      <section
-        data-pin-mode={pinTarget ? 'true' : undefined}
-        className={cx('min-w-0 overflow-x-auto rounded-[14px] border border-line bg-white p-4', pinTarget && 'outline outline-2 outline-offset-2 outline-brand')}
+      <PinSection
+        pin={pin}
+        teacher={teacherDisplayName(teacher, lang)}
+        teacherRows
+        footer={
+          <>
+            <p className="mb-0 mt-3 text-xs text-ink-muted">{t('teacherView.hint')}</p>
+            {outside.length > 0 && (
+              <div className="mt-4 border-t border-line pt-3">
+                <h3 className="m-0 text-sm font-bold text-ink">{t('teacherView.outside')}</h3>
+                <p className="mb-1.5 mt-0.5 text-xs text-ink-muted">{t('teacherView.outsideHint')}</p>
+                <ul className="m-0 list-disc pl-5 text-sm text-ink-soft">
+                  {outside.map((e) => (
+                    <li key={e.id}>{describe(e)}</li>
+                  ))}
+                </ul>
+              </div>
+            )}
+          </>
+        }
       >
-        {pinTarget && (
-          <PinLegend
-            teacher={teacherDisplayName(teacher, lang)}
-            teacherRows={{ classes: pin.names?.classes ?? '', base: ctx.classes.find((c) => c.id === pinTarget.classIds[0])?.name ?? '' }}
-            {...(pinTarget.groupKey === undefined ? {} : { group: { count: new Set(pinTarget.lessons.map((l) => l.teacherId)).size, classes: pin.names?.classes ?? '' } })}
-          />
-        )}
         <TimetableGrid
           rows={rows}
           cellsFor={(d, p) => {
@@ -359,22 +356,7 @@ function TeacherView({ teacher, teachers, template }: { teacher: Teacher; teache
           overlay={pinTarget ? pinOverlay : undefined}
           activateOnClick={!!pinTarget}
         />
-        <p role="status" className="mx-1 mb-0 mt-3 min-h-[1px] text-[13px] font-semibold text-[#1F6B34] empty:mt-0">
-          {pin.message}
-        </p>
-        <p className="mb-0 mt-3 text-xs text-ink-muted">{t('teacherView.hint')}</p>
-        {outside.length > 0 && (
-          <div className="mt-4 border-t border-line pt-3">
-            <h3 className="m-0 text-sm font-bold text-ink">{t('teacherView.outside')}</h3>
-            <p className="mb-1.5 mt-0.5 text-xs text-ink-muted">{t('teacherView.outsideHint')}</p>
-            <ul className="m-0 list-disc pl-5 text-sm text-ink-soft">
-              {outside.map((e) => (
-                <li key={e.id}>{describe(e)}</li>
-              ))}
-            </ul>
-          </div>
-        )}
-      </section>
+      </PinSection>
 
       {assign && (
         <TeacherAssignPicker teacherId={teacher.id} slot={assign} entries={entries} onClose={() => setAssign(null)} onSave={save} onPin={pin.start} />

@@ -30,14 +30,13 @@ import { Icon } from '../../ui/Icon';
 import { LoadingState } from '../../ui/LoadingState';
 import { Modal } from '../../ui/Modal';
 import { Select } from '../../ui/Select';
-import { cx } from '../../ui/cx';
 import { AssignPicker } from './AssignPicker';
 import { BlockEditor } from './BlockEditor';
 import { blockKey, blockStateFor, isBlock, type BlockState } from './blockState';
 import { classCellView } from './labels';
 import { useAdminBase } from './paths';
-import { PinBar } from './PinBar';
-import { PinLegend, pinOverlayCell } from './pinOverlay';
+import { PinHeader, PinSection } from './PinPanel';
+import { pinOverlayCell } from './pinOverlay';
 import { SlotPicker } from './SlotPicker';
 import { SubjectProgress } from './SubjectProgress';
 import { TimetableGrid, type GridOverlay, type Slot } from './TimetableGrid';
@@ -247,35 +246,10 @@ function ClassView({ cls, classes }: { cls: SchoolClass; classes: SchoolClass[] 
         </div>
       </div>
 
-      {pinTarget && pin.progress ? (
-        <PinBar
-          title={pin.names?.title ?? ''}
-          {...(pin.names?.detail ? { detail: pin.names.detail } : {})}
-          color={pin.names?.color ?? '#E9E9E9'}
-          progress={pin.progress}
-          suggestedCount={pin.suggested.length}
-          onSuggest={pin.suggest}
-          onPinSuggested={() => void pin.pinSuggested()}
-          onDone={stopPin}
-        />
-      ) : (
-        !readOnly && <p className="mb-3.5 rounded-[10px] border border-line bg-white px-3.5 py-2.5 text-[13px] text-ink-soft">{t('pin.hint')}</p>
-      )}
+      <PinHeader pin={pin} hint={t('pin.hint')} readOnly={readOnly} />
 
       <div className="flex flex-wrap items-start gap-5">
-        <section
-          data-pin-mode={pinTarget ? 'true' : undefined}
-          className={cx(
-            'min-w-0 flex-[999_1_620px] overflow-x-auto rounded-[14px] border border-line bg-white p-4',
-            pinTarget && 'outline outline-2 outline-offset-2 outline-brand',
-          )}
-        >
-          {pinTarget && (
-            <PinLegend
-              teacher={pin.names?.teacher ?? ''}
-              {...(pinTarget.groupKey === undefined ? {} : { group: { count: new Set(pinTarget.lessons.map((l) => l.teacherId)).size, classes: pin.names?.classes ?? '' } })}
-            />
-          )}
+        <PinSection pin={pin} teacher={pin.names?.teacher ?? ''} className="flex-[999_1_620px]">
           <TimetableGrid
             rows={rows}
             cellsFor={(d, p) => {
@@ -290,10 +264,7 @@ function ClassView({ cls, classes }: { cls: SchoolClass; classes: SchoolClass[] 
             overlay={pinTarget ? pinOverlay : undefined}
             activateOnClick={!!pinTarget}
           />
-          <p role="status" className="mx-1 mb-0 mt-3 min-h-[1px] text-[13px] font-semibold text-[#1F6B34] empty:mt-0">
-            {pin.message}
-          </p>
-        </section>
+        </PinSection>
         <div className="flex min-w-[280px] max-w-[360px] flex-[1_1_300px] flex-col gap-4">
           <SubjectProgress
             cls={cls}

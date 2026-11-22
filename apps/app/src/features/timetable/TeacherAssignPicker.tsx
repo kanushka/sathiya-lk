@@ -31,7 +31,6 @@ import { Modal } from '../../ui/Modal';
 import { busyLabel } from './conflictLabel';
 import { GroupTeachersStep } from './GroupTeachersStep';
 import { placeThenPin } from './placeThenPin';
-import { planItemColor } from './labels';
 import { teacherSubjects, type GroupItem } from './pickerData';
 
 export interface TeacherAssignPickerProps {

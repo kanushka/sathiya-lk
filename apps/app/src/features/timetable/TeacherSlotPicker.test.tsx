@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
 // Copyright (C) 2026 Kanushka Gayan
 
-import type { DayIndex, Entry } from '@sathiya/core';
+import type { Entry } from '@sathiya/core';
 import { C, ctx, entries6B, entry, S, T } from '@sathiya/core/fixtures';
 import { screen, waitFor, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';

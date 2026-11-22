@@ -19,6 +19,12 @@ function groupName(ctx: SchoolContext, key: string, lang: Lang): string | undefi
   return group && pickName(group, lang);
 }
 
+export function blockerText(t: TFunction, b: Omit<BusyDetail, 'entryId'>, ctx: SchoolContext, lang: Lang): string {
+  const reason = busyLabel(t, b, ctx, lang);
+  const teacher = b.kind === 'teacher' ? ctx.teachers.find((x) => x.id === b.teacherId) : undefined;
+  return teacher ? t('assign.blocker', { who: teacherDisplayName(teacher, lang), reason }) : reason;
+}
+
 export function busyLabel(t: TFunction, b: Omit<BusyDetail, 'entryId'>, ctx: SchoolContext, lang: Lang): string {
   const classes = classNames(ctx, b.classIds);
   const s = ctx.subjects.find((x) => x.id === b.subjectId);
