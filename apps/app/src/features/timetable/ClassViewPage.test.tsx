@@ -435,7 +435,7 @@ describe('ClassViewPage', () => {
         expect(screen.getByLabelText('Pin mode legend')).toHaveTextContent('Free for all 3 teachers and 6A+6B');
         expect(cellNamed(/^Wednesday, period 4, 09:50–10:30: Religion 6A\+6B, pinned, click to unpin$/)).toBeInTheDocument();
         expect(cellNamed(/^Thursday, period 7, 12:10–12:50: pin Religion for 6A\+6B, over plan$/)).toBeInTheDocument();
-        expect(screen.getByRole('button', { name: 'Stop pinning Religion' }).closest('li')).toHaveAttribute('data-active', 'true');
+        expect(screen.getByRole('button', { name: 'Done pinning Religion' }).closest('li')).toHaveAttribute('data-active', 'true');
       });
 
       it('starts group pin mode from the list with the latest lesson’s teachers and classes', async () => {

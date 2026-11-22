@@ -2,7 +2,7 @@
 // Copyright (C) 2026 Kanushka Gayan
 import { expect, test } from '@playwright/test';
 import { ADMIN } from '../../scripts/seed';
-import { loginAdmin, pick, shot } from '../helpers';
+import { loginAdmin, shot } from '../helpers';
 
 test('teacher view: build a religion block through the assign popup', async ({ page }) => {
   await loginAdmin(page, ADMIN.email, ADMIN.password);
