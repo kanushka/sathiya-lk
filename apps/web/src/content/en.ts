@@ -49,9 +49,9 @@ export const en = {
   hero: {
     pill: 'Free for every Sri Lankan school',
     title: "Your whole school's week, planned in one place.",
-    sub: 'ඔබේ පාසලේ කාලසටහන, පහසුවෙන්.',
+    sub: 'මුළු පාසලේම සතියේ කාලසටහන, එකම තැනකින් පහසුවෙන්.',
     subLang: 'si',
-    body: 'Build class and teacher timetables side by side. Sathiya warns you about clashes, counts periods per subject, and gives every teacher their timetable on their phone.',
+    body: "Build class and teacher timetables side by side, with clash prevention, live period counts and every teacher's timetable on their phone.",
     register: 'Register your school',
     teacherLogin: 'Teacher login',
   },
@@ -76,24 +76,24 @@ export const en = {
   },
   features: {
     title: 'Made for how Sri Lankan schools actually work',
-    intro: 'Primary class teachers, religion groups, aesthetic subjects, combined classes — all built in.',
+    intro: 'Primary class teachers, religion and aesthetic groups, combined classes: all built in, no spreadsheet workarounds.',
     items: [
-      { title: 'Class + teacher views', body: 'Fill the week from a class grid or a teacher grid. Every change shows in both instantly.' },
-      { title: 'Clash warnings', body: 'Only teachers who teach that subject, that grade, and are free in that slot appear in the list.' },
-      { title: 'Period targets', body: 'Set periods per week per subject for each grade and watch "Maths 4/6" fill up.' },
-      { title: 'Groups & combined classes', body: 'Religion and Aesthetic groups run in parallel, even across 6A and 6B together.' },
-      { title: 'Teachers on their phone', body: 'Teachers log in with staff ID and see what they teach now and next.' },
-      { title: 'Sinhala & English', body: 'Every screen and every printout in the language you prefer.' },
+      { title: 'Class + teacher views', body: 'Fill the week from a class grid or a teacher grid. Every change shows in both at once.' },
+      { title: 'Clash prevention', body: 'When you fill a period, only teachers who teach that subject and grade and are free at that time are offered. Double-bookings are stopped before they happen.' },
+      { title: 'Live period counts', body: 'Set periods per week for each subject and grade, and a daily limit for each teacher. Watch "Maths 4/6" fill up and see what is missing before you publish.' },
+      { title: 'Religion, aesthetic & combined classes', body: 'Religion and aesthetic options run in the same period, each with its own teacher, even across 6A and 6B together.' },
+      { title: 'Teachers on their phone', body: "Publish the timetable and every teacher sees today's periods and their week on their phone. Login slips and printouts cover anyone without one." },
+      { title: 'Sinhala & English', body: 'Every screen and every printout in Sinhala or English. Each person picks their own.' },
     ],
   },
   steps: {
     title: 'Up and running in an afternoon',
     step: 'Step',
     items: [
-      { title: 'Register your school', body: 'Add your name, logo and school colours.' },
-      { title: 'Add teachers & subjects', body: 'Staff IDs, subjects, grades they teach.' },
-      { title: 'Set up grades', body: 'Classes, class teachers, periods per subject.' },
-      { title: 'Build & share', body: 'Fill the grid, print, hand out teacher login slips.' },
+      { title: 'Register your school', body: "Add your school's name, logo and colours." },
+      { title: 'Add teachers & subjects', body: 'Type them in or upload the Excel template: staff IDs, subjects and the grades each teacher takes.' },
+      { title: 'Set up grades & periods', body: 'Classes, class teachers, period times and periods per subject for each grade.' },
+      { title: 'Build, publish & print', body: 'Fill the grid without clashes, publish to teachers, and print class and teacher timetables and login slips.' },
     ],
   },
   faq: {
@@ -104,12 +104,28 @@ export const en = {
         a: 'Yes. Sathiya is a free service for Sri Lankan schools. There are no fees, no paid plans and no advertising.',
       },
       {
+        q: 'Can it handle religion groups, aesthetic subjects and combined classes?',
+        a: 'Yes. Religion and aesthetic subjects are set up as groups whose options run in the same period, each with its own teacher, and a group can join classes such as 6A and 6B. Class and teacher timetables stay in step.',
+      },
+      {
+        q: 'How does it prevent clashes?',
+        a: "When you fill a period, Sathiya only offers teachers who teach that subject and grade, are free at that time and are under their daily limit. A teacher who is already busy in that period isn't offered.",
+      },
+      {
+        q: 'Is our work saved? Can several people work on it?',
+        a: 'Every change is saved as you make it. Your school can have more than one administrator, so the timetable committee can share the work. Teachers see the timetable only after you publish it.',
+      },
+      {
+        q: 'Can we change the timetable during the year?',
+        a: 'Yes. Change a lesson or a teacher in one place and the class and teacher views both update. Publish again and teachers see the new version.',
+      },
+      {
         q: "Who can see our school's data?",
         a: "Only people your school's administrators add. Administrators manage the timetable; teachers see their own timetable and the school's timetables. The only public details are your school's name, district and whether it is active, so teachers can find the school when they log in. We do not sell your data.",
       },
       {
-        q: 'Does it work on phones?',
-        a: 'Teachers can check their timetable and today\'s periods on any phone. Building the timetable and other admin work is made for a laptop or desktop, and tablets work too. Sathiya runs in a modern browser, so there is nothing to install.',
+        q: 'Do teachers need a smartphone?',
+        a: "No. Teachers with a phone can check today's periods and their week any time, with nothing to install. For anyone else, print their timetable. Building the timetable is made for a laptop or desktop; tablets work too.",
       },
       {
         q: 'Can we use it in Sinhala?',
@@ -123,8 +139,8 @@ export const en = {
     report: 'Seen a fake or duplicate school registration?',
   },
   cta: {
-    title: 'A contribution to the Sri Lankan school community.',
-    sub: 'ශ්‍රී ලාංකීය පාසල් සඳහා නොමිලේ.',
+    title: 'Less spreadsheet stress. Fewer clashes. A smoother school week.',
+    sub: 'සෑම ශ්‍රී ලාංකීය පාසලකටම නොමිලේ.',
     subLang: 'si',
     button: 'Register your school — free',
   },

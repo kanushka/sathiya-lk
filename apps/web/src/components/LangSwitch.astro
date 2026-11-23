@@ -7,11 +7,12 @@ interface Props {
   lang: Lang;
   page: Page;
   class?: string;
+  short?: boolean;
 }
-const { lang, page, class: className } = Astro.props;
+const { lang, page, class: className, short = false } = Astro.props;
 const t = content(lang);
 ---
 <div class:list={['lang-switch', className]} role="group" aria-label={t.nav.language}>
-  <a href={pagePath('si', page)} lang="si" hreflang="si" aria-label={t.nav.sinhala} aria-current={lang === 'si' ? 'page' : undefined}>සිං</a>
-  <a href={pagePath('en', page)} lang="en" hreflang="en" aria-label={t.nav.english} aria-current={lang === 'en' ? 'page' : undefined}>EN</a>
+  <a href={pagePath('si', page)} lang="si" hreflang="si" aria-label={short ? t.nav.sinhala : undefined} aria-current={lang === 'si' ? 'page' : undefined}>{short ? 'සිං' : t.nav.sinhala}</a>
+  <a href={pagePath('en', page)} lang="en" hreflang="en" aria-label={short ? t.nav.english : undefined} aria-current={lang === 'en' ? 'page' : undefined}>{short ? 'EN' : t.nav.english}</a>
 </div>
