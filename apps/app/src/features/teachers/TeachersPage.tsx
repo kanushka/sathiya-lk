@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
 // Copyright (C) 2026 Kanushka Gayan
-import { pickName, teacherDisplayName, usageCount, type Lang, type Teacher } from '@sathiya/core';
+import { pickName, teacherDisplayName, teacherNameMissing, usageCount, type Lang, type Teacher } from '@sathiya/core';
 import { useEffect, useMemo, useState } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
@@ -52,7 +52,10 @@ export function TeachersPage() {
   const subjectName = useMemo(() => new Map(subjects.map((s) => [s.id, pickName(s, lang)])), [subjects, lang]);
   const sorted = useMemo(() => [...teachers].sort((a, b) => a.staffId.localeCompare(b.staffId)), [teachers]);
   const q = search.trim().toLowerCase();
-  const rows = q ? sorted.filter((x) => teacherDisplayName(x, lang).toLowerCase().includes(q) || x.staffId.toLowerCase().includes(q)) : sorted;
+  const other: Lang = lang === 'si' ? 'en' : 'si';
+  const rows = q
+    ? sorted.filter((x) => [teacherDisplayName(x, 'en'), teacherDisplayName(x, 'si'), x.staffId].some((v) => v.toLowerCase().includes(q)))
+    : sorted;
 
   async function printTeachers(list: Teacher[], pw: Readonly<Record<string, string>>) {
     const url = teacherLoginUrl(window.location.origin, school.id);
@@ -134,7 +137,14 @@ export function TeachersPage() {
             {rows.map((x) => (
               <Tr key={x.id}>
                 <Td className="font-mono text-[13px]">{x.staffId}</Td>
-                <Td className="font-semibold">{teacherDisplayName(x, lang)}</Td>
+                <Td>
+                  <span className="font-semibold">{teacherDisplayName(x, lang)}</span>
+                  {teacherNameMissing(x, lang) ? (
+                    <Badge tone="warning" className="ml-2">{t(lang === 'si' ? 'common:names.noSi' : 'common:names.noEn')}</Badge>
+                  ) : (
+                    !teacherNameMissing(x, other) && <span className="block text-xs text-ink-muted">{teacherDisplayName(x, other)}</span>
+                  )}
+                </Td>
                 <Td>
                   {x.isPrimary ? (
                     <Badge tone="warning">{t('page.primaryTeacher')}</Badge>

@@ -86,7 +86,10 @@ describe('profile page', () => {
     expect(prefix).toHaveValue('SCC');
     expect(screen.getByRole('button', { name: 'Save changes' })).toBeEnabled();
     await user.clear(screen.getByLabelText('School name (English)'));
+    expect(screen.getByRole('button', { name: 'Save changes' })).toBeEnabled();
+    await user.clear(screen.getByLabelText('School name (Sinhala)'));
     expect(screen.getByRole('button', { name: 'Save changes' })).toBeDisabled();
+    expect(screen.getByText('Enter the name in English or Sinhala (or both).')).toBeInTheDocument();
   });
 
   it('keeps the saved prefix on rename and suggests one only after the prefix is cleared', async () => {

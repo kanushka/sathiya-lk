@@ -11,5 +11,6 @@
     "save": "Save", "cancel": "Cancel", "close": "Close", "add": "Add",
     "delete": "Delete", "print": "Print", "edit": "Edit"
   },
-  "languages": { "en": "English", "si": "සිංහල" }
+  "languages": { "en": "English", "si": "සිංහල" },
+  "names": {"legend": "Name", "either": "English, Sinhala or both", "inEnglish": "In English", "inSinhala": "In Sinhala", "hint": "Fill both if you can. When one is empty, the other is shown.", "missing": "Enter the name in English or Sinhala (or both).", "noEn": "No English name", "noSi": "No Sinhala name"}
 }

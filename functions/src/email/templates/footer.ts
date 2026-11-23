@@ -3,7 +3,7 @@
 import type { Email } from './layout';
 
 export const siteFooter = (webUrl?: string): Email['footer'] => ({
-  en: 'Sathiya: free school timetables for Sri Lanka',
+  en: 'Sathiya (සතිය): free school timetables for Sri Lanka',
   linkUrl: webUrl,
   linkLabel: webUrl ? webUrl.replace(/^https?:\/\//, '').replace(/\/$/, '') : undefined,
 });

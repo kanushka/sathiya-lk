@@ -30,6 +30,8 @@ import { useSessionPasswords } from '../teachers/sessionPasswords';
 import { teacherLoginUrl } from '../teachers/slip';
 import { importSetup } from './api';
 import { ImportFileError, readImportFile } from './readFile';
+import { fetchDefaultSubjects } from '../subjects/api';
+import { missingDefaults, standardList } from '../subjects/standard';
 import { downloadBlob, templateCsv, templateSheetNames, templateXlsx } from './template';
 
 type View =
@@ -106,12 +108,15 @@ export function ImportModal({ onClose }: { onClose: () => void }) {
     teachers: t('teacherCount', { count: tc }),
   });
 
+  const prefill = async () => missingDefaults(subjects, await fetchDefaultSubjects().catch(() => standardList(undefined)));
+
   async function download(kind: 'xlsx' | ImportKind) {
     try {
       if (kind === 'xlsx') {
         const fixed = (l: Lang) => i18n.getFixedT(l, 'import');
         const both = (key: string) => `${fixed('en')(key)} / ${fixed('si')(key)}`;
         const blob = await templateXlsx({
+          subjects: await prefill(),
           staffPrefix: school.staffPrefix,
           grades: [...school.grades].sort((a, b) => a - b),
           instructions: {
@@ -123,7 +128,7 @@ export function ImportModal({ onClose }: { onClose: () => void }) {
         });
         downloadBlob(blob, 'sathiya-import-template.xlsx');
       } else {
-        downloadBlob(new Blob([templateCsv(kind)], { type: 'text/csv;charset=utf-8' }), `sathiya-${kind}.csv`);
+        downloadBlob(new Blob([templateCsv(kind, kind === 'subjects' ? await prefill() : [])], { type: 'text/csv;charset=utf-8' }), `sathiya-${kind}.csv`);
       }
     } catch {
       toast.show(t('downloadFailed'), 'error');

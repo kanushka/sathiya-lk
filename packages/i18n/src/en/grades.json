@@ -51,6 +51,7 @@
     "optionPlaceholder": "+ option"
   },
   "group": {
+    "name": "Group name",
     "addTitle": "Add group",
     "editTitle": "Edit group",
     "subtitle": "Options in a group are taught at the same time.",

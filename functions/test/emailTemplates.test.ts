@@ -90,3 +90,13 @@ describe('email templates', () => {
     expect(html).not.toContain('<img');
   });
 });
+
+describe('email templates for a school with only a Sinhala name', () => {
+  it('uses the Sinhala name in the subject, header and body', () => {
+    const siOnly = { nameEn: '', nameSi: 'සිරිපුර විද්‍යාලය', colors: { primary: '#7A1F3D' } };
+    const r = schoolRegistered({ adminName: 'W. Perera', school: siOnly, loginUrl, webUrl });
+    expect(r.subject).toBe('Welcome to Sathiya: සිරිපුර විද්‍යාලය is registered');
+    expect(r.text).toContain('සිරිපුර විද්‍යාලය is now registered');
+    expect(adminInvite({ inviter: 'W. Perera', school: siOnly, loginUrl, webUrl }).subject).toContain('සිරිපුර විද්‍යාලය');
+  });
+});

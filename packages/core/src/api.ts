@@ -28,7 +28,7 @@ export interface RegisterSchoolRes { schoolId: string }
 export interface CreateTeacherReq { schoolId: string; teacher: Omit<Teacher, 'id' | 'uid' | 'lastLoginAt'> }
 export interface CreateTeacherRes { teacherId: string; password: string }
 export interface ImportSetupReq { schoolId: string; subjectsVersion: string; subjects: ImportRow<SubjectColumn>[]; teachers: ImportRow<TeacherColumn>[] }
-export interface ImportSetupRes { subjectIds: string[]; teachers: { teacherId: string; staffId: string; name: string; title?: TeacherTitle; password: string }[]; notCreated: string[] }
+export interface ImportSetupRes { subjectIds: string[]; teachers: { teacherId: string; staffId: string; name: string; nameSi?: string; title?: TeacherTitle; password: string }[]; notCreated: string[] }
 export interface ResetTeacherPasswordReq { schoolId: string; teacherId: string }
 export interface ResetTeacherPasswordRes { password: string }
 export interface InviteAdminReq { schoolId: string; email: string; teacherId?: string }

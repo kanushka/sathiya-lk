@@ -28,13 +28,13 @@ describe('subjects page', () => {
     expect(within(screen.getByTestId('page-header')).getAllByRole('button').map((b) => b.textContent)).toEqual(['Load standard Sri Lankan list', 'Import', '+ Add subject']);
   });
 
-  it('add requires the English name', async () => {
+  it('add requires an English or a Sinhala name', async () => {
     const user = userEvent.setup();
     render();
     await user.click(screen.getByRole('button', { name: '+ Add subject' }));
     const dialog = screen.getByRole('dialog');
     await user.click(within(dialog).getByRole('button', { name: 'Add subject' }));
-    expect(within(dialog).getByText('Enter the subject name in English')).toBeInTheDocument();
+    expect(within(dialog).getByText('Enter the name in English or Sinhala (or both).')).toBeInTheDocument();
     expect(api.addSubject).not.toHaveBeenCalled();
 
     await user.type(within(dialog).getByLabelText('Name in English'), 'Agriculture');
@@ -151,7 +151,7 @@ describe('subjects page', () => {
     expect(within(dialog).queryByRole('button', { name: 'Delete' })).not.toBeInTheDocument();
   });
 
-  it('inline edit saves a changed short name and ignores an emptied English name', async () => {
+  it('inline edit saves a changed short name and refuses to empty the only name', async () => {
     const user = userEvent.setup();
     render();
     const short = screen.getByLabelText('Short name of Mathematics');
@@ -163,8 +163,7 @@ describe('subjects page', () => {
     const en = screen.getByLabelText('English name of Mathematics');
     await user.clear(en);
     await user.tab();
-    expect(api.updateSubject).not.toHaveBeenCalled();
-    expect(en).toHaveValue('Mathematics');
+    expect(api.updateSubject).toHaveBeenCalledWith('siripura', 's-maths', expect.objectContaining({ nameEn: '', nameSi: 'ගණිතය' }));
   });
 
   it('read-only hides write controls and makes inline inputs readOnly', () => {

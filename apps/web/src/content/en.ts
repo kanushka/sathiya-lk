@@ -8,24 +8,24 @@ export const en = {
   skip: 'Skip to content',
   meta: {
     index: {
-      title: 'Sathiya — free school timetables for Sri Lankan schools',
+      title: 'Sathiya (සතිය) — Free school timetables for Sri Lanka',
       description:
-        'Build class and teacher timetables side by side, catch clashes early, and give every teacher their timetable on their phone. Free for every Sri Lankan school, in Sinhala and English.',
+        'Sathiya (සතිය) is a free timetable app for Sri Lankan schools. Build class and teacher timetables, catch clashes early, and give every teacher their week on their phone.',
     },
     terms: {
-      title: 'Terms & Conditions — Sathiya',
-      description: 'The terms for using Sathiya, the free school timetable service for Sri Lankan schools.',
+      title: 'Terms & Conditions · Sathiya (සතිය)',
+      description: 'The terms for using Sathiya (සතිය), the free school timetable service for Sri Lankan schools.',
     },
     privacy: {
-      title: 'Privacy Policy — Sathiya',
-      description: 'What Sathiya collects, where it is stored, and who can see it.',
+      title: 'Privacy Policy · Sathiya (සතිය)',
+      description: 'What Sathiya (සතිය) collects, where it is stored, and who can see it.',
     },
     contact: {
-      title: 'Contact — Sathiya',
-      description: 'How to reach the people who run Sathiya.',
+      title: 'Contact · Sathiya (සතිය)',
+      description: 'How to reach the people who run Sathiya (සතිය).',
     },
     '404': {
-      title: 'Page not found — Sathiya',
+      title: 'Page not found · Sathiya (සතිය)',
       description: `This page does not exist on ${SITE_HOST}.`,
     },
   },
@@ -129,7 +129,7 @@ export const en = {
     button: 'Register your school — free',
   },
   footer: {
-    copyright: '© 2026 Sathiya',
+    copyright: '© 2026 Sathiya (සතිය)',
     label: 'Legal',
     terms: 'Terms & Conditions',
     privacy: 'Privacy Policy',

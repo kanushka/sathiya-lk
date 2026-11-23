@@ -12,13 +12,13 @@ export interface SchoolRegisteredInput {
 }
 
 export function schoolRegistered({ adminName, school, loginUrl, webUrl }: SchoolRegisteredInput): Rendered {
-  const si = pickName({ nameEn: school.nameEn, nameSi: school.nameSi }, 'si');
+  const si = pickName(school, 'si');
   return render({
-    subject: `Welcome to Sathiya: ${school.nameEn} is registered`,
+    subject: `Welcome to Sathiya: ${pickName(school, 'en')} is registered`,
     header: schoolHeader(school),
     en: {
       greeting: `Hello ${adminName},`,
-      paras: [[{ b: school.nameEn }, ' is now registered on Sathiya. Here is how to get started:']],
+      paras: [[{ b: pickName(school, 'en') }, ' is now registered on Sathiya. Here is how to get started:']],
       steps: [
         'Add your subjects, period times and classes.',
         'Add your teachers. Each one gets a login slip.',

@@ -63,7 +63,7 @@ describe('dashboard model', () => {
     expect(target.to).toMatch(/^\/timetable\/class\?c=c-6a/);
     expect(JSON.stringify(items)).not.toMatch(/periods on|outside the class/);
     const si = attentionItems(ctx, [...entries, ...over], 'si').find((i) => i.kind === 'over-limit')!;
-    expect(si.params.teacher).toBe('S. Kumara මහතා');
+    expect(si.params.teacher).toBe('Mr. S. Kumara');
   });
 
   it('class chips match the class page placement, capping over-plan and leaving out orphans', () => {

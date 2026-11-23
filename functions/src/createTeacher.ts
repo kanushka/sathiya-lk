@@ -3,7 +3,7 @@
 import { isValidStaffId, TEACHER_TITLES, type CreateTeacherRes, type Teacher, type TeacherTitle } from '@sathiya/core';
 import { onCall } from 'firebase-functions/v2/https';
 import { callOpts } from './lib/callOptions';
-import { bool, docIdList, email, int, intList, invalid, obj, optStr, requireSchoolAdmin, str } from './lib/guards';
+import { bool, docIdList, email, int, intList, invalid, obj, optStr, requireSchoolAdmin, str, twoNames } from './lib/guards';
 import { createTeacherAccount } from './lib/teacherAccount';
 
 const optTitle = (v: unknown): TeacherTitle | undefined => {
@@ -18,10 +18,12 @@ export const createTeacher = onCall(callOpts, async (req): Promise<CreateTeacher
   const t = obj(data.teacher, 'teacher');
   const staffId = str(t.staffId, 'staffId', 10);
   if (!isValidStaffId(school.staffPrefix, staffId)) invalid(`staffId must look like ${school.staffPrefix}001`);
+  const names = twoNames(t.name, t.nameSi, 'name', 'nameSi');
   const teacher: Omit<Teacher, 'id' | 'uid' | 'lastLoginAt'> = {
     staffId,
     title: optTitle(t.title),
-    name: str(t.name, 'name'),
+    name: names.en,
+    ...(names.si !== undefined && { nameSi: names.si }),
     isPrimary: bool(t.isPrimary, 'isPrimary'),
     subjectIds: docIdList(t.subjectIds, 'subjectIds'),
     grades: intList(t.grades, 'grades', 1, 13),

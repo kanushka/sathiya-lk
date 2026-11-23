@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
 // Copyright (C) 2026 Kanushka Gayan
-import { paths, REPORT_REASONS, type ReportReason, type ReportSchoolRes } from '@sathiya/core';
+import { paths, pickName, REPORT_REASONS, type ReportReason, type ReportSchoolRes } from '@sathiya/core';
 import { onCall } from 'firebase-functions/v2/https';
 import { db } from './lib/admin';
 import { mailConfig } from './email/params';
@@ -37,7 +37,7 @@ export const reportSchool = onCall(callOpts, async (req): Promise<ReportSchoolRe
   await sendMail('reportReceived', async () => {
     const { superEmails, appUrl, webUrl } = mailConfig();
     if (!superEmails.length) return undefined;
-    const schoolName = (school.get('nameEn') as string | undefined) ?? schoolId;
+    const schoolName = pickName({ nameEn: (school.get('nameEn') as string | undefined) ?? '', nameSi: school.get('nameSi') as string | undefined }, 'en') || schoolId;
     return { to: superEmails, message: reportReceived({ schoolName, schoolId, reason, details, reporterEmail: from, loginUrl: `${appUrl}/login`, webUrl }) };
   });
   return { ok: true };

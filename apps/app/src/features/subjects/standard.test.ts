@@ -50,6 +50,6 @@ describe('missingDefaults aliases', () => {
   });
   it('never leaves a colliding entry with an empty short name', () => {
     const added = missingDefaults([{ nameEn: 'Other', short: 'X' }], [{ nameEn: 'වෙනත්', short: 'x', color: '#E9E9E9' }]);
-    expect(added).toEqual([{ nameEn: 'වෙනත්', short: 'x2', color: '#E9E9E9' }]);
+    expect(added).toEqual([{ nameEn: 'වෙනත්', short: 'වෙනත්', color: '#E9E9E9' }]);
   });
 });

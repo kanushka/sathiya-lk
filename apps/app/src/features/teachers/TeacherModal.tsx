@@ -10,6 +10,7 @@ import { ToggleChip } from '../../ui/Chip';
 import { Field, inputClass } from '../../ui/Field';
 import { FormError } from '../../ui/FormError';
 import { Modal } from '../../ui/Modal';
+import { NameFields } from '../../ui/NameFields';
 import { MultiSelect } from '../../ui/MultiSelect';
 import { Select } from '../../ui/Select';
 import { useToast } from '../../ui/Toast';
@@ -29,6 +30,7 @@ interface Form {
   staffId: string;
   title: TeacherTitle | '';
   name: string;
+  nameSi: string;
   isPrimary: boolean;
   subjectIds: string[];
   grades: number[];
@@ -57,6 +59,7 @@ export function TeacherModal({ teacher, onClose }: TeacherModalProps) {
   const [form, setForm] = useState<Form>(() => ({
     staffId: teacher?.staffId ?? formatStaffId(school.staffPrefix, nextStaffNumber(teachers.map((x) => x.staffId), school.staffPrefix)),
     ...initialName(teacher),
+    nameSi: teacher?.nameSi ?? '',
     isPrimary: teacher?.isPrimary ?? false,
     subjectIds: teacher?.subjectIds ?? [],
     grades: teacher?.grades ?? [],
@@ -78,7 +81,7 @@ export function TeacherModal({ teacher, onClose }: TeacherModalProps) {
 
   const maxPerDay = Number(form.maxPerDay);
   const errors = {
-    name: form.name.trim() ? null : t('modal.errors.name'),
+    name: form.name.trim() || form.nameSi.trim() ? null : t('common:names.missing'),
     staffId: teacher
       ? null
       : !isValidStaffId(school.staffPrefix, form.staffId)
@@ -101,6 +104,7 @@ export function TeacherModal({ teacher, onClose }: TeacherModalProps) {
       staffId: form.staffId,
       ...(form.title ? { title: form.title } : {}),
       name: form.name.trim(),
+      ...(form.nameSi.trim() ? { nameSi: form.nameSi.trim() } : {}),
       isPrimary: form.isPrimary,
       subjectIds: form.isPrimary ? [] : form.subjectIds,
       grades: [...form.grades].sort((a, b) => a - b),
@@ -173,7 +177,7 @@ export function TeacherModal({ teacher, onClose }: TeacherModalProps) {
         {!savedId && (
         <form id="teacher-form" onSubmit={save} noValidate className="flex flex-col gap-4">
           <fieldset disabled={locked} className="m-0 flex min-w-0 flex-col gap-4 border-0 p-0">
-            <div className="grid grid-cols-[140px_110px_1fr] gap-3">
+            <div className="grid grid-cols-[140px_140px] gap-3">
               <Field label={t('modal.staffId')} error={show('staffId')}>
                 <input
                   className={inputClass}
@@ -192,10 +196,19 @@ export function TeacherModal({ teacher, onClose }: TeacherModalProps) {
                   ]}
                 />
               </Field>
-              <Field label={t('modal.name')} error={show('name')}>
-                <input className={inputClass} value={form.name} onChange={(e) => set('name', e.target.value)} />
-              </Field>
             </div>
+            <NameFields
+              enLabel={t('modal.nameEn')}
+              siLabel={t('modal.nameSi')}
+              en={form.name}
+              si={form.nameSi}
+              onEn={(v) => set('name', v)}
+              onSi={(v) => set('nameSi', v)}
+              missing={!!show('name')}
+              enPlaceholder={t('modal.namePlaceholderEn')}
+              siPlaceholder={t('modal.namePlaceholderSi')}
+              hint={t('modal.nameHint')}
+            />
             <div className="rounded-lg border border-line bg-surface p-3">
               <Checkbox
                 checked={form.isPrimary}
@@ -261,7 +274,7 @@ export function TeacherModal({ teacher, onClose }: TeacherModalProps) {
           slip={{
             schoolName: pickName(school, lang),
             staffId: form.staffId,
-            name: teacherDisplayName({ name: form.name, ...(form.title ? { title: form.title } : {}) }, lang),
+            name: teacherDisplayName({ name: form.name, nameSi: form.nameSi, ...(form.title ? { title: form.title } : {}) }, lang),
             password: teacherId ? passwords[teacherId] : undefined,
             url: teacherLoginUrl(window.location.origin, school.id),
           }}
@@ -276,7 +289,7 @@ export function TeacherModal({ teacher, onClose }: TeacherModalProps) {
         <Modal
           open
           width={440}
-          title={t('resetConfirm.title', { name: teacherDisplayName({ name: form.name, ...(form.title ? { title: form.title } : {}) }, lang) })}
+          title={t('resetConfirm.title', { name: teacherDisplayName({ name: form.name, nameSi: form.nameSi, ...(form.title ? { title: form.title } : {}) }, lang) })}
           onClose={() => setConfirmingReset(false)}
           busy={resetting}
           footer={
@@ -289,7 +302,7 @@ export function TeacherModal({ teacher, onClose }: TeacherModalProps) {
           }
         >
           <p className="text-sm text-ink-soft">
-            {t('resetConfirm.body', { name: teacherDisplayName({ name: form.name, ...(form.title ? { title: form.title } : {}) }, lang) })}
+            {t('resetConfirm.body', { name: teacherDisplayName({ name: form.name, nameSi: form.nameSi, ...(form.title ? { title: form.title } : {}) }, lang) })}
           </p>
         </Modal>
       )}

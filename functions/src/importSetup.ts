@@ -109,7 +109,7 @@ export const importSetup = onCall({ ...callOpts, timeoutSeconds: 300 }, async (r
           ...teacher,
           subjectIds: subjectRefs.map((r) => ('existingId' in r ? r.existingId : subjectIds[r.newIndex]!)),
         });
-        created[i] = { teacherId, staffId: teacher.staffId, name: teacher.name, ...(teacher.title && { title: teacher.title }), password };
+        created[i] = { teacherId, staffId: teacher.staffId, name: teacher.name, ...(teacher.nameSi !== undefined && { nameSi: teacher.nameSi }), ...(teacher.title && { title: teacher.title }), password };
       } catch (e) {
         failed = true;
         // Messages can carry staff IDs, names or emails; the code is enough to diagnose.

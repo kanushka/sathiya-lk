@@ -31,7 +31,7 @@ describe('PrintTeacherPage', () => {
     setup(T.ananda, '', 'si');
     const filled = screen.getAllByTestId('print-slot').filter((s) => s.dataset.empty !== 'true');
     expect(filled.some((s) => /බුද්ධ/.test(s.textContent ?? ''))).toBe(true);
-    expect(screen.getByRole('heading', { name: /^පූජ්‍ය Ananda Thero/ })).toBeInTheDocument();
+    expect(screen.getByRole('heading', { name: /^Ven. Ananda Thero/ })).toBeInTheDocument();
   });
 
   it('prints once when auto=1', async () => {

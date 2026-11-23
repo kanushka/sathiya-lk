@@ -34,6 +34,17 @@ describe('createTeacher', () => {
     await expectFnError(admin.call('createTeacher', { schoolId: sid, teacher: { ...teacherInput('SCC027'), title: 'King' as never } }), 'invalid-argument', 'invalid');
   });
 
+  it('takes the name in English, Sinhala or both, but not neither', async () => {
+    const { admin, sid } = await adminWithSchool();
+    const { teacherId } = await admin.call('createTeacher', { schoolId: sid, teacher: { ...teacherInput('SCC030'), name: '', nameSi: 'ජී. ජයසේකර', title: 'Mr' } });
+    const stored = (await adminDb.doc(`${paths.teachers(sid)}/${teacherId}`).get()).data()!;
+    expect(stored).toMatchObject({ name: '', nameSi: 'ජී. ජයසේකර' });
+    expect((await adminAuth.getUser(stored.uid as string)).displayName).toBe('ජී. ජයසේකර මහතා');
+    const { teacherId: both } = await admin.call('createTeacher', { schoolId: sid, teacher: { ...teacherInput('SCC031'), name: 'N. Perera', nameSi: 'එන්. පෙරේරා' } });
+    expect((await adminDb.doc(`${paths.teachers(sid)}/${both}`).get()).data()).toMatchObject({ name: 'N. Perera', nameSi: 'එන්. පෙරේරා' });
+    await expectFnError(admin.call('createTeacher', { schoolId: sid, teacher: { ...teacherInput('SCC032'), name: ' ', nameSi: '' } }), 'invalid-argument', 'invalid');
+  });
+
   it('refuses a caller who is not admin of the school', async () => {
     const { sid } = await adminWithSchool();
     const { admin: other } = await adminWithSchool();

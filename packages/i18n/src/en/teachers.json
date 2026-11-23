@@ -26,6 +26,11 @@
     "printPartial_other": "{{count}} teachers could not be reset and were left out of the slips"
   },
   "modal": {
+    "nameEn": "Name in English",
+    "nameSi": "Name in Sinhala",
+    "namePlaceholderEn": "e.g. N. Perera",
+    "namePlaceholderSi": "e.g. එන්. පෙරේරා",
+    "nameHint": "Without the title. Fill both if you can. When one is empty, the other is shown.",
     "titleAdd": "Add teacher",
     "titleEdit": "Edit teacher",
     "staffId": "Staff ID",

@@ -81,7 +81,7 @@ describe('teachers page', () => {
     vi.mocked(api.createTeacher).mockResolvedValue({ teacherId: 'tNew', password: 'k7m4x9pq' });
     render();
     const dialog = await openAdd(user);
-    await user.type(within(dialog).getByLabelText('Name'), 'Mr. New Teacher');
+    await user.type(within(dialog).getByLabelText('Name in English'), 'Mr. New Teacher');
     await pickOption(user, within(dialog).getByRole('combobox', { name: 'Subjects' }), 'Mathematics');
     await user.click(within(dialog).getByRole('button', { name: '6', pressed: false }));
     await user.click(within(dialog).getByRole('button', { name: 'Save teacher' }));
@@ -103,7 +103,7 @@ describe('teachers page', () => {
     vi.mocked(api.createTeacher).mockRejectedValue(new ApiError('school-disabled', 'School is suspended'));
     render();
     const dialog = await openAdd(user);
-    await user.type(within(dialog).getByLabelText('Name'), 'Mr. New Teacher');
+    await user.type(within(dialog).getByLabelText('Name in English'), 'Mr. New Teacher');
     await pickOption(user, within(dialog).getByRole('combobox', { name: 'Subjects' }), 'Mathematics');
     await user.click(within(dialog).getByRole('button', { name: '6', pressed: false }));
     await user.click(within(dialog).getByRole('button', { name: 'Save teacher' }));
@@ -115,7 +115,7 @@ describe('teachers page', () => {
     vi.mocked(api.createTeacher).mockResolvedValue({ teacherId: 'tNew', password: 'k7m4x9pq' });
     render();
     const dialog = await openAdd(user);
-    await user.type(within(dialog).getByLabelText('Name'), 'New Teacher');
+    await user.type(within(dialog).getByLabelText('Name in English'), 'New Teacher');
     await pickOption(user, within(dialog).getByRole('combobox', { name: 'Subjects' }), 'Mathematics');
     await user.click(within(dialog).getByRole('button', { name: '6', pressed: false }));
     await user.click(within(dialog).getByRole('button', { name: 'Save teacher' }));
@@ -133,7 +133,7 @@ describe('teachers page', () => {
     vi.mocked(api.createTeacher).mockResolvedValue({ teacherId: 'tNew', password: 'k7m4x9pq' });
     render();
     const dialog = await openAdd(user);
-    await user.type(within(dialog).getByLabelText('Name'), 'New Teacher');
+    await user.type(within(dialog).getByLabelText('Name in English'), 'New Teacher');
     await pickOption(user, within(dialog).getByRole('combobox', { name: 'Subjects' }), 'Mathematics');
     await user.click(within(dialog).getByRole('button', { name: '6', pressed: false }));
     await user.click(within(dialog).getByRole('button', { name: 'Save teacher' }));
@@ -305,7 +305,7 @@ describe('teachers page', () => {
     await user.click(within(screen.getByText('Mrs. N. Perera').closest('tr')!).getByRole('button', { name: 'Edit' }));
     const dialog = screen.getByRole('dialog');
     flags.readOnly = true;
-    fireEvent.change(within(dialog).getByRole('textbox', { name: /^Name/ }), { target: { value: 'Mrs. N. Perera ' } });
+    fireEvent.change(within(dialog).getByRole('textbox', { name: 'Name in English' }), { target: { value: 'Mrs. N. Perera ' } });
     expect(within(dialog).queryByText('Reset the password first to print a slip')).not.toBeInTheDocument();
   });
 
@@ -394,12 +394,40 @@ describe('teachers page', () => {
     expect(screen.getAllByRole('option').map((o) => o.textContent)).toEqual(['—', 'Mr.', 'Mrs.', 'Miss', 'Ms.', 'Dr.', 'Rev.', 'Ven.']);
     expect(screen.queryByRole('combobox', { name: 'Search' })).toBeNull();
     await user.click(screen.getByRole('option', { name: 'Ven.' }));
-    await user.type(within(dialog).getByLabelText('Name'), 'Ananda Thero');
+    await user.type(within(dialog).getByLabelText('Name in English'), 'Ananda Thero');
     await pickOption(user, within(dialog).getByRole('combobox', { name: 'Subjects' }), 'Mathematics');
     await user.click(within(dialog).getByRole('button', { name: '6', pressed: false }));
     await user.click(within(dialog).getByRole('button', { name: 'Save teacher' }));
     await waitFor(() => expect(api.createTeacher).toHaveBeenCalled());
     expect(api.createTeacher).toHaveBeenCalledWith('siripura', expect.objectContaining({ title: 'Ven.', name: 'Ananda Thero' }));
+  });
+
+  it('creates a teacher with only a Sinhala name and refuses one with no name', async () => {
+    const user = userEvent.setup();
+    vi.mocked(api.createTeacher).mockResolvedValue({ teacherId: 'tNew', password: 'k7m4x9pq' });
+    render();
+    const dialog = await openAdd(user);
+    await pickOption(user, within(dialog).getByRole('combobox', { name: 'Subjects' }), 'Mathematics');
+    await user.click(within(dialog).getByRole('button', { name: '6', pressed: false }));
+    await user.click(within(dialog).getByRole('button', { name: 'Save teacher' }));
+    expect(within(dialog).getByText('Enter the name in English or Sinhala (or both).')).toBeInTheDocument();
+    expect(api.createTeacher).not.toHaveBeenCalled();
+    await user.type(within(dialog).getByLabelText('Name in Sinhala'), 'ජී. ජයසේකර');
+    await user.click(within(dialog).getByRole('button', { name: 'Save teacher' }));
+    await waitFor(() => expect(api.createTeacher).toHaveBeenCalledWith('siripura', expect.objectContaining({ name: '', nameSi: 'ජී. ජයසේකර' })));
+  });
+
+  it('shows the other-language name and flags a missing one', () => {
+    const named = { ...ctx, teachers: ctx.teachers.map((t) => (t.staffId === 'SCC024' ? { ...t, nameSi: 'එන්. පෙරේරා' } : t)) };
+    renderWithSchool(<TeachersPage />, { ctx: named, entries });
+    const perera = screen.getByText('Mrs. N. Perera').closest('tr')!;
+    expect(within(perera).getByText('එන්. පෙරේරා මහත්මිය')).toBeInTheDocument();
+    expect(screen.queryByText('No English name')).toBeNull();
+  });
+
+  it('flags teachers without a Sinhala name on Sinhala screens', () => {
+    renderWithSchool(<TeachersPage />, { ctx, entries, lang: 'si' });
+    expect(screen.getAllByText('සිංහල නමක් නැත').length).toBe(ctx.teachers.length);
   });
 
   it('moves a legacy name prefix into the title when editing', async () => {
@@ -412,7 +440,7 @@ describe('teachers page', () => {
     await user.click(within(row).getByRole('button', { name: 'Edit' }));
     const dialog = screen.getByRole('dialog');
     expect(within(dialog).getByRole('combobox', { name: /^Title/ })).toHaveTextContent('Mrs.');
-    expect(within(dialog).getByLabelText('Name')).toHaveValue('N. Perera');
+    expect(within(dialog).getByLabelText('Name in English')).toHaveValue('N. Perera');
     await user.click(within(dialog).getByRole('button', { name: 'Save teacher' }));
     await waitFor(() => expect(api.updateTeacher).toHaveBeenCalled());
     expect(api.updateTeacher).toHaveBeenCalledWith('siripura', perera.id, expect.objectContaining({ title: 'Mrs', name: 'N. Perera' }));
@@ -446,7 +474,7 @@ describe('teachers page', () => {
     await user.click(within(row).getByRole('button', { name: 'Edit' }));
     const dialog = screen.getByRole('dialog');
     flags.readOnly = true;
-    fireEvent.change(within(dialog).getByRole('textbox', { name: /^Name/ }), { target: { value: 'Mrs. N. Perera ' } });
+    fireEvent.change(within(dialog).getByRole('textbox', { name: 'Name in English' }), { target: { value: 'Mrs. N. Perera ' } });
     const subjects = within(dialog).getByRole('combobox', { name: /^Subjects/ });
     expect(subjects).toBeDisabled();
     await user.click(subjects);

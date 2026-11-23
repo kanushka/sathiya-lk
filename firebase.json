@@ -4,6 +4,7 @@
       "target": "web",
       "public": "apps/web/dist",
       "ignore": ["firebase.json", "**/.*", "**/node_modules/**"],
+      "rewrites": [{ "source": "/si/**", "destination": "/si/404/index.html" }],
       "headers": [
         {
           "source": "**",

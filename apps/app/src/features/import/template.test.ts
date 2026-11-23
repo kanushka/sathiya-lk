@@ -86,3 +86,29 @@ describe('template sheet names', () => {
     expect(sheetName('Teachers', 'a/b')).toBe('Teachers');
   });
 });
+
+describe('pre-filled subjects', () => {
+  it('lists the given subjects under the header in the CSV and they read back as subjects', () => {
+    const csv = templateCsv('subjects', [{ nameEn: 'Tamil', nameSi: 'දෙමළ', short: 'Tam' }, { nameEn: 'Pali', short: 'Pali' }]);
+    const parsed = readSheets([{ name: 't', rows: parseCsv(csv) }]);
+    expect(parsed.errors).toEqual([]);
+    expect(parsed.subjects.map((r) => r.cells)).toEqual([{ nameEn: 'Tamil', nameSi: 'දෙමළ', short: 'Tam' }, { nameEn: 'Pali', short: 'Pali' }]);
+    expect(parseCsv(templateCsv('teachers', [{ nameEn: 'Tamil', short: 'Tam' }]))).toHaveLength(1);
+  });
+});
+
+describe('pre-filled Excel template', () => {
+  it('puts the given subjects on the Subjects sheet so they import as-is', async () => {
+    const blob = await templateXlsx({
+      staffPrefix: 'SCC',
+      grades: [6],
+      instructions: { en: [], si: [] },
+      labels: { titles: 'a', grades: 'b', staffId: 'c' },
+      sheetNames: SHEET_NAMES,
+      subjects: [{ nameEn: 'Tamil', nameSi: 'දෙමළ', short: 'Tam' }],
+    });
+    const parsed = readSheets(await readImportFile(new File([blob], 't.xlsx')));
+    expect(parsed.errors).toEqual([]);
+    expect(parsed.subjects.map((r) => r.cells)).toEqual([{ nameEn: 'Tamil', nameSi: 'දෙමළ', short: 'Tam' }]);
+  });
+});

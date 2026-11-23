@@ -65,7 +65,7 @@ export function SchoolDetail({ school: injected, setStatus = defaultSetStatus, r
         </div>
       </div>
       <dl className="m-0 rounded-[14px] border border-line bg-white px-5">
-        <Row label={t('detail.name')}>{school.nameEn}</Row>
+        <Row label={t('detail.name')}>{pickName(school, 'en')}</Row>
         <Row label={t('detail.nameSi')}>{school.nameSi || t('usage.noData')}</Row>
         <Row label={t('detail.city')}>{school.city || t('usage.noData')}</Row>
         <Row label={t('detail.type')}>{school.type ? t(`schoolTypes.${school.type}`) : t('usage.noData')}</Row>

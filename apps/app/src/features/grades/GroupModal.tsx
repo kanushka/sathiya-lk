@@ -3,6 +3,7 @@
 import { pickName, type Lang, type PlanItem, type Subject } from '@sathiya/core';
 import { useState, type FormEvent } from 'react';
 import { useTranslation } from 'react-i18next';
+import { NameFields } from '../../ui/NameFields';
 import { Button } from '../../ui/Button';
 import { Field, inputClass } from '../../ui/Field';
 import { MultiSelect } from '../../ui/MultiSelect';
@@ -28,7 +29,7 @@ export function GroupModal({ initial, subjects, newKey, onSave, onClose }: Group
   const [submitted, setSubmitted] = useState(false);
 
   const byId = new Map(subjects.map((s) => [s.id, s]));
-  const nameError = nameEn.trim() ? null : t('group.errors.name');
+  const nameError = nameEn.trim() || nameSi.trim() ? null : t('common:names.missing');
   const optionsError = options.length > 0 ? null : t('group.errors.options');
 
   function submit(e: FormEvent) {
@@ -62,12 +63,7 @@ export function GroupModal({ initial, subjects, newKey, onSave, onClose }: Group
       }
     >
       <form id="group-form" onSubmit={submit} noValidate className="flex flex-col gap-4">
-        <Field label={t('group.nameEn')} error={submitted ? nameError : null}>
-          <input className={inputClass} value={nameEn} onChange={(e) => setNameEn(e.target.value)} />
-        </Field>
-        <Field label={t('group.nameSi')} hint={t('group.nameSiHint')}>
-          <input className={inputClass} value={nameSi} onChange={(e) => setNameSi(e.target.value)} />
-        </Field>
+        <NameFields legend={t('group.name')} enLabel={t('group.nameEn')} siLabel={t('group.nameSi')} en={nameEn} si={nameSi} onEn={setNameEn} onSi={setNameSi} missing={submitted && !!nameError} />
         <Field label={t('group.perWeek')} className="w-40">
           <input
             className={inputClass}

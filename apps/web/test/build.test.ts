@@ -5,7 +5,7 @@ import { existsSync, readFileSync, readdirSync, statSync } from 'node:fs';
 import { join, relative } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { describe, expect, it } from 'vitest';
-import { APP_URL, CONTACT_EMAIL, SITE_URL } from '../src/site';
+import { APP_URL, CONTACT_EMAIL, SITE_NAME, SITE_URL } from '../src/site';
 import { robotsTxt, sitemapXml } from '../src/lib/seo';
 
 const dist = fileURLToPath(new URL('../dist/', import.meta.url));
@@ -112,6 +112,16 @@ describe('built site', () => {
     expect(attrs(read(p), 'a', 'href')).toContain(`mailto:${CONTACT_EMAIL}`);
   });
 
+  it.each(allPaths)('%s names the site Sathiya (සතිය) in the title, og:site_name and JSON-LD', (p) => {
+    const html = read(p);
+    expect(SITE_NAME).toBe('Sathiya (සතිය)');
+    expect(html.match(/<title>([^<]*)<\/title>/)?.[1]).toContain(SITE_NAME);
+    expect(html).toContain(`<meta property="og:site_name" content="${SITE_NAME}"`);
+    const ld = JSON.parse(html.match(/<script type="application\/ld\+json">([\s\S]*?)<\/script>/)?.[1] ?? '{}');
+    const site = ld['@graph']?.find((n: { '@type': string }) => n['@type'] === 'WebSite');
+    expect(site).toMatchObject({ name: SITE_NAME, alternateName: ['Sathiya', 'සතිය'] });
+  });
+
   it.each(allPaths)('%s uses the configured site URL for og:url and og:image', (p) => {
     const html = read(p);
     expect(html).toMatch(new RegExp(`<meta property="og:url" content="${SITE_URL.replace(/\./g, '\\.')}/`));
@@ -140,18 +150,29 @@ describe('built site', () => {
     expect(inline + external).toBeLessThan(150 * 1024);
   });
 
-  it('emits a noindex bilingual 404 page that links home', () => {
-    const p = '404.html';
+  it.each([
+    ['404.html', 'en', '/', '/si/'],
+    ['si/404/index.html', 'si', '/si/', '/'],
+  ])('emits a noindex single-language 404 page %s that links home', (p, lang, home, other) => {
     expect(existsSync(join(dist, p))).toBe(true);
     const html = read(p);
-    expect(html).toMatch(/<html[^>]*\slang="en"/);
+    expect(html).toMatch(new RegExp(`<html[^>]*\\slang="${lang}"`));
     expect(html).toMatch(/<title>[^<\s][^<]*<\/title>/);
     expect(html).toContain('<meta name="robots" content="noindex"');
     expect(html).not.toContain('rel="canonical"');
-    expect(html).toMatch(/<section lang="si"/);
+    expect(html).not.toMatch(/<section lang=/);
     const hrefs = attrs(html, 'a', 'href');
-    expect(hrefs).toEqual(expect.arrayContaining(['/', '/si/']));
+    expect(hrefs).toEqual(expect.arrayContaining([home, other]));
     expect(hrefs).not.toContain('#');
+  });
+
+  it('emits a noindex /login/ page that redirects to the app login', () => {
+    const html = read('login/index.html');
+    const target = `${APP_URL}/login`;
+    expect(html).toContain('<meta name="robots" content="noindex"');
+    expect(html).toContain(`<meta http-equiv="refresh" content="0;url=${target}"`);
+    expect(html).toContain('location.replace(');
+    expect(attrs(html, 'a', 'href')).toEqual([target]);
   });
 
   it('ships og image and favicon', () => {
@@ -173,7 +194,7 @@ describe('robots and sitemap', () => {
   const site = SITE_URL;
   const publicPaths = walk(dist)
     .map((f) => relative(dist, f).split('\\').join('/'))
-    .filter((f) => f.endsWith('.html') && f !== '404.html')
+    .filter((f) => f.endsWith('.html') && !/(^|\/)404(\/index)?\.html$/.test(f) && f !== 'login/index.html')
     .map((p) => '/' + p.replace(/index\.html$/, ''));
 
   it('emits robots.txt that allows all and points at the sitemap', () => {

@@ -9,3 +9,5 @@ export const APP_URL = fromEnv('PUBLIC_APP_URL', 'https://app.sathiya.kanushka.c
 export const CONTACT_EMAIL = 'sathiya@kanushka.com';
 
 export const SITE_HOST = new URL(SITE_URL).host;
+
+export const SITE_NAME = 'Sathiya (සතිය)';

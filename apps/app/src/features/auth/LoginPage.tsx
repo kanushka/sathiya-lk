@@ -6,7 +6,8 @@ import { useSearchParams } from 'react-router-dom';
 import { Button } from '../../ui/Button';
 import { Tabs, tabId, tabPanelId } from '../../ui/Tabs';
 import { AdminLoginForm } from './AdminLoginForm';
-import { BrandMark, LanguageToggle } from './AuthChrome';
+import { BrandLockup, LanguageToggle } from './AuthChrome';
+import { useDocumentTitle } from '../../lib/brand';
 import { ReportSchoolModal } from './ReportSchoolModal';
 import { TeacherLoginForm } from './TeacherLoginForm';
 
@@ -16,6 +17,7 @@ const ID_BASE = 'login-as';
 
 export function LoginPage() {
   const { t } = useTranslation('auth');
+  useDocumentTitle(t('pageTitle.login'));
   const [params, setParams] = useSearchParams();
   const [reporting, setReporting] = useState(() => params.get('report') === '1');
   const asParam = params.get('as');
@@ -41,9 +43,8 @@ export function LoginPage() {
 
   return (
     <div className="flex min-h-screen flex-col items-center bg-canvas px-4 py-10 sm:py-12">
-      <div className="mb-7 flex items-center gap-2.5">
-        <BrandMark />
-        <span className="text-2xl font-extrabold">{t('brand')}</span>
+      <div className="mb-7">
+        <BrandLockup />
       </div>
       <div className="w-full max-w-[460px] rounded-2xl border border-line bg-white px-5 pb-6 pt-5 sm:px-8 sm:pb-8 sm:pt-7">
         <div

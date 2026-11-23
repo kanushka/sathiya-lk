@@ -103,7 +103,7 @@ describe('TodayPage', () => {
     const si = ctx.subjects.find((s) => s.id === S.maths)?.nameSi;
     expect(si).toBeTruthy();
     expect(within(screen.getByTestId('now-card')).getAllByText(new RegExp(si as string)).length).toBeGreaterThan(0);
-    expect(screen.getByText('N. Perera මහත්මිය · SCC024')).toBeInTheDocument();
+    expect(screen.getByText('Mrs. N. Perera · SCC024')).toBeInTheDocument();
   });
 
   it('shows the date line in the active language', () => {

@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
 // Copyright (C) 2026 Kanushka Gayan
-import { nameTaken, pickName, usageCount, type Lang, type Subject } from '@sathiya/core';
+import { hasName, nameTaken, pickName, usageCount, type Lang, type Subject } from '@sathiya/core';
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useSchool, useYear } from '../../app/SchoolProvider';
@@ -31,7 +31,7 @@ export function SubjectsPage() {
   const [dialog, setDialog] = useState<Dialog>(null);
   const [loading, setLoading] = useState(false);
 
-  const subjects = [...school.subjects].sort((a, b) => a.nameEn.localeCompare(b.nameEn));
+  const subjects = [...school.subjects].sort((a, b) => pickName(a, lang).localeCompare(pickName(b, lang)));
 
   async function loadStandard() {
     setLoading(true);
@@ -48,10 +48,15 @@ export function SubjectsPage() {
 
   async function edit(s: Subject, patch: Partial<Omit<Subject, 'id'>>) {
     const others = school.subjects.filter((x) => x.id !== s.id);
+    const otherNames = others.flatMap((x) => [x.nameEn, x.nameSi]);
     const clash = [
-      patch.nameEn !== undefined && nameTaken(patch.nameEn, others.map((x) => x.nameEn)) ? patch.nameEn : null,
-      patch.nameSi !== undefined && nameTaken(patch.nameSi, others.map((x) => x.nameSi)) ? patch.nameSi : null,
+      patch.nameEn !== undefined && nameTaken(patch.nameEn, otherNames) ? patch.nameEn : null,
+      patch.nameSi !== undefined && nameTaken(patch.nameSi, otherNames) ? patch.nameSi : null,
     ].find((n) => n !== null);
+    if (!hasName({ ...s, ...patch })) {
+      toast.show(t('common:names.missing'), 'error');
+      return;
+    }
     if (clash) {
       toast.show(t('modal.errors.nameTaken', { name: clash }), 'error');
       return;
@@ -119,7 +124,7 @@ export function SubjectsPage() {
                   <InlineInput
                     label={t('page.fields.english', { name: pickName(s, lang) })}
                     value={s.nameEn}
-                    required
+                    placeholder={s.nameEn.trim() ? undefined : t('page.showsOther', { name: pickName(s, 'si') })}
                     readOnly={readOnly}
                     className="font-semibold"
                     onCommit={(v) => void edit(s, { nameEn: v })}
@@ -129,6 +134,7 @@ export function SubjectsPage() {
                   <InlineInput
                     label={t('page.fields.sinhala', { name: pickName(s, lang) })}
                     value={s.nameSi ?? ''}
+                    placeholder={s.nameSi?.trim() ? undefined : t('page.showsOther', { name: pickName(s, 'en') })}
                     readOnly={readOnly}
                     onCommit={(v) => void edit(s, { nameSi: v })}
                   />

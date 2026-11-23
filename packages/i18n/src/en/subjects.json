@@ -1,5 +1,6 @@
 {
   "page": {
+    "showsOther": "Shows: {{name}}",
     "title": "Subjects",
     "intro": "One list for the whole school. Each grade picks from it in Grade settings, as a normal subject or as an option inside a group.",
     "add": "+ Add subject",

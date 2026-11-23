@@ -3,16 +3,17 @@
 import type { ReactNode } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Link } from 'react-router-dom';
-import { BrandMark, LanguageToggle } from './AuthChrome';
+import { BrandLockup, LanguageToggle } from './AuthChrome';
+import { useDocumentTitle } from '../../lib/brand';
 import { FormError } from '../../ui/FormError';
 
 export function ActionShell({ title, children }: { title: string; children: ReactNode }) {
   const { t } = useTranslation('auth');
+  useDocumentTitle(title);
   return (
     <div className="flex min-h-screen flex-col items-center bg-ground px-4 py-10 sm:py-12">
-      <div className="mb-9 flex items-center gap-2.5">
-        <BrandMark />
-        <span className="text-2xl font-extrabold">{t('brand')}</span>
+      <div className="mb-9">
+        <BrandLockup />
       </div>
       <div className="w-full max-w-[460px] rounded-2xl border border-line bg-white p-5 sm:p-8">
         <p className="m-0 text-[13px] font-bold uppercase tracking-[.06em] text-teal">{t('action.eyebrow')}</p>

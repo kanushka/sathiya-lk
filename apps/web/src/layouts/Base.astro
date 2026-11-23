@@ -6,7 +6,7 @@ import Header from '../components/Header.astro';
 import Footer from '../components/Footer.astro';
 import Consent from '../components/Consent.astro';
 import { content, pagePath, type Lang, type Page } from '../lib/links';
-import { SITE_URL } from '../site';
+import { APP_URL, CONTACT_EMAIL, SITE_NAME, SITE_URL } from '../site';
 
 interface Props {
   lang: Lang;
@@ -19,6 +19,40 @@ const site = new URL(SITE_URL);
 const url = (l: Lang) => new URL(pagePath(l, page), site).href;
 const ogImage = new URL('/og.png', site).href;
 const notFound = page === '404';
+const home = new URL('/', site).href;
+const jsonLd = JSON.stringify({
+  '@context': 'https://schema.org',
+  '@graph': [
+    {
+      '@type': 'WebSite',
+      '@id': `${home}#website`,
+      name: SITE_NAME,
+      alternateName: ['Sathiya', 'සතිය'],
+      url: home,
+      inLanguage: ['en', 'si'],
+      publisher: { '@id': `${home}#org` },
+    },
+    {
+      '@type': 'Organization',
+      '@id': `${home}#org`,
+      name: SITE_NAME,
+      url: home,
+      logo: new URL('/icon-512.png', site).href,
+      email: CONTACT_EMAIL,
+    },
+    {
+      '@type': 'WebApplication',
+      name: SITE_NAME,
+      url: APP_URL,
+      applicationCategory: 'EducationalApplication',
+      operatingSystem: 'Web',
+      inLanguage: ['en', 'si'],
+      description: t.meta.index.description,
+      offers: { '@type': 'Offer', price: '0', priceCurrency: 'LKR' },
+      publisher: { '@id': `${home}#org` },
+    },
+  ],
+}).replace(/</g, '\\u003c');
 ---
 <!doctype html>
 <html lang={lang}>
@@ -37,18 +71,29 @@ const notFound = page === '404';
         <link rel="alternate" hreflang="x-default" href={url('en')} />
       </>
     )}
+    <link rel="icon" href="/favicon.ico" sizes="32x32" />
     <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+    <link rel="apple-touch-icon" href="/apple-touch-icon.png" />
+    <link rel="manifest" href="/site.webmanifest" />
     <meta name="theme-color" content="#0E6B6A" />
+    <meta name="application-name" content="Sathiya" />
+    <meta name="apple-mobile-web-app-title" content="Sathiya" />
     <meta property="og:type" content="website" />
-    <meta property="og:site_name" content="Sathiya" />
+    <meta property="og:site_name" content={SITE_NAME} />
     <meta property="og:title" content={title} />
     <meta property="og:description" content={description} />
     <meta property="og:url" content={url(lang)} />
     <meta property="og:image" content={ogImage} />
     <meta property="og:image:width" content="1200" />
     <meta property="og:image:height" content="630" />
+    <meta property="og:image:alt" content={SITE_NAME} />
     <meta property="og:locale" content={lang === 'si' ? 'si_LK' : 'en_LK'} />
+    <meta property="og:locale:alternate" content={lang === 'si' ? 'en_LK' : 'si_LK'} />
     <meta name="twitter:card" content="summary_large_image" />
+    <meta name="twitter:title" content={title} />
+    <meta name="twitter:description" content={description} />
+    <meta name="twitter:image" content={ogImage} />
+    {!notFound && <script type="application/ld+json" set:html={jsonLd} />}
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <link

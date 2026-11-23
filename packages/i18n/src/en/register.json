@@ -7,6 +7,8 @@
   },
   "back": "Back",
   "school": {
+    "name": "School name",
+    "nameHint": "Fill both if you can. When one is empty, the other is shown on timetables, print and the school list.",
     "title": "1 · School details",
     "subtitle": "You can edit these later in school profile.",
     "nameEn": "School name (English)",
