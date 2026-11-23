@@ -13,3 +13,5 @@ allowBuilds:
 
 overrides:
   pkce-challenge: 5.0.1
+  'undici@>=6.0.0 <6.29.1': ^6.29.1
+  '@grpc/grpc-js@<1.13.6': ^1.14.7

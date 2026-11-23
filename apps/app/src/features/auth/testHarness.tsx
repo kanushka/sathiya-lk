@@ -80,7 +80,7 @@ function Harness({ options, children }: { options: AuthHarnessOptions; children:
 
 export function renderAuth(ui: ReactElement, options: AuthHarnessOptions = {}) {
   return render(
-    <MemoryRouter initialEntries={[options.route ?? '/login']} future={{ v7_startTransition: true, v7_relativeSplatPath: true }}>
+    <MemoryRouter initialEntries={[options.route ?? '/login']}>
       <Harness options={options}>{ui}</Harness>
     </MemoryRouter>,
   );

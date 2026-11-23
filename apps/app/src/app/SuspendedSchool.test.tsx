@@ -40,7 +40,7 @@ const { SchoolProvider } = await import('./SchoolProvider');
 function renderProvider(scope?: 'full' | 'school', sid?: string) {
   const lang = { lang: 'en' as const, setLang: () => undefined };
   return render(
-    <MemoryRouter future={{ v7_startTransition: true, v7_relativeSplatPath: true }}>
+    <MemoryRouter>
       <LangContextProvider value={lang}>
         <I18nextProvider i18n={testI18n}>
           <ToastProvider>
