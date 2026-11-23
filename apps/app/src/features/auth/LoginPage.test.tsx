@@ -403,3 +403,10 @@ describe('login form basics', () => {
     expect(screen.queryByText('පරිපාලක පිවිසුම')).not.toBeInTheDocument();
   });
 });
+
+describe('brand logo', () => {
+  it('links to the website home page', () => {
+    renderAuth(<LoginPage />);
+    expect(screen.getByRole('link', { name: /Sathiya/ })).toHaveAttribute('href', 'https://sathiya.kanushka.com/');
+  });
+});
