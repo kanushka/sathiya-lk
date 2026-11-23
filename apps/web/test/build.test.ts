@@ -17,6 +17,7 @@ const siPaths = enPaths.map((p) => `si/${p}`);
 const allPaths = [...enPaths, ...siPaths];
 
 const read = (p: string) => readFileSync(join(dist, p), 'utf8');
+const escapeRe = (s: string) => s.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
 
 function walk(dir: string): string[] {
   return readdirSync(dir).flatMap((name) => {
@@ -124,7 +125,7 @@ describe('built site', () => {
 
   it.each(allPaths)('%s uses the configured site URL for og:url and og:image', (p) => {
     const html = read(p);
-    expect(html).toMatch(new RegExp(`<meta property="og:url" content="${SITE_URL.replace(/\./g, '\\.')}/`));
+    expect(html).toMatch(new RegExp(`<meta property="og:url" content="${escapeRe(SITE_URL)}/`));
     expect(html).toContain(`<meta property="og:image" content="${SITE_URL}/og.png"`);
   });
 
@@ -136,14 +137,14 @@ describe('built site', () => {
 
   it.each(allPaths)('%s does not load gtag eagerly but offers consent', (p) => {
     const html = read(p);
-    expect(attrs(html, 'script', 'src').some((s) => s.includes('googletagmanager.com'))).toBe(false);
+    expect(attrs(html, 'script', 'src').some((s) => /(^|\.)googletagmanager\.com$/.test(new URL(s, SITE_URL).hostname))).toBe(false);
     expect(html).toContain('G-Z7BE11T4C9');
     expect(html).toContain('sathiya.consent');
   });
 
   it.each(allPaths)('%s ships under 150 KB of JS', (p) => {
     const html = read(p);
-    const inline = [...html.matchAll(/<script\b[^>]*>([\s\S]*?)<\/script>/g)].reduce((n, m) => n + m[1]!.length, 0);
+    const inline = [...html.matchAll(/<script\b[^>]*>([\s\S]*?)<\/script\s*>/gi)].reduce((n, m) => n + m[1]!.length, 0);
     const external = attrs(html, 'script', 'src')
       .filter((s) => s.startsWith('/'))
       .reduce((n, s) => n + statSync(join(dist, s)).size, 0);
@@ -219,7 +220,7 @@ describe('robots and sitemap', () => {
 
   it.each(publicPaths)('sitemap entry %s has en, si and x-default alternates', (path) => {
     const xml = read('sitemap.xml');
-    const entry = xml.match(new RegExp(`<url>\\s*<loc>${(site + path).replace(/[.?]/g, '\\$&')}</loc>[\\s\\S]*?</url>`))?.[0] ?? '';
+    const entry = xml.match(new RegExp(`<url>\\s*<loc>${escapeRe(site + path)}</loc>[\\s\\S]*?</url>`))?.[0] ?? '';
     const en = path.replace(/^\/si\//, '/');
     const si = en === '/' ? '/si/' : `/si${en}`;
     expect(entry).toContain(`hreflang="en" href="${site}${en}"`);
