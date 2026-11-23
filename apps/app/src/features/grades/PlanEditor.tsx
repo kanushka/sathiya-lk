@@ -73,7 +73,7 @@ export function PlanEditor({ plan, capacity, subjects, readOnly, onChange }: Pla
   const total = planTotal(plan);
   const fit = planFit(total, capacity);
   const usedSubjects = new Set(plan.flatMap((p) => (p.kind === 'subject' ? [p.subjectId] : [])));
-  const unused = subjects.filter((s) => !usedSubjects.has(s.id)).sort((a, b) => a.nameEn.localeCompare(b.nameEn));
+  const unused = subjects.filter((s) => !usedSubjects.has(s.id)).sort((a, b) => pickName(a, lang).localeCompare(pickName(b, lang)));
 
   const replace = (i: number, item: PlanItem) => onChange(plan.map((p, j) => (j === i ? item : p)));
   const remove = (i: number) => onChange(plan.filter((_, j) => j !== i));

@@ -4,9 +4,10 @@ import { useState } from 'react';
 import { fieldFocusClass } from '../../ui/Field';
 import { cx } from '../../ui/cx';
 
-const ghostClass = `h-9 w-full rounded-lg border border-transparent bg-transparent px-3 text-sm text-ink placeholder:text-ink-muted ${fieldFocusClass}`;
+const ghostClass = `h-9 w-full rounded-lg border border-transparent bg-transparent px-3 text-sm text-ink placeholder:italic placeholder:text-ink-muted ${fieldFocusClass}`;
 
 export interface InlineInputProps {
+  placeholder?: string;
   label: string;
   value: string;
   readOnly: boolean;
@@ -16,7 +17,7 @@ export interface InlineInputProps {
   onCommit: (value: string) => void;
 }
 
-export function InlineInput({ label, value, readOnly, required, maxLength, className, onCommit }: InlineInputProps) {
+export function InlineInput({ label, value, readOnly, required, maxLength, placeholder, className, onCommit }: InlineInputProps) {
   const [draft, setDraft] = useState<string | null>(null);
 
   function commit() {
@@ -34,6 +35,7 @@ export function InlineInput({ label, value, readOnly, required, maxLength, class
       value={draft ?? value}
       readOnly={readOnly}
       maxLength={maxLength}
+      placeholder={placeholder}
       onChange={(e) => setDraft(e.target.value)}
       onBlur={commit}
       onKeyDown={(e) => {

@@ -119,6 +119,15 @@ describe('registerSchool', () => {
     expect(dir.phone).toBeUndefined();
   });
 
+  it('takes the school name in English, Sinhala or both, but not neither', async () => {
+    const c = await signUp();
+    const { schoolId } = await c.call('registerSchool', schoolReq({ nameEn: '', nameSi: 'සිරිපුර විද්‍යාලය' }));
+    expect((await adminDb.doc(paths.school(schoolId)).get()).data()).toMatchObject({ nameEn: '', nameSi: 'සිරිපුර විද්‍යාලය' });
+    expect((await adminDb.doc(paths.directory(schoolId)).get()).data()).toMatchObject({ nameLower: 'සිරිපුර විද්‍යාලය' });
+    const other = await signUp();
+    await expectFnError(other.call('registerSchool', schoolReq({ nameEn: ' ', nameSi: '' })), 'invalid-argument', 'invalid');
+  });
+
   it('accepts a school without address and phone', async () => {
     const c = await signUp();
     const { schoolId } = await c.call('registerSchool', schoolReq());

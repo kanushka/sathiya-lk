@@ -2,7 +2,7 @@
 // Copyright (C) 2026 Kanushka Gayan
 
 import { describe, expect, it } from 'vitest';
-import { normalizeTeacher, pickName, splitTitle, TEACHER_TITLE_LABELS, teacherDisplayName } from './names';
+import { hasName, normalizeTeacher, pickName, splitTitle, TEACHER_TITLE_LABELS, teacherDisplayName, teacherNameMissing } from './names';
 import { TEACHER_TITLES } from './types';
 
 describe('pickName', () => {
@@ -76,14 +76,41 @@ describe('teacherDisplayName', () => {
     expect(teacherDisplayName({ name: 'mrs N. Perera' })).toBe('Mrs. N. Perera');
     expect(teacherDisplayName({ name: 'Mrs. N. Perera', title: 'Mrs' })).toBe('Mrs. N. Perera');
   });
-  it('uses Sinhala labels in si', () => {
+  it('uses Sinhala labels with the Sinhala name', () => {
     for (const title of TEACHER_TITLES) {
-      const si = teacherDisplayName({ name: 'N. Perera', title }, 'si');
-      expect(si).toContain('N. Perera');
+      const si = teacherDisplayName({ name: 'N. Perera', nameSi: 'එන්. පෙරේරා', title }, 'si');
+      expect(si).toContain('එන්. පෙරේරා');
       expect(si).toContain(TEACHER_TITLE_LABELS.si[title]);
       expect(TEACHER_TITLE_LABELS.si[title].trim()).not.toBe('');
     }
-    expect(teacherDisplayName({ name: 'Mrs. N. Perera' }, 'si')).toBe(`N. Perera ${TEACHER_TITLE_LABELS.si.Mrs}`);
+    expect(teacherDisplayName({ name: 'Mrs. N. Perera' }, 'si')).toBe('Mrs. N. Perera');
     expect(teacherDisplayName({ name: 'N. Perera' }, 'si')).toBe('N. Perera');
+  });
+});
+
+describe('names in either language', () => {
+  it('pickName falls back to Sinhala when English is empty', () => {
+    expect(pickName({ nameEn: '', nameSi: 'දහම් පාසල' }, 'en')).toBe('දහම් පාසල');
+    expect(pickName({ nameEn: '  ', nameSi: 'දහම් පාසල' }, 'si')).toBe('දහම් පාසල');
+    expect(pickName({ nameEn: '' }, 'en')).toBe('');
+  });
+  it('hasName needs at least one non-blank name', () => {
+    expect(hasName({ nameEn: 'Maths' })).toBe(true);
+    expect(hasName({ nameEn: '', nameSi: 'ගණිතය' })).toBe(true);
+    expect(hasName({ nameEn: ' ', nameSi: ' ' })).toBe(false);
+  });
+  it('shows the Sinhala name with a Sinhala title on Sinhala screens', () => {
+    expect(teacherDisplayName({ name: 'N. Perera', nameSi: 'එන්. පෙරේරා', title: 'Mrs' }, 'si')).toBe('එන්. පෙරේරා මහත්මිය');
+    expect(teacherDisplayName({ name: 'N. Perera', nameSi: 'එන්. පෙරේරා', title: 'Mrs' }, 'en')).toBe('Mrs. N. Perera');
+  });
+  it('formats the title in the language of the name that is shown', () => {
+    expect(teacherDisplayName({ name: '', nameSi: 'ජී. ජයසේකර', title: 'Mr' }, 'en')).toBe('ජී. ජයසේකර මහතා');
+    expect(teacherDisplayName({ name: 'A. Rizan', title: 'Mr' }, 'si')).toBe('Mr. A. Rizan');
+    expect(teacherDisplayName({ name: '', nameSi: 'ආනන්ද හිමි', title: 'Ven.' }, 'en')).toBe('පූජ්‍ය ආනන්ද හිමි');
+  });
+  it('teacherNameMissing says when the current language has no name', () => {
+    expect(teacherNameMissing({ name: 'A. Rizan' }, 'si')).toBe(true);
+    expect(teacherNameMissing({ name: 'A. Rizan' }, 'en')).toBe(false);
+    expect(teacherNameMissing({ name: '', nameSi: 'ජී. ජයසේකර' }, 'en')).toBe(true);
   });
 });

@@ -15,7 +15,7 @@ export async function loginAdmin(page: Page, email: string, password: string, la
   await page.goto('/login');
   const form = adminForm(page);
   await form.getByLabel('Email').fill(email);
-  await form.getByLabel('Password').fill(password);
+  await form.getByLabel('Password', { exact: true }).fill(password);
   await form.getByRole('button', { name: 'Log in' }).click();
   await expect(page).toHaveURL(landing);
 }
@@ -26,7 +26,7 @@ export async function loginTeacher(page: Page, staffId: string, password: string
   await form.getByRole('combobox').fill(schoolName.slice(0, 8));
   await page.getByRole('option', { name: new RegExp(schoolName) }).click();
   await form.getByLabel('Staff ID').fill(staffId);
-  await form.getByLabel('Password').fill(password);
+  await form.getByLabel('Password', { exact: true }).fill(password);
   await form.getByRole('button', { name: 'Log in' }).click();
   await expect(page).toHaveURL(/\/me$/);
 }

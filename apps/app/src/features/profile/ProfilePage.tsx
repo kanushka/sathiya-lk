@@ -3,6 +3,7 @@
 import { suggestStaffPrefix, type School } from '@sathiya/core';
 import { useEffect, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
+import { NameFields } from '../../ui/NameFields';
 import { useSchool } from '../../app/SchoolProvider';
 import { applyBrand } from '../../lib/theme';
 import { useReadOnly } from '../../ui/AdminLayout';
@@ -54,7 +55,7 @@ export function ProfilePage() {
     applyBrand({ primary: next.primary, second: next.second });
   }
 
-  const nameOk = draft.nameEn.trim() !== '';
+  const nameOk = draft.nameEn.trim() !== '' || draft.nameSi.trim() !== '';
   const cityOk = draft.city.trim() !== '';
   const prefixValid = prefixOk(draft.staffPrefix);
   const canSave = !readOnly && !saving && nameOk && cityOk && draft.district.trim() !== '' && prefixValid;
@@ -94,19 +95,16 @@ export function ProfilePage() {
         }}
       >
         <fieldset disabled={readOnly} className="m-0 flex min-w-[300px] flex-[1_1_320px] flex-col gap-3.5 border-0 p-0">
-          <Field label={t('fields.nameEn')} error={nameOk ? undefined : t('fields.required')}>
-            <input
-              className={inputClass}
-              value={draft.nameEn}
-              onChange={(e) => {
-                const nameEn = e.target.value;
-                setDraft((d) => ({ ...d, nameEn, ...(prefixTouched ? {} : { staffPrefix: suggestStaffPrefix(nameEn) }) }));
-              }}
-            />
-          </Field>
-          <Field label={t('fields.nameSi')}>
-            <input lang="si" className={inputClass} value={draft.nameSi} onChange={(e) => set('nameSi', e.target.value)} />
-          </Field>
+          <NameFields
+            legend={t('fields.name')}
+            enLabel={t('fields.nameEn')}
+            siLabel={t('fields.nameSi')}
+            en={draft.nameEn}
+            si={draft.nameSi}
+            onEn={(nameEn) => setDraft((d) => ({ ...d, nameEn, ...(prefixTouched ? {} : { staffPrefix: suggestStaffPrefix(nameEn) }) }))}
+            onSi={(v) => set('nameSi', v)}
+            missing={!nameOk}
+          />
           <div className="flex gap-3">
             <Field label={t('fields.city')} className="flex-1" error={cityOk ? undefined : t('fields.cityError')}>
               <input className={inputClass} value={draft.city} onChange={(e) => set('city', e.target.value)} />

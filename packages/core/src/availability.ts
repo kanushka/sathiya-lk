@@ -13,6 +13,8 @@ export interface BusyDetail { kind: 'teacher' | 'class'; entryId: string; classI
 export interface TeacherClassOption { cls: SchoolClass; item: PlanItem; subjectId: string; preferred: boolean; template: PeriodTemplate }
 export interface ClassOption { cls: SchoolClass; period: number; free: boolean; busy?: BusyDetail }
 
+const sortName = (t: Teacher): string => t.name.trim() || (t.nameSi ?? '').trim();
+
 export function busyDetail(e: Entry, kind: BusyDetail['kind'], teacherId: string): BusyDetail {
   if (kind === 'teacher') {
     const lesson = e.lessons.find((l) => l.teacherId === teacherId);
@@ -84,7 +86,7 @@ export function teacherOptionsForSlot(args: { ctx: SchoolContext; entries: Entry
       available.push({ teacher, loadToday });
     }
   }
-  available.sort((a, b) => a.loadToday - b.loadToday || a.teacher.name.localeCompare(b.teacher.name));
+  available.sort((a, b) => a.loadToday - b.loadToday || sortName(a.teacher).localeCompare(sortName(b.teacher)));
   return { available, unavailable };
 }
 

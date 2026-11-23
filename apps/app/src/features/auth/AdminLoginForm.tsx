@@ -7,6 +7,7 @@ import { useAuth } from '../../app/AuthProvider';
 import { useLang } from '../../app/LangProvider';
 import { Button } from '../../ui/Button';
 import { Field, inputClass } from '../../ui/Field';
+import { PasswordInput } from '../../ui/PasswordInput';
 import { useToast } from '../../ui/Toast';
 import { claimInvites, signInWithGoogle, signInWithPassword } from './api';
 import { sendAuthEmail } from './authEmail';
@@ -77,6 +78,10 @@ export function AdminLoginForm({ autoFocus }: { autoFocus?: boolean }) {
 
   function submit(e: FormEvent) {
     e.preventDefault();
+    if (!email.trim() || !password) {
+      setError(t('admin.missing'));
+      return;
+    }
     void run('password', () => signInWithPassword(email.trim(), password));
   }
 
@@ -97,10 +102,7 @@ export function AdminLoginForm({ autoFocus }: { autoFocus?: boolean }) {
 
   return (
     <form onSubmit={submit} noValidate>
-      <h1 className="mb-1 mt-0 text-[26px] font-bold">{t('admin.title')}</h1>
-      <p lang="si" className="mb-6 text-ink-muted font-[family-name:'Noto_Sans_Sinhala',Inter,sans-serif]">
-        {t('admin.titleSi')}
-      </p>
+      <h1 className="mb-6 mt-0 text-[26px] font-bold">{t('admin.title')}</h1>
       <Button
         size="lg"
         className="w-full"
@@ -130,13 +132,7 @@ export function AdminLoginForm({ autoFocus }: { autoFocus?: boolean }) {
         />
       </Field>
       <Field label={t('admin.password')} error={error} className="mb-2">
-        <input
-          className={inputClass}
-          type="password"
-          autoComplete="current-password"
-          value={password}
-          onChange={(e) => setPassword(e.target.value)}
-        />
+        <PasswordInput autoComplete="current-password" value={password} onChange={(e) => setPassword(e.target.value)} />
       </Field>
       <p className="mb-6 mt-2 text-right text-sm">
         <Button variant="link" onClick={() => void reset()} className="underline">
@@ -148,7 +144,7 @@ export function AdminLoginForm({ autoFocus }: { autoFocus?: boolean }) {
         size="lg"
         className="w-full !bg-navy !text-white"
         loading={busy === 'password'}
-        disabled={busy === 'google' || !email || !password}
+        disabled={busy === 'google'}
       >
         {t('admin.submit')}
       </Button>

@@ -41,7 +41,7 @@ export const censusError = (s: SchoolDraft): 'format' | null => (s.censusNo !== 
 const censusOk = (s: SchoolDraft) => (s.type !== 'government' && s.noCensus ? s.censusNo === '' : censusValid(s.censusNo));
 export const schoolOk = (s: SchoolDraft) =>
   censusOk(s) &&
-  s.nameEn.trim() !== '' && s.district.trim() !== '' && s.city.trim() !== '' && prefixOk(s.staffPrefix) && gradesOk(s);
+  (s.nameEn.trim() !== '' || s.nameSi.trim() !== '') && s.district.trim() !== '' && s.city.trim() !== '' && prefixOk(s.staffPrefix) && gradesOk(s);
 
 export function gradeList(s: SchoolDraft): number[] {
   return Array.from({ length: s.gradeTo - s.gradeFrom + 1 }, (_, i) => s.gradeFrom + i);

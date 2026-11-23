@@ -58,7 +58,7 @@ describe('report a school', () => {
   it('opens the report popup from the login page', async () => {
     const user = userEvent.setup();
     renderAuth(<LoginPage />);
-    await user.click(screen.getByRole('button', { name: 'Report a school' }));
+    await user.click(screen.getByRole('button', { name: 'Report it' }));
     expect(screen.getByRole('dialog', { name: 'Report a school' })).toBeInTheDocument();
   });
 
@@ -367,5 +367,39 @@ describe('refreshClaims failure after sign-in', () => {
     const card = within(screen.getByRole('heading', { name: 'Admin login' }).closest('form') as HTMLElement);
     await user.click(card.getByRole('button', { name: 'Continue with Google' }));
     expect(await screen.findByTestId('where')).toHaveTextContent('/admin');
+  });
+});
+
+describe('login form basics', () => {
+  const adminCard = () => within(screen.getByRole('heading', { name: 'Admin login' }).closest('form') as HTMLElement);
+
+  it('keeps Log in enabled and asks for missing details on submit', async () => {
+    const user = userEvent.setup();
+    renderAuth(<LoginPage />);
+    const card = adminCard();
+    const submit = card.getByRole('button', { name: 'Log in' });
+    expect(submit).toBeEnabled();
+    await user.click(submit);
+    expect(card.getByText('Enter your email and password.')).toBeInTheDocument();
+    expect(api.signInWithPassword).not.toHaveBeenCalled();
+  });
+
+  it('shows and hides the password', async () => {
+    const user = userEvent.setup();
+    renderAuth(<LoginPage />);
+    const card = adminCard();
+    const input = card.getByLabelText('Password');
+    const toggle = card.getByRole('button', { name: 'Show password' });
+    expect(input).toHaveAttribute('type', 'password');
+    await user.click(toggle);
+    expect(input).toHaveAttribute('type', 'text');
+    expect(toggle).toHaveAttribute('aria-pressed', 'true');
+    await user.click(toggle);
+    expect(input).toHaveAttribute('type', 'password');
+  });
+
+  it('shows one language only', () => {
+    renderAuth(<LoginPage />);
+    expect(screen.queryByText('පරිපාලක පිවිසුම')).not.toBeInTheDocument();
   });
 });

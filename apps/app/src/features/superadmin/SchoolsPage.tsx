@@ -52,7 +52,7 @@ export function SchoolsPage({ schools: injected, setStatus = defaultSetStatus }:
         (s) =>
           !q || [s.nameEn, s.nameSi ?? '', s.staffPrefix, s.city ?? '', s.censusNo ?? ''].some((v) => v.toLowerCase().includes(q)),
       )
-      .sort((a, b) => a.nameEn.localeCompare(b.nameEn));
+      .sort((a, b) => pickName(a, 'en').localeCompare(pickName(b, 'en')));
   }, [state.data, search, status, district]);
   const counts = useUsageCounts(visible);
 

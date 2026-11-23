@@ -10,14 +10,14 @@ export interface SchoolStatusInput {
 }
 
 export function schoolSuspended({ school }: SchoolStatusInput): Rendered {
-  const si = pickName({ nameEn: school.nameEn, nameSi: school.nameSi }, 'si');
+  const si = pickName(school, 'si');
   return render({
-    subject: `${school.nameEn} has been suspended on Sathiya`,
+    subject: `${pickName(school, 'en')} has been suspended on Sathiya`,
     header: schoolHeader(school),
     en: {
       greeting: 'Hello,',
       paras: [
-        [{ b: school.nameEn }, ' has been suspended on Sathiya. Admins and teachers cannot sign in to it until it is reactivated.'],
+        [{ b: pickName(school, 'en') }, ' has been suspended on Sathiya. Admins and teachers cannot sign in to it until it is reactivated.'],
         'Your data is kept.',
       ],
       note: 'If you think this is a mistake, reply to this email.',
@@ -30,24 +30,24 @@ export function schoolSuspended({ school }: SchoolStatusInput): Rendered {
       ],
       note: 'මෙය වැරදීමක් යැයි ඔබ සිතන්නේ නම් මෙම ඊමේලයට පිළිතුරු දෙන්න.',
     },
-    footer: { en: `Sent by Sathiya for ${school.nameEn}.` },
+    footer: { en: `Sent by Sathiya for ${pickName(school, 'en')}.` },
   });
 }
 
 export function schoolReactivated({ school, loginUrl }: SchoolStatusInput): Rendered {
-  const si = pickName({ nameEn: school.nameEn, nameSi: school.nameSi }, 'si');
+  const si = pickName(school, 'si');
   return render({
-    subject: `${school.nameEn} is active again on Sathiya`,
+    subject: `${pickName(school, 'en')} is active again on Sathiya`,
     header: schoolHeader(school),
     en: {
       greeting: 'Hello,',
-      paras: [[{ b: school.nameEn }, ' has been reactivated on Sathiya. Admins and teachers can sign in again.']],
+      paras: [[{ b: pickName(school, 'en') }, ' has been reactivated on Sathiya. Admins and teachers can sign in again.']],
       cta: { label: 'Open Sathiya', url: loginUrl },
     },
     si: {
       greeting: 'ආයුබෝවන්,',
       paras: [`${si} Sathiya හි නැවත සක්‍රිය කර ඇත. පරිපාලකයන්ට සහ ගුරුවරුන්ට නැවත පිවිසිය හැක.`],
     },
-    footer: { en: `Sent by Sathiya for ${school.nameEn}.` },
+    footer: { en: `Sent by Sathiya for ${pickName(school, 'en')}.` },
   });
 }

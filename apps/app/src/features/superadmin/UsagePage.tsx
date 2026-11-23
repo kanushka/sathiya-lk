@@ -15,7 +15,7 @@ export function UsagePage({ schools: injected }: { schools?: CollectionState<Sch
   const { lang } = useLang();
   const live = useCollection<School>(injected ? null : 'schools');
   const state = injected ?? live;
-  const schools = [...state.data].sort((a, b) => a.nameEn.localeCompare(b.nameEn));
+  const schools = [...state.data].sort((a, b) => pickName(a, 'en').localeCompare(pickName(b, 'en')));
   const counts = useUsageCounts(state.data);
   const dash = t('usage.noData');
 

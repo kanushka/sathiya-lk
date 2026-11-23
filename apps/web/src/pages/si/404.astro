@@ -1,0 +1,13 @@
+---
+// SPDX-License-Identifier: AGPL-3.0-or-later
+// Copyright (C) 2026 Kanushka Gayan
+import Base from '../../layouts/Base.astro';
+import { si } from '../../content/si';
+---
+<Base lang="si" page="404">
+  <article class="wrap prose not-found">
+    <h1>{si.notFound.title}</h1>
+    <p>{si.notFound.body}</p>
+    <p><a class="btn btn-primary" href="/si/">{si.notFound.home}</a></p>
+  </article>
+</Base>

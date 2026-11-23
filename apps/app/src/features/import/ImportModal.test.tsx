@@ -105,7 +105,7 @@ describe('ImportModal preview', () => {
     renderWithSchool(<ImportModal onClose={vi.fn()} />, { ctx, entries, lang: 'si' });
     const dialog = screen.getByRole('dialog');
     await user.upload(within(dialog).getByLabelText('ගොනුව තෝරන්න'), csv('Staff ID\nSCC001\n', 'teachers.csv'));
-    expect(await within(dialog).findByText('"සම්පූර්ණ නම" තීරුව නැත')).toBeInTheDocument();
+    expect(await within(dialog).findByText('"නම (ඉංග්‍රීසි)" තීරුව නැත')).toBeInTheDocument();
   });
 
   it('replaces the preview when another file is chosen', async () => {

@@ -1,6 +1,7 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
 // Copyright (C) 2026 Kanushka Gayan
 
+import { pickName } from '@sathiya/core';
 import type { ClassSnapshot, DayIndex, Lang, SnapshotCell, TeacherSnapshot, TemplateRow } from '@sathiya/core';
 import { useTranslation } from 'react-i18next';
 import './print.css';
@@ -139,8 +140,8 @@ export function PrintSheet(props: Props) {
       <header style={{ display: 'flex', alignItems: 'center', gap: 16, paddingBottom: 14, borderBottom: '3px solid var(--brand)' }}>
         {logoUrl && <img data-testid="school-logo" src={logoUrl} alt="" width={56} height={56} style={{ objectFit: 'contain' }} />}
         <div style={{ flex: 1 }}>
-          <p style={{ margin: 0, fontSize: 20, fontWeight: 800 }}>{snapshot.schoolName.nameEn}</p>
-          {snapshot.schoolName.nameSi && <p style={{ margin: '2px 0 0', fontSize: 14, color: '#3B4560' }}>{snapshot.schoolName.nameSi}</p>}
+          <p style={{ margin: 0, fontSize: 20, fontWeight: 800 }}>{pickName(snapshot.schoolName, 'en')}</p>
+          {snapshot.schoolName.nameEn.trim() && snapshot.schoolName.nameSi && <p style={{ margin: '2px 0 0', fontSize: 14, color: '#3B4560' }}>{snapshot.schoolName.nameSi}</p>}
         </div>
         <div style={{ textAlign: 'right' }}>
           <h1 style={{ margin: 0, fontSize: 30, fontWeight: 800, color: 'var(--brand)', lineHeight: 1 }}>{title}</h1>

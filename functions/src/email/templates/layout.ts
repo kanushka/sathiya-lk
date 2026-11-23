@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
 // Copyright (C) 2026 Kanushka Gayan
-import { onColor } from '@sathiya/core';
+import { onColor, pickName } from '@sathiya/core';
 
 export const SATHIYA_TEAL = '#0E6B6A';
 export const SATHIYA_NAVY = '#14213D';
@@ -44,6 +44,8 @@ export interface Content {
 
 export interface Header {
   name: string;
+  /** Second line under the name (stacked lockup). */
+  subName?: string;
   primary?: string;
   logoUrl?: string;
 }
@@ -105,9 +107,15 @@ export function render(e: Email): Rendered {
   const bg = hex(e.header.primary, SATHIYA_TEAL);
   const fg = onColor(bg);
   const logo = safeUrl(e.header.logoUrl);
+  const nameHtml = e.header.subName
+    ? `<span style="display:inline-block;vertical-align:middle;line-height:1.1">${esc(e.header.name)}<br><span style="font-family:${SINHALA};font-weight:600;font-size:14px">${esc(e.header.subName)}</span></span>`
+    : `<span style="vertical-align:middle">${esc(e.header.name)}</span>`;
+  const logoSize = e.header.subName ? 40 : 28;
   const headerInner = logo
-    ? `<img src="${esc(logo)}" alt="" width="28" height="28" style="vertical-align:middle;border:0;margin-right:10px"><span style="vertical-align:middle">${esc(e.header.name)}</span>`
-    : esc(e.header.name);
+    ? `<img src="${esc(logo)}" alt="" width="${logoSize}" height="${logoSize}" style="vertical-align:middle;border:0;margin-right:10px">${nameHtml}`
+    : e.header.subName
+      ? nameHtml
+      : esc(e.header.name);
   const link = safeUrl(e.footer.linkUrl);
   const footerLines = [esc(e.footer.en), ...(e.footer.si ? [esc(e.footer.si)] : [])];
   const footerLink = link ? `<a href="${esc(link)}" style="color:${FOOT}">${esc(e.footer.linkLabel ?? link)}</a>` : '';
@@ -149,5 +157,10 @@ export interface SchoolBrand {
   colors?: { primary?: string };
 }
 
-export const schoolHeader = (s: SchoolBrand): Header => ({ name: s.nameEn, primary: s.colors?.primary, logoUrl: s.logoUrl });
-export const sathiyaHeader: Header = { name: 'Sathiya', primary: SATHIYA_TEAL };
+export const schoolHeader = (s: SchoolBrand): Header => ({ name: pickName(s, 'en'), primary: s.colors?.primary, logoUrl: s.logoUrl });
+export const sathiyaHeader: Header = {
+  name: 'Sathiya',
+  subName: 'සතිය',
+  primary: SATHIYA_TEAL,
+  logoUrl: 'https://sathiya.kanushka.com/logo-on-teal-96.png',
+};

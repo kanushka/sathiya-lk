@@ -22,8 +22,10 @@ describe('suggestSubjectShort', () => {
     expect(suggestSubjectShort(name, [])).toBe(short);
   });
 
-  it('gives nothing without Latin letters', () => {
-    expect(suggestSubjectShort('ගණිතය', [])).toBe('');
+  it('uses the first word of a non-Latin name', () => {
+    expect(suggestSubjectShort('ගණිතය', [])).toBe('ගණිතය');
+    expect(suggestSubjectShort('ගණිතය', ['ගණිතය'])).toBe('ගණිතය2');
+    expect(suggestSubjectShort('දහම් පාසල', [])).toBe('දහම්');
     expect(suggestSubjectShort('  ', [])).toBe('');
   });
 

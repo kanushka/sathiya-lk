@@ -56,6 +56,21 @@ describe('importSetup', () => {
     expect(res.teachers.map((t) => t.staffId)).toEqual(['SCC008', 'SCC009']);
   });
 
+  it('imports Sinhala-only subjects and teachers and returns both names for slips', async () => {
+    const { admin, sid } = await adminWithSchool();
+    const res = await admin.call('importSetup', {
+      schoolId: sid,
+      subjectsVersion: NONE,
+      subjects: [sub(2, { nameSi: 'දහම් පාසල' })],
+      teachers: [tch(2, { nameSi: 'ජී. ජයසේකර', subjects: 'දහම් පාසල', grades: '6' }), tch(3, { name: 'N. Perera', nameSi: 'එන්. පෙරේරා', isPrimary: 'yes', grades: '6' })],
+    });
+    expect((await adminDb.doc(`${paths.subjects(sid)}/${res.subjectIds[0]}`).get()).data()).toMatchObject({ nameEn: '', nameSi: 'දහම් පාසල', short: 'දහම්' });
+    expect(res.teachers.map(({ name, nameSi }) => ({ name, nameSi }))).toEqual([
+      { name: '', nameSi: 'ජී. ජයසේකර' },
+      { name: 'N. Perera', nameSi: 'එන්. පෙරේරා' },
+    ]);
+  });
+
   it('rejects an import with errors and writes nothing', async () => {
     const { admin, sid } = await adminWithSchool();
     const err = await admin

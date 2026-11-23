@@ -64,6 +64,14 @@ export function optStr(v: unknown, name: string, max = 200): string | undefined 
   return str(v, name, max);
 }
 
+// Names may be given in English, Sinhala or both; at least one is required.
+export function twoNames(en: unknown, si: unknown, enField: string, siField: string): { en: string; si?: string } {
+  const e = optStr(en, enField) ?? '';
+  const s = optStr(si, siField);
+  if (!e && !s) invalid(`${enField} or ${siField} is required`);
+  return s === undefined ? { en: e } : { en: e, si: s };
+}
+
 export function bool(v: unknown, name: string): boolean {
   if (typeof v !== 'boolean') invalid(`${name} must be a boolean`);
   return v as boolean;

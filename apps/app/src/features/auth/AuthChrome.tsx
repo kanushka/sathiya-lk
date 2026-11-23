@@ -14,6 +14,22 @@ export function BrandMark({ size = 34 }: { size?: number }) {
   );
 }
 
+export function BrandLockup({ size = 40 }: { size?: number }) {
+  return (
+    <div className="flex items-center gap-2.5">
+      <BrandMark size={size} />
+      <span className="flex flex-col gap-0.5">
+        <span lang="en" className="text-2xl font-extrabold leading-none tracking-[-0.02em]">
+          Sathiya
+        </span>
+        <span lang="si" className="text-[15px] font-semibold leading-tight text-teal">
+          සතිය
+        </span>
+      </span>
+    </div>
+  );
+}
+
 export function LanguageToggle() {
   const { lang, setLang } = useLang();
   const { t } = useTranslation(['common', 'shell']);

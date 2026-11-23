@@ -3,6 +3,7 @@
 
 import { teacherDayLoad } from './availability';
 import { DAYS, gradeOf, templateOf } from './lookup';
+import { pickName } from './names';
 import { effectivePlan } from './plan';
 import { classPlacement } from './progress';
 import { windowOf } from './time';
@@ -13,8 +14,9 @@ export interface Warning { kind: 'over-limit' | 'over-target' | 'group-no-teache
 const DAY_NAMES = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri'] as const;
 
 function itemName(item: PlanItem, ctx: SchoolContext): string {
-  if (item.kind === 'group') return item.nameEn;
-  return ctx.subjects.find((s) => s.id === item.subjectId)?.nameEn ?? item.subjectId;
+  if (item.kind === 'group') return pickName(item, 'en');
+  const subject = ctx.subjects.find((s) => s.id === item.subjectId);
+  return (subject && pickName(subject, 'en')) || item.subjectId;
 }
 
 export function usageCount(kind: 'teacher' | 'subject' | 'class' | 'template', id: string, ctx: SchoolContext, entries: Entry[]): number {

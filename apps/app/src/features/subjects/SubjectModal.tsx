@@ -7,6 +7,7 @@ import { useSchool } from '../../app/SchoolProvider';
 import { Button } from '../../ui/Button';
 import { Field, inputClass } from '../../ui/Field';
 import { Modal } from '../../ui/Modal';
+import { NameFields } from '../../ui/NameFields';
 import { useToast } from '../../ui/Toast';
 import { FormError } from '../../ui/FormError';
 import { ColorSwatches } from '../register/ColorSwatches';
@@ -17,8 +18,7 @@ export function SubjectModal({ onClose }: { onClose: () => void }) {
   const { t } = useTranslation('subjects');
   const { school, subjects } = useSchool();
   const existingShorts = subjects.map((s) => s.short);
-  const existingNamesEn = subjects.map((s) => s.nameEn);
-  const existingNamesSi = subjects.map((s) => s.nameSi);
+  const existingNames = subjects.flatMap((s) => [s.nameEn, s.nameSi]);
   const toast = useToast();
   const [nameEn, setNameEn] = useState('');
   const [nameSi, setNameSi] = useState('');
@@ -29,25 +29,24 @@ export function SubjectModal({ onClose }: { onClose: () => void }) {
   const [saving, setSaving] = useState(false);
   const [saveError, setSaveError] = useState(false);
 
-  const nameError = !nameEn.trim()
-    ? t('modal.errors.name')
-    : nameTaken(nameEn, existingNamesEn)
-      ? t('modal.errors.nameTaken', { name: nameEn.trim() })
-      : null;
-  const nameSiError = nameTaken(nameSi, existingNamesSi) ? t('modal.errors.nameTaken', { name: nameSi.trim() }) : null;
-  const suggestion = suggestSubjectShort(nameEn, existingShorts).slice(0, SHORT_MAX);
+  const missing = !nameEn.trim() && !nameSi.trim();
+  const nameError = nameTaken(nameEn, existingNames) ? t('modal.errors.nameTaken', { name: nameEn.trim() }) : null;
+  const nameSiError = nameTaken(nameSi, existingNames) ? t('modal.errors.nameTaken', { name: nameSi.trim() }) : null;
+  const suggestFrom = (en: string, si: string) => suggestSubjectShort(en.trim() || si, existingShorts).slice(0, SHORT_MAX);
+  const suggestion = suggestFrom(nameEn, nameSi);
   const shortValue = short.trim() || suggestion;
   const shortError = shortTaken(shortValue, existingShorts) ? t('modal.errors.shortTaken') : !shortValue && submitted ? t('modal.errors.short') : null;
 
-  function changeName(value: string) {
-    setNameEn(value);
-    if (!shortTouched) setShort(suggestSubjectShort(value, existingShorts).slice(0, SHORT_MAX));
+  function changeName(en: string, si: string) {
+    setNameEn(en);
+    setNameSi(si);
+    if (!shortTouched) setShort(suggestFrom(en, si));
   }
 
   async function save(e: FormEvent) {
     e.preventDefault();
     setSubmitted(true);
-    if (nameError || nameSiError || shortError || !shortValue || saving) return;
+    if (missing || nameError || nameSiError || shortError || !shortValue || saving) return;
     setSaving(true);
     setSaveError(false);
     try {
@@ -81,12 +80,19 @@ export function SubjectModal({ onClose }: { onClose: () => void }) {
       }
     >
       <form id="subject-form" onSubmit={save} noValidate className="flex flex-col gap-4">
-        <Field label={t('modal.nameEn')} error={nameError && (submitted || nameTaken(nameEn, existingNamesEn)) ? nameError : null}>
-          <input className={inputClass} value={nameEn} placeholder={t('modal.nameEnPlaceholder')} onChange={(e) => changeName(e.target.value)} />
-        </Field>
-        <Field label={t('modal.nameSi')} hint={t('modal.nameSiHint')} error={nameSiError}>
-          <input className={inputClass} value={nameSi} placeholder={t('modal.nameSiPlaceholder')} onChange={(e) => setNameSi(e.target.value)} />
-        </Field>
+        <NameFields
+          enLabel={t('modal.nameEn')}
+          siLabel={t('modal.nameSi')}
+          en={nameEn}
+          si={nameSi}
+          onEn={(v) => changeName(v, nameSi)}
+          onSi={(v) => changeName(nameEn, v)}
+          missing={submitted && missing}
+          enError={nameError}
+          siError={nameSiError}
+          enPlaceholder={t('modal.nameEnPlaceholder')}
+          siPlaceholder={t('modal.nameSiPlaceholder')}
+        />
         <div className="flex flex-wrap gap-4">
           <Field label={t('modal.short')} hint={t('modal.shortHint')} error={shortError} className="w-40">
             <input

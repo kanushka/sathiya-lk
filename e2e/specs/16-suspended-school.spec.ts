@@ -26,7 +26,7 @@ test('a suspended school locks out its admin and teachers until re-enabled', asy
     await admin.goto('/login');
     const form = adminForm(admin);
     await form.getByLabel('Email').fill(ADMIN.email);
-    await form.getByLabel('Password').fill(ADMIN.password);
+    await form.getByLabel('Password', { exact: true }).fill(ADMIN.password);
     await form.getByRole('button', { name: 'Log in' }).click();
     await expect(admin.getByRole('heading', suspendedHeading)).toBeVisible();
     await expect(admin.getByRole('link', { name: 'Contact the Sathiya team' })).toBeVisible();

@@ -9,9 +9,15 @@ const TEXT_COLUMNS: ReadonlySet<TeacherColumn> = new Set(['staffId', 'phone', 'g
 const header = (kind: ImportKind) =>
   IMPORT_COLUMNS[kind].map((c) => `${c.en} / ${c.si}${c.required ? ' *' : ''}`);
 
-export function templateCsv(kind: ImportKind): string {
-  const cells = header(kind).map((h) => `"${h.replace(/"/g, '""')}"`);
-  return `\uFEFF${cells.join(',')}\r\n`;
+export type TemplateSubject = { nameEn: string; nameSi?: string; short: string };
+
+const subjectCells = (s: TemplateSubject) => [s.nameEn, s.nameSi ?? '', s.short];
+const csvLine = (cells: string[]) => cells.map((c) => `"${c.replace(/"/g, '""')}"`).join(',');
+
+// The subjects template comes pre-filled with the standard subjects the school doesn't have yet.
+export function templateCsv(kind: ImportKind, subjects: readonly TemplateSubject[] = []): string {
+  const lines = [header(kind), ...(kind === 'subjects' ? subjects.map(subjectCells) : [])].map(csvLine);
+  return `\uFEFF${lines.join('\r\n')}\r\n`;
 }
 
 const SHEET_NAME_MAX = 31;
@@ -42,6 +48,7 @@ export async function templateXlsx(opts: {
   instructions: { en: string[]; si: string[] };
   labels: { titles: string; grades: string; staffId: string };
   sheetNames: TemplateSheetNames;
+  subjects?: readonly TemplateSubject[];
 }): Promise<Blob> {
   const { default: writeXlsxFile } = await import('write-excel-file/browser');
   const bold = (value: string) => ({ value, fontWeight: 'bold' as const });
@@ -58,7 +65,12 @@ export async function templateXlsx(opts: {
     `${opts.labels.staffId}: ${formatStaffId(opts.staffPrefix, 1)}`,
   ].map((line) => [line]);
   return writeXlsxFile([
-    { sheet: opts.sheetNames.subjects, data: [headerRow('subjects')], columns: widths('subjects'), stickyRowsCount: 1 },
+    {
+      sheet: opts.sheetNames.subjects,
+      data: [headerRow('subjects'), ...(opts.subjects ?? []).map((s) => subjectCells(s).map((value) => ({ value, type: String })))],
+      columns: widths('subjects'),
+      stickyRowsCount: 1,
+    },
     { sheet: opts.sheetNames.teachers, data: [headerRow('teachers'), ...teacherRows], columns: widths('teachers'), stickyRowsCount: 1 },
     { sheet: opts.sheetNames.howTo, data: howTo, columns: [{ width: 100 }] },
   ]).toBlob();

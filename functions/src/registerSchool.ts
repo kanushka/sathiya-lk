@@ -11,7 +11,7 @@ import { schoolRegistered } from './email/templates';
 import { callOpts } from './lib/callOptions';
 import { setSchoolClaims } from './lib/claims';
 import { directoryFields } from './lib/directory';
-import { fail, intList, invalid, isVerified, obj, optStr, requireAuth, str } from './lib/guards';
+import { fail, intList, invalid, isVerified, obj, optStr, requireAuth, str, twoNames } from './lib/guards';
 import { clientIp, consumeRateLimits, hashIp, REGISTER_PER_IP_PER_DAY, REGISTER_PER_UID_PER_DAY } from './lib/rateLimit';
 import { runTx } from './lib/tx';
 
@@ -54,8 +54,7 @@ export const registerSchool = onCall(callOpts, async (req): Promise<RegisterScho
   if (!HEX.test(primary) || !HEX.test(second)) invalid('colors must be #RRGGBB');
   const grades = intList(s.grades, 'grades', 1, 13);
   if (!grades.length) invalid('grades is required');
-  const nameEn = str(s.nameEn, 'nameEn');
-  const nameSi = optStr(s.nameSi, 'nameSi');
+  const { en: nameEn, si: nameSi } = twoNames(s.nameEn, s.nameSi, 'nameEn', 'nameSi');
   const district = str(s.district, 'district', 60);
   const city = str(s.city, 'city', 80);
   const address = optStr(s.address, 'address', 200);

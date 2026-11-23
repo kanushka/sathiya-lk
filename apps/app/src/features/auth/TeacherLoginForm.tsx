@@ -7,6 +7,7 @@ import { useNavigate, useSearchParams } from 'react-router-dom';
 import { useAuth } from '../../app/AuthProvider';
 import { Button } from '../../ui/Button';
 import { Field, inputClass } from '../../ui/Field';
+import { PasswordInput } from '../../ui/PasswordInput';
 import { recordSignIn } from '../teacher/signIn';
 import { SchoolSearch } from './SchoolSearch';
 import { getDirectorySchool, signInWithPassword, type DirectorySchool } from './api';
@@ -75,6 +76,10 @@ export function TeacherLoginForm({ autoFocus }: { autoFocus?: boolean }) {
       setSchoolError(true);
       return;
     }
+    if (!staffId.trim() || !password) {
+      setError(t('teacher.missing'));
+      return;
+    }
     setBusy(true);
     setError(null);
     try {
@@ -95,10 +100,7 @@ export function TeacherLoginForm({ autoFocus }: { autoFocus?: boolean }) {
 
   return (
     <form onSubmit={submit} noValidate>
-      <h1 className="mb-1 mt-0 text-[26px] font-bold">{t('teacher.title')}</h1>
-      <p lang="si" className="mb-6 text-ink-muted font-[family-name:'Noto_Sans_Sinhala',Inter,sans-serif]">
-        {t('teacher.titleSi')}
-      </p>
+      <h1 className="mb-6 mt-0 text-[26px] font-bold">{t('teacher.title')}</h1>
       <div className="mb-[18px]">
         <Field
           label={t('teacher.school')}
@@ -127,15 +129,9 @@ export function TeacherLoginForm({ autoFocus }: { autoFocus?: boolean }) {
         />
       </Field>
       <Field label={t('teacher.password')} hint={t('teacher.passwordHint')} error={error} className="mb-6">
-        <input
-          className={inputClass}
-          type="password"
-          autoComplete="current-password"
-          value={password}
-          onChange={(e) => setPassword(e.target.value)}
-        />
+        <PasswordInput autoComplete="current-password" value={password} onChange={(e) => setPassword(e.target.value)} />
       </Field>
-      <Button type="submit" variant="primary" size="lg" className="w-full" loading={busy} disabled={!staffId || !password}>
+      <Button type="submit" variant="primary" size="lg" className="w-full" loading={busy}>
         {t('teacher.submit')}
       </Button>
       <p className="mb-0 mt-[18px] rounded-lg bg-surface-2 px-3.5 py-3 text-sm leading-normal text-ink-soft">

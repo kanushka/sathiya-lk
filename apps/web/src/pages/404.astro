@@ -3,19 +3,11 @@
 // Copyright (C) 2026 Kanushka Gayan
 import Base from '../layouts/Base.astro';
 import { en } from '../content/en';
-import { si } from '../content/si';
 ---
 <Base lang="en" page="404">
   <article class="wrap prose not-found">
-    <section>
-      <h1>{en.notFound.title}</h1>
-      <p>{en.notFound.body}</p>
-      <p><a class="btn btn-primary" href="/">{en.notFound.home}</a></p>
-    </section>
-    <section lang="si">
-      <h2>{si.notFound.title}</h2>
-      <p>{si.notFound.body}</p>
-      <p><a class="btn btn-secondary" href="/si/" hreflang="si">{si.notFound.home}</a></p>
-    </section>
+    <h1>{en.notFound.title}</h1>
+    <p>{en.notFound.body}</p>
+    <p><a class="btn btn-primary" href="/">{en.notFound.home}</a></p>
   </article>
 </Base>

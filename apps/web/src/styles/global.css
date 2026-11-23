@@ -182,15 +182,25 @@ a:hover {
   color: var(--navy);
 }
 
+.logo-text {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
 .logo-en {
   font-weight: 800;
   font-size: 22px;
   letter-spacing: -0.02em;
+  line-height: 1;
 }
 
 .logo-si {
+  font-family: var(--font-si);
+  font-weight: 600;
   font-size: 15px;
-  color: var(--muted);
+  line-height: 1.1;
+  color: var(--teal);
 }
 
 .site-nav {
@@ -323,10 +333,6 @@ a:hover {
 }
 
 @media (max-width: 400px) {
-  .logo-si {
-    display: none;
-  }
-
   .menu-toggle {
     padding: 0 10px;
   }

@@ -43,13 +43,13 @@ exports[`email templates > passwordReset snapshot 1`] = `
 <body style="margin:0;padding:0;background:#E9E8E3">
 <table role="presentation" width="100%" cellspacing="0" cellpadding="0" border="0" style="background:#FBFAF7"><tr><td align="center" style="padding:28px 12px">
 <table role="presentation" width="520" cellspacing="0" cellpadding="0" border="0" style="width:100%;max-width:520px;background:#FFFFFF;border:1px solid #ECEDF1;border-radius:12px;overflow:hidden">
-<tr><td style="background:#0E6B6A;color:#FFFFFF;padding:18px 24px;font-family:Inter,'Segoe UI',Helvetica,Arial,'Noto Sans Sinhala','Iskoola Pota','Nirmala UI',sans-serif;font-weight:800;font-size:18px">Sathiya</td></tr>
+<tr><td style="background:#0E6B6A;color:#FFFFFF;padding:18px 24px;font-family:Inter,'Segoe UI',Helvetica,Arial,'Noto Sans Sinhala','Iskoola Pota','Nirmala UI',sans-serif;font-weight:800;font-size:18px"><img src="https://sathiya.kanushka.com/logo-on-teal-96.png" alt="" width="40" height="40" style="vertical-align:middle;border:0;margin-right:10px"><span style="display:inline-block;vertical-align:middle;line-height:1.1">Sathiya<br><span style="font-family:'Noto Sans Sinhala','Iskoola Pota','Nirmala UI',Inter,Arial,sans-serif;font-weight:600;font-size:14px">සතිය</span></span></td></tr>
 <tr><td style="padding:24px;color:#14213D">
 <div style="font-family:Inter,'Segoe UI',Helvetica,Arial,'Noto Sans Sinhala','Iskoola Pota','Nirmala UI',sans-serif;font-size:15px;line-height:1.6"><p style="margin:0 0 12px;">Hello,</p><p style="margin:0 0 12px;">We got a request to reset the password for your Sathiya account. Use the button below to choose a new one.</p><table role="presentation" cellspacing="0" cellpadding="0" border="0" style="margin:8px 0 4px"><tr><td style="background:#0E6B6A;border-radius:10px"><a href="https://app.example.test/auth/action?mode=resetPassword&amp;oobCode=abc" style="display:inline-block;padding:12px 22px;color:#FFFFFF;text-decoration:none;font-weight:700;font-size:15px">Reset password</a></td></tr></table><p style="margin:12px 0 0;font-size:13px;color:#5A6378">If you didn&#39;t ask for this, you can ignore this email. Your password stays the same.</p></div>
 <div style="border-top:1px solid #ECEDF1;margin-top:20px;padding-top:16px;color:#3B4560"><div style="font-family:'Noto Sans Sinhala','Iskoola Pota','Nirmala UI',Inter,Arial,sans-serif;font-size:14px;line-height:1.6"><p style="margin:0 0 12px;">ආයුබෝවන්,</p><p style="margin:0 0 12px;">ඔබගේ Sathiya ගිණුමේ මුරපදය යළි සැකසීමට ඉල්ලීමක් ලැබුණි. නව මුරපදයක් තෝරා ගැනීමට ඉහත බොත්තම ඔබන්න.</p></div></div>
 </td></tr>
 </table>
-<p style="margin:0;padding:16px 24px 0;text-align:center;font-family:Inter,'Segoe UI',Helvetica,Arial,'Noto Sans Sinhala','Iskoola Pota','Nirmala UI',sans-serif;font-size:12px;line-height:1.6;color:#8A91A3">Sathiya: free school timetables for Sri Lanka · <a href="https://www.example.test/" style="color:#8A91A3">www.example.test</a></p>
+<p style="margin:0;padding:16px 24px 0;text-align:center;font-family:Inter,'Segoe UI',Helvetica,Arial,'Noto Sans Sinhala','Iskoola Pota','Nirmala UI',sans-serif;font-size:12px;line-height:1.6;color:#8A91A3">Sathiya (සතිය): free school timetables for Sri Lanka · <a href="https://www.example.test/" style="color:#8A91A3">www.example.test</a></p>
 </td></tr></table>
 </body></html>",
   "subject": "ඔබගේ මුරපදය යළි සකසන්න · Reset your Sathiya password",
@@ -68,7 +68,7 @@ If you didn't ask for this, you can ignore this email. Your password stays the s
 ඔබගේ Sathiya ගිණුමේ මුරපදය යළි සැකසීමට ඉල්ලීමක් ලැබුණි. නව මුරපදයක් තෝරා ගැනීමට ඉහත බොත්තම ඔබන්න.
 
 --
-Sathiya: free school timetables for Sri Lanka
+Sathiya (සතිය): free school timetables for Sri Lanka
 https://www.example.test/",
 }
 `;
@@ -80,14 +80,14 @@ exports[`email templates > reportReceived snapshot 1`] = `
 <body style="margin:0;padding:0;background:#E9E8E3">
 <table role="presentation" width="100%" cellspacing="0" cellpadding="0" border="0" style="background:#FBFAF7"><tr><td align="center" style="padding:28px 12px">
 <table role="presentation" width="520" cellspacing="0" cellpadding="0" border="0" style="width:100%;max-width:520px;background:#FFFFFF;border:1px solid #ECEDF1;border-radius:12px;overflow:hidden">
-<tr><td style="background:#0E6B6A;color:#FFFFFF;padding:18px 24px;font-family:Inter,'Segoe UI',Helvetica,Arial,'Noto Sans Sinhala','Iskoola Pota','Nirmala UI',sans-serif;font-weight:800;font-size:18px">Sathiya</td></tr>
+<tr><td style="background:#0E6B6A;color:#FFFFFF;padding:18px 24px;font-family:Inter,'Segoe UI',Helvetica,Arial,'Noto Sans Sinhala','Iskoola Pota','Nirmala UI',sans-serif;font-weight:800;font-size:18px"><img src="https://sathiya.kanushka.com/logo-on-teal-96.png" alt="" width="40" height="40" style="vertical-align:middle;border:0;margin-right:10px"><span style="display:inline-block;vertical-align:middle;line-height:1.1">Sathiya<br><span style="font-family:'Noto Sans Sinhala','Iskoola Pota','Nirmala UI',Inter,Arial,sans-serif;font-weight:600;font-size:14px">සතිය</span></span></td></tr>
 <tr><td style="padding:24px;color:#14213D">
 <div style="font-family:Inter,'Segoe UI',Helvetica,Arial,'Noto Sans Sinhala','Iskoola Pota','Nirmala UI',sans-serif;font-size:15px;line-height:1.6"><p style="margin:0 0 12px;">Hello,</p><p style="margin:0 0 12px;">A school was reported on Sathiya: <b>Siripura Central College</b> (abc123).</p><p style="margin:0 0 12px;">Reason: <b>Fake school</b>. Reporter: parent@example.com</p><p style="margin:0 0 12px;padding:10px 14px;background:#FBFAF7;border-left:3px solid #ECEDF1;color:#3B4560;white-space:pre-wrap">No such school.
 Called them.</p><table role="presentation" cellspacing="0" cellpadding="0" border="0" style="margin:8px 0 4px"><tr><td style="background:#0E6B6A;border-radius:10px"><a href="https://app.example.test/login" style="display:inline-block;padding:12px 22px;color:#FFFFFF;text-decoration:none;font-weight:700;font-size:15px">Open Sathiya</a></td></tr></table></div>
 <div style="border-top:1px solid #ECEDF1;margin-top:20px;padding-top:16px;color:#3B4560"><div style="font-family:'Noto Sans Sinhala','Iskoola Pota','Nirmala UI',Inter,Arial,sans-serif;font-size:14px;line-height:1.6"><p style="margin:0 0 12px;">ආයුබෝවන්,</p><p style="margin:0 0 12px;">Sathiya හි පාසලක් පිළිබඳ වාර්තාවක් ලැබී ඇත: Siripura Central College. හේතුව: ව්‍යාජ පාසලක්.</p></div></div>
 </td></tr>
 </table>
-<p style="margin:0;padding:16px 24px 0;text-align:center;font-family:Inter,'Segoe UI',Helvetica,Arial,'Noto Sans Sinhala','Iskoola Pota','Nirmala UI',sans-serif;font-size:12px;line-height:1.6;color:#8A91A3">Sathiya: free school timetables for Sri Lanka · <a href="https://www.example.test/" style="color:#8A91A3">www.example.test</a></p>
+<p style="margin:0;padding:16px 24px 0;text-align:center;font-family:Inter,'Segoe UI',Helvetica,Arial,'Noto Sans Sinhala','Iskoola Pota','Nirmala UI',sans-serif;font-size:12px;line-height:1.6;color:#8A91A3">Sathiya (සතිය): free school timetables for Sri Lanka · <a href="https://www.example.test/" style="color:#8A91A3">www.example.test</a></p>
 </td></tr></table>
 </body></html>",
   "subject": "New report (Fake school): Siripura Central College",
@@ -109,7 +109,7 @@ Open Sathiya: https://app.example.test/login
 Sathiya හි පාසලක් පිළිබඳ වාර්තාවක් ලැබී ඇත: Siripura Central College. හේතුව: ව්‍යාජ පාසලක්.
 
 --
-Sathiya: free school timetables for Sri Lanka
+Sathiya (සතිය): free school timetables for Sri Lanka
 https://www.example.test/",
 }
 `;
@@ -161,7 +161,7 @@ exports[`email templates > schoolRegistered snapshot 1`] = `
 <div style="border-top:1px solid #ECEDF1;margin-top:20px;padding-top:16px;color:#3B4560"><div style="font-family:'Noto Sans Sinhala','Iskoola Pota','Nirmala UI',Inter,Arial,sans-serif;font-size:14px;line-height:1.6"><p style="margin:0 0 12px;">ආයුබෝවන් W. Perera,</p><p style="margin:0 0 12px;">සිරිපුර මධ්‍ය මහා විද්‍යාලය Sathiya හි ලියාපදිංචි කර ඇත. ආරම්භ කිරීමට:</p><ol style="margin:0 0 12px;padding-left:20px"><li style="margin:0 0 6px">විෂයන්, කාලච්ඡේද වේලාවන් සහ පන්ති එක් කරන්න.</li><li style="margin:0 0 6px">ගුරුවරුන් එක් කරන්න. සෑම ගුරුවරයෙකුටම පිවිසුම් පත්‍රිකාවක් ලැබේ.</li><li style="margin:0 0 6px">කාලසටහන සාදා එය ප්‍රකාශයට පත් කරන්න.</li></ol></div></div>
 </td></tr>
 </table>
-<p style="margin:0;padding:16px 24px 0;text-align:center;font-family:Inter,'Segoe UI',Helvetica,Arial,'Noto Sans Sinhala','Iskoola Pota','Nirmala UI',sans-serif;font-size:12px;line-height:1.6;color:#8A91A3">Sathiya: free school timetables for Sri Lanka · <a href="https://www.example.test/" style="color:#8A91A3">www.example.test</a></p>
+<p style="margin:0;padding:16px 24px 0;text-align:center;font-family:Inter,'Segoe UI',Helvetica,Arial,'Noto Sans Sinhala','Iskoola Pota','Nirmala UI',sans-serif;font-size:12px;line-height:1.6;color:#8A91A3">Sathiya (සතිය): free school timetables for Sri Lanka · <a href="https://www.example.test/" style="color:#8A91A3">www.example.test</a></p>
 </td></tr></table>
 </body></html>",
   "subject": "Welcome to Sathiya: Siripura Central College is registered",
@@ -188,7 +188,7 @@ Invite other admins from the school settings when you are ready.
 3. කාලසටහන සාදා එය ප්‍රකාශයට පත් කරන්න.
 
 --
-Sathiya: free school timetables for Sri Lanka
+Sathiya (සතිය): free school timetables for Sri Lanka
 https://www.example.test/",
 }
 `;
@@ -240,13 +240,13 @@ exports[`email templates > verifyEmail snapshot 1`] = `
 <body style="margin:0;padding:0;background:#E9E8E3">
 <table role="presentation" width="100%" cellspacing="0" cellpadding="0" border="0" style="background:#FBFAF7"><tr><td align="center" style="padding:28px 12px">
 <table role="presentation" width="520" cellspacing="0" cellpadding="0" border="0" style="width:100%;max-width:520px;background:#FFFFFF;border:1px solid #ECEDF1;border-radius:12px;overflow:hidden">
-<tr><td style="background:#0E6B6A;color:#FFFFFF;padding:18px 24px;font-family:Inter,'Segoe UI',Helvetica,Arial,'Noto Sans Sinhala','Iskoola Pota','Nirmala UI',sans-serif;font-weight:800;font-size:18px">Sathiya</td></tr>
+<tr><td style="background:#0E6B6A;color:#FFFFFF;padding:18px 24px;font-family:Inter,'Segoe UI',Helvetica,Arial,'Noto Sans Sinhala','Iskoola Pota','Nirmala UI',sans-serif;font-weight:800;font-size:18px"><img src="https://sathiya.kanushka.com/logo-on-teal-96.png" alt="" width="40" height="40" style="vertical-align:middle;border:0;margin-right:10px"><span style="display:inline-block;vertical-align:middle;line-height:1.1">Sathiya<br><span style="font-family:'Noto Sans Sinhala','Iskoola Pota','Nirmala UI',Inter,Arial,sans-serif;font-weight:600;font-size:14px">සතිය</span></span></td></tr>
 <tr><td style="padding:24px;color:#14213D">
 <div style="font-family:Inter,'Segoe UI',Helvetica,Arial,'Noto Sans Sinhala','Iskoola Pota','Nirmala UI',sans-serif;font-size:15px;line-height:1.6"><p style="margin:0 0 12px;">Hello,</p><p style="margin:0 0 12px;">Please confirm this email address so you can register your school on Sathiya.</p><table role="presentation" cellspacing="0" cellpadding="0" border="0" style="margin:8px 0 4px"><tr><td style="background:#0E6B6A;border-radius:10px"><a href="https://app.example.test/auth/action?mode=verifyEmail&amp;oobCode=abc" style="display:inline-block;padding:12px 22px;color:#FFFFFF;text-decoration:none;font-weight:700;font-size:15px">Confirm email</a></td></tr></table><p style="margin:12px 0 0;font-size:13px;color:#5A6378">If you didn&#39;t ask for this, you can ignore this email.</p></div>
 <div style="border-top:1px solid #ECEDF1;margin-top:20px;padding-top:16px;color:#3B4560"><div style="font-family:'Noto Sans Sinhala','Iskoola Pota','Nirmala UI',Inter,Arial,sans-serif;font-size:14px;line-height:1.6"><p style="margin:0 0 12px;">ආයුබෝවන්,</p><p style="margin:0 0 12px;">ඔබගේ පාසල Sathiya හි ලියාපදිංචි කිරීමට මෙම ඊමේල් ලිපිනය තහවුරු කරන්න. ඉහත බොත්තම ඔබන්න.</p></div></div>
 </td></tr>
 </table>
-<p style="margin:0;padding:16px 24px 0;text-align:center;font-family:Inter,'Segoe UI',Helvetica,Arial,'Noto Sans Sinhala','Iskoola Pota','Nirmala UI',sans-serif;font-size:12px;line-height:1.6;color:#8A91A3">Sathiya: free school timetables for Sri Lanka · <a href="https://www.example.test/" style="color:#8A91A3">www.example.test</a></p>
+<p style="margin:0;padding:16px 24px 0;text-align:center;font-family:Inter,'Segoe UI',Helvetica,Arial,'Noto Sans Sinhala','Iskoola Pota','Nirmala UI',sans-serif;font-size:12px;line-height:1.6;color:#8A91A3">Sathiya (සතිය): free school timetables for Sri Lanka · <a href="https://www.example.test/" style="color:#8A91A3">www.example.test</a></p>
 </td></tr></table>
 </body></html>",
   "subject": "Confirm your email for Sathiya · ඔබගේ ඊමේල් තහවුරු කරන්න",
@@ -265,7 +265,7 @@ If you didn't ask for this, you can ignore this email.
 ඔබගේ පාසල Sathiya හි ලියාපදිංචි කිරීමට මෙම ඊමේල් ලිපිනය තහවුරු කරන්න. ඉහත බොත්තම ඔබන්න.
 
 --
-Sathiya: free school timetables for Sri Lanka
+Sathiya (සතිය): free school timetables for Sri Lanka
 https://www.example.test/",
 }
 `;

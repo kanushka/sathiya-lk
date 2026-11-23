@@ -8,6 +8,7 @@
     "saveFailed": "Could not save. Try again."
   },
   "fields": {
+    "name": "School name",
     "nameEn": "School name (English)",
     "nameSi": "School name (Sinhala)",
     "district": "District",

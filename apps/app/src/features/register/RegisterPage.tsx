@@ -1,5 +1,6 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
 // Copyright (C) 2026 Kanushka Gayan
+import { pickName } from '@sathiya/core';
 import { useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useNavigate } from 'react-router-dom';
@@ -7,7 +8,8 @@ import { useAuth } from '../../app/AuthProvider';
 import { useLang } from '../../app/LangProvider';
 import { cx } from '../../ui/cx';
 import { useToast } from '../../ui/Toast';
-import { BrandMark, LanguageToggle } from '../auth/AuthChrome';
+import { BrandLockup, LanguageToggle } from '../auth/AuthChrome';
+import { useDocumentTitle } from '../../lib/brand';
 import { sendAuthEmail } from '../auth/authEmail';
 import { ReportSchoolModal } from '../auth/ReportSchoolModal';
 import { StepAccount } from './StepAccount';
@@ -24,6 +26,7 @@ const steps = ['school', 'brand', 'account'] as const;
 export function RegisterPage() {
   const { t } = useTranslation('register');
   const { t: ta } = useTranslation('auth');
+  useDocumentTitle(ta('pageTitle.register'));
   const { user, refreshClaims } = useAuth();
   const { lang } = useLang();
   const navigate = useNavigate();
@@ -156,10 +159,7 @@ export function RegisterPage() {
     <div className="min-h-screen bg-canvas px-4 py-10">
       <div className="mx-auto max-w-[1040px]">
         <div className="mb-7 flex flex-wrap items-center justify-between gap-4">
-          <div className="flex items-center gap-2.5">
-            <BrandMark />
-            <span className="text-xl font-extrabold">{ta('brand')}</span>
-          </div>
+          <BrandLockup />
           <ol aria-label={t('steps.label')} className="m-0 flex list-none flex-wrap gap-2 p-0 text-sm font-semibold">
             {steps.map((key, i) => {
               const n = i + 1;
@@ -204,7 +204,7 @@ export function RegisterPage() {
         )}
         {!needsGate && step === 2 && (
           <StepBrand
-            schoolName={school.nameEn}
+            schoolName={pickName(school, 'en')}
             schoolNameSi={school.nameSi}
             value={brand}
             onChange={setBrand}

@@ -3,6 +3,7 @@
 import { SCHOOL_TYPES, suggestStaffPrefix, type SchoolType } from '@sathiya/core';
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
+import { NameFields } from '../../ui/NameFields';
 import { Button } from '../../ui/Button';
 import { Checkbox } from '../../ui/Checkbox';
 import { Field, inputClass } from '../../ui/Field';
@@ -75,21 +76,16 @@ export function StepSchool({ value, onChange, onNext, censusTaken, checking, onR
           onChange={(checked) => onChange({ ...value, noCensus: checked, censusNo: checked ? '' : value.censusNo })}
           label={t('school.noCensus')}
         />
-        <Field label={t('school.nameEn')}>
-          <input
-            className={inputClass}
-            value={value.nameEn}
-            onChange={(e) => onChange({ ...value, nameEn: e.target.value, ...(prefixTouched ? {} : { staffPrefix: suggestStaffPrefix(e.target.value) }) })}
-          />
-        </Field>
-        <Field label={t('school.nameSi')}>
-          <input
-            lang="si"
-            className={inputClass}
-            value={value.nameSi}
-            onChange={(e) => set('nameSi', e.target.value)}
-          />
-        </Field>
+        <NameFields
+          legend={t('school.name')}
+          enLabel={t('school.nameEn')}
+          siLabel={t('school.nameSi')}
+          en={value.nameEn}
+          si={value.nameSi}
+          onEn={(v) => onChange({ ...value, nameEn: v, ...(prefixTouched ? {} : { staffPrefix: suggestStaffPrefix(v) }) })}
+          onSi={(v) => set('nameSi', v)}
+          hint={t('school.nameHint')}
+        />
         <div className="flex gap-3">
           <Field
             label={t('school.city')}

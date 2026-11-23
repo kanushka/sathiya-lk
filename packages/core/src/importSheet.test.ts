@@ -30,8 +30,8 @@ describe('cellText', () => {
 describe('IMPORT_COLUMNS', () => {
   it('marks the required columns', () => {
     const req = (k: 'subjects' | 'teachers') => IMPORT_COLUMNS[k].filter((c) => c.required).map((c) => c.key);
-    expect(req('subjects')).toEqual(['nameEn']);
-    expect(req('teachers')).toEqual(['name']);
+    expect(req('subjects')).toEqual([]);
+    expect(req('teachers')).toEqual([]);
   });
 });
 
@@ -77,7 +77,7 @@ describe('readSheets', () => {
       row: 1,
       column: 'name',
       code: 'missingHeader',
-      params: { header: 'Full name', column: 'name' },
+      params: { header: 'Name (English)', column: 'name' },
     });
   });
 
@@ -166,5 +166,23 @@ describe('readSheets header matching', () => {
     const start = Date.now();
     readSheets([{ name: 'y', rows: [[`Full name${'*'.repeat(50_000)}x`]] }]);
     expect(Date.now() - start).toBeLessThan(500);
+  });
+});
+
+describe('two-language names in sheets', () => {
+  it('reads a sheet of names alone as subjects', () => {
+    const r = readSheets([{ name: 'S', rows: [['Name (English)', 'Name (Sinhala)'], ['Maths', 'ගණිතය']] }]);
+    expect(r.errors).toEqual([]);
+    expect(r.subjects).toEqual([{ row: 2, cells: { nameEn: 'Maths', nameSi: 'ගණිතය' } }]);
+  });
+  it('reads teacher names in both languages and the old Full name heading', () => {
+    const r = readSheets([{ name: 'T', rows: [['Full name / සම්පූර්ණ නම', 'Name (Sinhala) / නම (සිංහල)', 'Grades'], ['N. Perera', 'එන්. පෙරේරා', '6']] }]);
+    expect(r.errors).toEqual([]);
+    expect(r.teachers).toEqual([{ row: 2, cells: { name: 'N. Perera', nameSi: 'එන්. පෙරේරා', grades: '6' } }]);
+  });
+  it('accepts a teacher sheet with only the Sinhala name heading', () => {
+    const r = readSheets([{ name: 'T', rows: [['නම (සිංහල)', 'Grades'], ['ජී. ජයසේකර', '6']] }]);
+    expect(r.errors).toEqual([]);
+    expect(r.teachers[0]?.cells).toEqual({ nameSi: 'ජී. ජයසේකර', grades: '6' });
   });
 });

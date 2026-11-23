@@ -2,7 +2,7 @@
 // Copyright (C) 2026 Kanushka Gayan
 
 import { findClass, gradeOf, templateOf } from './lookup';
-import { teacherDisplayName } from './names';
+import { pickName, teacherDisplayName } from './names';
 import { effectivePlan } from './plan';
 import { bestOverlapPeriod, periodsFor, rowsFor, toMinutes } from './time';
 import type { Bilingual, DayIndex, Entry, Hhmm, PeriodTemplate, SchoolClass, SchoolContext, Subject, Teacher, TemplateRow, Year } from './types';
@@ -59,7 +59,7 @@ function classCell(ctx: SchoolContext, cls: SchoolClass, e: Entry, slot: { start
     const others = e.classIds.filter((id) => id !== cls.id).map((id) => findClass(ctx, id)?.name ?? id);
     const firstOption = group?.optionSubjectIds[0] ?? e.lessons[0]?.subjectId;
     const color = (firstOption !== undefined ? subjects.get(firstOption)?.color : undefined) ?? '';
-    return withSi({ ...base, title: group?.nameEn ?? e.groupKey, sub: others.length ? `Group · ${others.join('+')}` : 'Group', otherClasses: others, color }, group?.nameSi);
+    return withSi({ ...base, title: (group && pickName(group, 'en')) || e.groupKey, sub: others.length ? `Group · ${others.join('+')}` : 'Group', otherClasses: others, color }, group?.nameSi);
   }
   const lesson = e.lessons[0];
   const subject = lesson && subjects.get(lesson.subjectId);
@@ -70,7 +70,7 @@ function classCell(ctx: SchoolContext, cls: SchoolClass, e: Entry, slot: { start
 }
 
 export function buildSnapshots(ctx: SchoolContext, entries: Entry[], year: Year): { classes: ClassSnapshot[]; teachers: TeacherSnapshot[] } {
-  const schoolName: Bilingual = ctx.school.nameSi === undefined ? { nameEn: ctx.school.nameEn } : { nameEn: ctx.school.nameEn, nameSi: ctx.school.nameSi };
+  const schoolName: Bilingual = ctx.school.nameSi === undefined ? { nameEn: pickName(ctx.school, 'en') } : { nameEn: pickName(ctx.school, 'en'), nameSi: ctx.school.nameSi };
   const subjects = new Map(ctx.subjects.map((s) => [s.id, s]));
   const slotted = entries.flatMap((e) => {
     const slot = entrySlot(ctx, e);
@@ -97,7 +97,7 @@ export function buildSnapshots(ctx: SchoolContext, entries: Entry[], year: Year)
       const subject = subjects.get(lesson.subjectId);
       const title = e.classIds.map((id) => findClass(ctx, id)?.name ?? id).join('+');
       const subSi = subject?.nameSi?.trim();
-      cells.push({ day: e.day, period, start: slot.start, end: slot.end, title, sub: subject?.nameEn ?? '', ...(subSi ? { subSi } : {}), color: subject?.color ?? '', isGroup: e.groupKey !== undefined });
+      cells.push({ day: e.day, period, start: slot.start, end: slot.end, title, sub: subject ? pickName(subject, 'en') : '', ...(subSi ? { subSi } : {}), color: subject?.color ?? '', isGroup: e.groupKey !== undefined });
     }
     cells.sort(byDayStart);
     const names = displayNames(teacher);
