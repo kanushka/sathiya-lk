@@ -8,7 +8,7 @@ import { inputClass } from './Field';
 
 export interface NameFieldsProps {
   legend?: ReactNode;
-  // Full accessible names for the two inputs, e.g. "School name (English)"; the visible labels stay short.
+  // Full accessible names for the two inputs, e.g. "School name in English"; each must contain the visible label text; the visible labels stay short.
   enLabel?: string;
   siLabel?: string;
   en: string;

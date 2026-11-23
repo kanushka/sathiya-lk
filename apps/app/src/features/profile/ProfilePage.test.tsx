@@ -30,7 +30,7 @@ function setup() {
 describe('profile page', () => {
   it('prefills the saved profile', () => {
     setup();
-    expect(screen.getByLabelText('School name (English)')).toHaveValue('Siripura Central College');
+    expect(screen.getByLabelText('School name in English')).toHaveValue('Siripura Central College');
     expect(screen.getByLabelText('Staff ID prefix')).toHaveValue('SCC');
   });
 
@@ -53,7 +53,7 @@ describe('profile page', () => {
   it('saves edits in one write', async () => {
     vi.mocked(api.updateSchool).mockResolvedValue(undefined);
     const { user } = setup();
-    const nameEn = screen.getByLabelText('School name (English)');
+    const nameEn = screen.getByLabelText('School name in English');
     await user.clear(nameEn);
     await user.type(nameEn, 'Siripura MV');
     await user.click(screen.getByRole('button', { name: '#1D3E7A' }));
@@ -85,16 +85,16 @@ describe('profile page', () => {
     await user.type(prefix, 'scc');
     expect(prefix).toHaveValue('SCC');
     expect(screen.getByRole('button', { name: 'Save changes' })).toBeEnabled();
-    await user.clear(screen.getByLabelText('School name (English)'));
+    await user.clear(screen.getByLabelText('School name in English'));
     expect(screen.getByRole('button', { name: 'Save changes' })).toBeEnabled();
-    await user.clear(screen.getByLabelText('School name (Sinhala)'));
+    await user.clear(screen.getByLabelText('School name in Sinhala'));
     expect(screen.getByRole('button', { name: 'Save changes' })).toBeDisabled();
     expect(screen.getByText('Enter the name in English or Sinhala (or both).')).toBeInTheDocument();
   });
 
   it('keeps the saved prefix on rename and suggests one only after the prefix is cleared', async () => {
     const { user } = setup();
-    const name = screen.getByLabelText('School name (English)');
+    const name = screen.getByLabelText('School name in English');
     const prefix = screen.getByLabelText('Staff ID prefix');
     await user.clear(name);
     await user.type(name, 'Royal College');
@@ -142,6 +142,6 @@ describe('profile page', () => {
     flags.readOnly = true;
     setup();
     expect(screen.queryByRole('button', { name: 'Save changes' })).not.toBeInTheDocument();
-    expect(screen.getByLabelText('School name (English)')).toBeDisabled();
+    expect(screen.getByLabelText('School name in English')).toBeDisabled();
   });
 });

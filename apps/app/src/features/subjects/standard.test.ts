@@ -52,4 +52,15 @@ describe('missingDefaults aliases', () => {
     const added = missingDefaults([{ nameEn: 'Other', short: 'X' }], [{ nameEn: 'වෙනත්', short: 'x', color: '#E9E9E9' }]);
     expect(added).toEqual([{ nameEn: 'වෙනත්', short: 'වෙනත්', color: '#E9E9E9' }]);
   });
+
+  it('adds only one default per Sinhala name', () => {
+    const added = missingDefaults(
+      [],
+      [
+        { nameEn: 'Mathematics', nameSi: 'ගණිතය', short: 'Maths', color: '#D4ECEA' },
+        { nameEn: 'Arithmetic', nameSi: 'ගණිතය', short: 'Arith', color: '#D4ECEA' },
+      ],
+    );
+    expect(added.map((d) => d.nameEn)).toEqual(['Mathematics']);
+  });
 });

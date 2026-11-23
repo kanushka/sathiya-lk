@@ -24,7 +24,7 @@ test('register a government school: census checks, email verification gate, land
   await shot(page, 'register-step1');
   const next = page.getByRole('button', { name: 'Next: logo & colours' });
 
-  await page.getByLabel('School name (English)').fill('Nugegoda Central College');
+  await page.getByLabel('School name in English').fill('Nugegoda Central College');
   await page.getByLabel('City', { exact: true }).fill('Nugegoda');
   await page.getByLabel('District').fill('Colombo');
   await expect(page.getByLabel('Staff ID prefix')).toHaveValue('NCC');

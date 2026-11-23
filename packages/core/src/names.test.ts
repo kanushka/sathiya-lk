@@ -113,4 +113,8 @@ describe('names in either language', () => {
     expect(teacherNameMissing({ name: 'A. Rizan' }, 'en')).toBe(false);
     expect(teacherNameMissing({ name: '', nameSi: 'ජී. ජයසේකර' }, 'en')).toBe(true);
   });
+
+  it('reads a legacy Thero title before the Sinhala name', () => {
+    expect(teacherDisplayName({ name: 'Ananda', nameSi: 'ආනන්ද හිමි', title: 'Thero' as never }, 'si')).toBe('පූජ්‍ය ආනන්ද හිමි');
+  });
 });

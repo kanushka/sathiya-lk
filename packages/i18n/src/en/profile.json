@@ -9,8 +9,8 @@
   },
   "fields": {
     "name": "School name",
-    "nameEn": "School name (English)",
-    "nameSi": "School name (Sinhala)",
+    "nameEn": "School name in English",
+    "nameSi": "School name in Sinhala",
     "district": "District",
     "prefix": "Staff ID prefix",
     "prefixHint": "2 to 5 capital letters. Warning: existing staff IDs are not changed, only new teachers use the new prefix.",

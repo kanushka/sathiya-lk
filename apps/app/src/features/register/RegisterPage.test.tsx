@@ -29,7 +29,7 @@ beforeEach(() => {
 });
 
 async function fillSchool(user: ReturnType<typeof userEvent.setup>) {
-  await user.type(screen.getByLabelText('School name (English)'), 'Siripura Central College');
+  await user.type(screen.getByLabelText('School name in English'), 'Siripura Central College');
   await user.type(screen.getByLabelText('City'), 'Kandy');
   await user.type(screen.getByLabelText('District'), 'Kandy');
   await user.clear(screen.getByLabelText('Staff ID prefix'));
@@ -42,7 +42,7 @@ describe('register', () => {
   it('suggests a staff ID prefix from the school name until the user types their own', async () => {
     const user = userEvent.setup();
     renderAuth(<RegisterPage />, { route: '/register', at: '/register' });
-    const name = screen.getByLabelText('School name (English)');
+    const name = screen.getByLabelText('School name in English');
     const prefix = screen.getByLabelText('Staff ID prefix');
     await user.type(name, 'G/ P. D. S. Kularathne Collage');
     expect(prefix).toHaveValue('KC');
@@ -60,7 +60,7 @@ describe('register', () => {
     renderAuth(<RegisterPage />, { route: '/register', at: '/register' });
     const next = screen.getByRole('button', { name: 'Next: logo & colours' });
     expect(next).toBeDisabled();
-    await user.type(screen.getByLabelText('School name (English)'), 'Siripura');
+    await user.type(screen.getByLabelText('School name in English'), 'Siripura');
     await user.type(screen.getByLabelText('District'), 'Kandy');
     expect(next).toBeDisabled();
     await user.type(screen.getByLabelText('City'), 'Kandy');
@@ -368,7 +368,7 @@ describe('register', () => {
     it('sends type and census, and omits census when none', async () => {
       const user = userEvent.setup();
       renderAuth(<RegisterPage />, { route: '/register', at: '/register', signedIn: true, claimsAfterRefresh: { sid: 's', role: 'admin' } });
-      await user.type(screen.getByLabelText('School name (English)'), 'Lake School');
+      await user.type(screen.getByLabelText('School name in English'), 'Lake School');
       await user.type(screen.getByLabelText('City'), 'Kandy');
       await user.type(screen.getByLabelText('District'), 'Kandy');
       await user.type(screen.getByLabelText('Staff ID prefix'), 'lsc');
@@ -459,7 +459,7 @@ describe('register', () => {
       renderAuth(<RegisterPage />, { route: '/register', at: '/register' });
       await pickOption(user, screen.getByRole('combobox', { name: /^School type/ }), 'Private');
       await user.click(screen.getByRole('checkbox', { name: /No census number/ }));
-      await user.type(screen.getByLabelText('School name (English)'), 'Siripura Central College');
+      await user.type(screen.getByLabelText('School name in English'), 'Siripura Central College');
       await user.type(screen.getByLabelText('City'), 'Kandy');
       await user.type(screen.getByLabelText('District'), 'Kandy');
       await user.click(screen.getByRole('button', { name: 'Next: logo & colours' }));
@@ -528,9 +528,9 @@ describe('register', () => {
       renderAuth(<RegisterPage />, { route: '/register', at: '/register', signedIn: true, passwordUser: true, emailVerified: false });
       expect(screen.getByRole('heading', { name: 'Check your email' })).toBeInTheDocument();
       expect(screen.getByText('a@b.lk', { selector: 'b' })).toBeInTheDocument();
-      expect(screen.queryByLabelText('School name (English)')).not.toBeInTheDocument();
+      expect(screen.queryByLabelText('School name in English')).not.toBeInTheDocument();
       await user.click(screen.getByRole('button', { name: "I've confirmed it" }));
-      expect(await screen.findByLabelText('School name (English)')).toBeInTheDocument();
+      expect(await screen.findByLabelText('School name in English')).toBeInTheDocument();
       expect(api.confirmVerified).toHaveBeenCalled();
     });
 
@@ -540,7 +540,7 @@ describe('register', () => {
       renderAuth(<RegisterPage />, { route: '/register', at: '/register', signedIn: true, passwordUser: true, emailVerified: false });
       await user.click(screen.getByRole('button', { name: "I've confirmed it" }));
       expect(await screen.findByText(/Not verified yet/)).toBeInTheDocument();
-      expect(screen.queryByLabelText('School name (English)')).not.toBeInTheDocument();
+      expect(screen.queryByLabelText('School name in English')).not.toBeInTheDocument();
     });
 
     it('sends the email again and confirms', async () => {
@@ -561,7 +561,7 @@ describe('register', () => {
 
     it('skips the gate for Google and verified users', () => {
       renderAuth(<RegisterPage />, { route: '/register', at: '/register', signedIn: true });
-      expect(screen.getByLabelText('School name (English)')).toBeInTheDocument();
+      expect(screen.getByLabelText('School name in English')).toBeInTheDocument();
     });
 
     it('never calls registerSchool right after creating a new account', async () => {

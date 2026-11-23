@@ -50,7 +50,7 @@ export function splitTitle(name: string): { title?: TeacherTitle; name: string }
 
 export function teacherDisplayName(raw: TeacherNames, lang: Lang = 'en'): string {
   const shown: Lang = teacherNameMissing(raw, lang) && !teacherNameMissing(raw, other(lang)) ? other(lang) : lang;
-  return shown === 'si' ? withTitle(raw.nameSi!.trim(), raw.title, 'si') : englishDisplay(raw);
+  return shown === 'si' ? withTitle(raw.nameSi!.trim(), (raw.title as string | undefined) === 'Thero' ? 'Ven.' : raw.title, 'si') : englishDisplay(raw);
 }
 
 function withTitle(name: string, title: TeacherTitle | undefined, lang: Lang): string {

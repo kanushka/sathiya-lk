@@ -28,6 +28,8 @@ export function missingDefaults(
     const k = key(d.nameEn);
     if (!k || seen.has(k) || seen.has(key(d.nameSi ?? '')) || aliases.has(key(d.short))) continue;
     seen.add(k);
+    const si = key(d.nameSi ?? '');
+    if (si) seen.add(si);
     const short = uniqueShort(d, shorts);
     shorts.push(short);
     out.push(short === d.short ? d : { ...d, short });
