@@ -18,6 +18,7 @@ import { onCall } from 'firebase-functions/v2/https';
 import { db } from './lib/admin';
 import { callOpts } from './lib/callOptions';
 import { fail, int, invalid, obj, requireSchoolAdmin } from './lib/guards';
+import { releaseImportMarker } from './lib/importMarker';
 import { createTeacherAccount } from './lib/teacherAccount';
 
 const CONCURRENCY = 5;
@@ -91,7 +92,7 @@ export const importSetup = onCall({ ...callOpts, timeoutSeconds: 300 }, async (r
   try {
     await batch.commit();
   } catch (e) {
-    await marker.delete().catch(() => undefined);
+    await releaseImportMarker(marker, sid);
     throw e;
   }
 
@@ -120,6 +121,6 @@ export const importSetup = onCall({ ...callOpts, timeoutSeconds: 300 }, async (r
   await Promise.all(Array.from({ length: Math.min(CONCURRENCY, plan.teachers.length) }, worker));
 
   const notCreated = plan.teachers.filter((_, i) => !created[i]).map((t) => t.teacher.staffId);
-  if (subjectIds.length === 0 && !created.some(Boolean)) await marker.delete().catch(() => undefined);
+  if (subjectIds.length === 0 && !created.some(Boolean)) await releaseImportMarker(marker, sid);
   return { subjectIds, teachers: created.filter((t) => t !== undefined), notCreated };
 });
