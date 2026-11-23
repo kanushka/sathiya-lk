@@ -41,7 +41,7 @@ describe('AdminLoginForm password reset', () => {
   it('shows the rate-limit message', async () => {
     vi.mocked(authEmail.sendAuthEmail).mockRejectedValue(new ApiError('invalid', 'x', { code: 'rate-limited' }));
     await requestReset();
-    expect(await screen.findByText(/Too many requests/)).toBeInTheDocument();
+    expect(await screen.findByText(/Too many reset requests today/)).toBeInTheDocument();
     expect(screen.queryByText("If an account exists, we've sent a link.")).not.toBeInTheDocument();
   });
 
