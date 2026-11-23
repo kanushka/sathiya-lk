@@ -1,16 +1,17 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
 // Copyright (C) 2026 Kanushka Gayan
 import { useEffect } from 'react';
+import { useTranslation } from 'react-i18next';
 
-export const SITE_NAME = 'Sathiya (සතිය)';
-
-export const pageTitle = (page?: string): string => (page ? `${page} · ${SITE_NAME}` : SITE_NAME);
+export const pageTitle = (siteName: string, page?: string): string => (page ? `${page} · ${siteName}` : siteName);
 
 export function useDocumentTitle(page?: string) {
+  const { t } = useTranslation('common');
+  const siteName = t('brand.name');
   useEffect(() => {
-    document.title = pageTitle(page);
+    document.title = pageTitle(siteName, page);
     return () => {
-      document.title = SITE_NAME;
+      document.title = siteName;
     };
-  }, [page]);
+  }, [siteName, page]);
 }

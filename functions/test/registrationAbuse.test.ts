@@ -149,7 +149,7 @@ describe('registerSchool rate limits', () => {
     expect(REGISTER_PER_UID_PER_DAY).toBe(3);
     const c = await signUp();
     for (let i = 0; i < REGISTER_PER_UID_PER_DAY; i++) {
-      await expectFnError(c.call('registerSchool', schoolReq({ nameEn: ' ' })), 'invalid-argument', 'invalid');
+      await expectFnError(c.call('registerSchool', schoolReq({ nameEn: ' ', nameSi: ' ' })), 'invalid-argument', 'invalid');
     }
     await expectFnError(c.call('registerSchool', schoolReq()), 'resource-exhausted', 'rate-limited');
     expect((await c.claims()).sid).toBeUndefined();
@@ -158,7 +158,7 @@ describe('registerSchool rate limits', () => {
   it('counts per user across IPs', async () => {
     const c = await signUp();
     for (let i = 0; i < REGISTER_PER_UID_PER_DAY; i++) {
-      const r = await rawCall('registerSchool', badSchool({ nameEn: ' ' }), { client: c, ip: `198.51.100.${i + 1}` });
+      const r = await rawCall('registerSchool', badSchool({ nameEn: ' ', nameSi: ' ' }), { client: c, ip: `198.51.100.${i + 1}` });
       expect(rawErr(r)).toEqual({ status: 'INVALID_ARGUMENT', code: 'invalid' });
     }
     const r = await rawCall('registerSchool', schoolReq(), { client: c, ip: '198.51.100.99' });
@@ -170,7 +170,7 @@ describe('registerSchool rate limits', () => {
     const ip = '203.0.113.7';
     const users = await Promise.all(Array.from({ length: REGISTER_PER_IP_PER_DAY + 1 }, () => signUp()));
     for (const u of users.slice(0, REGISTER_PER_IP_PER_DAY)) {
-      const r = await rawCall('registerSchool', badSchool({ nameEn: ' ' }), { client: u, ip });
+      const r = await rawCall('registerSchool', badSchool({ nameEn: ' ', nameSi: ' ' }), { client: u, ip });
       expect(rawErr(r)).toEqual({ status: 'INVALID_ARGUMENT', code: 'invalid' });
     }
     const last = users[REGISTER_PER_IP_PER_DAY]!;
@@ -187,7 +187,7 @@ describe('registerSchool rate limits', () => {
     const ip = '203.0.113.20';
     const users = await Promise.all(Array.from({ length: REGISTER_PER_IP_PER_DAY + 1 }, () => signUp()));
     for (const [i, u] of users.slice(0, REGISTER_PER_IP_PER_DAY).entries()) {
-      const r = await rawCall('registerSchool', badSchool({ nameEn: ' ' }), { client: u, ip, spoof: `10.9.8.${i}` });
+      const r = await rawCall('registerSchool', badSchool({ nameEn: ' ', nameSi: ' ' }), { client: u, ip, spoof: `10.9.8.${i}` });
       expect(rawErr(r)).toEqual({ status: 'INVALID_ARGUMENT', code: 'invalid' });
     }
     const r = await rawCall('registerSchool', schoolReq(), { client: users[REGISTER_PER_IP_PER_DAY]!, ip, spoof: '10.9.8.200' });

@@ -43,6 +43,8 @@ describe('createTeacher', () => {
     const { teacherId: both } = await admin.call('createTeacher', { schoolId: sid, teacher: { ...teacherInput('SCC031'), name: 'N. Perera', nameSi: 'එන්. පෙරේරා' } });
     expect((await adminDb.doc(`${paths.teachers(sid)}/${both}`).get()).data()).toMatchObject({ name: 'N. Perera', nameSi: 'එන්. පෙරේරා' });
     await expectFnError(admin.call('createTeacher', { schoolId: sid, teacher: { ...teacherInput('SCC032'), name: ' ', nameSi: '' } }), 'invalid-argument', 'invalid');
+    const { teacherId: blankSi } = await admin.call('createTeacher', { schoolId: sid, teacher: { ...teacherInput('SCC033'), name: 'N. Perera', nameSi: ' ' } });
+    expect((await adminDb.doc(`${paths.teachers(sid)}/${blankSi}`).get()).data()?.nameSi).toBeUndefined();
   });
 
   it('refuses a caller who is not admin of the school', async () => {

@@ -2,7 +2,7 @@
 // Copyright (C) 2026 Kanushka Gayan
 
 import { describe, expect, it } from 'vitest';
-import { nameTaken, shortTaken, suggestSubjectShort } from './subjectShort';
+import { SHORT_MAX, nameTaken, shortTaken, suggestSubjectShort } from './subjectShort';
 import { STANDARD_SUBJECTS } from './standardSubjects';
 
 describe('suggestSubjectShort', () => {
@@ -74,5 +74,12 @@ describe('nameTaken', () => {
   it('is false for a different or empty name', () => {
     expect(nameTaken('Maths', existing)).toBe(false);
     expect(nameTaken('   ', ['', ' '])).toBe(false);
+  });
+
+  it('keeps suffixed Sinhala shorts within SHORT_MAX and unique', () => {
+    const existing: string[] = [];
+    for (let i = 0; i < 12; i++) existing.push(suggestSubjectShort('අආඉඊඋඌඑඒඓ විෂය', existing));
+    expect(existing.every((s) => s.length <= SHORT_MAX)).toBe(true);
+    expect(new Set(existing).size).toBe(existing.length);
   });
 });

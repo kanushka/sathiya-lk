@@ -93,7 +93,7 @@ describe('registerSchool', () => {
   it('rejects invalid input', async () => {
     const c = await signUp();
     await expectFnError(c.call('registerSchool', schoolReq({ staffPrefix: 'scc1' })), 'invalid-argument', 'invalid');
-    await expectFnError(c.call('registerSchool', schoolReq({ nameEn: '  ' })), 'invalid-argument', 'invalid');
+    await expectFnError(c.call('registerSchool', schoolReq({ nameEn: '  ', nameSi: ' ' })), 'invalid-argument', 'invalid');
     await expectFnError(c.call('registerSchool', { ...schoolReq(), acceptedTermsVersion: '' }), 'invalid-argument', 'invalid');
   });
 

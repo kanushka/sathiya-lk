@@ -60,7 +60,7 @@ export function str(v: unknown, name: string, max = 200): string {
 }
 
 export function optStr(v: unknown, name: string, max = 200): string | undefined {
-  if (v === undefined || v === null || v === '') return undefined;
+  if (v === undefined || v === null || (typeof v === 'string' && !v.trim())) return undefined;
   return str(v, name, max);
 }
 

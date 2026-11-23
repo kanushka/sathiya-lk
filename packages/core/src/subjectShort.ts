@@ -50,9 +50,22 @@ function firstWord(name: string): string {
   return out;
 }
 
+function fit(text: string, max: number): string {
+  let out = '';
+  for (const { segment } of new Intl.Segmenter(undefined, { granularity: 'grapheme' }).segment(text)) {
+    if (out.length + segment.length > max) break;
+    out += segment;
+  }
+  return out;
+}
+
 function unique(base: string, existing: readonly string[]): string {
   if (!shortTaken(base, existing)) return base;
-  for (let n = 2; ; n++) if (!shortTaken(`${base}${n}`, existing)) return `${base}${n}`;
+  for (let n = 2; ; n++) {
+    const suffix = String(n);
+    const candidate = fit(base, SHORT_MAX - suffix.length) + suffix;
+    if (!shortTaken(candidate, existing)) return candidate;
+  }
 }
 
 export function suggestSubjectShort(name: string, existing: readonly string[]): string {
