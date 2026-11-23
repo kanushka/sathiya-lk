@@ -14,7 +14,6 @@ const d = t[doc];
 <article class="wrap prose">
   <h1>{d.title}</h1>
   <p class="meta-line">{t.legal.version} <time datetime={LEGAL_VERSION}>{LEGAL_VERSION}</time></p>
-  <p class="draft" role="note">{t.legal.draft}</p>
   {d.sections.map((s) => (
     <section>
       <h2>{s.title}</h2>
