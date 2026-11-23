@@ -27,7 +27,7 @@ describe('buildSnapshots', () => {
     expect(sixB.cells).toHaveLength(40);
     expect(sixB.cells.find((c) => c.day === 0 && c.period === 5)?.start).toBe('10:50');
     expect(sixB).toMatchObject({ className: '6B', gradeNumber: 6, classTeacher: 'Mrs. N. Perera', yearLabel: '2026', schoolName: { nameEn: 'Siripura Central College', nameSi: 'සිරිපුර මධ්‍ය විද්‍යාලය' } });
-    expect(sixB.cells.find((c) => c.day === 0 && c.period === 1)).toEqual({ day: 0, period: 1, start: '07:45', end: '08:30', title: 'Maths', titleSi: 'ගණිතය', sub: 'Mrs. N. Perera', subSi: 'N. Perera මහත්මිය', color: '#D4ECEA', isGroup: false });
+    expect(sixB.cells.find((c) => c.day === 0 && c.period === 1)).toEqual({ day: 0, period: 1, start: '07:45', end: '08:30', title: 'Maths', titleSi: 'ගණිතය', sub: 'Mrs. N. Perera', color: '#D4ECEA', isGroup: false });
   });
 
   it('sorts cells by day then start', () => {
@@ -93,8 +93,14 @@ describe('buildSnapshots', () => {
 
   it('carries teacher display names with the title in both languages', () => {
     expect(ctx.teachers.find((t) => t.id === T.perera)).toMatchObject({ title: 'Mrs', name: 'N. Perera' });
-    expect(sixB).toMatchObject({ classTeacher: 'Mrs. N. Perera', classTeacherSi: 'N. Perera මහත්මිය' });
-    expect(teachers.find((t) => t.teacherId === T.perera)).toMatchObject({ name: 'Mrs. N. Perera', nameSi: 'N. Perera මහත්මිය' });
+    expect(sixB).toMatchObject({ classTeacher: 'Mrs. N. Perera' });
+    expect(sixB).not.toHaveProperty('classTeacherSi');
+    const withSi = { ...ctx, teachers: ctx.teachers.map((t) => (t.id === T.perera ? { ...t, nameSi: 'එන්. පෙරේරා' } : t)) };
+    const both = buildSnapshots(withSi, filled6B, year);
+    expect(both.classes.find((c) => c.classId === C.c6b)).toMatchObject({ classTeacher: 'Mrs. N. Perera', classTeacherSi: 'එන්. පෙරේරා මහත්මිය' });
+    expect(both.teachers.find((t) => t.teacherId === T.perera)).toMatchObject({ name: 'Mrs. N. Perera', nameSi: 'එන්. පෙරේරා මහත්මිය' });
+    const siOnly = { ...ctx, teachers: ctx.teachers.map((t) => (t.id === T.perera ? { ...t, name: '', nameSi: 'එන්. පෙරේරා' } : t)) };
+    expect(buildSnapshots(siOnly, filled6B, year).teachers.find((t) => t.teacherId === T.perera)).toMatchObject({ name: 'එන්. පෙරේරා මහත්මිය' });
     const untitled = { ...ctx, teachers: ctx.teachers.map((t) => (t.id === T.perera ? { ...t, title: undefined, name: 'N. Perera' } : t)) };
     const snap = buildSnapshots(untitled, filled6B, year);
     expect(snap.teachers.find((t) => t.teacherId === T.perera)).not.toHaveProperty('nameSi');

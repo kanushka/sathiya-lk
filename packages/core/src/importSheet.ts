@@ -7,6 +7,7 @@ export type TeacherColumn =
   | 'staffId'
   | 'title'
   | 'name'
+  | 'nameSi'
   | 'phone'
   | 'email'
   | 'subjects'
@@ -23,6 +24,7 @@ export type ImportErrorCode =
   | 'duplicateSheet'
   | 'tooManyRows'
   | 'required'
+  | 'nameMissing'
   | 'staffIdFormat'
   | 'staffIdTaken'
   | 'staffIdDuplicate'
@@ -80,6 +82,8 @@ interface ColumnDef<K extends ImportColumn> {
   en: string;
   si: string;
   aliases?: readonly string[];
+  // Whole headings from older templates that still map to this column.
+  legacy?: readonly string[];
   required: boolean;
 }
 
@@ -88,14 +92,15 @@ export const IMPORT_COLUMNS: {
   teachers: readonly ColumnDef<TeacherColumn>[];
 } = {
   subjects: [
-    { key: 'nameEn', en: 'Name (English)', si: 'නම (ඉංග්‍රීසි)', required: true },
+    { key: 'nameEn', en: 'Name (English)', si: 'නම (ඉංග්‍රීසි)', required: false },
     { key: 'nameSi', en: 'Name (Sinhala)', si: 'නම (සිංහල)', required: false },
     { key: 'short', en: 'Short name', si: 'කෙටි නම', required: false },
   ],
   teachers: [
     { key: 'staffId', en: 'Staff ID', si: 'සේවක අංකය', required: false },
     { key: 'title', en: 'Title', si: 'ගෞරව නාමය', required: false },
-    { key: 'name', en: 'Full name', si: 'සම්පූර්ණ නම', required: true },
+    { key: 'name', en: 'Name (English)', si: 'නම (ඉංග්‍රීසි)', legacy: ['Full name', 'සම්පූර්ණ නම', 'Full name / සම්පූර්ණ නම'], required: false },
+    { key: 'nameSi', en: 'Name (Sinhala)', si: 'නම (සිංහල)', required: false },
     { key: 'phone', en: 'Phone', si: 'දුරකථන', required: false },
     { key: 'email', en: 'Email', si: 'විද්‍යුත් තැපෑල', required: false },
     { key: 'subjects', en: 'Subjects', si: 'විෂයන්', aliases: ['විෂයයන්'], required: false },
@@ -103,6 +108,12 @@ export const IMPORT_COLUMNS: {
     { key: 'maxPerDay', en: 'Max periods/day', si: 'දිනකට උපරිම කාලච්ඡේද', required: false },
     { key: 'isPrimary', en: 'Primary teacher?', si: 'ප්‍රාථමික ගුරුවරයෙක්ද?', required: false },
   ],
+};
+
+// Each row needs at least one of these two; a sheet needs at least one of the two headings.
+export const NAME_COLUMNS: { subjects: readonly [SubjectColumn, SubjectColumn]; teachers: readonly [TeacherColumn, TeacherColumn] } = {
+  subjects: ['nameEn', 'nameSi'],
+  teachers: ['name', 'nameSi'],
 };
 
 export const IMPORT_MAX_ROWS = 200;
@@ -181,17 +192,21 @@ function buildLookup(defs: readonly AnyDef[]) {
     for (const si of [d.si, ...(d.aliases ?? [])]) {
       for (const h of [d.en, si, `${d.en} / ${si}`]) m.set(normHeader(h), d.key);
     }
+    for (const h of d.legacy ?? []) m.set(normHeader(h), d.key);
   }
   return m;
 }
 
 const isBlankRow = (cells: string[]) => cells.every((c) => c === '');
 
+// "Name (English)" / "Name (Sinhala)" head both sheets, so only the other headings decide; a sheet of names alone is a subject list.
 function detectKind(headers: string[]): ImportKind | 'ambiguous' | null {
-  const score = (k: ImportKind) => headers.filter((h) => LOOKUP[k].has(normHeader(h))).length;
-  const s = score('subjects');
-  const t = score('teachers');
-  if (s === t) return s === 0 ? null : 'ambiguous';
+  const keys = headers.map(normHeader);
+  const only = (k: ImportKind, o: ImportKind) => keys.filter((h) => LOOKUP[k].has(h) && !LOOKUP[o].has(h)).length;
+  const s = only('subjects', 'teachers');
+  const t = only('teachers', 'subjects');
+  if (s === 0 && t === 0) return keys.some((h) => LOOKUP.subjects.has(h)) ? 'subjects' : null;
+  if (s === t) return 'ambiguous';
   return s > t ? 'subjects' : 'teachers';
 }
 
@@ -232,6 +247,11 @@ export function readSheets(sheets: RawSheet[]): ParsedSheets {
       if (d.required && !mapped.has(d.key)) {
         out.errors.push({ sheet: kind, row: 1, column: d.key, code: 'missingHeader', params: { header: d.en, column: d.key } });
       }
+    }
+    const [enCol, siCol] = NAME_COLUMNS[kind];
+    if (!mapped.has(enCol) && !mapped.has(siCol)) {
+      const d = (IMPORT_COLUMNS[kind] as readonly AnyDef[]).find((x) => x.key === enCol)!;
+      out.errors.push({ sheet: kind, row: 1, column: enCol, code: 'missingHeader', params: { header: d.en, column: enCol } });
     }
 
     const rows: ImportRow<string>[] = [];

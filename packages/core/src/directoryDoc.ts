@@ -23,7 +23,7 @@ export function directoryFields(school: Record<string, unknown>): DirectoryDoc {
     city,
     type: school.type as string | undefined,
     status: (school.status as string | undefined) ?? 'active',
-    nameLower: lower(nameEn),
+    nameLower: lower(nameEn) || lower(school.nameSi),
     cityLower: lower(city),
   };
 }

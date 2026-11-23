@@ -68,8 +68,11 @@ describe('validateImport happy path', () => {
 });
 
 describe('validateImport subject errors', () => {
-  it('required nameEn', () => {
-    expect(errs(run([sub(5, {})], []))).toEqual([{ sheet: 'subjects', row: 5, column: 'nameEn', code: 'required' }]);
+  it('needs an English or a Sinhala name', () => {
+    expect(errs(run([sub(5, {})], []))).toEqual([{ sheet: 'subjects', row: 5, column: 'nameEn', code: 'nameMissing' }]);
+    const p = run([sub(2, { nameSi: 'දහම් පාසල' })], []);
+    expect(errs(p)).toEqual([]);
+    expect(p.subjects[0]).toMatchObject({ nameEn: '', nameSi: 'දහම් පාසල', short: 'දහම්' });
   });
   it('nameTaken for en and si (case/space-insensitive)', () => {
     const p = run([sub(2, { nameEn: 'MATHEMATICS', nameSi: 'ගණිතය', short: 'X1' })], []);
@@ -104,7 +107,7 @@ describe('validateImport subject errors', () => {
 describe('validateImport subject trimming', () => {
   it('trims names and treats a whitespace-only English name as missing', () => {
     const p = run([sub(2, { nameEn: '  Drama ', nameSi: ' නාට්‍ය  ' }), sub(3, { nameEn: '   ', nameSi: '  ', short: 'X' })], []);
-    expect(errs(p)).toEqual([{ sheet: 'subjects', row: 3, column: 'nameEn', code: 'required' }]);
+    expect(errs(p)).toEqual([{ sheet: 'subjects', row: 3, column: 'nameEn', code: 'nameMissing' }]);
     expect(p.subjects[0]).toMatchObject({ nameEn: 'Drama', nameSi: 'නාට්‍ය', short: 'Dra' });
     expect(p.subjects[1]).not.toHaveProperty('nameSi');
   });
@@ -135,7 +138,15 @@ describe('validateImport teacher errors', () => {
   const e = (column: TeacherColumn, code: string) => ({ sheet: 'teachers', row: 7, column, code });
 
   it('required name and gradesRequired', () => {
-    expect(only({ isPrimary: 'y' })).toEqual([e('name', 'required'), e('grades', 'gradesRequired')]);
+    expect(only({ isPrimary: 'y' })).toEqual([e('name', 'nameMissing'), e('grades', 'gradesRequired')]);
+  });
+  it('accepts a Sinhala-only or two-language name', () => {
+    const { name: _drop, ...noEn } = okTeacher;
+    const si = one({ ...noEn, nameSi: ' ජී. ජයසේකර ' });
+    expect(errs(si)).toEqual([]);
+    expect(si.teachers[0]?.teacher).toMatchObject({ name: '', nameSi: 'ජී. ජයසේකර' });
+    expect(one({ ...okTeacher, nameSi: 'එන්. පෙරේරා' }).teachers[0]?.teacher).toMatchObject({ name: okTeacher.name, nameSi: 'එන්. පෙරේරා' });
+    expect(one(okTeacher).teachers[0]?.teacher).not.toHaveProperty('nameSi');
   });
   it('name tooLong', () => {
     expect(only({ ...okTeacher, name: 'x'.repeat(201) })).toEqual([e('name', 'tooLong')]);
@@ -152,7 +163,7 @@ describe('validateImport teacher errors', () => {
     expect(p.errors[0]?.params).toEqual({ example: 'SCC024' });
   });
   it('trims names and treats whitespace-only as missing', () => {
-    expect(only({ ...okTeacher, name: '   ' })).toEqual([e('name', 'required')]);
+    expect(only({ ...okTeacher, name: '   ' })).toEqual([e('name', 'nameMissing')]);
     expect(one({ ...okTeacher, name: '  A B  ' }).teachers[0]?.teacher.name).toBe('A B');
   });
   it('staffIdTaken and staffIdDuplicate', () => {
@@ -236,7 +247,7 @@ describe('validateImport teacher errors', () => {
   it('collects errors across rows with original row numbers', () => {
     const p = run([], [tch(4, { grades: '6', isPrimary: 'y' }), tch(9, { name: 'A', isPrimary: 'y' })]);
     expect(errs(p)).toEqual([
-      { sheet: 'teachers', row: 4, column: 'name', code: 'required' },
+      { sheet: 'teachers', row: 4, column: 'name', code: 'nameMissing' },
       { sheet: 'teachers', row: 9, column: 'grades', code: 'gradesRequired' },
     ]);
   });

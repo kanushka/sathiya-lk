@@ -3,9 +3,22 @@
 
 import type { Bilingual, Lang, Teacher, TeacherTitle } from './types';
 
+const nameIn = (x: Bilingual, lang: Lang): string => ((lang === 'si' ? x.nameSi : x.nameEn) ?? '').trim();
+const other = (lang: Lang): Lang => (lang === 'si' ? 'en' : 'si');
+
 export function pickName(x: Bilingual, lang: Lang): string {
-  if (lang === 'si' && x.nameSi && x.nameSi.trim() !== '') return x.nameSi;
-  return x.nameEn;
+  return nameIn(x, lang) || nameIn(x, other(lang));
+}
+
+export function hasName(x: Bilingual): boolean {
+  return pickName(x, 'en') !== '';
+}
+
+type TeacherNames = Pick<Teacher, 'name' | 'nameSi' | 'title'>;
+const teacherBilingual = (t: Pick<Teacher, 'name' | 'nameSi'>): Bilingual => ({ nameEn: t.name, ...(t.nameSi === undefined ? {} : { nameSi: t.nameSi }) });
+
+export function teacherNameMissing(t: Pick<Teacher, 'name' | 'nameSi'>, lang: Lang): boolean {
+  return nameIn(teacherBilingual(t), lang) === '';
 }
 
 export const TEACHER_TITLE_LABELS: Record<Lang, Record<TeacherTitle, string>> = {
@@ -35,12 +48,22 @@ export function splitTitle(name: string): { title?: TeacherTitle; name: string }
   return m?.[2] && title ? { title, name: m[2] } : { name };
 }
 
-export function teacherDisplayName(raw: Pick<Teacher, 'name' | 'title'>, lang: Lang = 'en'): string {
+export function teacherDisplayName(raw: TeacherNames, lang: Lang = 'en'): string {
+  const shown: Lang = teacherNameMissing(raw, lang) && !teacherNameMissing(raw, other(lang)) ? other(lang) : lang;
+  return shown === 'si' ? withTitle(raw.nameSi!.trim(), raw.title, 'si') : englishDisplay(raw);
+}
+
+function withTitle(name: string, title: TeacherTitle | undefined, lang: Lang): string {
+  if (!title) return name;
+  const label = TEACHER_TITLE_LABELS[lang][title];
+  return TITLE_AFTER[lang].has(title) ? `${name} ${label}` : `${label} ${name}`;
+}
+
+// English names may still carry a typed title ("Mrs. N. Perera") from before titles were a separate field.
+function englishDisplay(raw: TeacherNames): string {
   const teacher = normalizeTeacher(raw);
   const split = splitTitle(teacher.name);
   const title = teacher.title ?? split.title;
   const name = split.title === undefined || split.title === title ? split.name : teacher.name.trim();
-  if (!title) return name;
-  const label = TEACHER_TITLE_LABELS[lang][title];
-  return TITLE_AFTER[lang].has(title) ? `${name} ${label}` : `${label} ${name}`;
+  return withTitle(name, title, 'en');
 }

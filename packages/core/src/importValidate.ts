@@ -105,19 +105,17 @@ function validateSubjects(rows: ImportRow<SubjectColumn>[], ctx: ImportContext, 
 
     for (const [column, name] of [['nameEn', nameEn], ['nameSi', nameSi]] as const) {
       if (bad.has(column)) continue;
-      if (name === '') {
-        if (column === 'nameEn') err('nameEn', 'required');
-        continue;
-      }
+      if (name === '') continue;
       if (name.length > NAME_MAX) errors.push({ sheet: 'subjects', row: r.row, column, code: 'tooLong', params: { max: NAME_MAX } });
       else if (nameTaken(name, existingNames)) err(column, 'nameTaken', name);
       else if (nameTaken(name, fileNames)) err(column, 'nameDuplicate', name);
     }
+    if (nameEn === '' && nameSi === '' && !bad.has('nameEn') && !bad.has('nameSi')) err('nameEn', 'nameMissing');
     fileNames.push(nameEn, nameSi);
 
     let short = r.cells.short ?? '';
-    if (short === '' && nameEn !== '') {
-      short = suggestSubjectShort(nameEn, [...existingShorts, ...reserved, ...fileShorts]).slice(0, SHORT_MAX);
+    if (short === '' && (nameEn !== '' || nameSi !== '')) {
+      short = suggestSubjectShort(nameEn || nameSi, [...existingShorts, ...reserved, ...fileShorts]).slice(0, SHORT_MAX);
       if (short === '') err('short', 'required');
     } else if (short !== '' && !bad.has('short')) {
       if (short.length > SHORT_MAX) err('short', 'shortTooLong', short);
@@ -174,7 +172,7 @@ function validateTeachers(
   };
 
   rows.forEach((r, i) => {
-    const bad = cellErrors<TeacherColumn>(r, 'teachers', ['name'], errors);
+    const bad = cellErrors<TeacherColumn>(r, 'teachers', ['name', 'nameSi'], errors);
     const c: Partial<Record<TeacherColumn, string>> = Object.fromEntries(Object.entries(r.cells).filter(([k]) => !bad.has(k as TeacherColumn)));
     const err = (column: ImportColumn, code: ImportErrorCode, params?: Record<string, string | number>) =>
       errors.push({ sheet: 'teachers' as ImportKind, row: r.row, column, code, ...(params && { params }) });
@@ -199,9 +197,12 @@ function validateTeachers(
     }
 
     const name = (c.name ?? '').trim();
-    if (name === '') {
-      if (!bad.has('name')) err('name', 'required');
-    } else if (name.length > NAME_MAX) err('name', 'tooLong', { max: NAME_MAX });
+    const nameSi = (c.nameSi ?? '').trim();
+    if (name === '' && nameSi === '') {
+      if (!bad.has('name') && !bad.has('nameSi')) err('name', 'nameMissing');
+    }
+    if (name.length > NAME_MAX) err('name', 'tooLong', { max: NAME_MAX });
+    if (nameSi.length > NAME_MAX) err('nameSi', 'tooLong', { max: NAME_MAX });
 
     const phone = c.phone;
     if (phone && !PHONE_RE.test(phone)) err('phone', 'phone', { value: phone });
@@ -254,6 +255,7 @@ function validateTeachers(
       teacher: {
         staffId,
         name,
+        ...(nameSi !== '' && { nameSi }),
         ...(title && { title }),
         isPrimary,
         grades,

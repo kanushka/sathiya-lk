@@ -39,10 +39,29 @@ export function nameTaken(name: string, existing: readonly (string | undefined)[
   return k !== '' && existing.some((e) => nameKey(e ?? '') === k);
 }
 
-export function suggestSubjectShort(nameEn: string, existing: readonly string[]): string {
-  const words = latinWords(nameEn);
-  if (words.length === 0) return '';
-  const known = KNOWN.get(normalize(nameEn));
+// Non-Latin names (Sinhala-only subjects) get their first word, cut on whole letters so no vowel sign is split off.
+function firstWord(name: string): string {
+  const word = name.trim().split(/\s+/)[0] ?? '';
+  let out = '';
+  for (const { segment } of new Intl.Segmenter(undefined, { granularity: 'grapheme' }).segment(word)) {
+    if (out.length + segment.length > SHORT_MAX - 1) break;
+    out += segment;
+  }
+  return out;
+}
+
+function unique(base: string, existing: readonly string[]): string {
+  if (!shortTaken(base, existing)) return base;
+  for (let n = 2; ; n++) if (!shortTaken(`${base}${n}`, existing)) return `${base}${n}`;
+}
+
+export function suggestSubjectShort(name: string, existing: readonly string[]): string {
+  const words = latinWords(name);
+  if (words.length === 0) {
+    const word = firstWord(name);
+    return word === '' ? '' : unique(word, existing);
+  }
+  const known = KNOWN.get(normalize(name));
   const single = words.length === 1 ? words[0]! : null;
   const base =
     known ??
@@ -55,5 +74,5 @@ export function suggestSubjectShort(nameEn: string, existing: readonly string[])
   const candidates = [base];
   if (single && base.length < 4 && single.length > base.length) candidates.push(capital(single.slice(0, base.length + 1)));
   for (const c of candidates) if (!shortTaken(c, existing)) return c;
-  for (let n = 2; ; n++) if (!shortTaken(`${base}${n}`, existing)) return `${base}${n}`;
+  return unique(base, existing);
 }

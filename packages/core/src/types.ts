@@ -21,7 +21,7 @@ export interface DefaultSubjectsDoc { subjects: DefaultSubject[]; updatedAt: num
 export interface TermsVersion { version: string; termsMd: string; privacyMd: string; publishedAt: number }
 export const TEACHER_TITLES = ['Mr', 'Mrs', 'Miss', 'Ms', 'Dr', 'Rev', 'Ven.'] as const;
 export type TeacherTitle = (typeof TEACHER_TITLES)[number];
-export interface Teacher { id: string; staffId: string; name: string; title?: TeacherTitle; isPrimary: boolean; subjectIds: string[]; grades: number[]; maxPerDay: number; phone?: string; email?: string; uid?: string; lastLoginAt?: number }
+export interface Teacher { id: string; staffId: string; name: string; nameSi?: string; title?: TeacherTitle; isPrimary: boolean; subjectIds: string[]; grades: number[]; maxPerDay: number; phone?: string; email?: string; uid?: string; lastLoginAt?: number }
 export interface Subject extends Bilingual { id: string; short: string; color: string }
 export interface TemplateRow { type: 'period' | 'interval'; start: Hhmm; end: Hhmm }
 export interface PeriodTemplate { id: string; name: string; isDefault: boolean; mode: 'same' | 'perDay'; rows: TemplateRow[]; days?: Record<DayIndex, TemplateRow[]> }
