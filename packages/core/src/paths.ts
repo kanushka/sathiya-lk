@@ -10,6 +10,7 @@ export const paths = {
   classes: (sid: string) => `schools/${sid}/classes`,
   members: (sid: string) => `schools/${sid}/members`,
   invites: (sid: string) => `schools/${sid}/invites`,
+  imports: (sid: string) => `schools/${sid}/imports`,
   years: (sid: string) => `schools/${sid}/years`,
   user: (uid: string) => `users/${uid}`,
   publishedClasses: (sid: string, yid: string) => `schools/${sid}/years/${yid}/publishedClasses`,

@@ -2,7 +2,7 @@
 // Copyright (C) 2026 Kanushka Gayan
 
 import type { ApiErrorCode, CallableName, CallableTypes } from '@sathiya/core';
-import { httpsCallable } from 'firebase/functions';
+import { httpsCallable, type HttpsCallableOptions } from 'firebase/functions';
 import { functions } from './firebase';
 
 const apiCodes: readonly ApiErrorCode[] = ['clash', 'in-use', 'not-allowed', 'invalid', 'census-taken', 'email-unverified', 'already-has-school', 'rate-limited', 'school-disabled'];
@@ -38,12 +38,14 @@ export function toApiError(err: unknown): ApiError {
 
 export const isSchoolDisabled = (err: unknown): boolean => toApiError(err).code === 'school-disabled';
 
-export function call<K extends CallableName>(name: K, req: CallableTypes[K]['req']): Promise<CallableTypes[K]['res']>;
+export type CallOptions = Pick<HttpsCallableOptions, 'timeout'>;
+
+export function call<K extends CallableName>(name: K, req: CallableTypes[K]['req'], opts?: CallOptions): Promise<CallableTypes[K]['res']>;
 // NoInfer + never defaults keep this overload for explicit call<Req, Res>() only, so untyped calls get CallableTypes.
-export function call<Req = never, Res = never>(name: CallableName, req: NoInfer<Req>): Promise<Res>;
-export async function call<Req, Res>(name: CallableName, req: Req): Promise<Res> {
+export function call<Req = never, Res = never>(name: CallableName, req: NoInfer<Req>, opts?: CallOptions): Promise<Res>;
+export async function call<Req, Res>(name: CallableName, req: Req, opts?: CallOptions): Promise<Res> {
   try {
-    const result = await httpsCallable<Req, Res>(functions, name)(req);
+    const result = await httpsCallable<Req, Res>(functions, name, opts)(req);
     return result.data;
   } catch (err) {
     throw toApiError(err);
