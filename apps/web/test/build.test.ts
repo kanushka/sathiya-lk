@@ -18,6 +18,11 @@ const allPaths = [...enPaths, ...siPaths];
 
 const read = (p: string) => readFileSync(join(dist, p), 'utf8');
 const escapeRe = (s: string) => s.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+const NAMED: Record<string, string> = { amp: '&', lt: '<', gt: '>', quot: '"', apos: "'", period: '.', colon: ':', sol: '/' };
+const decodeEntities = (s: string) =>
+  s.replace(/&(#x[0-9a-f]+|#\d+|[a-z]+);?/gi, (m, e: string) =>
+    e[0] !== '#' ? (NAMED[e.toLowerCase()] ?? m) : String.fromCodePoint(e[1]?.toLowerCase() === 'x' ? parseInt(e.slice(2), 16) : Number(e.slice(1))),
+  );
 
 function walk(dir: string): string[] {
   return readdirSync(dir).flatMap((name) => {
@@ -137,14 +142,14 @@ describe('built site', () => {
 
   it.each(allPaths)('%s does not load gtag eagerly but offers consent', (p) => {
     const html = read(p);
-    expect(attrs(html, 'script', 'src').some((s) => /(^|\.)googletagmanager\.com$/.test(new URL(s, SITE_URL).hostname))).toBe(false);
+    expect(attrs(html, 'script', 'src').some((s) => /(^|\.)googletagmanager\.com$/.test(new URL(decodeEntities(s), SITE_URL).hostname))).toBe(false);
     expect(html).toContain('G-Z7BE11T4C9');
     expect(html).toContain('sathiya.consent');
   });
 
   it.each(allPaths)('%s ships under 150 KB of JS', (p) => {
     const html = read(p);
-    const inline = [...html.matchAll(/<script\b[^>]*>([\s\S]*?)<\/script\b[^>]*>/gi)].reduce((n, m) => n + m[1]!.length, 0);
+    const inline = [...html.matchAll(/<script\b[^>]*>([\s\S]*?)<\/script(?=[\s/>])[^>]*>/gi)].reduce((n, m) => n + m[1]!.length, 0);
     const external = attrs(html, 'script', 'src')
       .filter((s) => s.startsWith('/'))
       .reduce((n, s) => n + statSync(join(dist, s)).size, 0);
