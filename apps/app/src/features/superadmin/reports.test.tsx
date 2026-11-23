@@ -5,9 +5,11 @@ import { ctx } from '@sathiya/core/fixtures';
 import { screen, waitFor, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { Route, Routes } from 'react-router-dom';
-import { describe, expect, it, vi } from 'vitest';
+import { describe, expect, it, type Mock, vi } from 'vitest';
 import { renderWithSchool } from '../../test/renderWithSchool';
+import type { ReportWriter } from './reports';
 import { ReportsPage } from './ReportsPage';
+import type { SetStatusFn } from './status';
 import { SuperLayout } from './SuperLayout';
 
 const opts = { ctx, claims: { super: true } };
@@ -38,9 +40,9 @@ const reports = {
   ],
 };
 
-function renderPage(over: { writer?: { closeReport: ReturnType<typeof vi.fn> }; setStatus?: ReturnType<typeof vi.fn> } = {}) {
-  const writer = over.writer ?? { closeReport: vi.fn().mockResolvedValue(undefined) };
-  const setStatus = over.setStatus ?? vi.fn().mockResolvedValue({ ok: true });
+function renderPage(over: { writer?: { closeReport: Mock<ReportWriter['closeReport']> }; setStatus?: Mock<SetStatusFn> } = {}) {
+  const writer = over.writer ?? { closeReport: vi.fn<ReportWriter['closeReport']>().mockResolvedValue(undefined) };
+  const setStatus = over.setStatus ?? vi.fn<SetStatusFn>().mockResolvedValue({ ok: true });
   renderWithSchool(<ReportsPage reports={reports} schools={schools} writer={writer} setStatus={setStatus} />, opts);
   return { writer, setStatus };
 }

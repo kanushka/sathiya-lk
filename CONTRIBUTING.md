@@ -6,7 +6,7 @@ By taking part you agree to the [Code of Conduct](CODE_OF_CONDUCT.md). Security 
 
 ## Set up
 
-Requirements: Node 22 (`.nvmrc`), pnpm 9, Java 17+ (Firebase emulators).
+Requirements: Node 22.23.4 or later on the 22 line (`.nvmrc`), pnpm 9, Java 17+ (Firebase emulators).
 
 ```bash
 pnpm install

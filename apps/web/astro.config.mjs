@@ -8,4 +8,5 @@ export default defineConfig({
   site: SITE_URL,
   trailingSlash: 'always',
   build: { format: 'directory' },
+  vite: { environments: { prerender: { resolve: { noExternal: ['cookie'] } } } },
 });

@@ -81,7 +81,7 @@ export function GradesPage() {
               g.id === grade?.id ? 'bg-brand/10 font-bold text-brand' : 'text-ink-soft hover:bg-surface'
             }`}
           >
-            {t('rail.grade', { n: g.number })}
+            {t('rail.grade', { n: g.number })}{' '}
             <span className="text-xs font-medium text-ink-muted">{school.classes.filter((c) => c.gradeId === g.id).length}</span>
           </button>
         ))}
