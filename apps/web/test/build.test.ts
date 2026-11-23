@@ -144,7 +144,7 @@ describe('built site', () => {
 
   it.each(allPaths)('%s ships under 150 KB of JS', (p) => {
     const html = read(p);
-    const inline = [...html.matchAll(/<script\b[^>]*>([\s\S]*?)<\/script\s*>/gi)].reduce((n, m) => n + m[1]!.length, 0);
+    const inline = [...html.matchAll(/<script\b[^>]*>([\s\S]*?)<\/script\b[^>]*>/gi)].reduce((n, m) => n + m[1]!.length, 0);
     const external = attrs(html, 'script', 'src')
       .filter((s) => s.startsWith('/'))
       .reduce((n, s) => n + statSync(join(dist, s)).size, 0);
