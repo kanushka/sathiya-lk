@@ -2,6 +2,7 @@
 // Copyright (C) 2026 Kanushka Gayan
 import { useTranslation } from 'react-i18next';
 import { useLang } from '../../app/LangProvider';
+import { webUrl } from '../../lib/urls';
 import { SegmentedControl } from '../../ui/SegmentedControl';
 
 export function BrandMark({ size = 34 }: { size?: number }) {
@@ -14,20 +15,23 @@ export function BrandMark({ size = 34 }: { size?: number }) {
   );
 }
 
-export function BrandLockup({ size = 40 }: { size?: number }) {
-  const { t } = useTranslation('common');
+export function BrandLockup({ size = 60 }: { size?: number }) {
+  const { t, i18n } = useTranslation('common');
   return (
-    <div className="flex items-center gap-2.5">
+    <a
+      href={webUrl(i18n.language === 'si' ? '/si/' : '/')}
+      className="flex flex-col items-center gap-2 rounded-xl text-ink no-underline focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-brand"
+    >
       <BrandMark size={size} />
-      <span className="flex flex-col gap-0.5">
-        <span lang="en" className="text-2xl font-extrabold leading-none tracking-[-0.02em]">
+      <span className="flex flex-col items-center gap-1">
+        <span lang="en" className="text-[30px] font-extrabold leading-none tracking-[-0.02em]">
           {t('brand.en')}
         </span>
-        <span lang="si" className="text-[15px] font-semibold leading-tight text-teal">
+        <span lang="si" className="text-lg font-semibold leading-tight text-teal">
           {t('brand.si')}
         </span>
       </span>
-    </div>
+    </a>
   );
 }
 
