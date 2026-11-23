@@ -90,6 +90,7 @@ Sinhala text should read naturally to Sri Lankan teachers and admins. Native Sin
 
 - **Bugs:** open an issue with the "Bug report" form. Include steps to reproduce, what you expected, what happened, and your browser and device. Never include passwords, real staff IDs or other personal data.
 - **Features:** open an issue with the "Feature request" form. Describe the school problem first, then your idea. For larger changes, wait for a maintainer to agree before writing code.
+- **Specs:** once a larger feature is agreed, its design goes in an issue with the "Feature spec" form (label `spec`), and the PR that builds it links to that issue. Don't commit spec or plan files to the repo. Product intent and key decisions are in [docs/design.md](docs/design.md); decisions that are hard to reverse get an ADR in [docs/adr/](docs/adr/).
 - **Security:** see [SECURITY.md](SECURITY.md).
 
 ## Licence

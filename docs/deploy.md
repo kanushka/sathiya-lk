@@ -73,6 +73,12 @@ The app requires at least 8 characters wherever a password is set (`apps/app/src
 4. Leave "Require users to update password on sign in" **off**, so admins with an older 6–7 character password can still sign in.
 5. Save. Sign-up, reset and change attempts below the minimum now fail with `auth/password-does-not-meet-requirements`, which the app shows as the length rule.
 
+## After the first deploy (per project)
+- Firestore → TTL: confirm the policy on `rateLimits.expiresAt` is active.
+- `curl -I` an app asset and a deep link to check the cache headers.
+- Log `x-forwarded-for` once in a function to confirm the client IP used for rate limits.
+- Repository → Settings → Branches: require the checks `ci-fast`, `ci-emulators`, `ci-e2e`, and create the `e2e` label if missing.
+
 ## Preview channels
 `firebase hosting:channel:deploy <name> -P default` previews frontend changes only. A preview channel still talks to the production database and functions, so use staging for anything that needs backend changes or writes test data.
 
