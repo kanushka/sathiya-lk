@@ -27,11 +27,9 @@ School admins register their school, build class and teacher timetables, print t
 
 ## Screenshots
 
-<!-- TODO: add screenshots captured from `pnpm dev:local` (seeded demo school) into docs/images/ -->
-
 | Class view | Pin mode | Teacher (mobile) |
 |---|---|---|
-| _TODO: `docs/images/class-view.png`_ | _TODO: `docs/images/pin-mode.png`_ | _TODO: `docs/images/teacher-mobile.png`_ |
+| <img src="docs/images/class-view.png" alt="Class timetable for Grade 6B with the weekly subject plan" width="400"> | <img src="docs/images/pin-mode.png" alt="Pin mode placing Science periods, with free and busy slots marked" width="400"> | <img src="docs/images/teacher-mobile.png" alt="A teacher's day on a phone, showing the current lesson" width="180"> |
 
 ## Tech stack
 
