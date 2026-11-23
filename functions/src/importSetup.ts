@@ -120,5 +120,6 @@ export const importSetup = onCall({ ...callOpts, timeoutSeconds: 300 }, async (r
   await Promise.all(Array.from({ length: Math.min(CONCURRENCY, plan.teachers.length) }, worker));
 
   const notCreated = plan.teachers.filter((_, i) => !created[i]).map((t) => t.teacher.staffId);
+  if (subjectIds.length === 0 && !created.some(Boolean)) await marker.delete().catch(() => undefined);
   return { subjectIds, teachers: created.filter((t) => t !== undefined), notCreated };
 });

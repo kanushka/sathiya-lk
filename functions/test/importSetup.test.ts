@@ -150,6 +150,17 @@ describe('importSetup', () => {
     expect((await marker.get()).data()!.createdAt).toBeGreaterThan(old);
   });
 
+  it('lets the same file be retried when the first attempt created nothing', async () => {
+    const { admin, sid } = await adminWithSchool();
+    const auth = await adminAuth.createUser({ email: syntheticEmail('SCC045', sid), password: 'whatever123' });
+    const body = { schoolId: sid, subjectsVersion: NONE, subjects: [], teachers: [tch(2, { staffId: 'SCC045', name: 'A', grades: '6', isPrimary: 'yes' })] };
+    const first = await admin.call('importSetup', body);
+    expect(first).toMatchObject({ teachers: [], notCreated: ['SCC045'] });
+    expect((await adminDb.collection(paths.imports(sid)).get()).size).toBe(0);
+    await adminAuth.deleteUser(auth.uid);
+    expect((await admin.call('importSetup', body)).teachers).toHaveLength(1);
+  });
+
   it('refuses non-admins, oversized and empty imports, unknown columns', async () => {
     const { admin, sid } = await adminWithSchool();
     const stranger = await signUp();
