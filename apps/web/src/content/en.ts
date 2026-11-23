@@ -160,8 +160,6 @@ export const en = {
     deny: 'No thanks',
   },
   legal: {
-    draft:
-      "Draft — this text is waiting for the Sathiya owner's legal review and may change before it is final.",
     version: 'Version',
     lastUpdated: 'Last updated',
   },
