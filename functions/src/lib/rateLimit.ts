@@ -37,10 +37,17 @@ export function clientIp(req: CallableRequest): string {
 
 export const hashIp = (ip: string): string => createHash('sha256').update(ip).digest('hex');
 
+const dayOf = (now: number): string => new Date(now).toISOString().slice(0, 10);
+const counterRef = (scope: string, id: string, day: string) => db.collection(RATE_LIMITS).doc(`${scope}_${day}_${id}`);
+
+export async function clearRateLimit(scope: string, id: string, now = Date.now()): Promise<void> {
+  await counterRef(scope, id, dayOf(now)).delete();
+}
+
 // All counters checked and incremented in one transaction; nothing is counted when any limit is already reached.
 export async function consumeRateLimits(limits: Limit[], now = Date.now()): Promise<void> {
-  const day = new Date(now).toISOString().slice(0, 10);
-  const refs = limits.map((l) => db.collection(RATE_LIMITS).doc(`${l.scope}_${day}_${l.id}`));
+  const day = dayOf(now);
+  const refs = limits.map((l) => counterRef(l.scope, l.id, day));
   const expiresAt = Timestamp.fromMillis(Date.parse(day) + 2 * DAY_MS);
   await runTx(async (tx) => {
     const snaps = await tx.getAll(...refs);

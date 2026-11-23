@@ -206,6 +206,15 @@ describe('sendAuthEmail', () => {
     expect(await mailsTo(emailOf(c))).toHaveLength(0);
   });
 
+  it('verify clears reset requests made before the account existed', async () => {
+    const c = await unverifiedSignUp();
+    const to = emailOf(c);
+    const anon = client();
+    for (let i = 0; i < RESET_PER_EMAIL_PER_DAY; i++) await sendAuth(anon, { kind: 'reset', email: to, lang: 'en' });
+    await sendAuth(c, { kind: 'verify', lang: 'en' });
+    await expect(sendAuth(anon, { kind: 'reset', email: to, lang: 'en' })).resolves.toEqual({ ok: true });
+  });
+
   it('reset is rate limited per email, also for unknown addresses', async () => {
     const anon = client();
     const to = `ghost-${uniq()}@example.com`;
