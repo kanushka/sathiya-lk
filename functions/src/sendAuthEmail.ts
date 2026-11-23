@@ -6,8 +6,9 @@ import { onCall } from 'firebase-functions/v2/https';
 import { auth } from './lib/admin';
 import { callOpts } from './lib/callOptions';
 import { AUTH_EMAIL_KINDS, type AuthEmailKind, type SendAuthEmailRes } from '@sathiya/core';
-import { email, invalid, obj, requireAuth } from './lib/guards';
+import { email, fail, invalid, obj, requireAuth } from './lib/guards';
 import {
+  clearRateLimit,
   clientIp,
   consumeRateLimits,
   hashIp,
@@ -25,6 +26,19 @@ import { passwordReset, verifyEmail } from './email/templates';
 const isTeacherLogin = (e: string): boolean => e.endsWith('.teachers.sathiya.lk');
 
 const hash = (v: string): string => createHash('sha256').update(v).digest('hex');
+
+type AuthErr = { code?: string; message?: string };
+const authText = (e: AuthErr): string => `${e.message ?? ''} ${String((e as { cause?: unknown }).cause ?? '')}`;
+
+// With email enumeration protection on, Auth answers an unknown address with no link instead of user-not-found.
+const noAccount = (e: AuthErr): boolean =>
+  ['auth/user-not-found', 'auth/email-not-found'].includes(e.code ?? '') ||
+  (e.code === 'auth/internal-error' && authText(e).includes('Unable to create the email action link'));
+
+const throttledByAuth = (e: AuthErr): boolean => authText(e).includes('TOO_MANY_ATTEMPTS_TRY_LATER');
+
+const linkOrThrottle = (p: Promise<string>): Promise<string> =>
+  p.catch((e: AuthErr) => (throttledByAuth(e) ? fail('resource-exhausted', 'rate-limited', 'Too many attempts, try again later') : Promise.reject(e)));
 
 // verify: the signed-in user's own address. reset: open to signed-out callers and always answers ok, so it can't be used
 // to find out which addresses have an account.
@@ -45,8 +59,10 @@ export const sendAuthEmail = onCall(callOpts, async (req): Promise<SendAuthEmail
     ]);
     const to = token.email;
     if (!to) invalid('Account has no email address');
+    // Reset requests made before this account existed sent nothing, so they shouldn't block its first reset.
+    await clearRateLimit('reset-email', hash(to!.toLowerCase()));
     if (token.email_verified === true) return { ok: true };
-    const link = appActionLink(await auth.generateEmailVerificationLink(to!, actionCodeSettings), appUrl);
+    const link = appActionLink(await linkOrThrottle(auth.generateEmailVerificationLink(to!, actionCodeSettings)), appUrl);
     await writeMail({ to: [to!], message: verifyEmail({ link, lang, webUrl }) });
     return { ok: true };
   }
@@ -61,7 +77,7 @@ export const sendAuthEmail = onCall(callOpts, async (req): Promise<SendAuthEmail
     const link = appActionLink(await auth.generatePasswordResetLink(to, actionCodeSettings), appUrl);
     await writeMail({ to: [to], message: passwordReset({ link, lang, webUrl }) });
   } catch (e) {
-    if (!['auth/user-not-found', 'auth/email-not-found'].includes((e as { code?: string }).code ?? '')) logger.error('password reset email not sent', e);
+    if (!noAccount(e as AuthErr)) logger.error('password reset email not sent', e);
   }
   return { ok: true };
 });
