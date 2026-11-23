@@ -13,3 +13,6 @@ dist-e2e
 e2e/__screenshots__/
 e2e/test-results/
 e2e/playwright-report/
+
+# Agent working notes (plans, specs drafts); specs go to GitHub issues labelled spec
+docs/superpowers/

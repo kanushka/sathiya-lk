@@ -1,0 +1,35 @@
+name: Feature spec
+description: Design for a feature before building it (maintainers and contributors who will build it)
+title: "Spec: "
+labels: [spec]
+body:
+  - type: textarea
+    id: why
+    attributes:
+      label: Why
+      description: The school problem and who runs into it.
+    validations:
+      required: true
+  - type: textarea
+    id: goals
+    attributes:
+      label: Goals and non-goals
+      description: What it must do, and what it deliberately won't.
+    validations:
+      required: true
+  - type: textarea
+    id: design
+    attributes:
+      label: Design
+      description: Rules, UI flow, data changes, server work. Link screens or sketches.
+    validations:
+      required: true
+  - type: textarea
+    id: approaches
+    attributes:
+      label: Approaches considered
+      description: Options and why one was chosen.
+  - type: textarea
+    id: open
+    attributes:
+      label: Left to the builder / open questions

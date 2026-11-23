@@ -102,7 +102,7 @@ Production and staging are separate Firebase projects. See [docs/deploy.md](docs
 
 ## Contributing
 
-Contributions are welcome, including Sinhala translation reviews. Read [CONTRIBUTING.md](CONTRIBUTING.md) and the [Code of Conduct](CODE_OF_CONDUCT.md). To report a security issue, see [SECURITY.md](SECURITY.md).
+Contributions are welcome, including Sinhala translation reviews. Read [CONTRIBUTING.md](CONTRIBUTING.md), [docs/design.md](docs/design.md) for how the app is meant to work, and the [Code of Conduct](CODE_OF_CONDUCT.md). To report a security issue, see [SECURITY.md](SECURITY.md).
 
 ## Licence
 

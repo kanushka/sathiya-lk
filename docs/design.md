@@ -1,0 +1,52 @@
+# Sathiya design
+
+What Sathiya is for, and the decisions that shape the code. Feature specs live in GitHub issues labelled [`spec`](https://github.com/kanushka/sathiya-lk/issues?q=label%3Aspec); the original v1 spec is #47. Larger technical decisions go in [`adr/`](adr/).
+
+## Intent
+
+A free web app for Sri Lankan schools to build their yearly timetables. A school admin registers the school, sets up teachers, subjects, grades and bell schedules, then fills a weekly grid per class or per teacher. Teachers see their own timetable on their phone, with the current period highlighted.
+
+### Goals
+- Any school can self-register and start immediately.
+- An admin can build a full year's timetable by hand, from the class view or the teacher view, with every change visible in both.
+- The app prevents mistakes: clash detection, daily-limit warnings, per-subject period targets ("Maths 4/6").
+- It handles how Sri Lankan schools work: primary class teachers, religion/aesthetic groups running in parallel, combined classes, A/L streams.
+- Sinhala and English everywhere, for UI and data.
+
+### Non-goals
+- Automatic timetable generation.
+- Substitutions, rooms, students.
+- Mobile layout for admin screens (desktop only; teacher views are mobile-first).
+
+### Anti-goals
+- Storing sensitive teacher ID data (NIC is never collected).
+- An editor so clever it's hard to understand.
+
+## Roles
+
+| Role | Scope | Can |
+|---|---|---|
+| Super admin | Platform | List/disable schools, default subject list, terms versions, announcements, usage. |
+| School admin | One school | Setup, timetables, members, branding, publish. An admin can also be linked to a teacher record and get "My timetable". |
+| Teacher | One school | View published timetables, change own password. |
+
+## Architecture
+
+- Monorepo: `apps/web` (Astro static site), `apps/app` (React + Vite SPA), `functions` (Cloud Functions), shared domain logic in `packages`.
+- Firebase only: Auth, Firestore, Hosting (two sites), Storage, Functions. Chosen over Next.js on App Hosting (server runtime and cost for no SSR benefit) and a single SPA (weak SEO for the public site).
+- Privileged operations (creating teachers, saving entries, publishing) go through callable functions with App Check. Roles come from custom claims `{ sid, role, tid?, super? }` used by security rules.
+
+## Key decisions
+
+- **Teacher login** uses a synthetic email per teacher (never shown). Accounts are created and reset only by functions; the admin prints a login slip with a generated password. Teachers never get email.
+- **Slot entry model**: `{ day, period, classIds[], lessons[{ subjectId, teacherId }], groupKey? }`. One shape covers normal lessons, parallel groups (one lesson per option) and combined classes.
+- **Clash = clock-time overlap** on the same day, regardless of period number, for teachers and classes. Hard clashes are re-checked in a transaction inside `saveEntry`; soft issues (daily limit, over target, missing option teacher) are warnings on the dashboard.
+- **Subject plans** belong to a grade; a class may have its own `planOverride` (A/L streams).
+- **Years**: teachers, subjects, classes and templates belong to the school, not the year. Each year is draft → published. Publishing writes denormalized snapshots per class and per teacher, so old years stay correct after setup changes and the teacher view reads one doc.
+- **Deletes** of anything the draft uses are blocked ("used in N slots"). Shrinking a template leaves orphaned entries listed under Needs attention.
+- **Names**: schools, subjects, groups and teachers have an English name, a Sinhala name, or both. Display picks the app language and falls back to the other.
+- **Branding**: each school's logo and colours drive its screens and printouts, with text colour chosen for contrast. The public site, login and super admin use Sathiya's own palette.
+
+## Constraints
+- Keep Firestore reads low: load per school and year, no per-cell listeners.
+- Accessibility: real buttons and inputs, 4.5:1 contrast, keyboard-usable grid.
