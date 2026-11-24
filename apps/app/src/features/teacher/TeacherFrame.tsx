@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
 // Copyright (C) 2026 Kanushka Gayan
-import { isSchoolAdmin, paths, pickName, teacherIdOf, type TeacherSnapshot } from '@sathiya/core';
-import { useEffect, type ReactNode } from 'react';
+import { colomboToday, isSchoolAdmin, paths, pickName, teacherIdOf, type ReliefDay, type TeacherSnapshot } from '@sathiya/core';
+import { useEffect, useMemo, type ReactNode } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Link } from 'react-router-dom';
 import { useAuth } from '../../app/AuthProvider';
@@ -15,24 +15,27 @@ import { cx } from '../../ui/cx';
 import { SchoolSwitcher } from '../../ui/SchoolSwitcher';
 import { recordSignInOnce } from './signIn';
 import { colomboNow, greetingKey } from './colomboNow';
+import { overlayRelief, type OverlaySnapshot } from './reliefOverlay';
 import { useNow, type NowFn } from './useNow';
 
 export interface TeacherViewProps {
   now?: NowFn;
   snapshot?: DocState<TeacherSnapshot>;
+  reliefDay?: DocState<ReliefDay>;
 }
 
 interface FrameProps extends TeacherViewProps {
   view: 'today' | 'week';
-  children: (snap: TeacherSnapshot, now: Date) => ReactNode;
+  children: (snap: OverlaySnapshot, now: Date) => ReactNode;
 }
 
-export function TeacherFrame({ view, now: nowFn, snapshot, children }: FrameProps) {
+export function TeacherFrame({ view, now: nowFn, snapshot, reliefDay, children }: FrameProps) {
   const { t } = useTranslation(['teacher', 'common', 'shell']);
   const { lang, setLang } = useLang();
   const { claims, signOut } = useAuth();
   const { school } = useSchool();
-  const now = colomboNow(useNow(nowFn));
+  const instant = useNow(nowFn);
+  const now = colomboNow(instant);
 
   const yearId = school.activeYearId;
   const sid = school.id;
@@ -43,7 +46,12 @@ export function TeacherFrame({ view, now: nowFn, snapshot, children }: FrameProp
   const path = !snapshot && yearId && tid ? paths.publishedTeacher(school.id, yearId, tid) : null;
   const live = useDoc<TeacherSnapshot>(path);
   const state = snapshot ?? live;
-  const snap = state.data;
+  const today = colomboToday(instant);
+  const reliefPath = !reliefDay && today.day !== null && yearId ? paths.reliefDay(sid, yearId, today.date) : null;
+  const liveRelief = useDoc<ReliefDay>(reliefPath);
+  const relief = (reliefDay ?? liveRelief).data ?? null;
+  const base = state.data;
+  const snap = useMemo(() => base && overlayRelief(base, relief, base.teacherId, lang), [base, relief, lang]);
 
   const target = lang === 'en' ? 'si' : 'en';
   const schoolName = pickName(school, lang);
