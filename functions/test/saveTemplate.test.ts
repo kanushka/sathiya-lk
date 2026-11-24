@@ -121,6 +121,17 @@ describe('saveTemplate', () => {
     expect(stored).toMatchObject({ name: 'Short', rows });
   });
 
+  it('stores days[0] as rows in per-day mode and rejects oversized times', async () => {
+    const { admin, sid } = await seededSchool();
+    const monday = defaultTemplate.rows.slice(0, 3);
+    const friday = defaultTemplate.rows.slice(0, 2);
+    const days = { 0: monday, 1: monday, 2: monday, 3: monday, 4: friday } as TemplatePatch['days'];
+    await call(admin, sid, patchOf(defaultTemplate.rows, { mode: 'perDay', days }), TPL.primary);
+    const stored = (await adminDb.doc(`${paths.templates(sid)}/${TPL.primary}`).get()).data();
+    expect(stored).toMatchObject({ mode: 'perDay', rows: monday });
+    await expectFnError(call(admin, sid, patchOf([{ type: 'period', start: '07:45'.padEnd(200, '0'), end: '08:30' }])), 'invalid-argument', 'invalid');
+  });
+
   it('rejects an invalid patch, an unknown template and non-admins', async () => {
     const { admin, sid } = await seededSchool();
     await expectFnError(call(admin, sid, patchOf([{ type: 'interval', start: '08:00', end: '08:20' }])), 'invalid-argument', 'invalid');

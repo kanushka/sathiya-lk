@@ -11,6 +11,7 @@ import { runTx } from './lib/tx';
 
 const BATCH_LIMIT = 450;
 const MAX_ROWS = 40;
+const MAX_TIME_LEN = 5;
 const ROW_TYPES: readonly string[] = ['period', 'interval', 'activity'];
 
 function parseRows(v: unknown, name: string): TemplateRow[] {
@@ -18,7 +19,7 @@ function parseRows(v: unknown, name: string): TemplateRow[] {
   return (v as unknown[]).map((raw) => {
     const r = obj(raw, 'row');
     if (typeof r.type !== 'string' || !ROW_TYPES.includes(r.type)) invalid('row type must be period, interval or activity');
-    if (typeof r.start !== 'string' || typeof r.end !== 'string') invalid('row start and end are required');
+    if (typeof r.start !== 'string' || typeof r.end !== 'string' || r.start.length > MAX_TIME_LEN || r.end.length > MAX_TIME_LEN) invalid('row start and end are required');
     const row: TemplateRow = { type: r.type as TemplateRow['type'], start: r.start as string, end: r.end as string };
     if (row.type === 'activity') {
       const nameEn = optStr(r.nameEn, 'nameEn');
@@ -35,10 +36,13 @@ function parseRows(v: unknown, name: string): TemplateRow[] {
 function parsePatch(v: unknown): TemplatePatch {
   const p = obj(v, 'patch');
   if (p.mode !== 'same' && p.mode !== 'perDay') invalid('mode must be same or perDay');
-  const patch: TemplatePatch = { name: str(p.name, 'name'), mode: p.mode as TemplatePatch['mode'], rows: parseRows(p.rows, 'rows') };
+  const patch: TemplatePatch = { name: str(p.name, 'name'), mode: p.mode as TemplatePatch['mode'], rows: [] };
   if (patch.mode === 'perDay') {
     const days = obj(p.days, 'days');
     patch.days = Object.fromEntries(DAY_INDEXES.map((d) => [d, parseRows(days[d], `days.${d}`)])) as Record<DayIndex, TemplateRow[]>;
+    patch.rows = patch.days[DAY_INDEXES[0]!];
+  } else {
+    patch.rows = parseRows(p.rows, 'rows');
   }
   if (validateTemplate(patch).length > 0) invalid('Template rows are not valid');
   return patch;
