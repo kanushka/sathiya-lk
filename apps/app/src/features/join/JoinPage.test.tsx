@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
 // Copyright (C) 2026 Kanushka Gayan
 import type { ApiErrorCode } from '@sathiya/core';
-import { screen, waitFor } from '@testing-library/react';
+import { act, screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { ApiError } from '../../lib/callable';
@@ -26,6 +26,7 @@ const PERSONAL = { route: `/join/t/${T2}`, at: '/join/t/:token' };
 beforeEach(() => {
   vi.resetAllMocks();
   vi.mocked(api.ownJoinRequest).mockResolvedValue(null);
+  vi.mocked(api.watchOwnJoinRequest).mockReturnValue(() => undefined);
   vi.mocked(authApi.getDirectorySchool).mockResolvedValue({ id: 's1', nameEn: 'Siripura Central College', district: 'Kandy', status: 'active' });
 });
 
@@ -73,6 +74,24 @@ describe('JoinPage', () => {
     renderAuth(<JoinPage />, { ...SCHOOL, signedIn: true, emailVerified: true });
     expect(await screen.findByText('Waiting for your school admin')).toBeInTheDocument();
     expect(await screen.findByText('Siripura Central College')).toBeInTheDocument();
+  });
+
+  it('switches a pending request to rejected when the admin rejects it, and stops watching', async () => {
+    let push: (r: Parameters<Parameters<typeof api.watchOwnJoinRequest>[2]>[0]) => void = () => undefined;
+    const stop = vi.fn();
+    vi.mocked(api.watchOwnJoinRequest).mockImplementation((_sid, _uid, onChange) => {
+      push = onChange;
+      return stop;
+    });
+    vi.mocked(api.ownJoinRequest).mockResolvedValue({ uid: 'u', email: 'x@example.com', staffId: 'SCC001', teacherId: 't1', createdAt: 1, status: 'pending' });
+    const { unmount } = renderAuth(<JoinPage />, { ...SCHOOL, signedIn: true, emailVerified: true });
+    expect(await screen.findByText('Waiting for your school admin')).toBeInTheDocument();
+    expect(api.watchOwnJoinRequest).toHaveBeenCalledWith('s1', expect.any(String), expect.any(Function));
+    act(() => push({ uid: 'u', email: 'x@example.com', staffId: 'SCC001', teacherId: 't1', createdAt: 1, status: 'rejected', decidedAt: 2 }));
+    expect(await screen.findByRole('button', { name: 'Try again with a staff ID' })).toBeInTheDocument();
+    expect(stop).toHaveBeenCalledTimes(1);
+    unmount();
+    expect(api.joinSchool).not.toHaveBeenCalled();
   });
 
   it('asks for the staff ID when the email does not match, then files a request', async () => {

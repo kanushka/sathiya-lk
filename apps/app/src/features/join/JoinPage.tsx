@@ -153,6 +153,14 @@ function JoinFlow({ sid, token, uid }: { sid?: string; token: string; uid: strin
     })();
   }, [refreshed, already, attempt, sid, uid]);
 
+  const pending = view.kind === 'pending';
+  useEffect(() => {
+    if (!pending || !sid) return;
+    return api.watchOwnJoinRequest(sid, uid, (request) => {
+      if (request?.status === 'rejected') setView({ kind: 'rejected' });
+    });
+  }, [pending, sid, uid]);
+
   if (already && sid) {
     return (
       <Card title={t('already.title')}>
