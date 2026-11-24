@@ -94,6 +94,14 @@ describe('saveReliefDay', () => {
     expect(await stats(sid)).toEqual({});
   });
 
+  it.skipIf(day === null)('a late leave ticking an afternoon lesson still gets a relief slot', async () => {
+    const { admin, sid } = await publishedSeed([...entries(), entry('e-pm', d, 8, [C.c6a], [[S.maths, T.bandara]])]);
+    const res = await admin.call('saveReliefDay', req(sid, { leaves: [{ teacherId: T.bandara, type: 'late', entryIds: ['e-pm'] }], reliefs: [pick('e-pm', T.kumara)] }));
+    const doc = (await adminDb.doc(paths.reliefDay(sid, YEAR, today.date)).get()).data() as ReliefDay;
+    expect(doc.reliefs.map((r) => [r.entryId, r.reliefTeacherId])).toEqual([['e-pm', T.kumara]]);
+    expect(res.uncovered).toBe(0);
+  });
+
   it.skipIf(day === null)('does not queue a mail doc synchronously', async () => {
     const { admin, sid } = await publishedSeed(entries());
     const before = (await adminDb.collection('mail').get()).size;

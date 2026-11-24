@@ -59,8 +59,9 @@ export function reliefSlots(leaves: Leave[], snaps: Map<string, TeacherSnapshot>
   for (const leave of leaves) {
     const snap = snaps.get(leave.teacherId);
     if (!snap) continue;
-    for (const c of lessonsForLeave(snap, day, leave.type)) {
-      if (c.entryId === undefined) continue;
+    const ticked = new Set(leave.entryIds);
+    for (const c of snap.cells) {
+      if (c.day !== day || c.entryId === undefined || !ticked.has(c.entryId)) continue;
       out.push({ entryId: c.entryId, absentTeacherId: leave.teacherId, day, period: c.period, start: c.start, end: c.end, classIds: c.classIds ?? [], subjectId: c.subjectId ?? '', reliefTeacherId: null });
     }
   }

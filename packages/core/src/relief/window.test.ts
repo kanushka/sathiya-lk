@@ -88,9 +88,15 @@ describe('reliefSlots', () => {
   it('keys by entryId, copies fields, sorts by start then class, skips cells without entryId', () => {
     const a = snap([cell(2, '08:30', '09:10', 'b', ['c2']), cell(1, '07:45', '08:30', undefined), cell(2, '08:30', '09:10', 'z', ['c1'])], 't1');
     const b = snap([cell(1, '07:45', '08:30', 'x', ['c9'])], 't2');
-    const leaves: Leave[] = [{ teacherId: 't1', type: 'full', entryIds: [] }, { teacherId: 't2', type: 'late', entryIds: [] }, { teacherId: 'ghost', type: 'full', entryIds: [] }];
+    const leaves: Leave[] = [{ teacherId: 't1', type: 'full', entryIds: ['b', 'z'] }, { teacherId: 't2', type: 'late', entryIds: ['x'] }, { teacherId: 'ghost', type: 'full', entryIds: ['q'] }];
     const slots = reliefSlots(leaves, new Map([['t1', a], ['t2', b]]), 1);
     expect(slots.map((r) => r.entryId)).toEqual(['x', 'z', 'b']);
     expect(slots[0]).toEqual({ entryId: 'x', absentTeacherId: 't2', day: 1, period: 1, start: '07:45', end: '08:30', classIds: ['c9'], subjectId: 'maths', reliefTeacherId: null });
+  });
+
+  it('follows ticks: a ticked lesson outside the window gets a slot, an unticked in-window one does not', () => {
+    const s = snap(cells, 't1');
+    const late: Leave[] = [{ teacherId: 't1', type: 'late', entryIds: ['b', 'e'] }];
+    expect(reliefSlots(late, new Map([['t1', s]]), 1).map((r) => r.entryId)).toEqual(['b', 'e']);
   });
 });

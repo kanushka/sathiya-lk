@@ -93,10 +93,7 @@ export const saveReliefDay = onCall(callOpts, async (req): Promise<SaveReliefDay
 
   const gradeNo = new Map(ctx.grades.map((g) => [g.id, g.number]));
   const gradeOfClass = new Map(ctx.classes.flatMap((c) => (gradeNo.has(c.gradeId) ? [[c.id, gradeNo.get(c.gradeId)!] as const] : [])));
-  const ticked = new Map(leaves.map((l) => [l.teacherId, new Set(l.entryIds)]));
-  const reliefs: Relief[] = reliefSlots(leaves, snaps, day)
-    .filter((s) => ticked.get(s.absentTeacherId)?.has(s.entryId))
-    .map((s) => ({ ...s, reliefTeacherId: picks.get(`${s.entryId}|${s.absentTeacherId}`) ?? null }));
+  const reliefs: Relief[] = reliefSlots(leaves, snaps, day).map((s) => ({ ...s, reliefTeacherId: picks.get(`${s.entryId}|${s.absentTeacherId}`) ?? null }));
 
   const dayRef = db.doc(paths.reliefDay(sid, yid, date));
   const statsRef = db.doc(paths.reliefStats(sid, yid));
