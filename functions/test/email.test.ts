@@ -190,13 +190,6 @@ describe('sendAuthEmail', () => {
     expect(await mailsTo(unknown)).toHaveLength(0);
   });
 
-  it('reset for a teacher login address answers ok and sends nothing', async () => {
-    const to = `t${uniq()}@sid1.teachers.sathiya.lk`;
-    await adminAuth.createUser({ email: to, password: 'secret123' });
-    await expect(sendAuth(client(), { kind: 'reset', email: to, lang: 'en' })).resolves.toEqual({ ok: true });
-    expect(await mailsTo(to)).toHaveLength(0);
-  });
-
   it('verify is limited per IP', async () => {
     const c = await unverifiedSignUp();
     const day = new Date().toISOString().slice(0, 10);

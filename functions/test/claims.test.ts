@@ -48,10 +48,12 @@ describe('syncClaims', () => {
   it('accepts the maximum number of schools with real-length ids and teacher ids', async () => {
     const c = await signUp();
     const pad = (i: number, ch: string) => `${ch}${String(i).padStart(2, '0')}`.padEnd(20, ch);
+    await adminAuth.setCustomUserClaims(c.uid, { super: true });
     for (let i = 0; i < MAX_SCHOOLS; i++) await addMember(pad(i, 's'), c.uid, { role: 'admin', teacherId: pad(i, 't') });
     await syncClaims(c.uid);
     const claims = await claimsOf(c.uid);
     expect(Object.keys(claims!.schools)).toHaveLength(MAX_SCHOOLS);
+    expect(claims!.super).toBe(true);
     expect(JSON.stringify(claims).length).toBeLessThan(1000);
   });
 

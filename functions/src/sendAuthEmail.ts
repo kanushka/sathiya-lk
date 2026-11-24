@@ -22,9 +22,6 @@ import { appActionLink } from './email/actionLink';
 import { writeMail } from './email/send';
 import { passwordReset, verifyEmail } from './email/templates';
 
-// Teacher login addresses (core syntheticEmail) are not real mailboxes.
-const isTeacherLogin = (e: string): boolean => e.endsWith('.teachers.sathiya.lk');
-
 const hash = (v: string): string => createHash('sha256').update(v).digest('hex');
 
 type AuthErr = { code?: string; message?: string };
@@ -72,7 +69,6 @@ export const sendAuthEmail = onCall(callOpts, async (req): Promise<SendAuthEmail
     { scope: 'reset-ip', id: hashIp(clientIp(req)), max: RESET_PER_IP_PER_DAY },
     { scope: 'reset-email', id: hash(to), max: RESET_PER_EMAIL_PER_DAY },
   ]);
-  if (isTeacherLogin(to)) return { ok: true };
   try {
     const link = appActionLink(await auth.generatePasswordResetLink(to, actionCodeSettings), appUrl);
     await writeMail({ to: [to], message: passwordReset({ link, lang, webUrl }) });
