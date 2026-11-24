@@ -6,6 +6,7 @@ import { C, ctx, entries6B, entry, S, T } from '@sathiya/core/fixtures';
 import { fireEvent, screen, waitFor, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { describe, expect, it, vi } from 'vitest';
+import { installMatchMedia } from '../../test/matchMedia';
 import { renderWithSchool } from '../../test/renderWithSchool';
 import { AssignPicker, type AssignPickerProps } from './AssignPicker';
 
@@ -32,6 +33,15 @@ async function pickSubject(name: string) {
 }
 
 describe('AssignPicker', () => {
+  it('does not focus the search on phones, so the keyboard stays down', async () => {
+    const restore = installMatchMedia(375);
+    setup();
+    await waitFor(() => expect(dialog()).toHaveFocus());
+    await pickSubject('Sinhala');
+    expect(teacherSearch()).not.toHaveFocus();
+    restore();
+  });
+
   it('starts on a searchable subject list with needed subjects first, focused', async () => {
     setup();
     expect(screen.getByRole('dialog', { name: 'Choose a subject' })).toBeInTheDocument();

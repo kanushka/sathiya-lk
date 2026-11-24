@@ -33,6 +33,7 @@ import { GroupTeachersStep } from './GroupTeachersStep';
 import { placeThenPin } from './placeThenPin';
 import { limitWarning, planItemColor, teacherReason, teachesAtAll } from './labels';
 import { initials, usePickItems, type GroupItem, type PickItem } from './pickerData';
+import { PHONE_QUERY, useMediaQuery } from '../../ui/PhoneNotice';
 
 export interface AssignPickerProps {
   classId: string;
@@ -88,10 +89,11 @@ function AssignPickerBody({ classId, slot, subjectId: initialSubject, groupKey, 
     return found?.kind === 'group' ? found : null;
   });
 
+  const isPhone = useMediaQuery(PHONE_QUERY);
   useEffect(() => {
-    if (group) return;
+    if (group || isPhone) return;
     (subjectId ? teacherInput : subjectInput).current?.focus();
-  }, [subjectId, group]);
+  }, [subjectId, group, isPhone]);
 
   useEffect(() => {
     const id = (subjectId ? teacherInput : subjectInput).current?.getAttribute('aria-activedescendant');

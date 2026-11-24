@@ -37,6 +37,7 @@ import { FullMateChip } from './FullMateChip';
 import { GroupTeachersStep } from './GroupTeachersStep';
 import { placeThenPin } from './placeThenPin';
 import { teacherSubjects, type GroupItem } from './pickerData';
+import { PHONE_QUERY, useMediaQuery } from '../../ui/PhoneNotice';
 
 export interface TeacherAssignPickerProps {
   teacherId: string;
@@ -149,10 +150,11 @@ function TeacherAssignPickerBody({ teacherId, slot, entries, onClose, onSave, on
     });
   }, [subjectId, ctx, entries, teacherId, slot.day, slot.row, lang, t]);
 
+  const isPhone = useMediaQuery(PHONE_QUERY);
   useEffect(() => {
-    if (groupFor) return;
+    if (groupFor || isPhone) return;
     (subjectId ? classInput : subjectInput).current?.focus();
-  }, [subjectId, groupFor]);
+  }, [subjectId, groupFor, isPhone]);
 
   useEffect(() => {
     const id = (subjectId ? classInput : subjectInput).current?.getAttribute('aria-activedescendant');

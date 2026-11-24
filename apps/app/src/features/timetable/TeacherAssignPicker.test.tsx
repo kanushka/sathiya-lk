@@ -6,6 +6,7 @@ import { C, ctx, entries, entry, S, T } from '@sathiya/core/fixtures';
 import { fireEvent, screen, waitFor, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { installMatchMedia } from '../../test/matchMedia';
 import { renderWithSchool } from '../../test/renderWithSchool';
 import { TeacherAssignPicker } from './TeacherAssignPicker';
 
@@ -33,6 +34,14 @@ async function pickSubject(name: string) {
 }
 
 describe('TeacherAssignPicker', () => {
+  it('does not focus the search on phones, so the keyboard stays down', () => {
+    const restore = installMatchMedia(375);
+    setup(T.rizan, { day: 2, row: 4 });
+    expect(screen.getByRole('combobox', { name: 'Search subjects' })).not.toHaveFocus();
+    expect(dialog()).toHaveFocus();
+    restore();
+  });
+
   it('lists the teacher’s subjects with what is still needed across his classes', () => {
     setup(T.rizan, { day: 2, row: 4 });
     expect(dialog()).toHaveAccessibleName('Choose a subject');
