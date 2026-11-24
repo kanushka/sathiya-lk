@@ -26,8 +26,8 @@ export function CellBody({ cells, readOnly }: { cells: CellView[]; readOnly?: bo
           style={{ background: c.color, border: c.dashed ? '1.5px dashed rgba(20,33,61,.45)' : undefined }}
           data-group={c.isGroup || undefined}
         >
-          <span className="text-[13px] font-bold">{c.title}</span>
-          <span className="text-[11px] opacity-80">{c.sub}</span>
+          <span className="text-[13px] font-bold [overflow-wrap:anywhere]">{c.title}</span>
+          <span className="text-[11px] opacity-80 [overflow-wrap:anywhere]">{c.sub}</span>
         </span>
       ))}
     </span>
