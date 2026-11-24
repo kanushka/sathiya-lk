@@ -33,12 +33,13 @@ describe('email templates', () => {
       expect({ subject, html, text }).toMatchSnapshot();
     });
 
-    it(`${name} is bilingual, English first, with a plain-text twin`, () => {
+    it(`${name} is bilingual with a plain-text twin, and email-safe`, () => {
       const { html, text } = make();
-      expect(html.indexOf('Hello')).toBeGreaterThan(-1);
-      expect(html.indexOf('ආයුබෝවන්')).toBeGreaterThan(html.indexOf('Hello'));
-      expect(text.indexOf('ආයුබෝවන්')).toBeGreaterThan(text.indexOf('Hello'));
-      expect(html).not.toMatch(/<script|<style|<svg|display:flex/);
+      expect(html).toMatch(/<h1 [^>]*>/);
+      expect(html).toMatch(/<h2 [^>]*>/);
+      expect(html).toMatch(/[\u0D80-\u0DFF]/);
+      expect(text).toMatch(/[\u0D80-\u0DFF]/);
+      expect(html).not.toMatch(/<script|<style|<svg|display:flex|color-mix/);
     });
   }
 
@@ -52,10 +53,52 @@ describe('email templates', () => {
     expect(bad.html).not.toContain('red;x:y');
   });
 
-  it('subjects: invite and verify match the design; verify subject order follows lang', () => {
-    expect(cases.adminInvite().subject).toBe("You're invited to manage Siripura Central College on Sathiya");
-    expect(cases.verifyEmail().subject).toBe('Confirm your email for Sathiya · ඔබගේ ඊමේල් තහවුරු කරන්න');
-    expect(verifyEmail({ link: loginUrl, lang: 'si' }).subject).toBe('ඔබගේ ඊමේල් තහවුරු කරන්න · Confirm your email for Sathiya');
+  it('subjects end with the brand name; auth subjects follow lang', () => {
+    expect(cases.adminInvite().subject).toBe('Join Siripura Central College on Sathiya (සතිය)');
+    expect(cases.verifyEmail().subject).toBe('Confirm your email · Sathiya (සතිය)');
+    expect(verifyEmail({ link: loginUrl, lang: 'si' }).subject).toBe('ඔබගේ ඊමේල් තහවුරු කරන්න · Sathiya (සතිය)');
+    expect(cases.passwordReset().subject).toBe('ඔබගේ මුරපදය යළි සකසන්න · Sathiya (සතිය)');
+    for (const make of Object.values(cases)) expect(make().subject).toContain('Sathiya (සතිය)');
+  });
+
+  it('puts the recipient language first, with the button', () => {
+    const en = cases.verifyEmail();
+    expect(en.html.indexOf('Confirm your email')).toBeLessThan(en.html.indexOf('ඔබගේ ඊමේල් තහවුරු කරන්න'));
+    expect(en.html).toContain('>Confirm email</a>');
+    expect(en.html).not.toContain('>ඊමේල් තහවුරු කරන්න</a>');
+    const si = cases.passwordReset();
+    expect(si.html).toContain('<html lang="si">');
+    expect(si.html.indexOf('ඔබගේ මුරපදය යළි සකසන්න')).toBeLessThan(si.html.indexOf('Reset your password'));
+    expect(si.html).toContain('>මුරපදය යළි සකසන්න</a>');
+    expect(si.html).toContain('පහත බොත්තම');
+    expect(si.text.indexOf('ඔබගේ මුරපදය')).toBeLessThan(si.text.indexOf('Reset your password'));
+  });
+
+  it('shows a pasteable link under auth buttons only', () => {
+    expect(cases.verifyEmail().html).toContain('Button not working? Paste this link into your browser:');
+    expect(cases.adminInvite().html).not.toContain('Paste this link');
+  });
+
+  it('school button and step numbers use the school colour', () => {
+    expect(cases.adminInvite().html).toMatch(/<td style="background:#7A1F3D;border-radius:8px"><a href="https:\/\/app\.example\.test\/login" style="display:inline-block;padding:12px 20px;color:#FFFFFF/);
+    expect(cases.schoolRegistered().html).toContain('background:#7A1F3D;color:#FFFFFF;text-align:center');
+  });
+
+  it('school header stacks the Sinhala name only when both names exist', () => {
+    expect(cases.adminInvite().html).toContain('සිරිපුර මධ්‍ය මහා විද්‍යාලය</span></span>');
+    const enOnly = adminInvite({ inviter: 'A', school: { nameEn: 'S' }, loginUrl });
+    expect(enOnly.html).not.toContain('<br><span style="font-family:');
+  });
+
+  it('report and status emails carry facts, badges and status strips', () => {
+    const r = cases.reportReceived();
+    expect(r.html).toContain('Super admin');
+    expect(r.html).toContain('#FDF0D8');
+    expect(r.text).toContain('Reason: Fake school');
+    expect(r.text).toContain('Reporter: parent@example.com');
+    expect(cases.schoolSuspended().html).toContain('Suspended');
+    expect(cases.schoolSuspended().html).toContain('#FBEAEA');
+    expect(cases.schoolReactivated().text).toContain('[Active] Admins and teachers can sign in again.');
   });
 
   it('escapes every interpolated value and URL attribute', () => {
@@ -95,8 +138,9 @@ describe('email templates for a school with only a Sinhala name', () => {
   it('uses the Sinhala name in the subject, header and body', () => {
     const siOnly = { nameEn: '', nameSi: 'සිරිපුර විද්‍යාලය', colors: { primary: '#7A1F3D' } };
     const r = schoolRegistered({ adminName: 'W. Perera', school: siOnly, loginUrl, webUrl });
-    expect(r.subject).toBe('Welcome to Sathiya: සිරිපුර විද්‍යාලය is registered');
-    expect(r.text).toContain('සිරිපුර විද්‍යාලය is now registered');
+    expect(r.subject).toBe('සිරිපුර විද්‍යාලය is registered · Sathiya (සතිය)');
+    expect(r.text).toContain('සිරිපුර විද්‍යාලය is registered on Sathiya');
+    expect(r.html).not.toContain('<br><span style="font-family:');
     expect(adminInvite({ inviter: 'W. Perera', school: siOnly, loginUrl, webUrl }).subject).toContain('සිරිපුර විද්‍යාලය');
   });
 });

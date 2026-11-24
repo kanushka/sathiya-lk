@@ -30,7 +30,7 @@ describe('app emails', () => {
     const mails = await mailsTo(emailOf(admin));
     expect(mails).toHaveLength(1);
     expect(mails[0]).toMatchObject({ to: [emailOf(admin)], from: FROM, replyTo: REPLY_TO });
-    expect(mails[0]!.message.subject).toBe('Welcome to Sathiya: Siripura Central College is registered');
+    expect(mails[0]!.message.subject).toBe('Siripura Central College is registered · Sathiya (සතිය)');
     expect(mails[0]!.message.html).toContain(`href="${APP_URL}/login`);
     expect(mails[0]!.message.text).toContain('Principal');
   });
@@ -42,7 +42,7 @@ describe('app emails', () => {
     const mails = await mailsTo(invitee);
     expect(mails).toHaveLength(1);
     expect(mails[0]).toMatchObject({ to: [invitee.toLowerCase()], replyTo: emailOf(admin), from: FROM });
-    expect(mails[0]!.message.subject).toBe("You're invited to manage Siripura Central College on Sathiya");
+    expect(mails[0]!.message.subject).toBe('Join Siripura Central College on Sathiya (සතිය)');
     expect(mails[0]!.message.html).toContain('<b>Principal</b>');
     expect(mails[0]!.message.html).toContain(`${APP_URL}/login`);
   });
@@ -74,7 +74,7 @@ describe('app emails', () => {
     const mails = (await mailsTo('super-one@example.test')).filter((m) => m.message.html.includes(sid));
     expect(mails).toHaveLength(1);
     expect(mails[0]).toMatchObject({ to: ['super-one@example.test', 'super-two@example.test'], from: FROM });
-    expect(mails[0]!.message.subject).toBe('New report (Fake school): Siripura Central College');
+    expect(mails[0]!.message.subject).toBe('New report (Fake school): Siripura Central College · Sathiya (සතිය)');
     expect(mails[0]!.message.html).toContain('Looks &lt;fake&gt;');
   });
 
@@ -102,12 +102,12 @@ describe('app emails', () => {
     await sup.call('setSchoolStatus', { schoolId: sid, status: 'disabled' });
     let mails = await mailsTo(emailOf(admin));
     expect(mails).toHaveLength(base + 1);
-    expect(mails.some((m) => m.message.subject === 'Siripura Central College has been suspended on Sathiya')).toBe(true);
+    expect(mails.some((m) => m.message.subject === 'Siripura Central College is suspended · Sathiya (සතිය)')).toBe(true);
     expect(await mailsTo(other)).toHaveLength(1);
 
     await sup.call('setSchoolStatus', { schoolId: sid, status: 'active' });
     mails = await mailsTo(emailOf(admin));
-    expect(mails.some((m) => m.message.subject === 'Siripura Central College is active again on Sathiya')).toBe(true);
+    expect(mails.some((m) => m.message.subject === 'Siripura Central College is active again · Sathiya (සතිය)')).toBe(true);
     expect(await mailsTo(other)).toHaveLength(2);
     const all = (await adminDb.collection('mail').get()).docs.map((d) => d.data());
     expect(all.some((m) => (m.to as string[]).some((t) => t.startsWith('t-')))).toBe(false);
@@ -163,9 +163,9 @@ describe('sendAuthEmail', () => {
     const mails = await mailsTo(emailOf(c));
     expect(mails).toHaveLength(1);
     expect(mails[0]).toMatchObject({ to: [emailOf(c)], from: FROM });
-    expect(mails[0]!.message.subject).toBe('ඔබගේ ඊමේල් තහවුරු කරන්න · Confirm your email for Sathiya');
+    expect(mails[0]!.message.subject).toBe('ඔබගේ ඊමේල් තහවුරු කරන්න · Sathiya (සතිය)');
     expect(mails[0]!.message.html).toMatch(actionHref('verifyEmail'));
-    expect(mails[0]!.message.text).toMatch(new RegExp(`Confirm email: ${esc(APP_URL)}/auth/action\\?mode=verifyEmail&oobCode=\\S+`));
+    expect(mails[0]!.message.text).toMatch(new RegExp(`ඊමේල් තහවුරු කරන්න: ${esc(APP_URL)}/auth/action\\?mode=verifyEmail&oobCode=\\S+`));
   });
 
   it('verify refuses signed-out callers, is a no-op for verified users and is rate limited', async () => {
@@ -186,7 +186,7 @@ describe('sendAuthEmail', () => {
     await expect(sendAuth(anon, { kind: 'reset', email: unknown, lang: 'en' })).resolves.toEqual({ ok: true });
     const mails = await mailsTo(emailOf(known));
     expect(mails).toHaveLength(1);
-    expect(mails[0]!.message.subject).toBe('Reset your Sathiya password · ඔබගේ මුරපදය යළි සකසන්න');
+    expect(mails[0]!.message.subject).toBe('Reset your password · Sathiya (සතිය)');
     expect(mails[0]!.message.html).toMatch(actionHref('resetPassword'));
     expect(await mailsTo(unknown)).toHaveLength(0);
   });
