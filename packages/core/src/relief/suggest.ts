@@ -24,7 +24,7 @@ function assess(t: Teacher, slot: Relief, others: Relief[], ctx: ReliefCtx): Can
 
   if (t.id === slot.absentTeacherId) return 'on-leave';
   const leave = ctx.leaves.find((l) => l.teacherId === t.id);
-  if (leave && overlaps(leaveWindow(leave.type, snap?.rows[ctx.day] ?? []), at)) return 'on-leave';
+  if (leave && (!snap || overlaps(leaveWindow(leave.type, snap.rows[ctx.day] ?? []), at))) return 'on-leave';
   if (today.some((c) => overlaps(span(c), at)) || mine.some((r) => overlaps(span(r), at))) return 'busy';
   const todayCount = today.length + mine.length;
   if (todayCount + 1 > t.maxPerDay) return 'over-limit';
@@ -49,10 +49,10 @@ export function candidatesFor(slot: Relief, others: Relief[], ctx: ReliefCtx): C
   }
   const knows = (c: Candidate) => (c.teachesClass || c.teachesSubject ? 0 : 1);
   return out.sort((a, b) =>
-    knows(a) - knows(b)
+    Number(a.noLessonsToday) - Number(b.noLessonsToday)
+    || knows(a) - knows(b)
     || a.yearCount - b.yearCount
     || a.todayCount - b.todayCount
-    || Number(a.noLessonsToday) - Number(b.noLessonsToday)
     || (name.get(a.teacherId) ?? '').localeCompare(name.get(b.teacherId) ?? ''));
 }
 

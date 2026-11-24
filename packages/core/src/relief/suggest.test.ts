@@ -73,13 +73,29 @@ describe('candidatesFor ranking', () => {
     expect(ids(s1, ctx)).toEqual(['B', 'A']);
   });
 
-  it('(4) no lessons today last', () => {
-    const ctx = mkCtx([teacher('A'), teacher('B')], [snap('B', [cell('b1', '09:50', '10:30', { classIds: ['c1a'], subjectId: 'x' })])], { counts: { B: 1 } });
+  it('(0) teachers without lessons today come last, even with a lower today count', () => {
+    const ctx = mkCtx([teacher('A'), teacher('B')], [snap('B', [cell('b1', '09:50', '10:30', { classIds: ['c1a'], subjectId: 'x' })])], { counts: { B: 4 } });
+    const c = candidatesFor(s1, [], ctx);
+    expect(c.map((x) => x.teacherId)).toEqual(['B', 'A']);
+    expect(c[1]).toMatchObject({ noLessonsToday: true, todayCount: 0, yearCount: 0 });
+  });
+
+  it('(0) a no-lessons teacher who teaches the class still ranks after one with lessons', () => {
+    const ctx = mkCtx([teacher('A'), teacher('B')], [
+      snap('A', [cell('a1', '07:45', '08:30', { day: 3 })]),
+      snap('B', [cell('b1', '09:50', '10:30', { classIds: ['c1a'], subjectId: 'x' })]),
+    ]);
+    const c = candidatesFor(s1, [], ctx);
+    expect(c.map((x) => x.teacherId)).toEqual(['B', 'A']);
+    expect(c[1]).toMatchObject({ teachesClass: true, noLessonsToday: true });
+  });
+
+  it('(0) reliefs alone do not count as lessons today', () => {
+    const ctx = mkCtx([teacher('A'), teacher('B')], [snap('B', [cell('b1', '09:50', '10:30', { classIds: ['c1a'], subjectId: 'x' }), cell('b2', '10:50', '11:30', { classIds: ['c1a'], subjectId: 'x' })])], { counts: { B: 1 } });
     const other = slot('o', 'abs2', '12:50', '13:30', { reliefTeacherId: 'A', classIds: ['c6b'], subjectId: 'y' });
     const c = candidatesFor(s1, [other], ctx);
     expect(c.map((x) => x.teacherId)).toEqual(['B', 'A']);
     expect(c[1]).toMatchObject({ noLessonsToday: true, todayCount: 1, yearCount: 1 });
-    expect(c[0]).toMatchObject({ noLessonsToday: false, todayCount: 1, yearCount: 1 });
   });
 
   it('(5) name, falling back to nameSi', () => {
@@ -111,6 +127,13 @@ describe('candidatesFor eligibility', () => {
     });
     expect(ids(s1, ctx)).toEqual(['A']);
     expect(ids(slot('e9', 'abs', '09:50', '10:30'), ctx)).toContain('L');
+  });
+
+  it('treats a teacher on leave without a snapshot as away all day', () => {
+    const ctx = mkCtx([teacher('N'), teacher('A')], [], { leaves: [absLeave, { teacherId: 'N', type: 'early', entryIds: [] }] });
+    expect(ids(s1, ctx)).toEqual(['A']);
+    expect(ids(slot('e9', 'abs', '09:50', '10:30'), ctx)).toEqual(['A']);
+    expect(validateRelief({ leaves: ctx.leaves, reliefs: [{ ...s1, reliefTeacherId: 'N' }] }, ctx)).toEqual([{ code: 'on-leave', entryId: 'e1', teacherId: 'N' }]);
   });
 
   it('excludes teachers busy at that time, by lesson or by relief', () => {
