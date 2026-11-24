@@ -24,6 +24,7 @@ export interface RenderWithSchoolOptions {
   path?: string;
   lang?: Lang;
   user?: Partial<User>;
+  signOut?: () => Promise<void>;
   renderOptions?: Omit<RenderOptions, 'wrapper'>;
 }
 
@@ -37,14 +38,15 @@ function Providers({ options, children }: { options: RenderWithSchoolOptions; ch
     claims: options.claims ?? { schools: { [options.ctx.school.id]: { r: 'a' as const } } },
     lang: options.lang ?? 'en',
     user: { uid: 'test-user', ...options.user } as User,
+    signOut: options.signOut ?? (async () => undefined),
   }));
-  const { ctx, entries, years, claims, lang, user } = fixed;
+  const { ctx, entries, years, claims, lang, user, signOut } = fixed;
   const [yearId, setYearId] = useState(options.yearId ?? years[0]?.id ?? '');
   const [i18n] = useState(() => (lang === 'en' ? testI18n : createI18n(lang)));
 
   const auth = useMemo<AuthState>(
-    () => ({ user, claims, loading: false, refreshClaims: async () => undefined, signOut: async () => undefined }),
-    [user, claims],
+    () => ({ user, claims, loading: false, refreshClaims: async () => undefined, signOut }),
+    [user, claims, signOut],
   );
   const school = useMemo<SchoolState>(() => ({ ...ctx, loading: false }), [ctx]);
   const year = useMemo<YearState>(() => ({ years, yearId, setYearId, entries, loading: false }), [years, yearId, entries]);

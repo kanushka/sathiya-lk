@@ -48,7 +48,8 @@ export function TeachersPage() {
   const slotUsage = (teacherId: string) => (yearId === latestYearId ? usageCount('teacher', teacherId, state, entries) : 0);
   const readOnly = useReadOnly();
   const toast = useToast();
-  const { user, claims, refreshClaims } = useAuth();
+  const { user, claims, refreshClaims, signOut } = useAuth();
+  const isSelf = (x: Teacher) => !!user && x.uid === user.uid;
   const now = Date.now();
   const liveLink = (x: Teacher) => !x.uid && !!x.inviteExpiresAt && x.inviteExpiresAt > now;
   const requests = useJoinRequests(school.id).data;
@@ -104,6 +105,7 @@ export function TeachersPage() {
     try {
       await api.unlinkTeacher(school.id, x.id);
       toast.show(t('page.unlinked', { name: teacherDisplayName(x, lang) }), 'success');
+      if (isSelf(x)) void signOut().catch(() => undefined);
       return null;
     } catch (err) {
       return accountActionError(err, t);
@@ -260,7 +262,7 @@ export function TeachersPage() {
         />
       )}
       {dialog?.kind === 'unlink' && (
-        <UnlinkModal name={teacherDisplayName(dialog.teacher, lang)} self={!!user && dialog.teacher.uid === user.uid} onConfirm={() => unlink(dialog.teacher)} onClose={() => setDialog(null)} />
+        <UnlinkModal name={teacherDisplayName(dialog.teacher, lang)} self={isSelf(dialog.teacher)} onConfirm={() => unlink(dialog.teacher)} onClose={() => setDialog(null)} />
       )}
       {dialog?.kind === 'delete' && (
         <DeleteSetupModal
@@ -269,6 +271,15 @@ export function TeachersPage() {
           id={dialog.teacher.id}
           name={teacherDisplayName(dialog.teacher, lang)}
           knownUsedIn={slotUsage(dialog.teacher.id) + classes.filter((c) => c.classTeacherId === dialog.teacher.id).length}
+          {...(isSelf(dialog.teacher) && {
+            body: (
+              <>
+                {t('deleteGuard.body.teacher')}
+                <span className="mt-3 block font-semibold text-danger">{t('unlink.selfBody')}</span>
+              </>
+            ),
+            onDeleted: () => void signOut().catch(() => undefined),
+          })}
           onClose={() => setDialog(null)}
         />
       )}

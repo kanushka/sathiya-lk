@@ -441,6 +441,55 @@ describe('teacher accounts', () => {
     expect(within(screen.getByRole('dialog')).getByText(/This is your own record\. You will be signed out/)).toBeInTheDocument();
   });
 
+  it('signs an admin out right after unlinking their own record', async () => {
+    vi.mocked(api.unlinkTeacher).mockResolvedValue(undefined);
+    const signOut = vi.fn(async () => undefined);
+    const self = { ...ctx, teachers: ctx.teachers.map((t) => (t.id === perera.id ? { ...t, uid: 'test-user' } : t)) };
+    const user = userEvent.setup();
+    renderWithSchool(<TeachersPage />, { ctx: self, entries, signOut, claims: { schools: { siripura: { r: 'a', t: perera.id } } } });
+    await user.click(within(rowOf('SCC024')).getByRole('button', { name: 'Unlink' }));
+    await user.click(within(screen.getByRole('dialog')).getByRole('button', { name: 'Unlink' }));
+    expect(api.unlinkTeacher).toHaveBeenCalledWith('siripura', perera.id);
+    await waitFor(() => expect(signOut).toHaveBeenCalledTimes(1));
+  });
+
+  it('keeps the admin signed in after unlinking someone else', async () => {
+    vi.mocked(api.unlinkTeacher).mockResolvedValue(undefined);
+    const signOut = vi.fn(async () => undefined);
+    const user = userEvent.setup();
+    renderWithSchool(<TeachersPage />, { ctx: linkedCtx, entries, signOut });
+    await user.click(within(rowOf('SCC024')).getByRole('button', { name: 'Unlink' }));
+    await user.click(within(screen.getByRole('dialog')).getByRole('button', { name: 'Unlink' }));
+    await waitFor(() => expect(api.unlinkTeacher).toHaveBeenCalled());
+    expect(signOut).not.toHaveBeenCalled();
+  });
+
+  it('warns an admin deleting their own record and signs them out afterwards', async () => {
+    vi.mocked(call).mockResolvedValue({ deleted: true });
+    const signOut = vi.fn(async () => undefined);
+    const self = { ...unused, teachers: unused.teachers.map((t) => (t.id === perera.id ? { ...t, uid: 'test-user' } : t)) };
+    const user = userEvent.setup();
+    renderWithSchool(<TeachersPage />, { ctx: self, entries: [], signOut, claims: { schools: { siripura: { r: 'a', t: perera.id } } } });
+    await user.click(within(rowOf('SCC024')).getByRole('button', { name: 'Delete' }));
+    const dialog = screen.getByRole('dialog');
+    expect(within(dialog).getByText(/This is your own record\. You will be signed out/)).toBeInTheDocument();
+    await user.click(within(dialog).getByRole('button', { name: 'Delete' }));
+    await waitFor(() => expect(signOut).toHaveBeenCalledTimes(1));
+  });
+
+  it('does not warn or sign out when deleting someone else', async () => {
+    vi.mocked(call).mockResolvedValue({ deleted: true });
+    const signOut = vi.fn(async () => undefined);
+    const user = userEvent.setup();
+    renderWithSchool(<TeachersPage />, { ctx: unused, entries: [], signOut });
+    await user.click(within(rowOf('SCC024')).getByRole('button', { name: 'Delete' }));
+    const dialog = screen.getByRole('dialog');
+    expect(within(dialog).queryByText(/signed out/)).not.toBeInTheDocument();
+    await user.click(within(dialog).getByRole('button', { name: 'Delete' }));
+    await waitFor(() => expect(call).toHaveBeenCalled());
+    expect(signOut).not.toHaveBeenCalled();
+  });
+
   it('does not warn about signing out when unlinking someone else', async () => {
     const user = userEvent.setup();
     renderLinked();
