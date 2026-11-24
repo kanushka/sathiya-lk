@@ -106,11 +106,7 @@ export const saveReliefDay = onCall(callOpts, async (req): Promise<SaveReliefDay
 
   const members = paths.members(sid);
   const candidates = new Set([...reliefs.flatMap((r) => (r.reliefTeacherId === null ? [] : [r.reliefTeacherId]))]);
-  try {
-    for (const r of ((await dayRef.get()).data() as ReliefDay | undefined)?.reliefs ?? []) if (r.reliefTeacherId !== null) candidates.add(r.reliefTeacherId);
-  } catch (e) {
-    logger.error('relief previous day lookup failed', e);
-  }
+  for (const r of ((await dayRef.get()).data() as ReliefDay | undefined)?.reliefs ?? []) if (r.reliefTeacherId !== null) candidates.add(r.reliefTeacherId);
   const hasEmail = new Set<string>();
   for (const id of candidates) {
     const t = teacherById.get(id);
