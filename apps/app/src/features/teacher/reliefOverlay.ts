@@ -38,7 +38,7 @@ export function overlayRelief(snap: TeacherSnapshot, day: ReliefDay | null, teac
   const relief = day.reliefs
     .filter((r) => r.reliefTeacherId === teacherId)
     .map((r): OverlayCell => {
-      const label = day.labels?.[r.entryId];
+      const label = day.labels?.[`${r.entryId}|${r.absentTeacherId}`];
       return {
         day: day.day,
         period: periodFor(r.start, r.end, r.period),

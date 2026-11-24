@@ -30,7 +30,7 @@ const relief = (over: Partial<Relief> = {}): Relief => ({
 });
 const doc = (over: Partial<ReliefDay> = {}): ReliefDay => ({
   date: '2026-11-25', day: 2, leaves: [], reliefs: [], names: { [T.bandara]: { en: 'Mr Bandara', si: 'බණ්ඩාර' }, [T.kumara]: { en: 'Mr Kumara' } },
-  labels: { 'e-x': { cls: '6A', sub: 'Maths', subSi: 'ගණිතය' } }, updatedAt: 1, updatedBy: 'u', ...over,
+  labels: { [`e-x|${T.bandara}`]: { cls: '6A', sub: 'Maths', subSi: 'ගණිතය' }, [`e-x|${T.kumara}`]: { cls: '9Z', sub: 'Art' } }, updatedAt: 1, updatedBy: 'u', ...over,
 });
 
 describe('overlayRelief', () => {

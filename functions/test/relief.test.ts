@@ -33,7 +33,7 @@ describe('saveReliefDay', () => {
     expect(doc).toMatchObject({ date: today.date, day: d, updatedAt: res.updatedAt, updatedBy: admin.uid });
     expect(doc.reliefs.map((r) => [r.entryId, r.reliefTeacherId, r.start])).toEqual([['e-a', T.kumara, '07:45'], ['e-b', null, '08:30']]);
     expect(Object.keys(doc.names).sort()).toEqual([T.bandara, T.kumara].sort());
-    expect(doc.labels).toEqual({ 'e-a': { cls: '6A', sub: 'Maths', subSi: expect.any(String) }, 'e-b': { cls: '6A', sub: 'Science', subSi: expect.any(String) } });
+    expect(doc.labels).toEqual({ [`e-a|${T.bandara}`]: { cls: '6A', sub: 'Maths', subSi: expect.any(String) }, [`e-b|${T.bandara}`]: { cls: '6A', sub: 'Science', subSi: expect.any(String) } });
     expect(await stats(sid)).toEqual({ [T.kumara]: 1 });
   });
 
@@ -110,6 +110,10 @@ describe('saveReliefDay', () => {
     await admin.call('saveReliefDay', req(sid, { leaves: both, reliefs }));
     const doc = (await adminDb.doc(paths.reliefDay(sid, YEAR, today.date)).get()).data() as ReliefDay;
     expect(doc.reliefs.map((r) => [r.absentTeacherId, r.reliefTeacherId]).sort()).toEqual([[T.bandara, T.kumara], [T.gunasekara, T.herath]].sort());
+    expect(doc.labels).toEqual({
+      [`e-g|${T.bandara}`]: { cls: '6A', sub: 'Maths', subSi: expect.any(String) },
+      [`e-g|${T.gunasekara}`]: { cls: '6A', sub: 'Science', subSi: expect.any(String) },
+    });
     await expectFnError(admin.call('saveReliefDay', req(sid, { leaves: both, reliefs: [...reliefs, pick('e-g', T.kumara)], expectedUpdatedAt: doc.updatedAt })), 'invalid-argument', 'invalid');
   });
 

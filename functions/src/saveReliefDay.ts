@@ -148,7 +148,7 @@ export const saveReliefDay = onCall(callOpts, async (req): Promise<SaveReliefDay
     for (const r of reliefs) {
       const subject = ctx.subjects.find((s) => s.id === r.subjectId);
       const subSi = subject?.nameSi?.trim();
-      labels[r.entryId] = {
+      labels[`${r.entryId}|${r.absentTeacherId}`] = {
         cls: r.classIds.map((id) => ctx.classes.find((c) => c.id === id)?.name ?? id).join('+'),
         sub: subject?.short || subject?.nameEn || '',
         ...(subSi ? { subSi } : {}),
