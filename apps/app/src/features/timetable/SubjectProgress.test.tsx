@@ -2,7 +2,7 @@
 // Copyright (C) 2026 Kanushka Gayan
 
 import type { SchoolContext } from '@sathiya/core';
-import { C, ctx, entries6B, entry, S, shortFridayTemplate, T, TPL } from '@sathiya/core/fixtures';
+import { C, ctx, entries6B, entry, mahasen, S, shortFridayTemplate, T, TPL } from '@sathiya/core/fixtures';
 import { screen, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { describe, expect, it, vi } from 'vitest';
@@ -86,5 +86,23 @@ describe('SubjectProgress', () => {
     const cls6C = shrunk.classes.find((c) => c.id === C.c6c)!;
     renderWithSchool(<SubjectProgress cls={cls6C} entries={[]} />, { ctx: shrunk });
     expect(screen.getByText('/ 40 placed')).toBeInTheDocument();
+  });
+
+  it('shows minute rows as placed/needed minutes', () => {
+    const mh = mahasen.ctx;
+    const cls = mh.classes[0]!;
+    const es = [entry('m1', 0, 1, [cls.id], [[mahasen.S.maths, 'mh-t-1a']]), entry('m2', 1, 3, [cls.id], [[mahasen.S.maths, 'mh-t-1a']])];
+    renderWithSchool(<SubjectProgress cls={cls} entries={es} />, { ctx: mh, entries: es });
+    expect(row('Mathematics')).toHaveTextContent('1h 30m/3h 10m');
+    expect(row('English')).toHaveTextContent('0/50 min');
+  });
+
+  it('totals an all-minutes class in minutes', () => {
+    const mh = mahasen.ctx;
+    const cls = mh.classes[0]!;
+    const es = [entry('m1', 0, 1, [cls.id], [[mahasen.S.maths, 'mh-t-1a']])];
+    renderWithSchool(<SubjectProgress cls={cls} entries={es} />, { ctx: mh, entries: es });
+    expect(screen.getByText('1h 50m')).toBeInTheDocument();
+    expect(screen.getByText('/ 17h 30m placed')).toBeInTheDocument();
   });
 });

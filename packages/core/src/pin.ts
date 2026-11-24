@@ -1,12 +1,13 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
 // Copyright (C) 2026 Kanushka Gayan
 
-import { busyDetail, teacherDayLoad, type BusyDetail } from './availability';
+import { busyDetail, isExemptPlacement, teacherDayLoad, type BusyDetail } from './availability';
 import { entryWindow, findConflicts } from './clash';
 import { DAYS, findClass, gradeOf, templateOf } from './lookup';
 import { effectivePlan } from './plan';
+import { isMinutes } from './staffing';
 import { classPlacement } from './progress';
-import { bestOverlapPeriod, periodsFor, windowOf } from './time';
+import { bestOverlapPeriod, periodsFor, slotMinutes, windowOf } from './time';
 import type { DayIndex, Entry, EntryDraft, SchoolContext } from './types';
 
 export interface PinSpec { classIds: string[]; lessons: Array<{ subjectId: string; teacherId: string }>; groupKey?: string }
@@ -17,8 +18,8 @@ export type PinCell =
   | { kind: 'busy'; busy: BusyDetail; blockers: BusyDetail[] }
   | { kind: 'free'; load: number; max: number; limit: boolean; teacherId: string; subjectThatDay: boolean };
 export interface PinSlot { day: DayIndex; period: number; cell: PinCell }
-export interface ClassRemaining { classId: string; placed: number; needed: number; left: number }
-export interface PinProgress { placed: number; needed: number; left: number; over: number; full: ClassRemaining[] }
+export interface ClassRemaining { classId: string; placed: number; needed: number; left: number; unit: 'periods' | 'minutes' }
+export interface PinProgress { placed: number; needed: number; left: number; over: number; full: ClassRemaining[]; unit: 'periods' | 'minutes' }
 export type PlanTarget = { groupKey: string } | { subjectId: string };
 export type TeacherPinCell = PinCell | { kind: 'none' };
 export interface TeacherPinSlot { day: DayIndex; row: number; period: number | null; cell: TeacherPinCell }
@@ -70,10 +71,11 @@ export function pinSlots(args: PinArgs): PinSlot[] {
   const specTeachers = teachers as NonNullable<(typeof teachers)[number]>[];
   const out: PinSlot[] = [];
   for (const day of DAYS) {
-    let tight = { teacherId: '', load: 0, max: 0 };
+    let tight = { teacherId: specTeachers[0]!.id, load: 0, max: Infinity };
     let tightGap = -Infinity;
     for (const t of specTeachers) {
-      const load = teacherDayLoad(t.id, day, entries);
+      if (isExemptPlacement(t.id, spec.classIds, ctx)) continue;
+      const load = teacherDayLoad(t.id, day, entries, ctx);
       if (load - t.maxPerDay > tightGap) {
         tightGap = load - t.maxPerDay;
         tight = { teacherId: t.id, load, max: t.maxPerDay };
@@ -106,39 +108,45 @@ export function pinSlots(args: PinArgs): PinSlot[] {
   return out;
 }
 
-export function suggestPins(args: PinArgs & { count: number; teacherId?: string }): Array<{ day: DayIndex; period: number }> {
+export function suggestPins(args: PinArgs & { count: number; teacherId?: string; minutes?: number }): Array<{ day: DayIndex; period: number }> {
   const { ctx, entries, spec, teacherId } = args;
   const baseId = spec.classIds[0];
+  const baseClass = baseId === undefined ? undefined : findClass(ctx, baseId);
   const rows =
     teacherId === undefined
       ? null
       : new Set(teacherPinSlots({ ctx, entries, spec, teacherId }).filter((s) => s.cell.kind === 'free').map((s) => `${s.day}-${s.period}`));
   const slots = pinSlots(args).filter((s) => s.cell.kind === 'free' && (!rows || rows.has(`${s.day}-${s.period}`)));
   const teachers = specTeacherIds(spec).map((id) => ctx.teachers.find((t) => t.id === id));
-  if (!baseId || teachers.some((t) => !t)) return [];
+  if (!baseId || !baseClass || teachers.some((t) => !t)) return [];
   const specTeachers = teachers as NonNullable<(typeof teachers)[number]>[];
+  const exempt = new Set(specTeachers.filter((t) => isExemptPlacement(t.id, spec.classIds, ctx)).map((t) => t.id));
   const load = new Map<DayIndex, Map<string, number>>();
   const subjectCount = new Map<DayIndex, number>();
   for (const day of DAYS) {
-    load.set(day, new Map(specTeachers.map((t) => [t.id, teacherDayLoad(t.id, day, entries)])));
+    load.set(day, new Map(specTeachers.map((t) => [t.id, teacherDayLoad(t.id, day, entries, ctx)])));
     subjectCount.set(day, entries.filter((e) => e.day === day && e.classIds.includes(baseId) && hasSubjectThatDay(e, spec)).length);
   }
-  const atLimit = (day: DayIndex) => specTeachers.some((t) => load.get(day)!.get(t.id)! >= t.maxPerDay);
+  const atLimit = (day: DayIndex) => specTeachers.some((t) => !exempt.has(t.id) && load.get(day)!.get(t.id)! >= t.maxPerDay);
   const picks: Array<{ day: DayIndex; period: number }> = [];
   const left = [...slots];
+  const template = templateOf(ctx, baseClass);
+  let budget = args.minutes ?? Infinity;
+  const cost = (s: PinSlot) => (args.minutes === undefined || !template ? 0 : slotMinutes(template, s.day, s.period));
   while (picks.length < args.count) {
     let best = -1;
     for (let i = 0; i < left.length; i++) {
       const s = left[i]!;
-      if (atLimit(s.day)) continue;
+      if (atLimit(s.day) || cost(s) > budget) continue;
       const b = left[best];
       if (!b || subjectCount.get(s.day)! < subjectCount.get(b.day)! || (subjectCount.get(s.day) === subjectCount.get(b.day) && (s.day < b.day || (s.day === b.day && s.period < b.period)))) best = i;
     }
     if (best < 0) break;
     const [s] = left.splice(best, 1);
+    budget -= cost(s!);
     picks.push({ day: s!.day, period: s!.period });
     const dayLoad = load.get(s!.day)!;
-    for (const t of specTeachers) dayLoad.set(t.id, dayLoad.get(t.id)! + 1);
+    for (const t of specTeachers) if (!exempt.has(t.id)) dayLoad.set(t.id, dayLoad.get(t.id)! + 1);
     subjectCount.set(s!.day, subjectCount.get(s!.day)! + 1);
   }
   return picks;
@@ -152,7 +160,7 @@ export function classRemaining(args: { ctx: SchoolContext; entries: Entry[]; cla
   );
   const placed = row?.placed ?? 0;
   const needed = row?.needed ?? 0;
-  return { classId, placed, needed, left: Math.max(0, needed - placed) };
+  return { classId, placed, needed, left: Math.max(0, needed - placed), unit: row?.unit ?? 'periods' };
 }
 
 function specTarget(spec: PinSpec): PlanTarget {
@@ -171,6 +179,7 @@ export function pinProgress(args: PinArgs): PinProgress {
     left: Math.min(base.left, ...joined.map((j) => j.left)),
     over: Math.max(0, base.placed - base.needed),
     full: joined.filter((j) => j.left === 0),
+    unit: base.unit,
   };
 }
 
@@ -242,5 +251,11 @@ export function groupSpecIsCurrent(args: { ctx: SchoolContext; classId: string; 
   if (item?.kind !== 'group') return false;
   const subjects = spec.lessons.map((l) => l.subjectId);
   if (subjects.length !== item.optionSubjectIds.length || !item.optionSubjectIds.every((s) => subjects.includes(s))) return false;
-  return spec.lessons.every((l) => ctx.teachers.some((t) => t.id === l.teacherId));
+  if (!spec.lessons.every((l) => ctx.teachers.some((t) => t.id === l.teacherId))) return false;
+  return spec.classIds.slice(1).every((id) => {
+    const c = findClass(ctx, id);
+    const g = c && gradeOf(ctx, c);
+    const mate = c && g ? effectivePlan(c, g).find((p) => p.kind === 'group' && p.key === spec.groupKey) : undefined;
+    return mate !== undefined && isMinutes(mate) === isMinutes(item);
+  });
 }

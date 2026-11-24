@@ -32,7 +32,7 @@ import { Modal } from '../../ui/Modal';
 import { GroupTeachersStep } from './GroupTeachersStep';
 import { placeThenPin } from './placeThenPin';
 import { limitWarning, planItemColor, teacherReason, teachesAtAll } from './labels';
-import { initials, usePickItems, type GroupItem, type PickItem } from './pickerData';
+import { initials, pickNeed, usePickItems, type GroupItem, type PickItem } from './pickerData';
 import { PHONE_QUERY, useMediaQuery } from '../../ui/PhoneNotice';
 import { focusStep } from './focusStep';
 
@@ -258,7 +258,7 @@ function AssignPickerBody({ classId, slot, subjectId: initialSubject, groupKey, 
     if (top && !next.some((c) => c.teacher.id === selected)) setPicked(top.teacher.id);
   }
 
-  const need = (p: PickItem) => (p.placed < p.needed ? t('picker.needs', { count: p.needed - p.placed }) : t('picker.done', { placed: p.placed, needed: p.needed }));
+  const need = (p: PickItem) => pickNeed(t, p, lang);
   const preferredName = (p: PickItem) => {
     if (p.item.kind === 'group') return `${t('assign.groupTag')} · ${t('assign.optionCount', { count: p.item.optionSubjectIds.length })}`;
     const id = preferredTeacherFor({ entries, classId, subjectId: p.item.subjectId });

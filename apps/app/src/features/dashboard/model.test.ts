@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
 // Copyright (C) 2026 Kanushka Gayan
-import { classPlacement, type SchoolContext } from '@sathiya/core';
-import { C, ctx, entries, entry, S, shortFridayTemplate, T, TPL } from '@sathiya/core/fixtures';
+import { classPlacement, formatSummary, type SchoolContext } from '@sathiya/core';
+import { C, ctx, entries, entry, mahasen, S, shortFridayTemplate, T, TPL } from '@sathiya/core/fixtures';
 import { describe, expect, it } from 'vitest';
 import { attentionItems, classChips, dashboardStats, publishProblems } from './model';
 
@@ -104,5 +104,22 @@ describe('dashboard model', () => {
     expect(publishProblems(ctx, entries)).toEqual({ incomplete: 5, clashes: 0, overLimit: 0, overTarget: 0, orphaned: 0, groupNoTeacher: 0, total: 5 });
     const over = Array.from({ length: 8 }, (_, i) => entry(`o${i}`, 0, i + 1, [C.c6a], [[S.sinhala, T.kumara]]));
     expect(publishProblems(shrunk, [...entries, ...over])).toEqual({ incomplete: 5, clashes: 2, overLimit: 1, overTarget: 1, orphaned: 1, groupNoTeacher: 0, total: 10 });
+  });
+
+  it('summarises an all-minutes class in minutes and a mixed class by met rows', () => {
+    const cls = mahasen.ctx.classes[0]!;
+    const es = [entry('m1', 0, 1, [cls.id], [[mahasen.S.maths, 'mh-t-1a']])];
+    const chip = chipOf(mahasen.ctx, es, '1A');
+    expect(formatSummary(chip.summary, 'en')).toBe('1h 50m/17h 30m');
+    const mixedGrade = { ...mahasen.ctx.grades[0]!, plan: [{ kind: 'subject' as const, subjectId: mahasen.S.maths, perWeek: 60, unit: 'minutes' as const }, { kind: 'subject' as const, subjectId: mahasen.S.english, perWeek: 2 }] };
+    const mixed = { ...mahasen.ctx, grades: [mixedGrade] };
+    expect(formatSummary(chipOf(mixed, es, '1A').summary, 'en')).toBe('1/2');
+  });
+
+  it('reports over-target amounts in minutes for time rows', () => {
+    const cls = mahasen.ctx.classes[0]!;
+    const es = [entry('m1', 0, 1, [cls.id], [[mahasen.S.coCurricular, 'mh-t-1a']])];
+    const item = attentionItems(mahasen.ctx, es, 'en').find((i) => i.kind === 'over-target')!;
+    expect(item.params).toMatchObject({ placed: '1h', needed: '30 min', extra: '30 min', context: 'minutes' });
   });
 });

@@ -1,13 +1,18 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
 // Copyright (C) 2026 Kanushka Gayan
 
-import type { Bilingual, Lang, Teacher, TeacherTitle } from './types';
+import type { Bilingual, Lang, Teacher, TeacherTitle, TemplateRow } from './types';
 
 const nameIn = (x: Bilingual, lang: Lang): string => ((lang === 'si' ? x.nameSi : x.nameEn) ?? '').trim();
 const other = (lang: Lang): Lang => (lang === 'si' ? 'en' : 'si');
 
 export function pickName(x: Bilingual, lang: Lang): string {
   return nameIn(x, lang) || nameIn(x, other(lang));
+}
+
+export function activityName(row: TemplateRow, lang: Lang): string {
+  if (row.type !== 'activity') return '';
+  return pickName({ nameEn: row.nameEn ?? '', ...(row.nameSi === undefined ? {} : { nameSi: row.nameSi }) }, lang);
 }
 
 export function hasName(x: Bilingual): boolean {

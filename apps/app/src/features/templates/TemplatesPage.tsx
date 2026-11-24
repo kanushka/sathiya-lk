@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
 // Copyright (C) 2026 Kanushka Gayan
-import { orphanedEntries, usageCount, type PeriodTemplate } from '@sathiya/core';
-import { useState } from 'react';
+import { orphanedEntries, usageCount, type PeriodTemplate, type TemplatePatch } from '@sathiya/core';
+import { useEffect, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useSchool, useYear } from '../../app/SchoolProvider';
 import { Badge } from '../../ui/Badge';
@@ -14,7 +14,8 @@ import { PageHeader } from '../../ui/PageHeader';
 import { useToast } from '../../ui/Toast';
 import { DeleteSetupModal } from '../teachers/DeleteSetupModal';
 import * as api from './api';
-import { draftToTemplate, newlyOrphaned, periodCount, validateTemplate, type TemplateDraft, type ValidationError } from './model';
+import { toApiError } from '../../lib/callable';
+import { draftToTemplate, periodCount, validateTemplate, type TemplateDraft, type ValidationError } from './model';
 import { NewTemplateModal } from './NewTemplateModal';
 import { ShrinkWarningModal } from './ShrinkWarningModal';
 import { TemplateEditor } from './TemplateEditor';
@@ -120,35 +121,73 @@ function TemplateDetail({ template, readOnly, dialog, setDialog }: DetailProps) 
   const [draft, setDraft] = useState<TemplateDraft>(() => toDraft(template));
   const [errors, setErrors] = useState<ValidationError[]>([]);
   const [pending, setPending] = useState<'save' | 'default' | null>(null);
+  const [inUse, setInUse] = useState(0);
+  const mounted = useRef(true);
+  useEffect(() => {
+    mounted.current = true;
+    return () => {
+      mounted.current = false;
+    };
+  }, []);
   const sid = school.school.id;
   const classes = usageCount('template', template.id, school, entries);
+
+  function showSaveError(err: unknown) {
+    const e = toApiError(err);
+    const count = (e.details as { count?: unknown } | undefined)?.count;
+    if (e.code === 'template-in-use' && typeof count === 'number') setInUse(count);
+    else toast.show(t(e.code === 'template-too-many-moves' ? 'page.tooManyMoves' : 'page.saveFailed'), 'error');
+  }
 
   async function guard(kind: 'save' | 'default', fn: () => Promise<void>, ok?: string) {
     setPending(kind);
     try {
       await fn();
       if (ok) toast.show(ok, 'success');
-    } catch {
-      toast.show(t('page.saveFailed'), 'error');
+    } catch (err) {
+      showSaveError(err);
     } finally {
       setPending(null);
     }
   }
 
-  const persist = () =>
-    guard(
-      'save',
-      () => api.saveTemplate(sid, template.id, { name: draft.name, mode: draft.mode, rows: draftToTemplate(template, draft).rows, ...(draft.mode === 'perDay' && draft.days ? { days: draft.days } : {}) }),
-      t('page.saved'),
-    );
+  const latest = useRef(draft);
+  latest.current = draft;
+  const checked = useRef<TemplatePatch | null>(null);
+  const patchOf = (d: TemplateDraft): TemplatePatch => ({ name: d.name, mode: d.mode, rows: draftToTemplate(template, d).rows, ...(d.mode === 'perDay' && d.days ? { days: d.days } : {}) });
+  const persist = (p: TemplatePatch) => guard('save', () => api.saveTemplateWithRemap(sid, template.id, p).then(() => undefined), t('page.saved'));
+
+  async function check(): Promise<void> {
+    setPending('save');
+    try {
+      const p = patchOf(latest.current);
+      const res = await api.saveTemplateWithRemap(sid, template.id, p, true);
+      if (!mounted.current) return;
+      if (JSON.stringify(patchOf(latest.current)) !== JSON.stringify(p)) {
+        return await check();
+      }
+      if (res.blocked > 0) setInUse(res.blocked);
+      else if (res.orphaned > 0) {
+        checked.current = p;
+        setDialog({ kind: 'shrink', count: res.orphaned });
+      } else {
+        await api.saveTemplateWithRemap(sid, template.id, p);
+        toast.show(t('page.saved'), 'success');
+      }
+    } catch (err) {
+      showSaveError(err);
+    } finally {
+      setPending(null);
+    }
+  }
 
   function save() {
     const found = validateTemplate(draft);
     setErrors(found);
+    setInUse(0);
     if (found.length > 0) return;
-    const count = newlyOrphaned(entries, school, draftToTemplate(template, draft));
-    if (count > 0) setDialog({ kind: 'shrink', count });
-    else void persist();
+    if (classes > 0) void check();
+    else void persist(patchOf(draft));
   }
 
   const nameError = errors.some((e) => e.code === 'name');
@@ -194,6 +233,12 @@ function TemplateDetail({ template, readOnly, dialog, setDialog }: DetailProps) 
 
       <TemplateEditor draft={draft} errors={errors} readOnly={readOnly} onChange={setDraft} />
 
+      {inUse > 0 && (
+        <Alert tone="danger" role="alert" className="mt-4">
+          {t('page.inUse', { count: inUse })}
+        </Alert>
+      )}
+
       {errors.length > 0 && (
         <ul role="alert" className="mb-0 mt-4 list-none p-0 text-sm font-medium text-danger">
           {errors.map((e, i) => (
@@ -216,7 +261,9 @@ function TemplateDetail({ template, readOnly, dialog, setDialog }: DetailProps) 
           onClose={() => setDialog(null)}
           onConfirm={() => {
             setDialog(null);
-            void persist();
+            const p = checked.current;
+            if (p && JSON.stringify(patchOf(latest.current)) === JSON.stringify(p)) void persist(p);
+            else void check();
           }}
         />
       )}

@@ -13,7 +13,7 @@ const t = testI18n.getFixedT('en', 'timetable');
 const tc = testI18n.getFixedT('en', 'common');
 const names = { subject: 'Science', teacher: 'Mrs. S. Gunasekara', classes: '6B', base: '6B' };
 
-function overlay(cell: TeacherPinCell, extra: { suggested?: boolean; left?: number; full?: boolean; classNote?: string; teacherView?: boolean; classes?: string } = {}) {
+function overlay(cell: TeacherPinCell, extra: { suggested?: boolean; left?: number; full?: boolean; classNote?: string; teacherView?: boolean; classes?: string; minutes?: { left: number; slot: number } } = {}) {
   return pinOverlayCell({
     cell,
     day: 2,
@@ -24,8 +24,9 @@ function overlay(cell: TeacherPinCell, extra: { suggested?: boolean; left?: numb
     t,
     tc,
     names: extra.classes ? { ...names, classes: extra.classes } : names,
-    progress: { placed: 3, needed: 5, left: extra.left ?? 2, over: 0, full: extra.full ? [{ classId: C.c6a, placed: 5, needed: 5, left: 0 }] : [] },
+    progress: { placed: 3, needed: 5, left: extra.minutes?.left ?? extra.left ?? 2, over: 0, full: extra.full ? [{ classId: C.c6a, placed: 5, needed: 5, left: 0, unit: 'periods' }] : [], unit: extra.minutes ? 'minutes' : 'periods' },
     suggested: extra.suggested ?? false,
+    ...(extra.minutes ? { slotMinutes: extra.minutes.slot } : {}),
     ...(extra.classNote ? { classNote: extra.classNote } : {}),
     ...(extra.teacherView ? { teacherView: true } : {}),
     entryView: (e) => classCellView(e, ctx, 'en', t),
@@ -41,6 +42,13 @@ describe('pinOverlayCell', () => {
     const o = overlay(free, { left: 0 });
     expect(o.label).toContain('over plan');
     expect(o.disabled).toBeFalsy();
+  });
+
+  it('disables a free cell longer than the minutes still needed', () => {
+    const o = overlay(free, { minutes: { left: 30, slot: 60 } });
+    expect(o.label).toContain('longer than the time still needed');
+    expect(o.disabled).toBe(true);
+    expect(overlay(free, { minutes: { left: 60, slot: 60 } }).disabled).toBeFalsy();
   });
 
   it('disables a free cell when a joined class has its target', () => {
