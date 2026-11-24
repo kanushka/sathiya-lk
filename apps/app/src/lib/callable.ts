@@ -5,7 +5,7 @@ import type { ApiErrorCode, CallableName, CallableTypes } from '@sathiya/core';
 import { httpsCallable, type HttpsCallableOptions } from 'firebase/functions';
 import { functions } from './firebase';
 
-const apiCodes: readonly ApiErrorCode[] = ['clash', 'in-use', 'not-allowed', 'invalid', 'census-taken', 'email-unverified', 'already-has-school', 'rate-limited', 'school-disabled'];
+const apiCodes: readonly ApiErrorCode[] = ['clash', 'in-use', 'not-allowed', 'invalid', 'census-taken', 'email-unverified', 'already-has-school', 'rate-limited', 'school-disabled', 'template-in-use'];
 
 export class ApiError extends Error {
   code: ApiErrorCode;

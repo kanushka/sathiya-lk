@@ -6,6 +6,8 @@
     "emptyBody": "Create a template to define the school's periods.",
     "orphans": "{{n}} timetable entries no longer fit a period. Review them under Needs attention.",
     "saved": "Template saved",
+    "inUse_one": "{{count}} timetable entry sits in a period that would stop being a period. Move it first.",
+    "inUse_other": "{{count}} timetable entries sit in periods that would stop being periods. Move them first.",
     "saveFailed": "Could not save. Try again."
   },
   "list": {
@@ -34,6 +36,15 @@
     "minutes": "{{n}} min",
     "remove": "Remove row {{n}}",
     "addPeriod": "+ Period",
+    "rowType": "Type, row {{n}}",
+    "type": { "period": "Period", "interval": "Interval", "activity": "Activity" },
+    "addActivity": "+ Activity",
+    "activityNameEn": "Activity name in English, row {{n}}",
+    "activityNameSi": "Activity name in Sinhala, row {{n}}",
+    "activityNameEnPlaceholder": "Name in English, e.g. Assembly",
+    "activityNameSiPlaceholder": "Name in Sinhala",
+    "activitySubject": "Subject, row {{n}}",
+    "noSubject": "No subject",
     "addInterval": "+ Interval",
     "save": "Save template",
     "setDefault": "Set as default",
@@ -44,6 +55,7 @@
     "empty": "Row {{row}}: enter a valid time.",
     "noPeriod": "Add at least one period.",
     "order": "Row {{row}}: the start must be before the end.",
+    "activityName": "Row {{row}}: name the activity in English or Sinhala.",
     "overlap": "Row {{row}} overlaps the previous row. Rows must run in time order."
   },
   "shrink": {

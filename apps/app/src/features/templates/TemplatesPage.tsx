@@ -14,7 +14,8 @@ import { PageHeader } from '../../ui/PageHeader';
 import { useToast } from '../../ui/Toast';
 import { DeleteSetupModal } from '../teachers/DeleteSetupModal';
 import * as api from './api';
-import { draftToTemplate, newlyOrphaned, periodCount, validateTemplate, type TemplateDraft, type ValidationError } from './model';
+import { toApiError } from '../../lib/callable';
+import { draftToTemplate, newlyOrphaned, periodCount, remapFor, validateTemplate, type TemplateDraft, type ValidationError } from './model';
 import { NewTemplateModal } from './NewTemplateModal';
 import { ShrinkWarningModal } from './ShrinkWarningModal';
 import { TemplateEditor } from './TemplateEditor';
@@ -120,6 +121,7 @@ function TemplateDetail({ template, readOnly, dialog, setDialog }: DetailProps) 
   const [draft, setDraft] = useState<TemplateDraft>(() => toDraft(template));
   const [errors, setErrors] = useState<ValidationError[]>([]);
   const [pending, setPending] = useState<'save' | 'default' | null>(null);
+  const [inUse, setInUse] = useState(0);
   const sid = school.school.id;
   const classes = usageCount('template', template.id, school, entries);
 
@@ -128,25 +130,33 @@ function TemplateDetail({ template, readOnly, dialog, setDialog }: DetailProps) 
     try {
       await fn();
       if (ok) toast.show(ok, 'success');
-    } catch {
-      toast.show(t('page.saveFailed'), 'error');
+    } catch (err) {
+      const e = toApiError(err);
+      const count = (e.details as { count?: unknown } | undefined)?.count;
+      if (e.code === 'template-in-use' && typeof count === 'number') setInUse(count);
+      else toast.show(t('page.saveFailed'), 'error');
     } finally {
       setPending(null);
     }
   }
 
-  const persist = () =>
-    guard(
-      'save',
-      () => api.saveTemplate(sid, template.id, { name: draft.name, mode: draft.mode, rows: draftToTemplate(template, draft).rows, ...(draft.mode === 'perDay' && draft.days ? { days: draft.days } : {}) }),
-      t('page.saved'),
-    );
+  const patch = () => ({ name: draft.name, mode: draft.mode, rows: draftToTemplate(template, draft).rows, ...(draft.mode === 'perDay' && draft.days ? { days: draft.days } : {}) });
+  const persist = (remap = false) =>
+    guard('save', async () => {
+      if (remap) await api.saveTemplateWithRemap(sid, template.id, patch());
+      else await api.saveTemplate(sid, template.id, patch());
+    }, t('page.saved'));
 
   function save() {
     const found = validateTemplate(draft);
     setErrors(found);
+    setInUse(0);
     if (found.length > 0) return;
-    const count = newlyOrphaned(entries, school, draftToTemplate(template, draft));
+    const next = draftToTemplate(template, draft);
+    const { moves, blocked } = remapFor(entries, school, template, next);
+    if (blocked.length > 0) return setInUse(blocked.length);
+    if (moves.length > 0) return void persist(true);
+    const count = newlyOrphaned(entries, school, next);
     if (count > 0) setDialog({ kind: 'shrink', count });
     else void persist();
   }
@@ -193,6 +203,12 @@ function TemplateDetail({ template, readOnly, dialog, setDialog }: DetailProps) 
       </div>
 
       <TemplateEditor draft={draft} errors={errors} readOnly={readOnly} onChange={setDraft} />
+
+      {inUse > 0 && (
+        <Alert tone="danger" role="alert" className="mt-4">
+          {t('page.inUse', { count: inUse })}
+        </Alert>
+      )}
 
       {errors.length > 0 && (
         <ul role="alert" className="mb-0 mt-4 list-none p-0 text-sm font-medium text-danger">

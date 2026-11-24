@@ -4,7 +4,9 @@ import { ctx, entries, TPL } from '@sathiya/core/fixtures';
 import { fireEvent, screen, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { pickOption } from '../../test/pickOption';
 import { renderWithSchool } from '../../test/renderWithSchool';
+import { ApiError } from '../../lib/callable';
 import * as api from './api';
 import { TemplatesPage } from './TemplatesPage';
 
@@ -57,17 +59,50 @@ describe('templates page', () => {
     expect(patch.days![4]).toEqual(patch.rows);
   });
 
-  it('shrink warning shows orphan count and needs confirmation', async () => {
+  it('refuses to save when a used period would be removed', async () => {
     const user = setup();
     await user.click(screen.getByRole('button', { name: /Short Friday/ }));
     await user.click(screen.getByRole('tab', { name: 'Fri' }));
     await user.click(screen.getByRole('button', { name: 'Remove row 8' }));
     await user.click(screen.getByRole('button', { name: 'Save template' }));
-    const dialog = screen.getByRole('dialog');
-    expect(within(dialog).getByText(/1 timetable entry will be orphaned/i)).toBeInTheDocument();
+    expect(screen.getByRole('alert')).toHaveTextContent(/1 timetable entry sits in a period/i);
     expect(api.saveTemplate).not.toHaveBeenCalled();
-    await user.click(within(dialog).getByRole('button', { name: 'Save anyway' }));
+    expect(api.saveTemplateWithRemap).not.toHaveBeenCalled();
+  });
+
+  it('saves through the remap callable when periods shift', async () => {
+    const user = setup();
+    await user.click(screen.getByRole('button', { name: /Primary/ }));
+    await user.click(screen.getByRole('button', { name: 'Save template' }));
     expect(api.saveTemplate).toHaveBeenCalledTimes(1);
+    vi.mocked(api.saveTemplate).mockClear();
+    await user.click(screen.getByRole('button', { name: /School default/ }));
+    await pickOption(user, screen.getByRole('combobox', { name: /^Type, row 5/ }), 'Period');
+    await user.click(screen.getByRole('button', { name: 'Save template' }));
+    expect(api.saveTemplateWithRemap).toHaveBeenCalledWith(ctx.school.id, TPL.default, expect.objectContaining({ mode: 'same' }));
+    expect(api.saveTemplate).not.toHaveBeenCalled();
+  });
+
+  it('adds a named activity row and saves it directly when no entry shifts', async () => {
+    const user = setup();
+    await user.click(screen.getByRole('button', { name: /Primary/ }));
+    await user.click(screen.getByRole('button', { name: '+ Activity' }));
+    await user.click(screen.getByRole('button', { name: 'Save template' }));
+    expect(screen.getByRole('alert')).toHaveTextContent(/name the activity/i);
+    expect(api.saveTemplate).not.toHaveBeenCalled();
+    await user.type(screen.getByLabelText('Activity name in English, row 8'), 'Assembly');
+    await user.click(screen.getByRole('button', { name: 'Save template' }));
+    const [, id, patch] = vi.mocked(api.saveTemplate).mock.calls[0]!;
+    expect(id).toBe(TPL.primary);
+    expect(patch.rows.at(-1)).toMatchObject({ type: 'activity', nameEn: 'Assembly' });
+  });
+
+  it('shows the in-use message when the server refuses', async () => {
+    const user = setup();
+    vi.mocked(api.saveTemplateWithRemap).mockRejectedValue(new ApiError('template-in-use', 'x', { count: 3 }));
+    await pickOption(user, screen.getByRole('combobox', { name: /^Type, row 5/ }), 'Period');
+    await user.click(screen.getByRole('button', { name: 'Save template' }));
+    expect(await screen.findByRole('alert')).toHaveTextContent(/3 timetable entries sit in periods/i);
   });
 
   it('sets a non-default template as default', async () => {
@@ -117,7 +152,7 @@ describe('templates page', () => {
   it('read-only hides every write control', () => {
     flags.readOnly = true;
     setup();
-    for (const name of ['Save template', '+ New template', 'Set as default', '+ Period', '+ Interval', 'Delete template']) {
+    for (const name of ['Save template', '+ New template', 'Set as default', '+ Period', '+ Interval', '+ Activity', 'Delete template']) {
       expect(screen.queryByRole('button', { name })).not.toBeInTheDocument();
     }
     expect(screen.getByLabelText('Start, row 1')).toBeDisabled();

@@ -1,13 +1,16 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
 // Copyright (C) 2026 Kanushka Gayan
 import type { DayIndex, TemplateRow } from '@sathiya/core';
-import { toMinutes } from '@sathiya/core';
+import { pickName, toMinutes } from '@sathiya/core';
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
+import { useLang } from '../../app/LangProvider';
+import { useSchool } from '../../app/SchoolProvider';
 import { Button } from '../../ui/Button';
 import { cx } from '../../ui/cx';
 import { inputBareCompactClass } from '../../ui/Field';
 import { IconButton } from '../../ui/IconButton';
+import { Select } from '../../ui/Select';
 import { SegmentedControl } from '../../ui/SegmentedControl';
 import { Tabs } from '../../ui/Tabs';
 import { appendRow, DAY_INDEXES, toPerDay, type TemplateDraft, type ValidationError } from './model';
@@ -19,11 +22,16 @@ export interface TemplateEditorProps {
   onChange: (draft: TemplateDraft) => void;
 }
 
+const NO_SUBJECT = 'none';
+const ROW_TYPES: TemplateRow['type'][] = ['period', 'interval', 'activity'];
+const nameClass = `${inputBareCompactClass} h-10 min-w-[160px] flex-1`;
 const timeClass = `${inputBareCompactClass} h-10 w-24 text-center tabular-nums`;
 
 export function TemplateEditor({ draft, errors, readOnly, onChange }: TemplateEditorProps) {
   const { t } = useTranslation('templates');
   const { t: tc } = useTranslation('common');
+  const { lang } = useLang();
+  const { subjects } = useSchool();
   const [day, setDay] = useState<DayIndex>(0);
   const perDay = draft.mode === 'perDay' && draft.days !== undefined;
   const rows = perDay ? draft.days![day] : draft.rows;
@@ -38,7 +46,20 @@ export function TemplateEditor({ draft, errors, readOnly, onChange }: TemplateEd
     setDay(0);
   }
 
-  const patchRow = (i: number, patch: Partial<TemplateRow>) => setRows(rows.map((r, j) => (j === i ? { ...r, ...patch } : r)));
+  const patchRow = (i: number, patch: Partial<TemplateRow>) =>
+    setRows(
+      rows.map((r, j) => {
+        if (j !== i) return r;
+        const next = { ...r, ...patch };
+        if (next.type !== 'activity') {
+          delete next.nameEn;
+          delete next.nameSi;
+          delete next.subjectId;
+        }
+        if (next.subjectId === undefined) delete next.subjectId;
+        return next;
+      }),
+    );
   const rowErrors = (i: number) => errors.some((e) => e.row === i && (e.day === null || e.day === day));
 
   let periodNo = 0;
@@ -70,13 +91,25 @@ export function TemplateEditor({ draft, errors, readOnly, onChange }: TemplateEd
         {rows.map((r, i) => {
           if (r.type === 'period') periodNo += 1;
           const n = i + 1;
+          const typeLabel = (v: TemplateRow['type']) => t(`editor.type.${v}`);
           return (
             <div
               key={i}
               data-testid="template-row"
-              className={cx('flex items-center gap-3 rounded-lg px-3 py-2', r.type !== 'period' ? 'bg-warning-soft' : 'bg-surface', rowErrors(i) && 'ring-2 ring-danger')}
+              className={cx('flex flex-wrap items-center gap-x-3 gap-y-2 rounded-lg px-3 py-2', r.type !== 'period' ? 'bg-warning-soft' : 'bg-surface', rowErrors(i) && 'ring-2 ring-danger')}
             >
-              <strong className="w-[110px] text-sm">{r.type === 'period' ? tc('periods.period') + ' ' + periodNo : tc('periods.interval')}</strong>
+              <div className="flex w-[150px] items-center gap-2">
+                <Select
+                  size="sm"
+                  className="w-[110px]"
+                  aria-label={t('editor.rowType', { n })}
+                  disabled={readOnly}
+                  value={r.type}
+                  options={ROW_TYPES.map((v) => ({ value: v, label: typeLabel(v) }))}
+                  onChange={(type) => patchRow(i, { type })}
+                />
+                {r.type === 'period' && <strong className="text-sm tabular-nums">{tc('periods.periodN', { n: periodNo })}</strong>}
+              </div>
               <input
                 type="time"
                 className={timeClass}
@@ -103,6 +136,39 @@ export function TemplateEditor({ draft, errors, readOnly, onChange }: TemplateEd
                   onClick={() => setRows(rows.filter((_, j) => j !== i))}
                 />
               )}
+              {r.type === 'activity' && (
+                <div className="flex w-full flex-wrap items-center gap-2">
+                  <input
+                    className={nameClass}
+                    aria-label={t('editor.activityNameEn', { n })}
+                    placeholder={t('editor.activityNameEnPlaceholder')}
+                    aria-invalid={errors.some((e) => e.code === 'activityName' && e.row === i && (e.day === null || e.day === day)) || undefined}
+                    value={r.nameEn ?? ''}
+                    disabled={readOnly}
+                    onChange={(e) => patchRow(i, { nameEn: e.target.value })}
+                  />
+                  <input
+                    className={nameClass}
+                    aria-label={t('editor.activityNameSi', { n })}
+                    placeholder={t('editor.activityNameSiPlaceholder')}
+                    value={r.nameSi ?? ''}
+                    disabled={readOnly}
+                    onChange={(e) => patchRow(i, { nameSi: e.target.value })}
+                  />
+                  <Select
+                    size="sm"
+                    className="w-[200px]"
+                    aria-label={t('editor.activitySubject', { n })}
+                    disabled={readOnly}
+                    value={r.subjectId ?? NO_SUBJECT}
+                    options={[
+                      { value: NO_SUBJECT, label: t('editor.noSubject') },
+                      ...subjects.map((s) => ({ value: s.id, label: pickName(s, lang) })),
+                    ]}
+                    onChange={(v) => patchRow(i, { subjectId: v === NO_SUBJECT ? undefined : v })}
+                  />
+                </div>
+              )}
             </div>
           );
         })}
@@ -115,6 +181,9 @@ export function TemplateEditor({ draft, errors, readOnly, onChange }: TemplateEd
           </Button>
           <Button variant="ghost" size="sm" onClick={() => setRows(appendRow(rows, 'interval'))}>
             {t('editor.addInterval')}
+          </Button>
+          <Button variant="ghost" size="sm" onClick={() => setRows(appendRow(rows, 'activity'))}>
+            {t('editor.addActivity')}
           </Button>
         </div>
       )}
