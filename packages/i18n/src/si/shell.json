@@ -1,6 +1,8 @@
 {
   "nav": {
     "menu": "මෙනුව",
+    "openMenu": "මෙනුව විවෘත කරන්න",
+    "closeMenu": "මෙනුව වසන්න",
     "dashboard": "පාලක පුවරුව",
     "groups": {
       "timetable": "කාලසටහන",

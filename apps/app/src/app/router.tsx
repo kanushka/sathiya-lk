@@ -109,7 +109,6 @@ export function buildRoutes(featureRoutes: RouteObject[]): RouteObject[] {
     {
       element: (
         <RequireRole role="admin">
-          <PhoneNotice />
           <AdminLayout />
         </RequireRole>
       ),

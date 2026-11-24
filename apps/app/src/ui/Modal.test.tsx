@@ -98,6 +98,20 @@ describe('Modal', () => {
     expect(screen.getByRole('dialog')).toContainElement(document.activeElement as HTMLElement);
   });
 
+  it('full-screen variant fills the viewport without a centred card', () => {
+    renderWithI18n(
+      <Modal open fullScreen title="Siripura" subtitle="Admin" closeLabel="Close menu" onClose={() => undefined}>
+        <a href="/x">Link</a>
+      </Modal>,
+    );
+    const dialog = screen.getByRole('dialog', { name: 'Siripura' });
+    expect(dialog).toHaveClass('h-full');
+    expect(dialog).not.toHaveClass('rounded-[18px]');
+    expect(dialog).not.toHaveStyle({ maxWidth: '560px' });
+    expect(screen.getByTestId('modal-backdrop')).toHaveClass('bg-white');
+    expect(screen.getByRole('button', { name: 'Close menu' })).toBeInTheDocument();
+  });
+
   it('renders nothing when closed', () => {
     renderWithI18n(
       <Modal open={false} title="Hidden" onClose={() => {}}>
