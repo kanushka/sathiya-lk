@@ -84,7 +84,7 @@ export const saveReliefDay = onCall(callOpts, async (req): Promise<SaveReliefDay
   const today = colomboToday(new Date());
   if (date !== today.date || today.day === null) invalid("Only today's relief can be edited");
   const day = today.day!;
-  const leaves = parseLeaves(data.leaves);
+  const asked = parseLeaves(data.leaves);
   const picks = parsePicks(data.reliefs);
   const expectedUpdatedAt = data.expectedUpdatedAt === null ? null : typeof data.expectedUpdatedAt === 'number' && Number.isFinite(data.expectedUpdatedAt) ? data.expectedUpdatedAt : invalid('expectedUpdatedAt is not valid');
 
@@ -95,6 +95,11 @@ export const saveReliefDay = onCall(callOpts, async (req): Promise<SaveReliefDay
   if ([...snaps.values()].some((s) => s.cells.some((c) => c.entryId === undefined))) {
     fail('failed-precondition', 'republish', 'Republish the timetable to enable relief');
   }
+  // A republish can remove a ticked lesson; drop it so the save goes through and the relief on it is removed.
+  const leaves = asked.map((l): Leave => {
+    const lessons = new Set((snaps.get(l.teacherId)?.cells ?? []).flatMap((c) => (c.day === day && c.entryId !== undefined ? [c.entryId] : [])));
+    return { ...l, entryIds: l.entryIds.filter((id) => lessons.has(id)) };
+  });
 
   const gradeNo = new Map(ctx.grades.map((g) => [g.id, g.number]));
   const gradeOfClass = new Map(ctx.classes.flatMap((c) => (gradeNo.has(c.gradeId) ? [[c.id, gradeNo.get(c.gradeId)!] as const] : [])));

@@ -32,7 +32,8 @@
     "for": "for {{name}}",
     "pickFor": "Relief for {{lesson}}",
     "uncovered": "Uncovered",
-    "notAvailable": "Not available"
+    "notAvailable": "Not available",
+    "gone": "No longer in the timetable"
   },
   "picker": {
     "title": "Choose relief teacher",

@@ -14,6 +14,7 @@ import { ReliefPicker } from './ReliefPicker';
 
 export interface ReliefListProps {
   reliefs: Relief[];
+  gone?: Relief[];
   names: Names;
   readOnly: boolean;
   candidatesOf(index: number): Candidate[];
@@ -23,7 +24,7 @@ export interface ReliefListProps {
   onSuggest(): void;
 }
 
-export function ReliefList({ reliefs, names, readOnly, candidatesOf, errorsOf, status, onPick, onSuggest }: ReliefListProps) {
+export function ReliefList({ reliefs, gone = [], names, readOnly, candidatesOf, errorsOf, status, onPick, onSuggest }: ReliefListProps) {
   const { t } = useTranslation('relief');
   const [open, setOpen] = useState<number | null>(null);
   const openRelief = open === null ? undefined : reliefs[open];
@@ -41,7 +42,7 @@ export function ReliefList({ reliefs, names, readOnly, candidatesOf, errorsOf, s
         )}
       </div>
 
-      {reliefs.length === 0 ? (
+      {reliefs.length === 0 && gone.length === 0 ? (
         <p className="m-0 text-sm text-ink-muted">{readOnly ? t('reliefs.nonePast') : t('reliefs.none')}</p>
       ) : (
         <ul className="m-0 flex list-none flex-col p-0">
@@ -87,6 +88,20 @@ export function ReliefList({ reliefs, names, readOnly, candidatesOf, errorsOf, s
               </li>
             );
           })}
+          {gone.map((r) => (
+            <li key={`gone-${reliefKey(r)}`} className="flex flex-col gap-2 border-t border-line-soft py-3 first:border-t-0 first:pt-0 sm:flex-row sm:items-center sm:gap-4">
+              <div className="min-w-0 sm:flex-1">
+                <strong className="block text-sm text-ink-muted line-through">{names.lesson(r)}</strong>
+                <span className="text-[13px] text-ink-muted">{t('reliefs.for', { name: names.teacher(r.absentTeacherId) })}</span>
+              </div>
+              <div className="flex flex-col gap-1 sm:w-72 sm:shrink-0">
+                <span className="text-sm text-ink-muted">{r.reliefTeacherId === null ? t('reliefs.uncovered') : names.teacher(r.reliefTeacherId)}</span>
+                <span className="flex flex-wrap gap-1.5">
+                  <Badge tone="warning">{t('reliefs.gone')}</Badge>
+                </span>
+              </div>
+            </li>
+          ))}
         </ul>
       )}
 

@@ -117,6 +117,23 @@ describe('saveReliefDay', () => {
     await expectFnError(admin.call('saveReliefDay', req(sid, { leaves: both, reliefs: [...reliefs, pick('e-g', T.kumara)], expectedUpdatedAt: doc.updatedAt })), 'invalid-argument', 'invalid');
   });
 
+  it.skipIf(day === null)('drops a relief whose lesson a republish removed and queues the removal', async () => {
+    const { admin, sid } = await publishedSeed(entries());
+    await adminDb.doc(`${paths.teachers(sid)}/${T.kumara}`).update({ email: 'kumara@example.test' });
+    const first = await admin.call('saveReliefDay', req(sid));
+    expect(await stats(sid)).toEqual({ [T.kumara]: 1 });
+    await adminDb.doc(`${paths.entries(sid, YEAR)}/e-a`).delete();
+    await admin.call('publishYear', { schoolId: sid, yearId: YEAR });
+
+    const res = await admin.call('saveReliefDay', req(sid, { expectedUpdatedAt: first.updatedAt }));
+    const doc = (await adminDb.doc(paths.reliefDay(sid, YEAR, today.date)).get()).data() as ReliefDay;
+    expect(doc.leaves).toEqual([{ ...leaves[0], entryIds: ['e-b'] }]);
+    expect(doc.reliefs.map((r) => [r.entryId, r.reliefTeacherId])).toEqual([['e-b', null]]);
+    expect(await stats(sid)).toEqual({});
+    const notified = (await adminDb.doc(paths.reliefNotified(sid, YEAR, today.date)).get()).data() as { pending: Record<string, number> };
+    expect(notified.pending[T.kumara]).toBe(res.updatedAt);
+  });
+
   it.skipIf(day === null)('does not queue a mail doc synchronously', async () => {
     const { admin, sid } = await publishedSeed(entries());
     const before = (await adminDb.collection('mail').get()).size;

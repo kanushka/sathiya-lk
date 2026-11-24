@@ -30,6 +30,17 @@ export function withLeaves(leaves: Leave[], prev: Relief[], snaps: Map<string, T
   return { leaves, reliefs };
 }
 
+// A republish can remove a ticked lesson: today's saved leave keeps only lessons still in the timetable, and reliefs on the rest are gone.
+export function currentSaved(doc: ReliefDay | null, snaps: Map<string, TeacherSnapshot>, day: DayIndex): { saved: DayDraft; gone: Relief[] } {
+  const leaves = (doc?.leaves ?? []).map((l) => {
+    const lessons = new Set((snaps.get(l.teacherId)?.cells ?? []).flatMap((c) => (c.day === day && c.entryId !== undefined ? [c.entryId] : [])));
+    return { ...l, entryIds: l.entryIds.filter((id) => lessons.has(id)) };
+  });
+  const saved = withLeaves(leaves, doc?.reliefs ?? [], snaps, day);
+  const keys = new Set(saved.reliefs.map(reliefKey));
+  return { saved, gone: (doc?.reliefs ?? []).filter((r) => !keys.has(reliefKey(r))) };
+}
+
 function countsOf(reliefs: Relief[]): Record<string, number> {
   const out: Record<string, number> = {};
   for (const r of reliefs) if (r.reliefTeacherId !== null) out[r.reliefTeacherId] = (out[r.reliefTeacherId] ?? 0) + 1;

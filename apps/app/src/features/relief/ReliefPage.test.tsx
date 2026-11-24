@@ -232,6 +232,30 @@ describe('relief page', () => {
     expect(screen.queryByText('Email pending')).not.toBeInTheDocument();
   });
 
+  it('lists a relief whose lesson a republish removed and lets the save drop it', async () => {
+    vi.mocked(call).mockResolvedValue({ updatedAt: 9, queued: 1, skippedNoEmail: 0, uncovered: 0 });
+    const saved: ReliefDay = {
+      date: '2026-11-24', day: TUE,
+      leaves: [{ teacherId: T.perera, type: 'morning', entryIds: ['e1', 'gone'] }],
+      reliefs: [
+        { entryId: 'e1', absentTeacherId: T.perera, day: TUE, period: 1, start: '07:45', end: '08:30', classIds: [C.c6a], subjectId: S.maths, reliefTeacherId: T.bandara },
+        { entryId: 'gone', absentTeacherId: T.perera, day: TUE, period: 2, start: '08:30', end: '09:10', classIds: [C.c6c], subjectId: S.science, reliefTeacherId: T.bandara },
+      ],
+      names: {}, updatedAt: 5, updatedBy: 'u',
+    };
+    vi.mocked(useReliefDay).mockReturnValue(state({ doc: saved }));
+    const user = setup();
+    const row = screen.getByText('No longer in the timetable').closest('li')!;
+    expect(row).toHaveTextContent('P2 · 08:30 · 6C Science');
+    expect(screen.getAllByRole('button', { name: /^Relief for/ })).toHaveLength(1);
+    const save = screen.getByRole('button', { name: 'Save & notify' });
+    expect(save).toBeEnabled();
+    await user.click(save);
+    const req = vi.mocked(call).mock.calls[0]![1] as { leaves: unknown; reliefs: { entryId: string; reliefTeacherId: string | null }[] };
+    expect(req.leaves).toEqual([{ teacherId: T.perera, type: 'morning', entryIds: ['e1'] }]);
+    expect(req.reliefs.map((r) => [r.entryId, r.reliefTeacherId])).toEqual([['e1', T.bandara]]);
+  });
+
   it('shows no email for a teacher without email or account', () => {
     const saved: ReliefDay = {
       date: '2026-11-24', day: TUE,

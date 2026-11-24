@@ -32,7 +32,8 @@
     "for": "{{name}} වෙනුවට",
     "pickFor": "{{lesson}} සඳහා ආදේශක",
     "uncovered": "ආදේශකයෙකු නැත",
-    "notAvailable": "නිදහස් නැත"
+    "notAvailable": "නිදහස් නැත",
+    "gone": "කාලසටහනේ තවදුරටත් නැත"
   },
   "picker": {
     "title": "ආදේශක ගුරුවරයා තෝරන්න",

@@ -34,6 +34,7 @@ import { LeaveList } from './LeaveList';
 import {
   colomboTime,
   countsExcludingSaved,
+  currentSaved,
   emailStatus,
   formatDate,
   isIsoDate,
@@ -146,7 +147,10 @@ function ReliefDayEditor({ sid, yid, date, day, readOnly, data, base }: EditorPr
   const [problem, setProblem] = useState<Problem | null>(null);
   const [result, setResult] = useState<SaveReliefDayRes | null>(null);
 
-  const saved = useMemo<DayDraft>(() => ({ leaves: doc?.leaves ?? [], reliefs: doc?.reliefs ?? [] }), [doc]);
+  const { saved, gone } = useMemo(
+    () => (readOnly ? { saved: { leaves: doc?.leaves ?? [], reliefs: doc?.reliefs ?? [] }, gone: [] } : currentSaved(doc, snaps, day)),
+    [readOnly, doc, snaps, day],
+  );
   const current = draft ?? saved;
 
   const awaiting = lastSave !== null && doc?.updatedAt !== lastSave.updatedAt;
@@ -213,7 +217,7 @@ function ReliefDayEditor({ sid, yid, date, day, readOnly, data, base }: EditorPr
   };
 
   const uncovered = current.reliefs.filter((r) => r.reliefTeacherId === null).length;
-  const dirty = !sameDraft(current, awaiting ? lastSave.draft : saved);
+  const dirty = (!awaiting && gone.length > 0) || !sameDraft(current, awaiting ? lastSave.draft : saved);
 
   async function save() {
     setSaving(true);
@@ -278,6 +282,7 @@ function ReliefDayEditor({ sid, yid, date, day, readOnly, data, base }: EditorPr
 
       <ReliefList
         reliefs={current.reliefs}
+        gone={gone}
         names={names}
         readOnly={readOnly}
         candidatesOf={(i) => candidates[i] ?? []}
