@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
 // Copyright (C) 2026 Kanushka Gayan
 
-import { pickName } from '@sathiya/core';
+import { activityName, pickName } from '@sathiya/core';
 import type { ClassSnapshot, DayIndex, Lang, SnapshotCell, TeacherSnapshot, TemplateRow } from '@sathiya/core';
 import { useTranslation } from 'react-i18next';
 import './print.css';
@@ -64,30 +64,40 @@ export function PrintSheet(props: Props) {
   const classTeacher = kind === 'class' ? (lang === 'si' && props.snapshot.classTeacherSi) || props.snapshot.classTeacher : undefined;
   const subtitle = [t('sheet.subtitle', { year: snapshot.yearLabel }), classTeacher ? t('sheet.classTeacher', { name: classTeacher }) : ''].filter(Boolean).join(' · ');
 
+  const rowLabel = (r: TemplateRow) => {
+    const name = activityName(r, lang);
+    return name ? `${name} · ${r.start} – ${r.end}` : t('sheet.interval', { start: r.start, end: r.end });
+  };
+
   const grid = [];
   for (let i = 0; i < rowCount; i++) {
     const present = DAYS.flatMap((d) => (rows[d]?.[i] ? [{ d, row: rows[d]![i]! }] : []));
     const first = present[0]?.row;
     if (!first) continue;
-    if (present.every((p) => p.row.type === 'interval')) {
+    const labelDay = present.find((p) => p.row.type === 'period');
+    const sharedBand = !labelDay && present.length === DAYS.length && present.every((p) => rowLabel(p.row) === rowLabel(first));
+    if (sharedBand) {
       grid.push(
         <div
           key={`r${i}`}
           style={{ gridColumn: '1 / -1', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 12, fontWeight: 700, letterSpacing: '.2em', color: '#7A5410', background: '#FBF1DC' }}
         >
-          {t('sheet.interval', { start: first.start, end: first.end })}
+          {rowLabel(first)}
         </div>,
       );
       continue;
     }
-    const labelDay = present.find((p) => p.row.type === 'period')!;
-    const sameTimes = present.every((p) => p.row.start === labelDay.row.start && p.row.end === labelDay.row.end);
+    const sameTimes = !labelDay || present.every((p) => p.row.start === labelDay.row.start && p.row.end === labelDay.row.end);
     grid.push(
       <div key={`l${i}`} style={{ display: 'flex', flexDirection: 'column', justifyContent: 'center', padding: '0 10px', background: '#F9FAFB' }}>
-        <b style={{ fontSize: 14 }}>{periodNumber(rows[labelDay.d]!, i)}</b>
-        <span style={{ fontSize: 11, color: '#5A6378' }}>
-          {labelDay.row.start}–{labelDay.row.end}
-        </span>
+        {labelDay && (
+          <>
+            <b style={{ fontSize: 14 }}>{periodNumber(rows[labelDay.d]!, i)}</b>
+            <span style={{ fontSize: 11, color: '#5A6378' }}>
+              {labelDay.row.start}–{labelDay.row.end}
+            </span>
+          </>
+        )}
       </div>,
     );
     for (const d of DAYS) {
@@ -96,10 +106,10 @@ export function PrintSheet(props: Props) {
         grid.push(<div key={`${i}-${d}`} style={{ background: '#F3F4F6' }} />);
         continue;
       }
-      if (row.type === 'interval') {
+      if (row.type !== 'period') {
         grid.push(
           <div key={`${i}-${d}`} style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 11, color: '#7A5410', background: '#FBF1DC' }}>
-            {t('sheet.interval', { start: row.start, end: row.end })}
+            {rowLabel(row)}
           </div>,
         );
         continue;

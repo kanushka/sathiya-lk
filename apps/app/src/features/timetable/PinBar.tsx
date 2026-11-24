@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
 // Copyright (C) 2026 Kanushka Gayan
 
-import type { PinProgress } from '@sathiya/core';
+import { formatAmount, formatAmountPair, type Lang, type PinProgress } from '@sathiya/core';
 import { useId } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Badge } from '../../ui/Badge';
@@ -21,11 +21,13 @@ export interface PinBarProps {
 }
 
 export function PinBar({ title, detail, color, progress, fullNote, suggestedCount, onSuggest, onPinSuggested, onDone }: PinBarProps) {
-  const { t } = useTranslation('timetable');
+  const { t, i18n } = useTranslation('timetable');
+  const lang = i18n.language as Lang;
   const titleId = useId();
-  const { placed, needed, left, over } = progress;
-  const base = t('pin.progress', { placed, needed });
-  const text = over > 0 ? base : `${base} · ${left > 0 ? t('pin.toGo', { count: left }) : fullNote || t('pin.complete')}`;
+  const { placed, needed, left, over, unit } = progress;
+  const amount = (n: number) => formatAmount(n, unit, lang);
+  const base = t('pin.progress', { placed: amount(placed), needed: amount(needed) });
+  const text = over > 0 ? base : `${base} · ${left > 0 ? t('pin.toGo', { amount: amount(left) }) : fullNote || t('pin.complete')}`;
   const max = Math.max(needed, placed, 1);
   const pct = Math.round((Math.min(placed, needed || placed) / max) * 100);
 
@@ -46,7 +48,7 @@ export function PinBar({ title, detail, color, progress, fullNote, suggestedCoun
       <div className="flex flex-col gap-1 md:min-w-[170px]">
         <span className="flex flex-wrap items-center gap-1.5 text-[13px] font-bold">
           <span>{text}</span>
-          {over > 0 && <Badge tone="danger">{t('pin.over', { count: over })}</Badge>}
+          {over > 0 && <Badge tone="danger">{t('pin.over', { amount: amount(over) })}</Badge>}
         </span>
         <span
           role="meter"
@@ -54,7 +56,7 @@ export function PinBar({ title, detail, color, progress, fullNote, suggestedCoun
           aria-valuemin={0}
           aria-valuemax={max}
           aria-valuenow={placed}
-          aria-valuetext={`${placed}/${needed}`}
+          aria-valuetext={formatAmountPair(placed, needed, unit, lang)}
           data-over={over > 0 || undefined}
           className="relative hidden h-1.5 overflow-hidden rounded-full bg-on-brand/25 md:block md:w-[170px]"
         >
@@ -65,7 +67,7 @@ export function PinBar({ title, detail, color, progress, fullNote, suggestedCoun
       <div className="flex w-full gap-2 md:w-auto md:flex-wrap">
         {left > 0 && suggestedCount === 0 && (
           <Button variant="onBrand" onClick={onSuggest} className="flex-1 md:flex-none">
-            {t('pin.suggest', { count: left })}
+            {unit === 'minutes' ? t('pin.suggestTime', { amount: amount(left) }) : t('pin.suggest', { count: left })}
           </Button>
         )}
         {suggestedCount > 0 && (

@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
 // Copyright (C) 2026 Kanushka Gayan
-import { C, ctx, entries, entry, S, T } from '@sathiya/core/fixtures';
+import { C, ctx, entries, entry, mahasen, S, T } from '@sathiya/core/fixtures';
 import { screen, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
@@ -132,5 +132,13 @@ describe('dashboard page', () => {
     expect(screen.queryByRole('button', { name: 'New year' })).not.toBeInTheDocument();
     expect(screen.queryByRole('button', { name: 'Publish to teachers' })).not.toBeInTheDocument();
     expect(screen.getByText('Classes complete')).toBeInTheDocument();
+  });
+
+  it('shows time-grade chips in minutes under a unit-neutral legend', () => {
+    const cls = mahasen.ctx.classes[0]!;
+    const es = [entry('m1', 0, 1, [cls.id], [[mahasen.S.maths, 'mh-t-1a']])];
+    renderWithSchool(<DashboardPage />, { ctx: mahasen.ctx, entries: es });
+    expect(screen.getByRole('link', { name: /^1A/ })).toHaveTextContent('1h 50m/17h 30m');
+    expect(screen.getByText('placed / needed')).toBeInTheDocument();
   });
 });

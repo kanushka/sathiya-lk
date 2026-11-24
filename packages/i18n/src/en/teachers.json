@@ -18,10 +18,12 @@
       "teaches": "Teaches",
       "grades": "Grades",
       "maxPerDay": "Max / day",
+      "load": "Load",
       "classTeacher": "Class teacher",
       "login": "Login",
       "actions": "Actions"
     },
+    "minPerWeek": "min {{n}}/wk",
     "printPartial_one": "{{count}} teacher could not be reset and was left out of the slips",
     "printPartial_other": "{{count}} teachers could not be reset and were left out of the slips"
   },
@@ -43,6 +45,7 @@
     "subjectsPlaceholder": "Add subjects",
     "grades": "Grades",
     "maxPerDay": "Max periods / day",
+    "minPerWeek": "Min periods / week (optional)",
     "phone": "Phone (optional)",
     "email": "Email (optional)",
     "save": "Save teacher",
@@ -57,7 +60,8 @@
       "staffIdTaken": "This staff ID is already used",
       "subjects": "Pick at least one subject",
       "grades": "Pick at least one grade",
-      "maxPerDay": "Enter a number from 1 to 10"
+      "maxPerDay": "Enter a number from 1 to 10",
+      "minPerWeek": "Enter a whole number from 0 to {{max}}"
     }
   },
   "slip": {

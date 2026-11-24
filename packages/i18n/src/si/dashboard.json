@@ -60,7 +60,7 @@
   },
   "classes": {
     "title": "පන්ති",
-    "legend": "ඇතුළත් කළ / අවශ්‍ය කාලච්ඡේද",
+    "legend": "ඇතුළත් කළ / අවශ්‍ය",
     "grade": "{{n}} ශ්‍රේණිය",
     "none": "තවම පන්ති නැත. ශ්‍රේණි හා පන්ති යටතේ ඒවා එක් කරන්න."
   },
@@ -68,7 +68,7 @@
     "title": "අවධානය අවශ්‍යයි",
     "none": "අවධානය අවශ්‍ය කිසිවක් නැත.",
     "over-limit": { "title": "{{teacher}} — {{dayName}} කාලච්ඡේද {{n}}", "detail": "දෛනික සීමාව {{max}} කි" },
-    "over-target": { "title": "{{class}} {{subject}} {{placed}} / {{needed}}", "detail": "කාලච්ඡේද {{extra}} ක් වැඩිය" },
+    "over-target": { "title": "{{class}} {{subject}} {{placed}} / {{needed}}", "detail": "කාලච්ඡේද {{extra}} ක් වැඩිය", "detail_minutes": "{{extra}} ක් වැඩිය" },
     "group-no-teacher": { "title": "{{group}} හි තේරීමකට ගුරුවරයෙකු නැත", "detail": "{{class}} · {{dayName}} P{{period}}" },
     "orphaned": { "title": "{{class}} {{dayName}} P{{period}} කාලච්ඡේද ආකෘතියෙන් පිටත ය", "detail": "මෙම ඇතුළත් කිරීම ගෙන යන්න හෝ ඉවත් කරන්න" }
   }

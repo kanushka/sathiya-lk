@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
 // Copyright (C) 2026 Kanushka Gayan
-import { C, ctx, entries, G, S } from '@sathiya/core/fixtures';
+import { C, ctx, entries, G, mahasen, S } from '@sathiya/core/fixtures';
 import { screen, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
@@ -247,5 +247,120 @@ describe('grades page', () => {
     expect(screen.getByLabelText('Periods per week for Mathematics')).toBeDisabled();
     await user.click(screen.getByRole('button', { name: /^Grade 1\b/ }));
     expect(api.saveGradePlan).not.toHaveBeenCalled();
+  });
+
+  it('toggling a row to time waits for a value above zero before saving', async () => {
+    const user = await openGrade6();
+    await user.click(screen.getByRole('button', { name: 'Time for Mathematics' }));
+    expect(api.saveGradePlan).not.toHaveBeenCalled();
+    expect(screen.getByLabelText('Minutes per week for Mathematics')).toHaveValue(null);
+    await user.type(screen.getByLabelText('Minutes per week for Mathematics'), '0');
+    await user.tab();
+    expect(api.saveGradePlan).not.toHaveBeenCalled();
+    await user.type(screen.getByLabelText('Minutes per week for Mathematics'), '50');
+    await user.tab();
+    const plan = vi.mocked(api.saveGradePlan).mock.calls.at(-1)![2];
+    expect(plan.find((p) => p.kind === 'subject' && p.subjectId === S.maths)).toMatchObject({ unit: 'minutes', perWeek: 50 });
+  });
+
+  it('shows the specific message and skips the save for an invalid plan', async () => {
+    const user = userEvent.setup();
+    const bad = {
+      ...ctx,
+      grades: ctx.grades.map((g) => (g.id === G.g6 ? { ...g, plan: g.plan.map((p, i) => (i === 0 ? { ...p, unit: 'minutes' as const, perWeek: 55, perDay: 10 } : p)) } : g)),
+    };
+    renderWithSchool(<GradesPage />, { ctx: bad, entries });
+    await user.click(screen.getByRole('button', { name: /^Grade 6\b/ }));
+    const english = screen.getByLabelText('Periods per week for English');
+    await user.clear(english);
+    await user.type(english, '4');
+    await user.tab();
+    expect(api.saveGradePlan).not.toHaveBeenCalled();
+    expect(await screen.findByText('Minutes per week must equal minutes per day × 5.')).toBeInTheDocument();
+    await user.click(screen.getAllByRole('button', { name: 'Custom plan' })[0]!);
+    await user.click(within(screen.getByRole('dialog')).getByRole('button', { name: 'Save custom plan' }));
+    expect(api.setPlanOverride).not.toHaveBeenCalled();
+  });
+
+  describe('with a time-based row', () => {
+    const timed = {
+      ...ctx,
+      grades: ctx.grades.map((g) => (g.id === G.g6 ? { ...g, plan: g.plan.map((p) => (p.kind === 'subject' && p.subjectId === S.maths ? { ...p, perWeek: 50, unit: 'minutes' as const } : p)) } : g)),
+    };
+
+    async function openTimed() {
+      const user = userEvent.setup();
+      renderWithSchool(<GradesPage />, { ctx: timed, entries });
+      await user.click(screen.getByRole('button', { name: /^Grade 6\b/ }));
+      return user;
+    }
+
+    it('stores hours and minutes as total minutes', async () => {
+      const user = await openTimed();
+      expect(screen.getByLabelText('Hours per week for Mathematics')).toHaveValue(0);
+      expect(screen.getByLabelText('Minutes per week for Mathematics')).toHaveValue(50);
+      const hours = screen.getByLabelText('Hours per week for Mathematics');
+      await user.clear(hours);
+      await user.type(hours, '3');
+      await user.tab();
+      const plan = vi.mocked(api.saveGradePlan).mock.calls.at(-1)![2];
+      expect(plan.find((p) => p.kind === 'subject' && p.subjectId === S.maths)).toMatchObject({ unit: 'minutes', perWeek: 230 });
+    });
+
+    it('per-day minutes set the weekly total to five days', async () => {
+      const user = await openTimed();
+      await user.type(screen.getByLabelText('Minutes per day for Mathematics'), '10');
+      await user.tab();
+      const plan = vi.mocked(api.saveGradePlan).mock.calls.at(-1)![2];
+      expect(plan.find((p) => p.kind === 'subject' && p.subjectId === S.maths)).toMatchObject({ unit: 'minutes', perWeek: 50, perDay: 10 });
+    });
+
+    it('derives the weekly inputs from per-day minutes', async () => {
+      const withDay = { ...timed, grades: timed.grades.map((g) => ({ ...g, plan: g.plan.map((p) => (p.kind === 'subject' && p.subjectId === S.maths ? { ...p, perDay: 10 } : p)) })) };
+      renderWithSchool(<GradesPage />, { ctx: withDay, entries });
+      await userEvent.click(screen.getByRole('button', { name: /^Grade 6\b/ }));
+      expect(screen.getByLabelText('Hours per week for Mathematics')).toBeDisabled();
+      expect(screen.getByLabelText('Minutes per week for Mathematics')).toBeDisabled();
+      expect(screen.getByLabelText('Minutes per day for Mathematics')).toHaveValue(10);
+    });
+
+    it('keeps time rows out of the period total', async () => {
+      await openTimed();
+      expect(screen.getByTestId('plan-total')).toHaveTextContent('34 / 39–40');
+    });
+  });
+
+  it('hides the period fit for an all-timed plan', async () => {
+    renderWithSchool(<GradesPage />, { ctx: mahasen.ctx, entries: [] });
+    await userEvent.click(screen.getByRole('button', { name: /^Grade 1\b/ }));
+    expect(screen.queryByTestId('plan-total')).not.toBeInTheDocument();
+    expect(screen.getByTestId('plan-timed')).toHaveTextContent('17h 30m timed per week');
+  });
+
+  it('shows the default staffing for the grade and saves a change', async () => {
+    const user = await openGrade6();
+    const mode = screen.getByRole('combobox', { name: /^Staffing/ });
+    expect(mode).toHaveTextContent('Subject teachers');
+    await pickOption(user, mode, 'Class teacher plus specialist teachers');
+    expect(api.saveGradeStaffing).toHaveBeenCalledWith('siripura', G.g6, { mode: 'classTeacherPlusSpecialists', specialistSubjectIds: [S.english] });
+  });
+
+  it('offers specialist subjects only for class teacher plus specialists', async () => {
+    const user = userEvent.setup();
+    renderWithSchool(<GradesPage />, { ctx, entries });
+    expect(screen.getByRole('combobox', { name: /^Staffing/ })).toHaveTextContent('Class teacher teaches everything');
+    expect(screen.queryByRole('combobox', { name: /Specialist subjects/ })).not.toBeInTheDocument();
+    await user.click(screen.getByRole('button', { name: /^Grade 6\b/ }));
+    expect(screen.queryByRole('combobox', { name: /Specialist subjects/ })).not.toBeInTheDocument();
+  });
+
+  it('shows the specialist subjects for a grade set to class teacher plus specialists', async () => {
+    const user = userEvent.setup();
+    const set = { ...ctx, grades: ctx.grades.map((g) => (g.id === G.g6 ? { ...g, staffing: { mode: 'classTeacherPlusSpecialists' as const, specialistSubjectIds: [S.english] } } : g)) };
+    renderWithSchool(<GradesPage />, { ctx: set, entries });
+    await user.click(screen.getByRole('button', { name: /^Grade 6\b/ }));
+    expect(screen.getByRole('combobox', { name: /^Specialist subjects/ })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'Remove English from specialist subjects' })).toBeInTheDocument();
+    expect(screen.queryByText('Using the default for this grade.')).not.toBeInTheDocument();
   });
 });

@@ -45,6 +45,7 @@
     "subjects": "Subjects",
     "grades": "Grades",
     "maxPerDay": "Max periods/day",
+    "minPerWeek": "Min periods/week",
     "isPrimary": "Primary teacher?"
   },
   "errors": {
@@ -69,6 +70,7 @@
     "gradeFormat": "Can't read grades \"{{value}}\". Use e.g. 6-9, 11",
     "gradeNotInSchool": "Not a grade in this school: {{value}}",
     "maxPerDay": "Enter a number from 1 to 10 (got \"{{value}}\")",
+    "minPerWeek": "Enter a whole number from 0 to {{max}} (got \"{{value}}\")",
     "primaryValue": "Use Yes or No (got \"{{value}}\")",
     "phone": "Not a valid phone number: {{value}}",
     "email": "Not a valid email: {{value}}",

@@ -42,3 +42,8 @@ export function bestOverlapPeriod(t: PeriodTemplate, day: DayIndex, window: { st
   }
   return best;
 }
+
+export function slotMinutes(t: PeriodTemplate, day: DayIndex, period: number): number {
+  const w = windowOf(t, day, period);
+  return w ? w.end - w.start : 0;
+}

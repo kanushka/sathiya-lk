@@ -1,7 +1,8 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
 // Copyright (C) 2026 Kanushka Gayan
 
-import { classPlacement, type Entry, type Lang, type PlanItem, type SchoolContext, type Subject, type Teacher } from '@sathiya/core';
+import { classPlacement, formatAmount, formatAmountPair, type Entry, type Lang, type PlanItem, type SchoolContext, type Subject, type Teacher } from '@sathiya/core';
+import type { TFunction } from 'i18next';
 import { useMemo } from 'react';
 import { planItemName } from './labels';
 
@@ -13,6 +14,13 @@ export interface PickItem {
   name: string;
   placed: number;
   needed: number;
+  unit: 'periods' | 'minutes';
+}
+
+export function pickNeed(t: TFunction, p: Pick<PickItem, 'placed' | 'needed' | 'unit'>, lang: Lang): string {
+  return p.placed < p.needed
+    ? t(p.unit === 'minutes' ? 'picker.needsTime' : 'picker.needs', { amount: formatAmount(p.needed - p.placed, p.unit, lang) })
+    : t('picker.done', { progress: formatAmountPair(p.placed, p.needed, p.unit, lang) });
 }
 
 export function usePickItems(ctx: SchoolContext, classId: string, entries: Entry[], lang: Lang): PickItem[] {
@@ -25,6 +33,7 @@ export function usePickItems(ctx: SchoolContext, classId: string, entries: Entry
       name: planItemName(r.item, ctx, lang),
       placed: r.placed,
       needed: r.needed,
+      unit: r.unit,
     }));
     return [...rows.filter((r) => r.placed < r.needed), ...rows.filter((r) => r.placed >= r.needed)];
   }, [ctx, classId, entries, lang]);

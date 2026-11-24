@@ -23,7 +23,7 @@ import { Combobox } from '../../ui/Combobox';
 import { inputClass } from '../../ui/Field';
 import { Modal } from '../../ui/Modal';
 import { limitWarning, planItemColor, teacherReason, teachesAtAll } from './labels';
-import { initials, usePickItems, type GroupItem, type PickItem } from './pickerData';
+import { initials, pickNeed, usePickItems, type GroupItem, type PickItem } from './pickerData';
 
 export type { GroupItem };
 
@@ -135,7 +135,7 @@ function SlotPickerBody({ onClose, classId, day, period, entries, editing, onSav
     if (ok) onClose();
   }
 
-  const need = (p: PickItem) => (p.placed < p.needed ? t('picker.needs', { count: p.needed - p.placed }) : t('picker.done', { placed: p.placed, needed: p.needed }));
+  const need = (p: PickItem) => pickNeed(t, p, lang);
   const sectionLabel = 'mb-1.5 mt-3.5 block text-xs font-bold uppercase tracking-[.04em]';
 
   const unavailableRow = (o: TeacherOption) =>

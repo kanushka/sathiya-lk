@@ -2,9 +2,10 @@
 // Copyright (C) 2026 Kanushka Gayan
 
 import { describe, expect, it } from 'vitest';
-import { C, ctx, entries, entries6B, entry, G, plan12A, primaryTemplate, S, shortFridayTemplate, T, TPL, defaultTemplate } from './fixtures';
-import { classPlacement, classProgress, weekCapacity } from './progress';
+import { C, ctx, mahasen, entries, entries6B, entry, G, plan12A, primaryTemplate, S, shortFridayTemplate, T, TPL, defaultTemplate } from './fixtures';
+import { activityCredit, classPlacement, classProgress, weekCapacity } from './progress';
 import type { SchoolContext } from './types';
+import { slotMinutes } from './time';
 
 const plan6 = ctx.grades.find((g) => g.id === G.g6)!.plan;
 const row = (rows: ReturnType<typeof classProgress>, key: string) => rows.find((r) => r.key === key);
@@ -77,5 +78,52 @@ describe('weekCapacity', () => {
     expect(weekCapacity(defaultTemplate)).toBe(40);
     expect(weekCapacity(shortFridayTemplate)).toBe(39);
     expect(weekCapacity(primaryTemplate)).toBe(30);
+  });
+});
+
+describe('minute plan items', () => {
+  const mh = mahasen.ctx;
+  const mhClass = mh.classes[0]!;
+  const mhTpl = mh.templates[0]!;
+  const mhPlan = mh.grades[0]!.plan;
+  const maths = mhPlan.find((p) => p.kind === 'subject' && p.subjectId === mahasen.S.maths)!;
+  const mathsEntry = (id: string, day: 0 | 1 | 2 | 3 | 4, period: number) => entry(id, day, period, [mhClass.id], [[mahasen.S.maths, mhClass.classTeacherId ?? null]]);
+
+  it('measures slot minutes', () => {
+    expect(slotMinutes(mhTpl, 0, 1)).toBe(60);
+    expect(slotMinutes(mhTpl, 0, 4)).toBe(10);
+    expect(slotMinutes(mhTpl, 0, 99)).toBe(0);
+  });
+
+  it('counts minutes for minute items', () => {
+    const e = [mathsEntry('m1', 0, 3), mathsEntry('m2', 1, 4)];
+    const rows = classProgress(mhClass.id, e, mhPlan, mhTpl);
+    expect(row(rows, `subject:${mahasen.S.maths}`)).toMatchObject({ placed: 40, needed: 190, unit: 'minutes' });
+  });
+
+  it('credits activity rows to their subject', () => {
+    const rows = classProgress(mhClass.id, [], mhPlan, mhTpl);
+    expect(row(rows, `subject:${mahasen.S.health}`)).toMatchObject({ placed: 50, needed: 50, unit: 'minutes' });
+    expect(row(rows, `subject:${mahasen.S.maths}`)).toMatchObject({ placed: 0 });
+  });
+
+  it('activityCredit counts 1 per row per day for period items', () => {
+    const item = { kind: 'subject', subjectId: mahasen.S.health, perWeek: 5 } as const;
+    expect(activityCredit(mhTpl, item)).toBe(5);
+    expect(activityCredit(mhTpl, maths)).toBe(0);
+  });
+
+  it('period rows report unit periods', () => {
+    expect(classProgress(C.c6b, entries, plan6)[0]?.unit).toBe('periods');
+  });
+
+  it('classPlacement caps by needed in minutes', () => {
+    const e = [0, 1, 2, 3, 4].flatMap((d) => [mathsEntry(`a${d}`, d as 0, 1), mathsEntry(`b${d}`, d as 0, 6)]);
+    const p = classPlacement(mhClass, e, mh);
+    const r = row(p.rows, `subject:${mahasen.S.maths}`)!;
+    expect(r.placed).toBeGreaterThan(r.needed);
+    const capped = p.rows.reduce((n, x) => n + Math.min(x.placed, x.needed), 0);
+    expect(p.placed).toBe(capped);
+    expect(p.placed).toBe(190 + 50);
   });
 });

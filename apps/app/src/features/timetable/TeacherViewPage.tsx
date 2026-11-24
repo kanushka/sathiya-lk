@@ -244,6 +244,7 @@ function TeacherView({ teacher, teachers, template }: { teacher: Teacher; teache
       tc,
       names: pin.names,
       progress: pin.progress,
+      slotMinutes: pin.minutesAt(day, row),
       suggested: pin.isSuggested(day, row),
       group: pinTarget.groupKey !== undefined,
       teacherView: true,
@@ -257,7 +258,7 @@ function TeacherView({ teacher, teachers, template }: { teacher: Teacher; teache
   }
 
   function loadBar(d: DayIndex) {
-    const load = teacherDayLoad(teacher.id, d, entries);
+    const load = teacherDayLoad(teacher.id, d, entries, ctx);
     const max = teacher.maxPerDay;
     const over = load > max;
     const value = t('teacherView.loadValue', { load, max });

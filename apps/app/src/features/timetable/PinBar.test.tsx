@@ -11,7 +11,7 @@ function setup(over: Partial<PinBarProps> = {}) {
   const props: PinBarProps = {
     title: 'Sinhala · Mrs. J. Ranasinghe',
     color: '#F2E2E7',
-    progress: { placed: 3, needed: 5, left: 2, over: 0, full: [] },
+    progress: { placed: 3, needed: 5, left: 2, over: 0, full: [], unit: 'periods' },
     suggestedCount: 0,
     onSuggest: vi.fn(),
     onPinSuggested: vi.fn(),
@@ -60,13 +60,13 @@ describe('PinBar', () => {
   });
 
   it('says complete when the plan is met', () => {
-    setup({ progress: { placed: 5, needed: 5, left: 0, over: 0, full: [] } });
+    setup({ progress: { placed: 5, needed: 5, left: 0, over: 0, full: [], unit: 'periods' } });
     expect(screen.getByText('5 of 5 placed · complete')).toBeInTheDocument();
     expect(screen.queryByRole('button', { name: /^Suggest/ })).not.toBeInTheDocument();
   });
 
   it('warns with a text cue when over the weekly plan', () => {
-    setup({ progress: { placed: 7, needed: 5, left: 0, over: 2, full: [] } });
+    setup({ progress: { placed: 7, needed: 5, left: 0, over: 2, full: [], unit: 'periods' } });
     expect(screen.getByText('7 of 5 placed')).toBeInTheDocument();
     expect(screen.getByText('+2 over')).toBeInTheDocument();
     const meter = screen.getByRole('meter', { name: 'Weekly plan progress' });
@@ -75,7 +75,7 @@ describe('PinBar', () => {
   });
 
   it('says which joined class is at its target and offers no suggestions', () => {
-    setup({ progress: { placed: 0, needed: 3, left: 0, over: 0, full: [{ classId: 'c6b', placed: 3, needed: 3, left: 0 }] }, fullNote: '6B already has 3/3' });
+    setup({ progress: { placed: 0, needed: 3, left: 0, over: 0, full: [{ classId: 'c6b', placed: 3, needed: 3, left: 0, unit: 'periods' }], unit: 'periods' }, fullNote: '6B already has 3/3' });
     expect(screen.getByText('0 of 3 placed · 6B already has 3/3')).toBeInTheDocument();
     expect(screen.queryByRole('button', { name: /^Suggest/ })).not.toBeInTheDocument();
   });
@@ -98,5 +98,12 @@ describe('PinBar', () => {
     expect(screen.queryByRole('button', { name: /Change teacher/ })).not.toBeInTheDocument();
     await userEvent.click(screen.getByRole('button', { name: 'Done' }));
     expect(p.onDone).toHaveBeenCalled();
+  });
+
+  it('shows minute progress and suggest without a slot count', () => {
+    setup({ progress: { placed: 40, needed: 190, left: 150, over: 0, full: [], unit: 'minutes' } });
+    expect(screen.getByText('40 min of 3h 10m placed · 2h 30m to go')).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'Suggest slots for 2h 30m' })).toBeInTheDocument();
+    expect(screen.getByRole('meter')).toHaveAttribute('aria-valuetext', '40 min/3h 10m');
   });
 });

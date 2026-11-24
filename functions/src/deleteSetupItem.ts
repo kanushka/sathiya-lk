@@ -1,12 +1,13 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
 // Copyright (C) 2026 Kanushka Gayan
-import { paths, usageCount, type DeleteSetupItemReq, type DeleteSetupItemRes, type Entry, type PlanItem, type SchoolContext } from '@sathiya/core';
+import { DAY_INDEXES, paths, rowsFor, usageCount, type DeleteSetupItemReq, type DeleteSetupItemRes, type PlanItem, type SchoolContext } from '@sathiya/core';
 import { FieldValue } from 'firebase-admin/firestore';
 import { onCall } from 'firebase-functions/v2/https';
 import { auth, db } from './lib/admin';
 import { callOpts } from './lib/callOptions';
 import { docId, fail, invalid, obj, requireSchoolAdmin } from './lib/guards';
-import { loadContext, loadEntries } from './lib/loadContext';
+import { loadContext } from './lib/loadContext';
+import { latestYearEntries } from './lib/yearEntries';
 
 type Kind = DeleteSetupItemReq['kind'];
 const KINDS: Record<Kind, (sid: string) => string> = { teacher: paths.teachers, subject: paths.subjects, class: paths.classes, template: paths.templates, grade: paths.grades };
@@ -14,11 +15,14 @@ const KINDS: Record<Kind, (sid: string) => string> = { teacher: paths.teachers, 
 const planUses = (plan: PlanItem[] | undefined, subjectId: string): number =>
   (plan ?? []).filter((p) => (p.kind === 'subject' ? p.subjectId === subjectId : p.optionSubjectIds.includes(subjectId))).length;
 
+const activityUses = (ctx: SchoolContext, subjectId: string): number =>
+  ctx.templates.reduce<number>((n, t) => n + DAY_INDEXES.reduce<number>((m, d) => m + rowsFor(t, d).filter((r) => r.type === 'activity' && r.subjectId === subjectId).length, 0), 0);
+
 // References outside entries that core usageCount does not see.
 function setupRefs(kind: Kind, id: string, ctx: SchoolContext): number {
   switch (kind) {
     case 'subject':
-      return ctx.grades.reduce((n, g) => n + planUses(g.plan, id), 0) + ctx.classes.reduce((n, c) => n + planUses(c.planOverride, id), 0);
+      return ctx.grades.reduce((n, g) => n + planUses(g.plan, id), 0) + ctx.classes.reduce((n, c) => n + planUses(c.planOverride, id), 0) + activityUses(ctx, id);
     case 'teacher':
       return ctx.classes.filter((c) => c.classTeacherId === id).length;
     case 'template':
@@ -27,15 +31,6 @@ function setupRefs(kind: Kind, id: string, ctx: SchoolContext): number {
     case 'grade':
       return 0;
   }
-}
-
-// Entry usage counts only the latest year (highest label: the draft being edited); older years keep their snapshots.
-async function latestYearEntries(sid: string): Promise<Entry[]> {
-  const years = await db.collection(paths.years(sid)).get();
-  const latest = years.docs
-    .map((y) => ({ id: y.id, label: String(y.get('label') ?? '') }))
-    .sort((a, b) => b.label.localeCompare(a.label, 'en', { numeric: true }))[0];
-  return latest ? loadEntries(sid, latest.id) : [];
 }
 
 const IN_LIMIT = 30;

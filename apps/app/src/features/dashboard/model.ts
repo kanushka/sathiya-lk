@@ -4,7 +4,9 @@ import {
   classPlacement,
   effectivePlan,
   findConflicts,
+  formatAmount,
   pickName,
+  placementSummary,
   teacherDisplayName,
   teacherDayLoad,
   warnings,
@@ -13,6 +15,7 @@ import {
   type DayIndex,
   type Entry,
   type Lang,
+  type PlacementSummary,
   type SchoolClass,
   type SchoolContext,
   type Warning,
@@ -29,6 +32,7 @@ export interface ClassChip {
   name: string;
   placed: number;
   needed: number;
+  summary: PlacementSummary;
   status: ChipStatus;
 }
 
@@ -61,9 +65,9 @@ export function classChips(ctx: SchoolContext, entries: Entry[]): GradeGroup[] {
     const classes: ClassChip[] = ctx.classes
       .filter((c) => c.gradeId === grade.id)
       .map((cls) => {
-        const { placed, needed } = classPlacement(cls, entries, ctx);
+        const { rows, placed, needed } = classPlacement(cls, entries, ctx);
         const status: ChipStatus = placed === 0 ? 'empty' : placed >= needed ? 'complete' : 'partial';
-        return { id: cls.id, name: cls.name, placed, needed, status };
+        return { id: cls.id, name: cls.name, placed, needed, summary: placementSummary(rows), status };
       });
     if (classes.length > 0) groups.push({ gradeId: grade.id, number: grade.number, classes });
   }
@@ -112,7 +116,7 @@ export function attentionItems(ctx: SchoolContext, entries: Entry[], lang: Lang)
         severity: 'high',
         to: `/timetable/teacher?t=${encodeURIComponent(teacher.id)}`,
         day: w.day,
-        params: { teacher: teacherDisplayName(teacher, lang), n: teacherDayLoad(teacher.id, w.day, entries), max: teacher.maxPerDay, day: w.day },
+        params: { teacher: teacherDisplayName(teacher, lang), n: teacherDayLoad(teacher.id, w.day, entries, ctx), max: teacher.maxPerDay, day: w.day },
       });
     } else if (w.kind === 'over-target') {
       const cls = ctx.classes.find((c) => c.id === w.refId);
@@ -129,7 +133,14 @@ export function attentionItems(ctx: SchoolContext, entries: Entry[], lang: Lang)
         kind: w.kind,
         severity: 'medium',
         to: classLink(cls.id),
-        params: { class: cls.name, subject, placed: row.placed, needed: row.needed, extra: row.placed - row.needed },
+        params: {
+          class: cls.name,
+          subject,
+          placed: formatAmount(row.placed, row.unit, lang),
+          needed: formatAmount(row.needed, row.unit, lang),
+          extra: formatAmount(row.placed - row.needed, row.unit, lang),
+          ...(row.unit === 'minutes' && { context: 'minutes' }),
+        },
       });
     } else {
       const e = entries.find((x) => x.id === w.refId);

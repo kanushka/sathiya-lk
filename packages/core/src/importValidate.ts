@@ -228,6 +228,13 @@ function validateTeachers(
       else err('maxPerDay', 'maxPerDay', { value: c.maxPerDay });
     }
 
+    let minPerWeek: number | undefined;
+    if (c.minPerWeek) {
+      const n = /^\d+$/.test(c.minPerWeek) ? Number(c.minPerWeek) : NaN;
+      if (n >= 0 && n <= maxPerDay * 5) minPerWeek = n;
+      else err('minPerWeek', 'minPerWeek', { value: c.minPerWeek, max: maxPerDay * 5 });
+    }
+
     const flag = key(c.isPrimary ?? '');
     let isPrimary = false;
     let primaryInvalid = bad.has('isPrimary');
@@ -260,6 +267,7 @@ function validateTeachers(
         isPrimary,
         grades,
         maxPerDay,
+        ...(minPerWeek !== undefined && { minPerWeek }),
         ...(phone && { phone }),
         ...(email && { email }),
       },

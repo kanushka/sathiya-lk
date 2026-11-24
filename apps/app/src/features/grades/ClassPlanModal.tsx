@@ -8,7 +8,7 @@ import { Modal } from '../../ui/Modal';
 import { useToast } from '../../ui/Toast';
 import * as api from './api';
 import { PlanEditor } from './PlanEditor';
-import { planCapacity } from './planModel';
+import { planCapacity, planIssues } from './planModel';
 
 export interface ClassPlanModalProps {
   schoolId: string;
@@ -26,6 +26,11 @@ export function ClassPlanModal({ schoolId, cls, grade, template, subjects, onClo
   const [saving, setSaving] = useState<'save' | 'clear' | null>(null);
 
   async function run(next: PlanItem[] | null) {
+    const issue = next ? planIssues(next)[0] : undefined;
+    if (issue) {
+      toast.show(t(`plan.errors.${issue.issue}`), 'error');
+      return;
+    }
     setSaving(next === null ? 'clear' : 'save');
     try {
       await api.setPlanOverride(schoolId, cls.id, next);
