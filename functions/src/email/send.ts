@@ -14,11 +14,21 @@ export interface MailJob {
 }
 
 // Queues a mail doc for the sendMail trigger (same shape the Trigger Email extension used). Throws on failure.
-export async function writeMail(job: MailJob): Promise<void> {
+// With `id`, the doc is created once: a repeat with the same id is a no-op.
+export async function writeMail(job: MailJob, id?: string): Promise<void> {
   const { from, replyTo, subjectPrefix } = mailConfig();
   const to = [...new Set(job.to.map((t) => t.trim().toLowerCase()).filter(Boolean))];
   if (!to.length) return;
-  await db.collection(MAIL).add({ to, from: from || undefined, replyTo: job.replyTo || replyTo || undefined, message: { ...job.message, subject: withSubjectPrefix(job.message.subject, subjectPrefix) } });
+  const doc = { to, from: from || undefined, replyTo: job.replyTo || replyTo || undefined, message: { ...job.message, subject: withSubjectPrefix(job.message.subject, subjectPrefix) } };
+  if (id === undefined) {
+    await db.collection(MAIL).add(doc);
+    return;
+  }
+  try {
+    await db.collection(MAIL).doc(id).create(doc);
+  } catch (e) {
+    if ((e as { code?: unknown }).code !== 6) throw e;
+  }
 }
 
 // For mail that is a side effect of a callable: never throws; a failure is logged and the callable's own work stands.

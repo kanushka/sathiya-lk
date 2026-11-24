@@ -16,6 +16,7 @@ import {
   type Teacher,
 } from '@sathiya/core';
 import { logger } from 'firebase-functions/v2';
+import { FieldValue } from 'firebase-admin/firestore';
 import { onCall } from 'firebase-functions/v2/https';
 import { db } from './lib/admin';
 import { callOpts } from './lib/callOptions';
@@ -102,6 +103,27 @@ export const saveReliefDay = onCall(callOpts, async (req): Promise<SaveReliefDay
   const statsRef = db.doc(paths.reliefStats(sid, yid));
   const teacherById = new Map(ctx.teachers.map((t) => [t.id, t]));
 
+  const members = paths.members(sid);
+  const candidates = new Set([...reliefs.flatMap((r) => (r.reliefTeacherId === null ? [] : [r.reliefTeacherId]))]);
+  try {
+    for (const r of ((await dayRef.get()).data() as ReliefDay | undefined)?.reliefs ?? []) if (r.reliefTeacherId !== null) candidates.add(r.reliefTeacherId);
+  } catch (e) {
+    logger.error('relief previous day lookup failed', e);
+  }
+  const hasEmail = new Set<string>();
+  for (const id of candidates) {
+    const t = teacherById.get(id);
+    let to = t?.email?.trim();
+    if (!to && t?.uid) {
+      try {
+        to = ((await db.doc(`${members}/${t.uid}`).get()).data() as { email?: string } | undefined)?.email?.trim();
+      } catch (e) {
+        logger.error('relief mail address lookup failed', e);
+      }
+    }
+    if (to) hasEmail.add(id);
+  }
+
   const { updatedAt, changed } = await runTx(async (tx) => {
     const [daySnap, statsSnap] = await Promise.all([tx.get(dayRef), tx.get(statsRef)]);
     const old = daySnap.data() as ReliefDay | undefined;
@@ -136,27 +158,14 @@ export const saveReliefDay = onCall(callOpts, async (req): Promise<SaveReliefDay
     const after = entrySets(reliefs);
     const changedIds = [...new Set([...before.keys(), ...after.keys()])].filter((t) => before.get(t) !== after.get(t));
     if (changedIds.length) {
-      tx.set(db.doc(paths.reliefNotified(sid, yid, date)), { pending: Object.fromEntries(changedIds.map((t) => [t, savedAt])) }, { merge: true });
+      const pending = Object.fromEntries(changedIds.map((t) => [t, hasEmail.has(t) ? savedAt : FieldValue.delete()]));
+      tx.set(db.doc(paths.reliefNotified(sid, yid, date)), { pending }, { merge: true });
     }
     return { updatedAt: savedAt, changed: changedIds };
   });
 
-  const members = paths.members(sid);
-  const withEmail: string[] = [];
-  let skippedNoEmail = 0;
-  for (const id of changed) {
-    const t = teacherById.get(id);
-    let to = t?.email?.trim();
-    if (!to && t?.uid) {
-      try {
-        to = ((await db.doc(`${members}/${t.uid}`).get()).data() as { email?: string } | undefined)?.email?.trim();
-      } catch (e) {
-        logger.error('relief mail address lookup failed', e);
-      }
-    }
-    if (to) withEmail.push(id);
-    else skippedNoEmail++;
-  }
+  const withEmail = changed.filter((t) => hasEmail.has(t));
+  const skippedNoEmail = changed.length - withEmail.length;
   await Promise.all(withEmail.map((teacherId) => enqueueReliefMail({ sid, yid, date, teacherId, savedAt: updatedAt })));
 
   return { updatedAt, queued: withEmail.length, skippedNoEmail, uncovered: reliefs.filter((r) => r.reliefTeacherId === null).length };

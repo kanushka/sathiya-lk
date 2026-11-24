@@ -64,7 +64,7 @@ export async function runReliefMail(args: ReliefMailArgs): Promise<'sent' | 'ski
                 };
               }),
           });
-    await writeMail({ to: [to], message });
+    await writeMail({ to: [to], message }, `relief-${sid}-${date}-${teacherId}-${savedAt}`);
     emailed = true;
   }
 

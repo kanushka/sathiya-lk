@@ -3,6 +3,7 @@
 import { colomboToday, paths, type ReliefNotified, type SaveReliefDayReq } from '@sathiya/core';
 import { C, entry, S, T } from '@sathiya/core/fixtures';
 import { describe, expect, it } from 'vitest';
+import { writeMail } from '../src/email/send';
 import { runReliefMail } from '../src/reliefMail';
 import { adminDb, uniq, type Client } from './helpers';
 import { publishedSeed, YEAR } from './seed';
@@ -86,14 +87,35 @@ describe.skipIf(day === null)('runReliefMail', () => {
     expect((await mails(c.email)).map((m) => m.message.subject)).toContain('Relief cancelled today');
   });
 
-  it('skips teacher without email and clears pending', async () => {
+  it('does not set pending for a teacher without email, and clears a stale one', async () => {
     const c = await setup();
-    await adminDb.doc(`${paths.teachers(c.sid)}/${T.kumara}`).update({ email: '' });
     const a1 = await save(c, [pick('e-a', T.kumara), pick('e-b', null)], null);
+    expect((await notified(c.sid)).pending[T.kumara]).toBe(a1);
+    await adminDb.doc(`${paths.teachers(c.sid)}/${T.kumara}`).update({ email: '' });
+    const a2 = await save(c, [pick('e-a', null), pick('e-b', T.kumara)], a1);
+    expect((await notified(c.sid)).pending?.[T.kumara]).toBeUndefined();
+    expect(await run(c, a2)).toBe('superseded');
+    expect(await mails(c.email)).toHaveLength(0);
+  });
+
+  it('skips when the teacher email vanishes before the task runs', async () => {
+    const c = await setup();
+    const a1 = await save(c, [pick('e-a', T.kumara), pick('e-b', null)], null);
+    await adminDb.doc(`${paths.teachers(c.sid)}/${T.kumara}`).update({ email: '' });
     expect(await run(c, a1)).toBe('skipped');
     const n = await notified(c.sid);
     expect(n.pending[T.kumara]).toBeUndefined();
     expect(n.sent?.[T.kumara]).toBeUndefined();
+  });
+
+  it('writeMail with an id creates the doc once', async () => {
+    const to = `once-${uniq()}@example.test`;
+    const job = { to: [to], message: { subject: 's', html: 'h', text: 't' } };
+    await writeMail(job, `relief-test-${uniq()}`);
+    const id = `relief-test-${uniq()}`;
+    await writeMail(job, id);
+    await writeMail(job, id);
+    expect(await mails(to)).toHaveLength(2);
   });
 
   it('falls back to the linked member email', async () => {
