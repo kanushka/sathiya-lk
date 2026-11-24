@@ -63,6 +63,13 @@ beforeEach(() => {
 });
 
 describe('TeacherViewPage', () => {
+  it('keeps prev, teacher picker and next on one row that fills the width on phones', () => {
+    setup(T.perera);
+    const wrap = teacherButton().closest('.flex-1')!;
+    expect(wrap).toHaveClass('min-w-0', 'flex-1', 'md:w-72', 'md:flex-none');
+    expect(wrap.parentElement).toHaveClass('w-full', 'md:w-auto');
+  });
+
   it('reopens the last viewed teacher and honours ?teacher=', () => {
     sessionStorage.clear();
     setup(T.perera);
@@ -287,7 +294,7 @@ describe('TeacherViewPage', () => {
     ro.value = true;
     const api = setup(T.perera);
     expect(screen.getByRole('meter', { name: 'Monday load' })).toBeInTheDocument();
-    expect(screen.queryByText(/Click \+ to give this teacher a lesson/)).not.toBeInTheDocument();
+    expect(screen.queryByText(/Choose \+ to give this teacher a lesson/)).not.toBeInTheDocument();
     await activate('Wednesday', 5);
     await activate('Monday', 1);
     expect(screen.queryByRole('dialog')).not.toBeInTheDocument();
@@ -333,7 +340,7 @@ describe('TeacherViewPage', () => {
 
     it('shows a hint before pin mode', () => {
       setup(T.rizan);
-      expect(screen.getByText(/Click \+ to give this teacher a lesson/)).toBeInTheDocument();
+      expect(screen.getByText(/Choose \+ to give this teacher a lesson/)).toBeInTheDocument();
       expect(screen.queryByRole('region', { name: 'Pin mode' })).not.toBeInTheDocument();
     });
 

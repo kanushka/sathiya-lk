@@ -39,7 +39,7 @@ import { blockKey, blockStateFor, isBlock, type BlockState } from './blockState'
 import { classCellView } from './labels';
 import { OutsideTemplateList } from './OutsideTemplateList';
 import { OUTSIDE_TEMPLATE_ID, pickInitial, rememberLast, useAdminBase } from './paths';
-import { PinHeader, PinSection } from './PinPanel';
+import { PinHeader, PinSection, PinSpacer } from './PinPanel';
 import { pinOverlayCell } from './pinOverlay';
 import { SlotPicker } from './SlotPicker';
 import { SubjectProgress } from './SubjectProgress';
@@ -222,20 +222,22 @@ function ClassView({ cls, classes }: { cls: SchoolClass; classes: SchoolClass[] 
   return (
     <div>
       <div className="mb-[18px] flex flex-wrap items-center justify-between gap-3">
-        <div className="flex flex-wrap items-center gap-2.5">
+        <div className="flex w-full flex-wrap items-center gap-2.5 md:w-auto">
           <IconButton icon="chevronLeft" variant="secondary" label={t('classView.prev')} disabled={index <= 0} onClick={() => go(classes[index - 1])} />
-          <Select
-            aria-label={t('classView.classLabel')}
-            value={cls.id}
-            onChange={(id) => go(classes.find((c) => c.id === id))}
-            className="w-52"
-            options={classes.map((c) => ({
-              value: c.id,
-              label: t('classView.classOption', { grade: gradeNumber(c), name: c.name }),
-            }))}
-          />
+          <div className="min-w-0 flex-1 md:w-52 md:flex-none">
+            <Select
+              aria-label={t('classView.classLabel')}
+              value={cls.id}
+              onChange={(id) => go(classes.find((c) => c.id === id))}
+              className="w-full"
+              options={classes.map((c) => ({
+                value: c.id,
+                label: t('classView.classOption', { grade: gradeNumber(c), name: c.name }),
+              }))}
+            />
+          </div>
           <IconButton icon="chevronRight" variant="secondary" label={t('classView.next')} disabled={index >= classes.length - 1} onClick={() => go(classes[index + 1])} />
-          <span className="ml-1.5 text-sm text-ink-muted">
+          <span className="basis-full text-sm text-ink-muted md:ml-1.5 md:basis-auto">
             {classTeacher ? (
               <>
                 {t('classView.classTeacher')} <b className="text-ink">{teacherDisplayName(classTeacher, lang)}</b>
@@ -360,6 +362,7 @@ function ClassView({ cls, classes }: { cls: SchoolClass; classes: SchoolClass[] 
           </p>
         </Modal>
       )}
+      <PinSpacer active={!!pin.target} />
     </div>
   );
 }

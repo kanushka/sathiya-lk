@@ -6,6 +6,7 @@ import { useRef, type KeyboardEvent, type ReactNode } from 'react';
 import { useTranslation } from 'react-i18next';
 import { isComposing } from '../../ui/composing';
 import { cx } from '../../ui/cx';
+import { PHONE_QUERY, useMediaQuery } from '../../ui/PhoneNotice';
 import { CellBody, type CellView } from './Cell';
 
 export type { CellView } from './Cell';
@@ -46,9 +47,14 @@ function periodTimes(rows: TemplateRow[]): Map<number, { start: string; end: str
   return map;
 }
 
+const DESKTOP_COLUMNS = '92px repeat(5,minmax(110px,1fr))';
+const PHONE_COLUMNS = '52px repeat(5, calc((100% - 52px - 18px) / 3))';
+const sticky = 'sticky left-0 z-10 bg-white';
+
 export function TimetableGrid({ rows, cellsFor, selected, onSelect, onActivate, onClear, readOnly, headerExtra, overlay }: TimetableGridProps) {
   const { t } = useTranslation('timetable');
   const { t: tc } = useTranslation('common');
+  const isPhone = useMediaQuery(PHONE_QUERY);
   const root = useRef<HTMLDivElement>(null);
 
   const refDay = DAYS.reduce((best, d) => (rows[d].length > rows[best].length ? d : best), 0 as DayIndex);
@@ -99,11 +105,16 @@ export function TimetableGrid({ rows, cellsFor, selected, onSelect, onActivate, 
   }
 
   return (
-    <div ref={root} role="group" aria-label={t('grid.label')} className="overflow-x-auto">
-      <div className="grid min-w-[660px] gap-1.5" style={{ gridTemplateColumns: '92px repeat(5,minmax(110px,1fr))' }}>
-        <span />
+    <div
+      ref={root}
+      role="group"
+      aria-label={t('grid.label')}
+      className={cx('overflow-x-auto', isPhone && 'snap-x snap-mandatory scroll-pl-[58px]')}
+    >
+      <div className={cx('grid gap-1.5', !isPhone && 'min-w-[660px]')} style={{ gridTemplateColumns: isPhone ? PHONE_COLUMNS : DESKTOP_COLUMNS }}>
+        <span className={cx(isPhone && sticky)} />
         {DAYS.map((d) => (
-          <div key={d} className="flex flex-col items-center py-1.5">
+          <div key={d} className={cx('flex flex-col items-center py-1.5', isPhone && 'snap-start')}>
             <b className="text-[13px] text-ink-muted">{tc(`days.short.${d}`)}</b>
             {headerExtra?.(d)}
           </div>
@@ -116,15 +127,15 @@ export function TimetableGrid({ rows, cellsFor, selected, onSelect, onActivate, 
                 className="flex items-center gap-2.5 rounded-lg bg-warning-soft px-2.5 py-1 text-xs font-bold text-warning"
                 style={{ gridColumn: '1 / -1' }}
               >
-                {t('grid.interval', { time: `${r.start}–${r.end}` })}
+                <span className={cx(isPhone && 'sticky left-2.5')}>{t('grid.interval', { time: `${r.start}–${r.end}` })}</span>
               </div>
             );
           }
           const refTime = times[refDay].get(r.n);
           return [
-            <div key={`l${i}`} className="flex flex-col justify-center pl-1">
+            <div key={`l${i}`} className={cx('flex flex-col justify-center pl-1', isPhone && sticky)}>
               <b className="text-sm">{tc('periods.periodN', { n: r.n })}</b>
-              <span className="text-[11px] text-ink-muted">{refTime ? `${refTime.start}–${refTime.end}` : ''}</span>
+              <span className="text-[11px] text-ink-muted">{refTime ? (isPhone ? refTime.start : `${refTime.start}–${refTime.end}`) : ''}</span>
             </div>,
             ...DAYS.map((d) => {
               const time = times[d].get(r.n);
@@ -153,7 +164,7 @@ export function TimetableGrid({ rows, cellsFor, selected, onSelect, onActivate, 
                   onClick={() => onClick(d, r.n)}
                   onKeyDown={(e) => onKeyDown(e, d, r.n)}
                   className={cx(
-                    'box-border flex min-h-[58px] flex-col justify-center rounded-lg border p-1 text-left focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand',
+                    'box-border flex min-h-[58px] min-w-0 flex-col justify-center rounded-lg border p-1 text-left focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand',
                     ov
                       ? ov.className
                       : cells.length === 0

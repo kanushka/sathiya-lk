@@ -5,7 +5,8 @@ import type { DayIndex, TemplateRow } from '@sathiya/core';
 import { defaultTemplate, shortFridayTemplate } from '@sathiya/core/fixtures';
 import { rowsFor } from '@sathiya/core';
 import { fireEvent, screen } from '@testing-library/react';
-import { describe, expect, it, vi } from 'vitest';
+import { afterEach, describe, expect, it, vi } from 'vitest';
+import { installMatchMedia, resizeTo } from '../../test/matchMedia';
 import { renderWithI18n } from '../../test/render';
 import { TimetableGrid, type CellView } from './TimetableGrid';
 
@@ -168,6 +169,63 @@ describe('TimetableGrid', () => {
       const { onSelect } = setup({ overlay });
       fireEvent.keyDown(screen.getByRole('button', { name: 'Tue busy' }), { key: 'ArrowRight' });
       expect(onSelect).toHaveBeenLastCalledWith(2, 1);
+    });
+  });
+
+  describe('phone layout', () => {
+    let restore: () => void;
+    afterEach(() => restore());
+
+    const grid = () => screen.getByRole('group').firstElementChild as HTMLElement;
+    const p1 = () => screen.getByText('P1').parentElement!;
+
+    it('shows three day columns per screen', () => {
+      restore = installMatchMedia(375);
+      setup();
+      expect(grid().style.gridTemplateColumns).toBe('52px repeat(5, calc(33.3333% - 23.3333px))');
+      expect(grid()).not.toHaveClass('min-w-[660px]');
+    });
+
+    it('keeps the desktop grid unchanged', () => {
+      restore = installMatchMedia(1280);
+      setup();
+      expect(grid().style.gridTemplateColumns).toBe('92px repeat(5, minmax(110px, 1fr))');
+      expect(grid()).toHaveClass('min-w-[660px]');
+      expect(p1()).not.toHaveClass('sticky');
+    });
+
+    it('pins period labels to the left', () => {
+      restore = installMatchMedia(375);
+      setup();
+      expect(p1()).toHaveClass('sticky', 'left-0');
+    });
+
+    it('shows only the start time in period labels', () => {
+      restore = installMatchMedia(375);
+      setup();
+      expect(p1()).toHaveTextContent(/^P1\d{2}:\d{2}$/);
+    });
+
+    it('snaps by day and keeps focused cells clear of the period column', () => {
+      restore = installMatchMedia(375);
+      setup();
+      expect(screen.getByRole('group')).toHaveClass('snap-x', 'snap-mandatory', 'scroll-pl-[58px]');
+      expect(screen.getByText('Tue').parentElement).toHaveClass('snap-start');
+    });
+
+    it('wraps long names inside narrow cells', () => {
+      restore = installMatchMedia(375);
+      setup();
+      expect(screen.getByText('T')).toHaveClass('[overflow-wrap:anywhere]');
+      expect(screen.getByRole('button', { name: /Monday, period 1/ })).toHaveClass('min-w-0');
+    });
+
+    it('switches layout on resize', () => {
+      restore = installMatchMedia(375);
+      setup();
+      resizeTo(1280);
+      expect(p1()).not.toHaveClass('sticky');
+      expect(grid().style.gridTemplateColumns).toBe('92px repeat(5, minmax(110px, 1fr))');
     });
   });
 });

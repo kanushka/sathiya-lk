@@ -26,10 +26,11 @@ export interface DialogTrapOptions {
   panelRef: RefObject<HTMLElement | null>;
   containerRef: RefObject<HTMLElement | null>;
   initialFocusRef?: RefObject<HTMLElement | null>;
+  focusPanel?: boolean;
   onClose: () => void;
 }
 
-export function useDialogTrap({ panelRef, containerRef, initialFocusRef, onClose }: DialogTrapOptions): void {
+export function useDialogTrap({ panelRef, containerRef, initialFocusRef, focusPanel = false, onClose }: DialogTrapOptions): void {
   const onCloseRef = useRef(onClose);
   onCloseRef.current = onClose;
 
@@ -40,7 +41,7 @@ export function useDialogTrap({ panelRef, containerRef, initialFocusRef, onClose
     const panel = panelRef.current;
     const restoreInert = containerRef.current ? inertOutside(containerRef.current) : undefined;
     const initial = initialFocusRef?.current;
-    const first = (initial && focusables(initial)[0]) ?? (panel && focusables(panel)[0]) ?? panel;
+    const first = focusPanel ? panel : ((initial && focusables(initial)[0]) ?? (panel && focusables(panel)[0]) ?? panel);
     first?.focus();
     const overflow = document.body.style.overflow;
     document.body.style.overflow = 'hidden';
@@ -62,7 +63,7 @@ export function useDialogTrap({ panelRef, containerRef, initialFocusRef, onClose
         return;
       }
       const active = document.activeElement;
-      if (e.shiftKey && (active === head || !panel.contains(active))) {
+      if (e.shiftKey && (active === head || active === panel || !panel.contains(active))) {
         e.preventDefault();
         tail.focus();
       } else if (!e.shiftKey && (active === tail || !panel.contains(active))) {

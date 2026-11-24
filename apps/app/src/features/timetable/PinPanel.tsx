@@ -41,7 +41,7 @@ export function PinSection({ pin, teacher, teacherRows, className, children, foo
   return (
     <section
       data-pin-mode={target ? 'true' : undefined}
-      className={cx('min-w-0 overflow-x-auto rounded-[14px] border border-line bg-white p-4', className, target && 'outline outline-2 outline-offset-2 outline-brand')}
+      className={cx('min-w-0 overflow-x-auto rounded-[14px] border border-line bg-white p-2 md:p-4', className, target && 'outline outline-2 outline-offset-2 outline-brand')}
     >
       {target && (
         <PinLegend
@@ -57,4 +57,8 @@ export function PinSection({ pin, teacher, teacherRows, className, children, foo
       {footer}
     </section>
   );
+}
+
+export function PinSpacer({ active }: { active: boolean }) {
+  return active ? <div aria-hidden="true" className="h-[calc(9rem+env(safe-area-inset-bottom))] md:hidden" /> : null;
 }
