@@ -3,8 +3,12 @@
 import { expect, test } from '@playwright/test';
 import { paths } from '@sathiya/core';
 import { school, T } from '@sathiya/core/fixtures';
-import { admin, ADMIN, INVITEE, JOIN_TOKEN, joinPath, REQUESTER, SID } from '../../scripts/seed';
-import { callAs, freshSchoolAdmin, idToken, loginAdmin, loginTeacher, pick, shot, signIn } from '../helpers';
+import { admin, ADMIN, INVITEE, joinPath, REQUESTER, SID, YEAR_ID } from '../../scripts/seed';
+import { callAs, freshSchoolAdmin, idToken, loginAdmin, loginTeacher, pick, shot, submitSignIn } from '../helpers';
+
+test.beforeAll(async () => {
+  await callAs(await idToken(ADMIN.email, ADMIN.password), 'publishYear', { schoolId: SID, yearId: YEAR_ID });
+});
 
 test('admin approves a join request and the teacher sees their timetable', async ({ page, browser }) => {
   await loginAdmin(page, ADMIN.email, ADMIN.password);
@@ -29,7 +33,7 @@ test('a teacher whose email matches their record joins with the school link at o
 
   await page.goto(joinPath());
   await expect(page).toHaveURL(/\/login$/);
-  await signIn(page, INVITEE.email, password);
+  await submitSignIn(page, INVITEE.email, password);
   await expect(page).toHaveURL(new RegExp(`/s/${SID}/me$`));
   await expect(page.getByRole('banner')).toContainText('SCC014');
 
@@ -42,14 +46,10 @@ test('a teacher whose email matches their record joins with the school link at o
 test('a user in two schools switches between them', async ({ page }) => {
   const other = await freshSchoolAdmin('switch');
   await admin().db.doc(`${paths.teachers(SID)}/${T.gunasekara}`).update({ email: other.email });
-  await callAs(await idToken(other.email, other.password), 'joinSchool', { schoolId: SID, token: JOIN_TOKEN });
 
-  await signIn(page, other.email, other.password);
-  await expect(page).toHaveURL(new RegExp(`/s/(${other.sid}/admin|${SID}/me)$`));
-  if (page.url().endsWith('/me')) await pick(page, /^School /, /^switch School · Admin$/);
-  await expect(page).toHaveURL(new RegExp(`/s/${other.sid}/admin$`));
-
-  await pick(page, /^School /, `${school.nameEn} · Teacher`);
+  await page.goto(joinPath());
+  await expect(page).toHaveURL(/\/login$/);
+  await submitSignIn(page, other.email, other.password);
   await expect(page).toHaveURL(new RegExp(`/s/${SID}/me$`));
   await expect(page.getByRole('banner')).toContainText('SCC019');
   await shot(page, 'school-switcher');
@@ -59,4 +59,8 @@ test('a user in two schools switches between them', async ({ page }) => {
   await expect(page.getByRole('combobox', { name: /^School / })).toHaveText('switch School · Admin');
   await page.goto('/');
   await expect(page).toHaveURL(new RegExp(`/s/${other.sid}/admin$`));
+
+  await pick(page, /^School /, `${school.nameEn} · Teacher`);
+  await expect(page).toHaveURL(new RegExp(`/s/${SID}/me$`));
+  await expect(page.getByRole('banner')).toContainText('SCC019');
 });

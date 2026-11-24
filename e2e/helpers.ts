@@ -9,6 +9,10 @@ export const shot = (page: Page, name: string) => page.screenshot({ path: `${SHO
 
 export async function signIn(page: Page, email: string, password: string): Promise<void> {
   await page.goto('/login');
+  await submitSignIn(page, email, password);
+}
+
+export async function submitSignIn(page: Page, email: string, password: string): Promise<void> {
   await page.getByLabel('Email').fill(email);
   await page.getByLabel('Password', { exact: true }).fill(password);
   await page.getByRole('button', { name: 'Log in' }).click();
