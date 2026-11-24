@@ -7,6 +7,7 @@ import { db } from './lib/admin';
 import { callOpts } from './lib/callOptions';
 import { docId, invalid, obj, requireSchoolAdmin } from './lib/guards';
 import { loadContext, loadEntries } from './lib/loadContext';
+import { refreshTodayRelief } from './relief/day';
 
 const BATCH_OPS = 450;
 
@@ -22,7 +23,7 @@ async function commitAll(ops: Op[]): Promise<void> {
 
 export const publishYear = onCall(callOpts, async (req): Promise<PublishYearRes> => {
   const data = obj(req.data, 'request');
-  const { sid } = await requireSchoolAdmin(req, data.schoolId);
+  const { sid, uid } = await requireSchoolAdmin(req, data.schoolId);
   const yid = docId(data.yearId, 'yearId');
   const yearRef = db.doc(`${paths.years(sid)}/${yid}`);
   const yearSnap = await yearRef.get();
@@ -49,5 +50,6 @@ export const publishYear = onCall(callOpts, async (req): Promise<PublishYearRes>
   batch.update(yearRef, { status: 'published', publishedAt: Date.now() });
   batch.update(db.doc(paths.school(sid)), { activeYearId: yid });
   await batch.commit();
+  await refreshTodayRelief(sid, yid, uid, ctx, new Map(snaps.teachers.map((t) => [t.teacherId, t])));
   return { classes: snaps.classes.length, teachers: snaps.teachers.length };
 });

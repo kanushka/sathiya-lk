@@ -4,26 +4,20 @@ import {
   colomboToday,
   LEAVE_TYPES,
   paths,
-  reliefSlots,
-  teacherDisplayName,
   validateRelief,
   type Leave,
   type LeaveType,
-  type Relief,
   type ReliefDay,
-  type ReliefLabel,
-  type ReliefStats,
+  type ReliefNotified,
   type SaveReliefDayRes,
-  type Teacher,
 } from '@sathiya/core';
-import { logger } from 'firebase-functions/v2';
-import { FieldValue } from 'firebase-admin/firestore';
 import { onCall } from 'firebase-functions/v2/https';
 import { db } from './lib/admin';
 import { callOpts } from './lib/callOptions';
 import { docId, docIdList, fail, invalid, obj, requireSchoolAdmin, str } from './lib/guards';
 import { loadContext, loadTeacherSnapshots } from './lib/loadContext';
 import { runTx } from './lib/tx';
+import { countsOf, dayRefs, emailable, mailCandidates, readDay, rebuildDay, writeDay, type Picks } from './relief/day';
 import { queueReliefMails } from './relief/mailQueue';
 
 const MAX_LEAVES = 50;
@@ -41,9 +35,9 @@ function parseLeaves(v: unknown): Leave[] {
 }
 
 // Only the pick is read from the client; every other field is rebuilt from the published timetable.
-function parsePicks(v: unknown): Map<string, string | null> {
+function parsePicks(v: unknown): Picks {
   if (!Array.isArray(v) || v.length > MAX_RELIEFS) invalid(`reliefs must be a list of at most ${MAX_RELIEFS}`);
-  const picks = new Map<string, string | null>();
+  const picks: Picks = new Map();
   const seen = new Set<string>();
   for (const x of v as unknown[]) {
     const r = obj(x, 'relief');
@@ -56,24 +50,6 @@ function parsePicks(v: unknown): Map<string, string | null> {
     picks.set(`${entryId}|${absent}`, pick);
   }
   return picks;
-}
-
-const countsOf = (reliefs: Relief[]): Record<string, number> => {
-  const out: Record<string, number> = {};
-  for (const r of reliefs) if (r.reliefTeacherId !== null) out[r.reliefTeacherId] = (out[r.reliefTeacherId] ?? 0) + 1;
-  return out;
-};
-
-const entrySets = (reliefs: Relief[]): Map<string, string> => {
-  const by = new Map<string, string[]>();
-  for (const r of reliefs) if (r.reliefTeacherId !== null) by.set(r.reliefTeacherId, [...(by.get(r.reliefTeacherId) ?? []), r.entryId]);
-  return new Map([...by].map(([t, ids]) => [t, ids.sort().join('|')]));
-};
-
-function nameOf(t: Teacher): { en: string; si?: string } {
-  const en = teacherDisplayName(t, 'en');
-  const si = teacherDisplayName(t, 'si');
-  return si === en ? { en } : { en, si };
 }
 
 export const saveReliefDay = onCall(callOpts, async (req): Promise<SaveReliefDayRes> => {
@@ -95,85 +71,25 @@ export const saveReliefDay = onCall(callOpts, async (req): Promise<SaveReliefDay
   if ([...snaps.values()].some((s) => s.cells.some((c) => c.entryId === undefined))) {
     fail('failed-precondition', 'republish', 'Republish the timetable to enable relief');
   }
-  // A republish can remove a ticked lesson; drop it so the save goes through and the relief on it is removed.
-  const leaves = asked.map((l): Leave => {
-    const lessons = new Set((snaps.get(l.teacherId)?.cells ?? []).flatMap((c) => (c.day === day && c.entryId !== undefined ? [c.entryId] : [])));
-    return { ...l, entryIds: l.entryIds.filter((id) => lessons.has(id)) };
-  });
-
   const gradeNo = new Map(ctx.grades.map((g) => [g.id, g.number]));
   const gradeOfClass = new Map(ctx.classes.flatMap((c) => (gradeNo.has(c.gradeId) ? [[c.id, gradeNo.get(c.gradeId)!] as const] : [])));
-  const reliefs: Relief[] = reliefSlots(leaves, snaps, day).map((s) => ({ ...s, reliefTeacherId: picks.get(`${s.entryId}|${s.absentTeacherId}`) ?? null }));
+  const { leaves, reliefs } = rebuildDay(asked, picks, snaps, day);
 
-  const dayRef = db.doc(paths.reliefDay(sid, yid, date));
-  const statsRef = db.doc(paths.reliefStats(sid, yid));
-  const teacherById = new Map(ctx.teachers.map((t) => [t.id, t]));
-
-  const members = paths.members(sid);
-  const candidates = new Set([...reliefs.flatMap((r) => (r.reliefTeacherId === null ? [] : [r.reliefTeacherId]))]);
-  for (const r of ((await dayRef.get()).data() as ReliefDay | undefined)?.reliefs ?? []) if (r.reliefTeacherId !== null) candidates.add(r.reliefTeacherId);
-  const hasEmail = new Set<string>();
-  for (const id of candidates) {
-    const t = teacherById.get(id);
-    let to = t?.email?.trim();
-    if (!to && t?.uid) {
-      try {
-        to = ((await db.doc(`${members}/${t.uid}`).get()).data() as { email?: string } | undefined)?.email?.trim();
-      } catch (e) {
-        logger.error('relief mail address lookup failed', e);
-      }
-    }
-    if (to) hasEmail.add(id);
-  }
+  const refs = dayRefs(sid, yid, date);
+  const [oldSnap, notifiedSnap] = await Promise.all([refs.day.get(), refs.notified.get()]);
+  const hasEmail = await emailable(sid, ctx, mailCandidates(oldSnap.data() as ReliefDay | undefined, reliefs, notifiedSnap.data() as Partial<ReliefNotified> | undefined));
 
   const { updatedAt, changed } = await runTx(async (tx) => {
-    const [daySnap, statsSnap] = await Promise.all([tx.get(dayRef), tx.get(statsRef)]);
-    const old = daySnap.data() as ReliefDay | undefined;
-    if ((old?.updatedAt ?? null) !== expectedUpdatedAt) fail('failed-precondition', 'stale', "Someone else changed today's relief; reload");
+    const read = await readDay(tx, sid, yid, date);
+    if ((read.old?.updatedAt ?? null) !== expectedUpdatedAt) fail('failed-precondition', 'stale', "Someone else changed today's relief; reload");
 
-    const oldCounts = countsOf(old?.reliefs ?? []);
-    const stats = (statsSnap.data() as ReliefStats | undefined)?.counts ?? {};
-    const counts: Record<string, number> = { ...stats };
-    for (const [t, n] of Object.entries(oldCounts)) counts[t] = Math.max(0, (counts[t] ?? 0) - n);
-
+    const counts: Record<string, number> = { ...read.stats };
+    for (const [t, n] of Object.entries(countsOf(read.old?.reliefs ?? []))) counts[t] = Math.max(0, (counts[t] ?? 0) - n);
     const errors = validateRelief({ leaves, reliefs }, { teachers: ctx.teachers, snaps, gradeOfClass, day, leaves, counts });
     if (errors.length) fail('failed-precondition', 'invalid-relief', 'Relief has problems', { errors });
 
-    const ids = new Set([...leaves.map((l) => l.teacherId), ...reliefs.flatMap((r) => (r.reliefTeacherId === null ? [] : [r.reliefTeacherId]))]);
-    const names: ReliefDay['names'] = {};
-    for (const id of ids) {
-      const t = teacherById.get(id);
-      if (t) names[id] = nameOf(t);
-    }
-    const labels: Record<string, ReliefLabel> = {};
-    for (const r of reliefs) {
-      const subject = ctx.subjects.find((s) => s.id === r.subjectId);
-      const subSi = subject?.nameSi?.trim();
-      labels[`${r.entryId}|${r.absentTeacherId}`] = {
-        cls: r.classIds.map((id) => ctx.classes.find((c) => c.id === id)?.name ?? id).join('+'),
-        sub: subject?.short || subject?.nameEn || '',
-        ...(subSi ? { subSi } : {}),
-      };
-    }
-    const savedAt = Date.now();
-    const doc: ReliefDay = { date, day, leaves, reliefs, names, labels, updatedAt: savedAt, updatedBy: uid };
-    tx.set(dayRef, doc);
-
-    const next = countsOf(reliefs);
-    const merged: Record<string, number> = { ...stats };
-    for (const [t, n] of Object.entries(oldCounts)) merged[t] = (merged[t] ?? 0) - n;
-    for (const [t, n] of Object.entries(next)) merged[t] = (merged[t] ?? 0) + n;
-    for (const t of Object.keys(merged)) if (merged[t]! <= 0) delete merged[t];
-    tx.set(statsRef, { counts: merged } satisfies ReliefStats);
-
-    const before = entrySets(old?.reliefs ?? []);
-    const after = entrySets(reliefs);
-    const changedIds = [...new Set([...before.keys(), ...after.keys()])].filter((t) => before.get(t) !== after.get(t));
-    if (changedIds.length) {
-      const pending = Object.fromEntries(changedIds.map((t) => [t, hasEmail.has(t) ? savedAt : FieldValue.delete()]));
-      tx.set(db.doc(paths.reliefNotified(sid, yid, date)), { pending }, { merge: true });
-    }
-    return { updatedAt: savedAt, changed: changedIds };
+    const { savedAt, changed } = writeDay(tx, { sid, yid, date, day, uid, ctx, leaves, reliefs, hasEmail }, read);
+    return { updatedAt: savedAt, changed };
   });
 
   const queued = await queueReliefMails({ sid, yid, date, savedAt: updatedAt }, changed.filter((t) => hasEmail.has(t)));

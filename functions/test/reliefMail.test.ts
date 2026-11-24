@@ -2,11 +2,12 @@
 // Copyright (C) 2026 Kanushka Gayan
 import { colomboToday, paths, reliefKey, type ReliefDay, type ReliefNotified, type SaveReliefDayReq } from '@sathiya/core';
 import { C, entry, S, T } from '@sathiya/core/fixtures';
+import { FieldValue } from 'firebase-admin/firestore';
 import { describe, expect, it } from 'vitest';
 import { writeMail } from '../src/email/send';
 import { runReliefMail } from '../src/reliefMail';
 import { adminDb, uniq, type Client } from './helpers';
-import { publishedSeed, YEAR } from './seed';
+import { publishedSeed, putEntries, YEAR } from './seed';
 
 const today = colomboToday(new Date());
 const day = today.day;
@@ -28,6 +29,8 @@ const run = (c: Ctx, savedAt: number, teacherId: string = T.kumara) => runRelief
 const mails = async (to: string) => (await adminDb.collection('mail').where('to', 'array-contains', to).get()).docs.map((x) => x.data() as { message: { subject: string } });
 const notified = async (sid: string) => (await adminDb.doc(paths.reliefNotified(sid, YEAR, today.date)).get()).data() as ReliefNotified;
 const dayDoc = async (sid: string) => (await adminDb.doc(paths.reliefDay(sid, YEAR, today.date)).get()).data() as ReliefDay;
+const dropPending = (sid: string, teacherId: string) =>
+  adminDb.doc(paths.reliefNotified(sid, YEAR, today.date)).set({ pending: { [teacherId]: FieldValue.delete() } }, { merge: true });
 
 describe.skipIf(day === null)('runReliefMail', () => {
   it('sends one assigned mail', async () => {
@@ -125,6 +128,52 @@ describe.skipIf(day === null)('runReliefMail', () => {
     expect(await runReliefMail({ sid: c.sid, yid: YEAR, date: past, teacherId: T.kumara, savedAt: a1 })).toBe('skipped');
     expect(await mails(c.email)).toHaveLength(0);
     expect(((await adminDb.doc(paths.reliefNotified(c.sid, YEAR, past)).get()).data() as ReliefNotified).pending).toEqual({ [T.herath]: 9 });
+  });
+
+  it('an unchanged re-save retries a mail that was never queued, but not one already sent', async () => {
+    const c = await setup();
+    const a1 = await save(c, [pick('e-a', T.kumara), pick('e-b', null)], null);
+    await dropPending(c.sid, T.kumara);
+    const a2 = await save(c, [pick('e-a', T.kumara), pick('e-b', null)], a1);
+    expect((await notified(c.sid)).pending[T.kumara]).toBe(a2);
+    expect(await run(c, a2)).toBe('sent');
+    const a3 = await save(c, [pick('e-a', T.kumara), pick('e-b', null)], a2);
+    expect((await notified(c.sid)).pending?.[T.kumara]).toBeUndefined();
+    expect(await run(c, a3)).toBe('superseded');
+    expect(await mails(c.email)).toHaveLength(1);
+  });
+
+  it('an unchanged re-save retries a cancellation that was never queued', async () => {
+    const c = await setup();
+    const a1 = await save(c, [pick('e-a', T.kumara), pick('e-b', null)], null);
+    expect(await run(c, a1)).toBe('sent');
+    const a2 = await save(c, [pick('e-a', null), pick('e-b', null)], a1);
+    await dropPending(c.sid, T.kumara);
+    const a3 = await save(c, [pick('e-a', null), pick('e-b', null)], a2);
+    expect((await notified(c.sid)).pending[T.kumara]).toBe(a3);
+    expect(await run(c, a3)).toBe('sent');
+    expect((await mails(c.email)).map((m) => m.message.subject)).toContain('Relief cancelled today');
+  });
+
+  it('a republish that moves a relieved lesson refreshes the relief and mails the new time', async () => {
+    const c = await setup();
+    const a1 = await save(c, [pick('e-a', T.kumara), pick('e-b', null)], null);
+    expect(await run(c, a1)).toBe('sent');
+    await putEntries(c.sid, [entry('e-a', d, 3, [C.c6a], [[S.maths, T.bandara]])]);
+    await c.admin.call('publishYear', { schoolId: c.sid, yearId: YEAR });
+    const doc = await dayDoc(c.sid);
+    expect(doc.updatedAt).toBeGreaterThan(a1);
+    expect(doc.reliefs.find((r) => r.entryId === 'e-a')).toMatchObject({ period: 3, reliefTeacherId: T.kumara });
+    expect((await notified(c.sid)).pending[T.kumara]).toBe(doc.updatedAt);
+    expect(await run(c, doc.updatedAt)).toBe('sent');
+    expect((await mails(c.email)).map((m) => m.message.subject)).toContain('Relief today: P3 6A Maths');
+  });
+
+  it('a republish that changes no relief leaves the day untouched', async () => {
+    const c = await setup();
+    const a1 = await save(c, [pick('e-a', T.kumara), pick('e-b', null)], null);
+    await c.admin.call('publishYear', { schoolId: c.sid, yearId: YEAR });
+    expect((await dayDoc(c.sid)).updatedAt).toBe(a1);
   });
 
   it('writeMail with an id creates the doc once', async () => {
