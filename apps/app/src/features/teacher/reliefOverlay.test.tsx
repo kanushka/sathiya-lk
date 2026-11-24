@@ -3,11 +3,19 @@
 import { buildSnapshots, type Relief, type ReliefDay, type TeacherSnapshot, type Year } from '@sathiya/core';
 import { C, S, T, ctx as baseCtx, entries } from '@sathiya/core/fixtures';
 import { screen, within } from '@testing-library/react';
-import { describe, expect, it } from 'vitest';
+import { afterEach, describe, expect, it, vi } from 'vitest';
+import { onSnapshot } from 'firebase/firestore';
 import { renderWithSchool } from '../../test/renderWithSchool';
 import { overlayRelief } from './reliefOverlay';
 import { TodayPage } from './TodayPage';
 import { WeekPage } from './WeekPage';
+
+vi.mock('firebase/firestore', async (orig) => ({ ...(await orig<typeof import('firebase/firestore')>()), onSnapshot: vi.fn(() => () => undefined) }));
+afterEach(() => {
+  const listeners = vi.mocked(onSnapshot).mock.calls.length;
+  vi.mocked(onSnapshot).mockClear();
+  expect(listeners).toBe(0);
+});
 
 const year: Year = { id: 'y-2026', label: '2026', status: 'published' };
 const ctx = { ...baseCtx, school: { ...baseCtx.school, activeYearId: year.id } };
