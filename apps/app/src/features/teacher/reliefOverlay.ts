@@ -21,27 +21,19 @@ export function overlayRelief(snap: TeacherSnapshot, day: ReliefDay | null, teac
     return id ? nameOf(id) : null;
   };
   const periods = slotsOf(snap.rows[day.day] ?? []).filter((s) => s.kind === 'period');
-  const periodFor = (start: string, end: string, fallback: number): number => {
-    let best = fallback;
-    let bestOverlap = 0;
-    for (const p of periods) {
-      const overlap = Math.min(toMinutes(end), toMinutes(p.row.end)) - Math.max(toMinutes(start), toMinutes(p.row.start));
-      if (overlap > bestOverlap) {
-        best = p.n;
-        bestOverlap = overlap;
-      }
-    }
-    return best;
+  const periodsFor = (start: string, end: string, fallback: number): number[] => {
+    const hit = periods.filter((p) => Math.min(toMinutes(end), toMinutes(p.row.end)) > Math.max(toMinutes(start), toMinutes(p.row.start))).map((p) => p.n);
+    return hit.length ? hit : [fallback];
   };
 
   const own = snap.cells.map((c): OverlayCell => (c.day === day.day && c.entryId !== undefined && ownLeave.has(c.entryId) ? { ...c, onLeave: { reliefBy: reliefBy(c.entryId) } } : c));
   const relief = day.reliefs
     .filter((r) => r.reliefTeacherId === teacherId)
-    .map((r): OverlayCell => {
+    .flatMap((r): OverlayCell[] => {
       const label = day.labels?.[`${r.entryId}|${r.absentTeacherId}`];
-      return {
+      return periodsFor(r.start, r.end, r.period).map((period) => ({
         day: day.day,
-        period: periodFor(r.start, r.end, r.period),
+        period,
         start: r.start,
         end: r.end,
         title: label?.cls ?? '',
@@ -51,7 +43,7 @@ export function overlayRelief(snap: TeacherSnapshot, day: ReliefDay | null, teac
         isGroup: false,
         entryId: r.entryId,
         relief: { forTeacher: nameOf(r.absentTeacherId) },
-      };
+      }));
     });
   return { ...snap, cells: [...own, ...relief].sort((a, b) => a.day - b.day || toMinutes(a.start) - toMinutes(b.start)) };
 }

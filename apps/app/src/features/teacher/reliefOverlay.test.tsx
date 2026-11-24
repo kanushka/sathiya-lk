@@ -62,6 +62,15 @@ describe('overlayRelief', () => {
     expect([bare.title, bare.sub]).toEqual(['', '']);
   });
 
+  it('shows a relief in every recipient period it overlaps', () => {
+    const periods = perera.rows[2].filter((r) => r.type === 'period');
+    const i = periods.findIndex((r, k) => periods[k + 1]?.start === r.end);
+    const [a, b] = [periods[i]!, periods[i + 1]!];
+    const r = relief({ start: a.start, end: b.end, period: 1 });
+    const added = overlayRelief({ ...perera, cells: [] }, doc({ reliefs: [r] }), T.perera, 'en').cells.filter((c) => c.relief);
+    expect(added.map((c) => c.period)).toEqual([i + 1, i + 2]);
+  });
+
   it('marks own leave lessons with the relief teacher or none', () => {
     const lv = { teacherId: T.perera, type: 'full' as const, entryIds: [lesson.entryId!] };
     const covered = overlayRelief(perera, doc({ leaves: [lv], reliefs: [relief({ entryId: lesson.entryId!, absentTeacherId: T.perera, reliefTeacherId: T.kumara })] }), T.perera, 'en');
