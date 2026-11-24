@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
 // Copyright (C) 2026 Kanushka Gayan
 import { orphanedEntries, usageCount, type PeriodTemplate } from '@sathiya/core';
-import { useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useSchool, useYear } from '../../app/SchoolProvider';
 import { Badge } from '../../ui/Badge';
@@ -122,6 +122,13 @@ function TemplateDetail({ template, readOnly, dialog, setDialog }: DetailProps) 
   const [errors, setErrors] = useState<ValidationError[]>([]);
   const [pending, setPending] = useState<'save' | 'default' | null>(null);
   const [inUse, setInUse] = useState(0);
+  const mounted = useRef(true);
+  useEffect(() => {
+    mounted.current = true;
+    return () => {
+      mounted.current = false;
+    };
+  }, []);
   const sid = school.school.id;
   const classes = usageCount('template', template.id, school, entries);
 
@@ -145,16 +152,13 @@ function TemplateDetail({ template, readOnly, dialog, setDialog }: DetailProps) 
   }
 
   const patch = () => ({ name: draft.name, mode: draft.mode, rows: draftToTemplate(template, draft).rows, ...(draft.mode === 'perDay' && draft.days ? { days: draft.days } : {}) });
-  const persist = (remap: boolean) =>
-    guard('save', async () => {
-      if (remap) await api.saveTemplateWithRemap(sid, template.id, patch());
-      else await api.saveTemplate(sid, template.id, patch());
-    }, t('page.saved'));
+  const persist = () => guard('save', () => api.saveTemplateWithRemap(sid, template.id, patch()).then(() => undefined), t('page.saved'));
 
   async function check(): Promise<void> {
     setPending('save');
     try {
       const res = await api.saveTemplateWithRemap(sid, template.id, patch(), true);
+      if (!mounted.current) return;
       if (res.blocked > 0) setInUse(res.blocked);
       else if (res.orphaned > 0) setDialog({ kind: 'shrink', count: res.orphaned });
       else {
@@ -174,7 +178,7 @@ function TemplateDetail({ template, readOnly, dialog, setDialog }: DetailProps) 
     setInUse(0);
     if (found.length > 0) return;
     if (classes > 0) void check();
-    else void persist(false);
+    else void persist();
   }
 
   const nameError = errors.some((e) => e.code === 'name');
@@ -248,7 +252,7 @@ function TemplateDetail({ template, readOnly, dialog, setDialog }: DetailProps) 
           onClose={() => setDialog(null)}
           onConfirm={() => {
             setDialog(null);
-            void persist(true);
+            void persist();
           }}
         />
       )}

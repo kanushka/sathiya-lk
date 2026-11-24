@@ -47,7 +47,6 @@ describe('templates page', () => {
     fireEvent.change(screen.getByLabelText('Start, row 2'), { target: { value: '08:00' } });
     await user.click(screen.getByRole('button', { name: 'Save template' }));
     expect(screen.getByRole('alert')).toHaveTextContent(/overlap/i);
-    expect(api.saveTemplate).not.toHaveBeenCalled();
     expect(api.saveTemplateWithRemap).not.toHaveBeenCalled();
   });
 
@@ -88,23 +87,33 @@ describe('templates page', () => {
     expect(api.saveTemplateWithRemap).toHaveBeenCalledTimes(1);
   });
 
+  it('ignores a dry run that finishes after another template was selected', async () => {
+    const user = setup();
+    let finish!: (r: SaveTemplateRes) => void;
+    vi.mocked(api.saveTemplateWithRemap).mockReturnValueOnce(new Promise((r) => (finish = r)));
+    await user.click(screen.getByRole('button', { name: 'Save template' }));
+    await user.click(screen.getByRole('button', { name: /Primary/ }));
+    finish(res({ orphaned: 2 }));
+    await vi.waitFor(() => expect(api.saveTemplateWithRemap).toHaveBeenCalledTimes(1));
+    expect(screen.queryByRole('dialog')).toBeNull();
+  });
+
   it('saves through the callable after a clean dry run when the template is used', async () => {
     const user = setup();
     await pickOption(user, screen.getByRole('combobox', { name: /^Type, row 5/ }), 'Period');
     await user.click(screen.getByRole('button', { name: 'Save template' }));
     await vi.waitFor(() => expect(api.saveTemplateWithRemap).toHaveBeenCalledTimes(2));
     expect(vi.mocked(api.saveTemplateWithRemap).mock.calls.map((c) => c[3])).toEqual([true, undefined]);
-    expect(api.saveTemplate).not.toHaveBeenCalled();
   });
 
-  it('writes directly when no class uses the template', async () => {
+  it('saves through the callable without a dry run when no class uses the template', async () => {
     const unused = { ...ctx, classes: ctx.classes.filter((c) => c.templateId !== TPL.primary) };
     renderWithSchool(<TemplatesPage />, { ctx: unused, entries });
     const user = userEvent.setup();
     await user.click(screen.getByRole('button', { name: /Primary/ }));
     await user.click(screen.getByRole('button', { name: 'Save template' }));
-    expect(api.saveTemplate).toHaveBeenCalledTimes(1);
-    expect(api.saveTemplateWithRemap).not.toHaveBeenCalled();
+    expect(api.saveTemplateWithRemap).toHaveBeenCalledTimes(1);
+    expect(vi.mocked(api.saveTemplateWithRemap).mock.calls[0]![3]).toBeUndefined();
   });
 
   it('adds a named activity row and saves it', async () => {
@@ -170,7 +179,7 @@ describe('templates page', () => {
     fireEvent.change(start, { target: { value: '' } });
     expect(screen.queryByText(/NaN/)).not.toBeInTheDocument();
     await user.click(screen.getByRole('button', { name: 'Save template' }));
-    expect(api.saveTemplate).not.toHaveBeenCalled();
+    expect(api.saveTemplateWithRemap).not.toHaveBeenCalled();
     expect(screen.getByText(/Row 1: enter a valid time/)).toBeInTheDocument();
   });
 

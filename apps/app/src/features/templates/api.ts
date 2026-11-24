@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
 // Copyright (C) 2026 Kanushka Gayan
 import { paths, type DayIndex, type SaveTemplateRes, type TemplatePatch, type TemplateRow } from '@sathiya/core';
-import { addDoc, collection, deleteField, doc, updateDoc, writeBatch } from 'firebase/firestore';
+import { addDoc, collection, doc, writeBatch } from 'firebase/firestore';
 import { call } from '../../lib/callable';
 import { db } from '../../lib/firebase';
 
@@ -32,19 +32,6 @@ export function saveTemplateWithRemap(schoolId: string, templateId: string, patc
 
 export async function createTemplate(schoolId: string, name: string, rows: TemplateRow[]): Promise<void> {
   await addDoc(collection(db, paths.templates(schoolId)), { name: name.trim(), isDefault: false, mode: 'same', rows: cleanRows(rows) });
-}
-
-export async function saveTemplate(schoolId: string, templateId: string, patch: TemplatePatch): Promise<void> {
-  const days =
-    patch.mode === 'perDay' && patch.days
-      ? Object.fromEntries(([0, 1, 2, 3, 4] as DayIndex[]).map((d) => [d, cleanRows(patch.days![d])]))
-      : deleteField();
-  await updateDoc(doc(db, paths.templates(schoolId), templateId), {
-    name: patch.name.trim(),
-    mode: patch.mode,
-    rows: cleanRows(patch.rows),
-    days,
-  });
 }
 
 export async function setDefaultTemplate(schoolId: string, templateId: string, previousDefaultIds: string[]): Promise<void> {
