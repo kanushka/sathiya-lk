@@ -202,7 +202,7 @@ describe('schools/{sid} doc', () => {
   describe('create / delete', () => {
     it('denies admin creating a school doc', async () => {
       await assertFails(as(env, 'anon').firestore().doc(paths.school('new')).set(school('new')));
-      await assertFails(env.authenticatedContext('u-x', { sid: 'new', role: 'admin' }).firestore().doc(paths.school('new')).set(school('new')));
+      await assertFails(env.authenticatedContext('u-x', { schools: { new: { r: 'a' } } }).firestore().doc(paths.school('new')).set(school('new')));
       await assertFails(set('noClaims', paths.school('new'), school('new')));
       await assertFails(set('super', paths.school('new'), school('new')));
     });
@@ -341,6 +341,84 @@ describe('members', () => {
     );
     deny([['admin', mt], ['teacher', mt]], (r, p) => update(r, p, { role: 'admin' }));
     deny([['admin', mt]], del);
+  });
+});
+
+describe('multi-school claims', () => {
+  const t = (sid: string, id: string) => `${paths.teachers(sid)}/${id}`;
+  it('admin of s1 is denied on s2', async () => {
+    await assertFails(read('admin', paths.school('s2')));
+    await assertFails(read('admin', `${paths.subjects('s2')}/sub9`));
+    await assertFails(set('admin', `${paths.subjects('s2')}/new`, { nameEn: 'x', short: 'X', color: '#000000' }));
+    await assertFails(update('admin', paths.school('s2'), { nameEn: 'x' }));
+  });
+  it('teacher in two schools reads only own teacher doc in each', async () => {
+    await assertSucceeds(read('multiTeacher', t('s1', 't1')));
+    await assertSucceeds(read('multiTeacher', t('s2', 't9')));
+    await assertFails(read('multiTeacher', t('s1', 't2')));
+    await assertFails(read('multiTeacher', t('s2', 't1')));
+    await assertFails(read('multiTeacher', paths.school('sd')));
+  });
+  it('admin of s1 and teacher of s2 gets admin powers only in s1', async () => {
+    await assertSucceeds(read('adminS1TeacherS2', `${paths.subjects('s1')}/sub1`));
+    await assertSucceeds(set('adminS1TeacherS2', `${paths.subjects('s1')}/new`, { nameEn: 'x', short: 'X', color: '#000000' }));
+    await assertFails(read('adminS1TeacherS2', `${paths.subjects('s2')}/sub9`));
+    await assertFails(set('adminS1TeacherS2', `${paths.subjects('s2')}/new`, { nameEn: 'x', short: 'X', color: '#000000' }));
+    await assertSucceeds(read('adminS1TeacherS2', t('s2', 't9')));
+    await assertFails(read('adminS1TeacherS2', t('s2', 't1')));
+    await assertSucceeds(read('adminS1TeacherS2', t('s1', 't2')));
+  });
+  it('admin-teacher keeps teacher reads in own school', async () => {
+    await assertSucceeds(read('adminTid', paths.publishedTeacher('s1', 'y1', 't2')));
+    await assertSucceeds(read('adminTid', paths.publishedClass('s1', 'y1', 'c1')));
+  });
+  it('old flat claims grant nothing', async () => {
+    const ctx = env.authenticatedContext('u-old', { sid: 's1', role: 'admin', tid: 't1' }).firestore();
+    await assertFails(ctx.doc(paths.school('s1')).get());
+    await assertFails(ctx.doc(`${paths.teachers('s1')}/t1`).get());
+  });
+});
+
+describe('joinLink (functions only)', () => {
+  const p = paths.joinLink('s1');
+  beforeEach(async () => {
+    await env.withSecurityRulesDisabled((ctx) => ctx.firestore().doc(p).set({ hash: 'h', createdAt: 1 }));
+  });
+  deny(
+    [['admin', p], ['adminTid', p], ['teacher', p], ['super', p], ['otherAdmin', p], ['noClaims', p], ['anon', p]],
+    read,
+  );
+  deny([['admin', p], ['super', p]], (r, q) => set(r, q, { hash: 'x' }));
+  deny([['admin', p]], del);
+  deny([['admin', `${paths.school('s1')}/private`]], list);
+});
+
+describe('teacherLinks (functions only)', () => {
+  const p = `${paths.teacherLinks()}/h1`;
+  beforeEach(async () => {
+    await env.withSecurityRulesDisabled((ctx) => ctx.firestore().doc(p).set({ schoolId: 's1', teacherId: 't1' }));
+  });
+  deny([['admin', p], ['adminTid', p], ['teacher', p], ['super', p], ['otherAdmin', p], ['noClaims', p], ['anon', p]], read);
+  deny([['admin', p], ['super', p], ['teacher', p]], (r, q) => set(r, q, { schoolId: 's1' }));
+  deny([['admin', p]], del);
+  deny([['admin', paths.teacherLinks()]], list);
+});
+
+describe('joinRequests', () => {
+  const p = `${paths.joinRequests('s1')}/u-req`;
+  beforeEach(async () => {
+    await env.withSecurityRulesDisabled((ctx) => ctx.firestore().doc(p).set({ uid: 'u-req', email: 'r@x.lk', createdAt: 1 }));
+  });
+  describe('read', () => {
+    allow([['admin', p], ['adminTid', p], ['super', p]], read);
+    allow([['admin', paths.joinRequests('s1')]], list);
+    deny([['teacher', p], ['otherAdmin', p], ['adminS1TeacherS2', `${paths.joinRequests('s2')}/u-req`], ['noClaims', p], ['anon', p]], read);
+  });
+  describe('write (functions only)', () => {
+    const fresh = `${paths.joinRequests('s1')}/u-new`;
+    deny([['admin', fresh], ['noClaims', fresh], ['teacher', fresh], ['super', fresh], ['anon', fresh]], (r, q) => set(r, q, { uid: 'u-new', email: 'n@x.lk' }));
+    deny([['admin', p]], (r, q) => update(r, q, { email: 'z@x.lk' }));
+    deny([['admin', p]], del);
   });
 });
 

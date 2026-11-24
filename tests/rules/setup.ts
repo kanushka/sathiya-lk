@@ -18,14 +18,16 @@ export function initEnv(): Promise<RulesTestEnvironment> {
 
 // s1 = the school under test, s2 = another active school, sd = a disabled school.
 export const roles = {
-  admin: { uid: 'u-admin', claims: { sid: 's1', role: 'admin' } },
-  adminTid: { uid: 'u-admin-t', claims: { sid: 's1', role: 'admin', tid: 't2' } },
-  teacher: { uid: 'u-teacher', claims: { sid: 's1', role: 'teacher', tid: 't1' } },
+  admin: { uid: 'u-admin', claims: { schools: { s1: { r: 'a' } } } },
+  adminTid: { uid: 'u-admin-t', claims: { schools: { s1: { r: 'a', t: 't2' } } } },
+  teacher: { uid: 'u-teacher', claims: { schools: { s1: { r: 't', t: 't1' } } } },
   super: { uid: 'u-super', claims: { super: true } },
-  otherAdmin: { uid: 'u-other', claims: { sid: 's2', role: 'admin' } },
-  otherTeacher: { uid: 'u-other-t', claims: { sid: 's2', role: 'teacher', tid: 't9' } },
-  disabledAdmin: { uid: 'u-dis', claims: { sid: 'sd', role: 'admin' } },
-  disabledTeacher: { uid: 'u-dis-t', claims: { sid: 'sd', role: 'teacher', tid: 'td' } },
+  otherAdmin: { uid: 'u-other', claims: { schools: { s2: { r: 'a' } } } },
+  otherTeacher: { uid: 'u-other-t', claims: { schools: { s2: { r: 't', t: 't9' } } } },
+  disabledAdmin: { uid: 'u-dis', claims: { schools: { sd: { r: 'a' } } } },
+  disabledTeacher: { uid: 'u-dis-t', claims: { schools: { sd: { r: 't', t: 'td' } } } },
+  multiTeacher: { uid: 'u-multi', claims: { schools: { s1: { r: 't', t: 't1' }, s2: { r: 't', t: 't9' } } } },
+  adminS1TeacherS2: { uid: 'u-mixed', claims: { schools: { s1: { r: 'a' }, s2: { r: 't', t: 't9' } } } },
   noClaims: { uid: 'u-new', claims: {} },
 } as const;
 
