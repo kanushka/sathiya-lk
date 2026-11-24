@@ -275,3 +275,20 @@ describe('ChangePasswordModal', () => {
     expect(await screen.findByText('Current password is incorrect')).toBeInTheDocument();
   });
 });
+
+describe('activity rows', () => {
+  const act = (start: string, end: string, nameEn: string) => ({ type: 'activity' as const, start, end, nameEn });
+  const row = (type: 'period', start: string, end: string) => ({ type, start, end });
+  const rows = [act('07:30', '07:45', 'Assembly'), row('period', '07:45', '08:30'), act('08:30', '08:45', 'School meal'), row('period', '08:45', '09:30')];
+
+  it('names activity rows on the week and today views, including before period 1', () => {
+    const snap: TeacherSnapshot = { ...snapshotFor(T.perera), rows: { 0: rows, 1: rows, 2: rows, 3: rows, 4: rows }, cells: [] };
+    const props = { snapshot: { loading: false, data: snap } };
+    const week = renderWithSchool(<WeekPage now={wed0920} {...props} />, { ctx, claims: claims(T.perera) });
+    expect(screen.getByText(/Assembly/)).toBeInTheDocument();
+    expect(screen.getByText(/School meal/)).toBeInTheDocument();
+    week.unmount();
+    renderWithSchool(<TodayPage now={wed0920} {...props} />, { ctx, claims: claims(T.perera) });
+    expect(screen.getByText(/Assembly · 7:30/)).toBeInTheDocument();
+  });
+});

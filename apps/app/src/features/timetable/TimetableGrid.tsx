@@ -1,9 +1,10 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
 // Copyright (C) 2026 Kanushka Gayan
 
-import type { DayIndex, TemplateRow } from '@sathiya/core';
+import { activityName, type DayIndex, type Lang, type TemplateRow } from '@sathiya/core';
 import { useRef, type KeyboardEvent, type ReactNode } from 'react';
 import { useTranslation } from 'react-i18next';
+import { useMaybeLang } from '../../app/LangProvider';
 import { isComposing } from '../../ui/composing';
 import { cx } from '../../ui/cx';
 import { PHONE_QUERY, useMediaQuery } from '../../ui/PhoneNotice';
@@ -38,7 +39,7 @@ export interface TimetableGridProps {
 
 const DAYS: DayIndex[] = [0, 1, 2, 3, 4];
 
-type RefRow = { kind: 'interval'; start: string; end: string } | { kind: 'period'; n: number };
+type RefRow = { kind: 'interval'; start: string; end: string; name: string } | { kind: 'period'; n: number };
 
 function periodTimes(rows: TemplateRow[]): Map<number, { start: string; end: string }> {
   const map = new Map<number, { start: string; end: string }>();
@@ -55,13 +56,14 @@ export function TimetableGrid({ rows, cellsFor, selected, onSelect, onActivate, 
   const { t } = useTranslation('timetable');
   const { t: tc } = useTranslation('common');
   const isPhone = useMediaQuery(PHONE_QUERY);
+  const lang: Lang = useMaybeLang()?.lang ?? 'en';
   const root = useRef<HTMLDivElement>(null);
 
   const refDay = DAYS.reduce((best, d) => (rows[d].length > rows[best].length ? d : best), 0 as DayIndex);
   const times = Object.fromEntries(DAYS.map((d) => [d, periodTimes(rows[d])])) as Record<DayIndex, ReturnType<typeof periodTimes>>;
   let n = 0;
   const refRows: RefRow[] = rows[refDay].map((r) =>
-    r.type !== 'period' ? { kind: 'interval', start: r.start, end: r.end } : { kind: 'period', n: ++n },
+    r.type !== 'period' ? { kind: 'interval', start: r.start, end: r.end, name: activityName(r, lang) } : { kind: 'period', n: ++n },
   );
   const periodRows = refRows.filter((r): r is Extract<RefRow, { kind: 'period' }> => r.kind === 'period');
 
@@ -127,7 +129,16 @@ export function TimetableGrid({ rows, cellsFor, selected, onSelect, onActivate, 
                 className="flex items-center gap-2.5 rounded-lg bg-warning-soft px-2.5 py-1 text-xs font-bold text-warning"
                 style={{ gridColumn: '1 / -1' }}
               >
-                <span className={cx(isPhone && 'sticky left-2.5')}>{t('grid.interval', { time: `${r.start}–${r.end}` })}</span>
+                <span className={cx('flex gap-2.5', isPhone && 'sticky left-2.5')}>
+                  {r.name ? (
+                    <>
+                      <span>{r.name}</span>
+                      <span className="font-normal">{`${r.start}–${r.end}`}</span>
+                    </>
+                  ) : (
+                    t('grid.interval', { time: `${r.start}–${r.end}` })
+                  )}
+                </span>
               </div>
             );
           }

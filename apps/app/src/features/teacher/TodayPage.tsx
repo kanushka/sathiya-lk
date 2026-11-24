@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
 // Copyright (C) 2026 Kanushka Gayan
-import { currentAndNext, toMinutes, type DayIndex, type SnapshotCell, type TeacherSnapshot } from '@sathiya/core';
+import { activityName, currentAndNext, toMinutes, type DayIndex, type SnapshotCell, type TeacherSnapshot } from '@sathiya/core';
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useLang } from '../../app/LangProvider';
@@ -61,7 +61,7 @@ function TodayBody({ snap, now }: { snap: TeacherSnapshot; now: Date }) {
           if (slot.kind === 'interval') {
             return (
               <div key={i} className="py-1 text-center text-[11px] font-bold tracking-widest text-warning">
-                {t('teacher:interval')} · {clock(slot.row.start)} – {clock(slot.row.end)}
+                {activityName(slot.row, lang) || t('teacher:interval')} · {clock(slot.row.start)} – {clock(slot.row.end)}
               </div>
             );
           }

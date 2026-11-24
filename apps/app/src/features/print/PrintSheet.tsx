@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
 // Copyright (C) 2026 Kanushka Gayan
 
-import { pickName } from '@sathiya/core';
+import { activityName, pickName } from '@sathiya/core';
 import type { ClassSnapshot, DayIndex, Lang, SnapshotCell, TeacherSnapshot, TemplateRow } from '@sathiya/core';
 import { useTranslation } from 'react-i18next';
 import './print.css';
@@ -64,6 +64,11 @@ export function PrintSheet(props: Props) {
   const classTeacher = kind === 'class' ? (lang === 'si' && props.snapshot.classTeacherSi) || props.snapshot.classTeacher : undefined;
   const subtitle = [t('sheet.subtitle', { year: snapshot.yearLabel }), classTeacher ? t('sheet.classTeacher', { name: classTeacher }) : ''].filter(Boolean).join(' · ');
 
+  const rowLabel = (r: TemplateRow) => {
+    const name = activityName(r, lang);
+    return name ? `${name} · ${r.start} – ${r.end}` : t('sheet.interval', { start: r.start, end: r.end });
+  };
+
   const grid = [];
   for (let i = 0; i < rowCount; i++) {
     const present = DAYS.flatMap((d) => (rows[d]?.[i] ? [{ d, row: rows[d]![i]! }] : []));
@@ -75,7 +80,7 @@ export function PrintSheet(props: Props) {
           key={`r${i}`}
           style={{ gridColumn: '1 / -1', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 12, fontWeight: 700, letterSpacing: '.2em', color: '#7A5410', background: '#FBF1DC' }}
         >
-          {t('sheet.interval', { start: first.start, end: first.end })}
+          {rowLabel(first)}
         </div>,
       );
       continue;
@@ -99,7 +104,7 @@ export function PrintSheet(props: Props) {
       if (row.type !== 'period') {
         grid.push(
           <div key={`${i}-${d}`} style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 11, color: '#7A5410', background: '#FBF1DC' }}>
-            {t('sheet.interval', { start: row.start, end: row.end })}
+            {rowLabel(row)}
           </div>,
         );
         continue;

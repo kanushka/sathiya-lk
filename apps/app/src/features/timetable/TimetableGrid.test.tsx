@@ -2,7 +2,7 @@
 // Copyright (C) 2026 Kanushka Gayan
 
 import type { DayIndex, TemplateRow } from '@sathiya/core';
-import { defaultTemplate, shortFridayTemplate } from '@sathiya/core/fixtures';
+import { defaultTemplate, mahasen, shortFridayTemplate } from '@sathiya/core/fixtures';
 import { rowsFor } from '@sathiya/core';
 import { fireEvent, screen } from '@testing-library/react';
 import { afterEach, describe, expect, it, vi } from 'vitest';
@@ -35,6 +35,17 @@ describe('TimetableGrid', () => {
     expect(intervals.length).toBe(rows[0].filter((r) => r.type === 'interval').length);
   });
 
+  it('shows an activity row with its name across the class', () => {
+    const tpl = mahasen.ctx.templates[0]!;
+    const mh = Object.fromEntries(days.map((d) => [d, rowsFor(tpl, d)])) as Record<DayIndex, TemplateRow[]>;
+    setup({ rows: mh });
+    expect(screen.getByText('Assembly')).toBeInTheDocument();
+    expect(screen.getByText('School meal')).toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: /Assembly/ })).toBeNull();
+    expect(screen.getAllByText(/^Interval ·/)).toHaveLength(1);
+    expect(screen.getAllByRole('button')).toHaveLength(tpl.rows.filter((r) => r.type === 'period').length * 5);
+  });
+
   it('does not number activity rows as periods', () => {
     const withActivity = Object.fromEntries(
       days.map((d) => {
@@ -46,7 +57,8 @@ describe('TimetableGrid', () => {
     const nPeriods = rows[0].filter((r) => r.type === 'period').length;
     expect(screen.getAllByRole('button').length).toBe(nPeriods * 5);
     expect(screen.getByRole('button', { name: new RegExp(`Monday, period ${nPeriods},`) })).toBeInTheDocument();
-    expect(screen.getAllByText(/^Interval ·/).length).toBe(rows[0].filter((r) => r.type === 'interval').length + 1);
+    expect(screen.getByText('Assembly')).toBeInTheDocument();
+    expect(screen.getAllByText(/^Interval ·/).length).toBe(rows[0].filter((r) => r.type === 'interval').length);
   });
 
   it('renders 5 day headers and a button per slot', () => {

@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
 // Copyright (C) 2026 Kanushka Gayan
-import type { TeacherSnapshot } from '@sathiya/core';
+import { activityName, type TeacherSnapshot } from '@sathiya/core';
 import { useTranslation } from 'react-i18next';
 import { useLang } from '../../app/LangProvider';
 import { cx } from '../../ui/cx';
@@ -35,7 +35,7 @@ function WeekBody({ snap, todayWeekday }: { snap: TeacherSnapshot; todayWeekday:
         {slots.map((slot, i) =>
           slot.kind === 'interval' ? (
             <div key={i} className="col-span-6 bg-warning-soft/60 py-0.5 text-center text-[10px] font-bold tracking-widest text-warning">
-              {t('teacher:interval')}
+              {(slot.row && activityName(slot.row, lang)) || t('teacher:interval')}
               {slot.start && slot.end ? ` · ${clock(slot.start)} – ${clock(slot.end)}` : ''}
             </div>
           ) : (
