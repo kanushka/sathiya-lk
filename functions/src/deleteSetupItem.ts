@@ -5,7 +5,7 @@ import { FieldValue, type DocumentSnapshot, type QuerySnapshot } from 'firebase-
 import { onCall } from 'firebase-functions/v2/https';
 import { auth, db } from './lib/admin';
 import { callOpts } from './lib/callOptions';
-import { syncClaims } from './lib/claims';
+import { syncClaimsAndRevoke } from './lib/claims';
 import { docId, fail, invalid, obj, requireSchoolAdmin } from './lib/guards';
 import { loadContext } from './lib/loadContext';
 import { runTx } from './lib/tx';
@@ -106,8 +106,6 @@ export const deleteSetupItem = onCall(callOpts, async (req): Promise<DeleteSetup
     }
     return members.filter((m) => m.exists).map((m) => m.id);
   });
-  const late = affected.filter((u) => !revoked.includes(u));
-  await Promise.all(late.map((u) => auth.revokeRefreshTokens(u)));
-  await Promise.all(affected.map((u) => syncClaims(u)));
+  await syncClaimsAndRevoke(affected);
   return { deleted: true, usedIn: 0 };
 });

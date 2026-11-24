@@ -3,7 +3,7 @@
 import { MAX_SCHOOLS, paths } from '@sathiya/core';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { auth } from '../src/lib/admin';
-import { assertSchoolRoom, syncClaims } from '../src/lib/claims';
+import { assertSchoolRoom, syncClaims, syncClaimsAndRevoke } from '../src/lib/claims';
 import { isAdminOf } from '../src/lib/guards';
 import { adminAuth, adminDb, signUp, uniq } from './helpers';
 
@@ -106,6 +106,26 @@ describe('syncClaims', () => {
     await addMember(`${tag}-last`, c.uid, { role: 'teacher' });
     await expect(assertSchoolRoom(c.uid, 'new2')).rejects.toMatchObject({ code: 'failed-precondition', details: { code: 'too-many-schools' } });
     await expect(assertSchoolRoom(c.uid, `${tag}-last`)).resolves.toBeUndefined();
+  });
+});
+
+describe('syncClaimsAndRevoke', () => {
+  it('syncs then revokes each account', async () => {
+    const { uid } = await signUp();
+    const order: string[] = [];
+    vi.spyOn(auth, 'setCustomUserClaims').mockImplementation(async () => void order.push('sync'));
+    vi.spyOn(auth, 'revokeRefreshTokens').mockImplementation(async () => void order.push('revoke'));
+    await syncClaimsAndRevoke([uid]);
+    expect(order).toEqual(['sync', 'revoke']);
+  });
+
+  it('still revokes when the sync fails, then rethrows the sync error', async () => {
+    const { uid } = await signUp();
+    const boom = new Error('sync failed');
+    vi.spyOn(auth, 'setCustomUserClaims').mockRejectedValue(boom);
+    const revoke = vi.spyOn(auth, 'revokeRefreshTokens').mockResolvedValue(undefined);
+    await expect(syncClaimsAndRevoke([uid])).rejects.toBe(boom);
+    expect(revoke).toHaveBeenCalledWith(uid);
   });
 });
 

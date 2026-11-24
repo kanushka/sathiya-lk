@@ -5,7 +5,7 @@ import { FieldValue } from 'firebase-admin/firestore';
 import { onCall } from 'firebase-functions/v2/https';
 import { auth, db } from './lib/admin';
 import { callOpts } from './lib/callOptions';
-import { syncClaims } from './lib/claims';
+import { syncClaimsAndRevoke } from './lib/claims';
 import { docId, fail, obj, requireSchoolAdmin } from './lib/guards';
 import { runTx } from './lib/tx';
 
@@ -32,6 +32,6 @@ export const unlinkTeacher = onCall(callOpts, async (req): Promise<UnlinkTeacher
     else if (member) tx.delete(memberRef);
     return target!;
   });
-  await syncClaims(uid);
+  await syncClaimsAndRevoke([uid]);
   return { ok: true };
 });

@@ -50,3 +50,13 @@ export async function syncClaims(uid: string): Promise<void> {
     schools = now;
   }
 }
+
+// For accounts revoked before a commit that removed their membership: a session started between that revoke and the
+// commit holds stale claims, so revoke again after the sync, even when the sync fails.
+export async function syncClaimsAndRevoke(uids: string[]): Promise<void> {
+  try {
+    await Promise.all(uids.map((u) => syncClaims(u)));
+  } finally {
+    await Promise.all(uids.map((u) => auth.revokeRefreshTokens(u)));
+  }
+}
