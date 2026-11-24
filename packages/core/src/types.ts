@@ -46,6 +46,7 @@ export const LEAVE_TYPES = ['full', 'morning', 'afternoon', 'late', 'early'] as 
 export type LeaveType = (typeof LEAVE_TYPES)[number];
 export interface Leave { teacherId: string; type: LeaveType; entryIds: string[] }
 export interface Relief { entryId: string; absentTeacherId: string; day: DayIndex; period: number; start: Hhmm; end: Hhmm; classIds: string[]; subjectId: string; groupKey?: string; reliefTeacherId: string | null }
-export interface ReliefDay { date: string; day: DayIndex; leaves: Leave[]; reliefs: Relief[]; names: Record<string, { en: string; si?: string }>; updatedAt: number; updatedBy: string }
+export interface ReliefLabel { cls: string; sub: string; subSi?: string }
+export interface ReliefDay { date: string; day: DayIndex; leaves: Leave[]; reliefs: Relief[]; names: Record<string, { en: string; si?: string }>; labels?: Record<string, ReliefLabel>; updatedAt: number; updatedBy: string }
 export interface ReliefStats { counts: Record<string, number> }
 export interface ReliefNotified { sent: Record<string, { key: string; at: number }>; pending: Record<string, number> }

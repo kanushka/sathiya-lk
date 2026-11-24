@@ -33,6 +33,7 @@ describe('saveReliefDay', () => {
     expect(doc).toMatchObject({ date: today.date, day: d, updatedAt: res.updatedAt, updatedBy: admin.uid });
     expect(doc.reliefs.map((r) => [r.entryId, r.reliefTeacherId, r.start])).toEqual([['e-a', T.kumara, '07:45'], ['e-b', null, '08:30']]);
     expect(Object.keys(doc.names).sort()).toEqual([T.bandara, T.kumara].sort());
+    expect(doc.labels).toEqual({ 'e-a': { cls: '6A', sub: 'Maths', subSi: expect.any(String) }, 'e-b': { cls: '6A', sub: 'Science', subSi: expect.any(String) } });
     expect(await stats(sid)).toEqual({ [T.kumara]: 1 });
   });
 

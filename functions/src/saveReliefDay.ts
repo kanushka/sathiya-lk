@@ -11,6 +11,7 @@ import {
   type LeaveType,
   type Relief,
   type ReliefDay,
+  type ReliefLabel,
   type ReliefStats,
   type SaveReliefDayRes,
   type Teacher,
@@ -143,8 +144,18 @@ export const saveReliefDay = onCall(callOpts, async (req): Promise<SaveReliefDay
       const t = teacherById.get(id);
       if (t) names[id] = nameOf(t);
     }
+    const labels: Record<string, ReliefLabel> = {};
+    for (const r of reliefs) {
+      const subject = ctx.subjects.find((s) => s.id === r.subjectId);
+      const subSi = subject?.nameSi?.trim();
+      labels[r.entryId] = {
+        cls: r.classIds.map((id) => ctx.classes.find((c) => c.id === id)?.name ?? id).join('+'),
+        sub: subject?.short || subject?.nameEn || '',
+        ...(subSi ? { subSi } : {}),
+      };
+    }
     const savedAt = Date.now();
-    const doc: ReliefDay = { date, day, leaves, reliefs, names, updatedAt: savedAt, updatedBy: uid };
+    const doc: ReliefDay = { date, day, leaves, reliefs, names, labels, updatedAt: savedAt, updatedBy: uid };
     tx.set(dayRef, doc);
 
     const next = countsOf(reliefs);
