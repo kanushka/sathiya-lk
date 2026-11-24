@@ -56,7 +56,7 @@ export function ReportsPage({
       ) : rows.length === 0 ? (
         <EmptyState icon="search" title={t('reports.empty')} body={t('reports.emptyBody')} />
       ) : (
-        <Table className="min-w-[900px]">
+        <Table className="md:min-w-[900px]">
           <THead>
             <tr>
               <Th>{t('reports.columns.school')}</Th>

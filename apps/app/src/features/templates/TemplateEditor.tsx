@@ -96,9 +96,9 @@ export function TemplateEditor({ draft, errors, readOnly, onChange }: TemplateEd
             <div
               key={i}
               data-testid="template-row"
-              className={cx('flex flex-wrap items-center gap-x-3 gap-y-2 rounded-lg px-3 py-2', r.type !== 'period' ? 'bg-warning-soft' : 'bg-surface', rowErrors(i) && 'ring-2 ring-danger')}
+              className={cx('flex flex-wrap items-center gap-x-3 gap-y-1.5 rounded-lg px-3 py-2', r.type === 'activity' ? 'md:gap-y-2' : 'md:flex-nowrap md:gap-y-0', r.type !== 'period' ? 'bg-warning-soft' : 'bg-surface', rowErrors(i) && 'ring-2 ring-danger')}
             >
-              <div className="flex w-[150px] items-center gap-2">
+              <div className="order-first flex min-w-0 flex-1 basis-[calc(100%-3.5rem)] items-center gap-2 md:order-none md:w-[150px] md:flex-none md:basis-auto">
                 <Select
                   size="sm"
                   className="w-[110px]"
@@ -133,6 +133,7 @@ export function TemplateEditor({ draft, errors, readOnly, onChange }: TemplateEd
                   icon="close"
                   size="sm"
                   label={t('editor.remove', { n })}
+                  className="order-first md:order-none"
                   onClick={() => setRows(rows.filter((_, j) => j !== i))}
                 />
               )}

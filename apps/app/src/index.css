@@ -105,3 +105,56 @@ a {
     animation: none;
   }
 }
+
+@media (max-width: 767.98px) {
+  .phone-cards table,
+  .phone-cards tbody,
+  .phone-cards tr,
+  .phone-cards td {
+    display: block;
+  }
+  .phone-cards thead {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    overflow: hidden;
+    clip-path: inset(50%);
+    white-space: nowrap;
+  }
+  .phone-cards tr {
+    border-bottom: 1px solid theme('colors.line.DEFAULT');
+    padding: 12px 16px;
+  }
+  .phone-cards tr:last-child {
+    border-bottom: 0;
+  }
+  .phone-cards td {
+    border: 0;
+    padding: 4px 0;
+    overflow-wrap: anywhere;
+  }
+  .phone-cards td:empty,
+  .phone-cards td[data-label]:empty {
+    display: none;
+  }
+  .phone-cards td[data-label] {
+    display: flow-root;
+    padding-left: calc(7rem + 12px);
+  }
+  .phone-cards td:first-child {
+    font-weight: 700;
+  }
+  .phone-cards td[data-label]::before {
+    content: attr(data-label);
+    float: left;
+    width: 7rem;
+    margin-left: calc(-7rem - 12px);
+    padding-top: 3px;
+    font-family: Inter, 'Noto Sans Sinhala', system-ui, sans-serif;
+    font-size: 11px;
+    font-weight: 700;
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+    color: theme('colors.ink.muted');
+  }
+}

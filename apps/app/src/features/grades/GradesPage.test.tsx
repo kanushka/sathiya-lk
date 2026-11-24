@@ -33,6 +33,20 @@ async function openGrade6() {
 const headerActions = () => within(screen.getByTestId('page-header')).getAllByRole('button').map((b) => b.textContent);
 
 describe('grades page', () => {
+  it('stacks the grade switcher above the settings on phones', async () => {
+    await openGrade6();
+    const nav = screen.getByRole('navigation', { name: 'Grades' });
+    expect(nav).toHaveClass('flex', 'overflow-x-auto', 'md:block', 'md:w-[150px]');
+    expect(nav.parentElement).toHaveClass('flex-col', 'md:flex-row');
+    expect(screen.getByRole('button', { name: /^Grade 6\b/ })).toHaveAttribute('aria-current', 'page');
+  });
+
+  it('wraps plan rows so the per-week input fits on phones', async () => {
+    await openGrade6();
+    const input = screen.getAllByRole('spinbutton')[0]!;
+    expect(input.closest('.border-b')).toHaveClass('flex-wrap');
+  });
+
   it('grade 1 plan is measured against its classes\' Primary template', async () => {
     const user = userEvent.setup();
     renderWithSchool(<GradesPage />, { ctx, entries });
