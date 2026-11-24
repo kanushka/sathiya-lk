@@ -5,17 +5,22 @@ import { T } from '@sathiya/core/fixtures';
 import { ADMIN, SID, teacherLogin, YEAR_ID } from '../../scripts/seed';
 import { callAs, idToken, loginAdmin, loginTeacher, shot } from '../helpers';
 
-const colombo = new Intl.DateTimeFormat('en-CA', { timeZone: 'Asia/Colombo', weekday: 'short', year: 'numeric', month: '2-digit', day: '2-digit' }).formatToParts(new Date());
-const part = (type: string) => colombo.find((p) => p.type === type)!.value;
+const colombo = new Intl.DateTimeFormat('en-US', { timeZone: 'Asia/Colombo', year: 'numeric', month: '2-digit', day: '2-digit' }).formatToParts(new Date());
+const part = (type: string) => colombo.find((p) => p.type === type)?.value ?? '';
 const today = `${part('year')}-${part('month')}-${part('day')}`;
+if (!/^\d{4}-\d{2}-\d{2}$/.test(today)) throw new Error(`Could not work out today's Colombo date: ${today}`);
+const weekday = new Date(`${today}T00:00:00Z`).getUTCDay();
 
-test.skip(['Sat', 'Sun'].includes(part('weekday')), 'relief is only planned on school days (the server checks the real Colombo date)');
+test.skip(weekday === 0 || weekday === 6, 'relief is only planned on school days (the server checks the real Colombo date)');
 
 test.beforeAll(async () => {
   await callAs(await idToken(ADMIN.email, ADMIN.password), 'publishYear', { schoolId: SID, yearId: YEAR_ID });
 });
 
 test('admin plans relief for a teacher on leave and the relief teacher sees it today', async ({ page, browser }) => {
+  await page.addInitScript(() => {
+    window.print = () => undefined;
+  });
   await loginAdmin(page, ADMIN.email, ADMIN.password);
   await page.getByRole('link', { name: 'Relief' }).first().click();
   await expect(page).toHaveURL(new RegExp(`/s/${SID}/admin/relief$`));
@@ -36,12 +41,9 @@ test('admin plans relief for a teacher on leave and the relief teacher sees it t
   await expect(pickRelief).toContainText('N. Perera');
 
   await page.getByRole('button', { name: 'Save & notify' }).click();
-  await expect(page.getByRole('status')).toContainText('1 teacher will be emailed');
+  await expect(page.getByRole('main').getByRole('status').filter({ hasText: 'will be emailed' })).toHaveText('1 teacher will be emailed');
   await shot(page, 'relief-saved');
 
-  await page.addInitScript(() => {
-    window.print = () => undefined;
-  });
   await page.getByRole('link', { name: 'Print' }).click();
   await expect(page).toHaveURL(new RegExp(`/admin/print/relief/${today}$`));
   await expect(page.getByRole('heading', { name: 'Relief periods' })).toBeVisible();
@@ -49,9 +51,14 @@ test('admin plans relief for a teacher on leave and the relief teacher sees it t
   await expect(page.getByText(/Perera/).first()).toBeVisible();
   await shot(page, 'relief-print');
 
-  const teacher = await (await browser.newContext()).newPage();
-  await loginTeacher(teacher, perera.email, perera.password);
-  const main = teacher.getByRole('main');
-  await expect(main.getByText('Relief', { exact: true }).first()).toBeVisible();
-  await expect(main).toContainText(/for .*Wijesekara/);
+  const context = await browser.newContext();
+  try {
+    const teacher = await context.newPage();
+    await loginTeacher(teacher, perera.email, perera.password);
+    const main = teacher.getByRole('main');
+    await expect(main.getByText('Relief', { exact: true }).first()).toBeVisible();
+    await expect(main).toContainText(/for .*Wijesekara/);
+  } finally {
+    await context.close();
+  }
 });
