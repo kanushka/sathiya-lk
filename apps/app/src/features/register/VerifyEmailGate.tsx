@@ -12,10 +12,11 @@ import * as api from './api';
 export interface VerifyEmailGateProps {
   email?: string | null;
   purpose?: 'register' | 'signUp';
+  continuePath?: string;
   onConfirmed(): void | Promise<void>;
 }
 
-export function VerifyEmailGate({ email, purpose = 'register', onConfirmed }: VerifyEmailGateProps) {
+export function VerifyEmailGate({ email, purpose = 'register', continuePath, onConfirmed }: VerifyEmailGateProps) {
   const { t } = useTranslation('register');
   const { lang } = useLang();
   const [busy, setBusy] = useState<'confirm' | 'resend' | null>(null);
@@ -41,7 +42,7 @@ export function VerifyEmailGate({ email, purpose = 'register', onConfirmed }: Ve
     setBusy('resend');
     setMessage(null);
     try {
-      await sendAuthEmail({ kind: 'verify', lang });
+      await sendAuthEmail({ kind: 'verify', lang, ...(continuePath && { continuePath }) });
       setMessage({ kind: 'info', text: t('verify.sent') });
     } catch (err) {
       setMessage({ kind: 'error', text: t(detailCode(err) === 'rate-limited' ? 'errors.rateLimited' : 'verify.sendFailed') });

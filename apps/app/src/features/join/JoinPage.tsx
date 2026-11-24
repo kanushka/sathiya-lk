@@ -77,7 +77,7 @@ export function JoinPage() {
         {!wellFormed || !user ? (
           <JoinError code="link-invalid" onRetry={() => undefined} />
         ) : isUnverifiedPasswordUser(user) && !verified ? (
-          <VerifyEmailGate email={user.email} purpose="signUp" onConfirmed={() => setVerified(true)} />
+          <VerifyEmailGate email={user.email} purpose="signUp" continuePath={location.pathname} onConfirmed={() => setVerified(true)} />
         ) : (
           <JoinFlow sid={sid} token={token} uid={user.uid} />
         )}

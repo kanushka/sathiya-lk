@@ -167,6 +167,16 @@ describe('sendAuthEmail', () => {
     expect(mails[0]!.message.text).toMatch(new RegExp(`ඊමේල් තහවුරු කරන්න: ${esc(APP_URL)}/auth/action\\?mode=verifyEmail&oobCode=\\S+`));
   });
 
+  it('verify points the link back at an app path, and refuses any other continuePath', async () => {
+    const c = await unverifiedSignUp();
+    await sendAuth(c, { kind: 'verify', lang: 'en', continuePath: '/join/s1/tok' });
+    const [mail] = await mailsTo(emailOf(c));
+    expect(mail!.message.html).toContain(`continueUrl=${encodeURIComponent(`${APP_URL}/join/s1/tok`)}`);
+    for (const bad of ['//evil.example/x', 'https://evil.example/', 'join/x', '/a b']) {
+      await expectFnError(sendAuth(c, { kind: 'verify', lang: 'en', continuePath: bad }) as Promise<never>, 'invalid-argument', 'invalid');
+    }
+  });
+
   it('verify refuses signed-out callers, is a no-op for verified users and is rate limited', async () => {
     await expectFnError(sendAuth(client(), { kind: 'verify', lang: 'en' }) as Promise<never>, 'unauthenticated', 'not-allowed');
     const verified = await signUp();

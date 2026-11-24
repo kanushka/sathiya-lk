@@ -57,7 +57,7 @@ export interface SaveTemplateReq { schoolId: string; templateId: string; patch: 
 export interface SaveTemplateRes { moved: number; blocked: number; orphaned: number }
 export interface ReportSchoolReq { schoolId: string; reason: ReportReason; details?: string; email?: string }
 export interface ReportSchoolRes { ok: true }
-export interface SendAuthEmailReq { kind: AuthEmailKind; email?: string; lang: Lang }
+export interface SendAuthEmailReq { kind: AuthEmailKind; email?: string; lang: Lang; continuePath?: string }
 export interface SendAuthEmailRes { ok: true }
 export interface ReleaseCensusNoReq { schoolId: string }
 export interface ReleaseCensusNoRes { censusNo: string; freed: boolean }

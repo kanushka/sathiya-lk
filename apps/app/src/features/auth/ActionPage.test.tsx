@@ -32,6 +32,22 @@ describe('verifyEmail', () => {
     expect(screen.getByRole('link', { name: 'Continue registering' })).toHaveAttribute('href', '/register');
   });
 
+  it('sends a sign-up or join verification back where it started, with neutral copy', async () => {
+    vi.mocked(api.applyEmailCode).mockResolvedValue(undefined);
+    const back = `${window.location.origin}/join/siripura/tok123`;
+    at(`mode=verifyEmail&oobCode=abc&continueUrl=${encodeURIComponent(back)}`);
+    expect(await screen.findByRole('heading', { name: 'Email confirmed' })).toBeInTheDocument();
+    expect(screen.getByText(/go back to where you left off/)).toBeInTheDocument();
+    expect(screen.queryByText(/setting up your school/)).not.toBeInTheDocument();
+    expect(screen.getByRole('link', { name: 'Continue' })).toHaveAttribute('href', '/join/siripura/tok123');
+  });
+
+  it('ignores a continueUrl on another origin', async () => {
+    vi.mocked(api.applyEmailCode).mockResolvedValue(undefined);
+    at(`mode=verifyEmail&oobCode=abc&continueUrl=${encodeURIComponent('https://evil.example/join/x/y')}`);
+    expect(await screen.findByRole('link', { name: 'Continue registering' })).toHaveAttribute('href', '/register');
+  });
+
   it('reads an encoded oobCode and ignores apiKey, lang and continueUrl', async () => {
     vi.mocked(api.applyEmailCode).mockResolvedValue(undefined);
     at(`mode=verifyEmail&oobCode=${encodeURIComponent('a+b/c=')}&apiKey=KEY&lang=si&continueUrl=${encodeURIComponent('https://app.example.test/login')}`);

@@ -200,7 +200,7 @@ describe('create account', () => {
     await user.click(screen.getByRole('checkbox'));
     await user.click(screen.getByRole('button', { name: 'Create account' }));
     expect(registerApi.createAccount).toHaveBeenCalledWith('nimal@siripura.lk', 'secret12', 'Nimal Perera');
-    expect(sendAuthEmail).toHaveBeenCalledWith({ kind: 'verify', lang: 'en' });
+    expect(sendAuthEmail).toHaveBeenCalledWith({ kind: 'verify', lang: 'en', continuePath: '/join/s1/tok' });
     expect(await screen.findByRole('heading', { name: 'Check your email' })).toBeInTheDocument();
     await user.click(screen.getByRole('button', { name: "I've confirmed it" }));
     expect(await screen.findByTestId('where')).toHaveTextContent('/join/s1/tok');

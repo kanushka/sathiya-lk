@@ -2,6 +2,7 @@
 // Copyright (C) 2026 Kanushka Gayan
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
+import { useLocation } from 'react-router-dom';
 import { useLang } from '../../app/LangProvider';
 import { Button } from '../../ui/Button';
 import * as registerApi from '../register/api';
@@ -10,13 +11,14 @@ import { emptyAccount, type AccountDraft } from '../register/model';
 import { StepAccount } from '../register/StepAccount';
 import { VerifyEmailGate } from '../register/VerifyEmailGate';
 import { sendAuthEmail } from './authEmail';
-import { useFinishSignIn } from './returnPath';
+import { returnPathFrom, useFinishSignIn } from './returnPath';
 
 export function SignUpForm({ onSignIn }: { onSignIn(): void }) {
   const { t } = useTranslation('auth');
   const { t: tr } = useTranslation('register');
   const { lang } = useLang();
   const finish = useFinishSignIn();
+  const continuePath = returnPathFrom(useLocation().state) ?? '/';
   const [account, setAccount] = useState<AccountDraft>(emptyAccount);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<{ field: 'email' | 'password' | null; message: string } | null>(null);
@@ -33,12 +35,12 @@ export function SignUpForm({ onSignIn }: { onSignIn(): void }) {
       setBusy(false);
       return;
     }
-    await sendAuthEmail({ kind: 'verify', lang }).catch(() => undefined);
+    await sendAuthEmail({ kind: 'verify', lang, continuePath }).catch(() => undefined);
     setBusy(false);
     setVerifying(true);
   }
 
-  if (verifying) return <VerifyEmailGate email={account.email.trim()} purpose="signUp" onConfirmed={finish} />;
+  if (verifying) return <VerifyEmailGate email={account.email.trim()} purpose="signUp" continuePath={continuePath} onConfirmed={finish} />;
 
   return (
     <>

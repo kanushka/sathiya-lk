@@ -24,7 +24,7 @@ describe('paths', () => {
   });
   it('sendAuthEmail callable and types', () => {
     expect(callables.sendAuthEmail).toBe('sendAuthEmail');
-    expectTypeOf<SendAuthEmailReq>().toEqualTypeOf<{ kind: 'verify' | 'reset'; email?: string; lang: 'en' | 'si' }>();
+    expectTypeOf<SendAuthEmailReq>().toEqualTypeOf<{ kind: 'verify' | 'reset'; email?: string; lang: 'en' | 'si'; continuePath?: string }>();
     expectTypeOf<CallableTypes['sendAuthEmail']['req']>().toEqualTypeOf<SendAuthEmailReq>();
     expectTypeOf<CallableTypes['sendAuthEmail']['res']>().toEqualTypeOf<{ ok: true }>();
   });
