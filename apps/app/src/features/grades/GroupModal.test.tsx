@@ -41,7 +41,7 @@ describe('GroupModal time target', () => {
     const { onSave, user } = setup();
     const dialog = screen.getByRole('dialog');
     expect(within(dialog).getByText('Target per week')).toBeInTheDocument();
-    await user.click(within(dialog).getByRole('button', { name: 'Time' }));
+    await user.click(within(dialog).getByRole('radio', { name: 'Time' }));
     await user.type(within(dialog).getByLabelText('Hours per week'), '1');
     await user.type(within(dialog).getByLabelText('Minutes per week'), '20');
     await user.click(within(dialog).getByRole('button', { name: 'Save group' }));
@@ -51,10 +51,10 @@ describe('GroupModal time target', () => {
   it('does not save while a unit switch has no amount yet', async () => {
     const { onSave, user } = setup();
     const dialog = screen.getByRole('dialog');
-    await user.click(within(dialog).getByRole('button', { name: 'Time' }));
+    await user.click(within(dialog).getByRole('radio', { name: 'Time' }));
     await user.click(within(dialog).getByRole('button', { name: 'Save group' }));
     expect(onSave).not.toHaveBeenCalled();
-    await user.click(within(dialog).getByRole('button', { name: 'Periods' }));
+    await user.click(within(dialog).getByRole('radio', { name: 'Periods' }));
     await user.click(within(dialog).getByRole('button', { name: 'Save group' }));
     expect(onSave).toHaveBeenCalledWith(expect.objectContaining({ perWeek: 2 }));
   });

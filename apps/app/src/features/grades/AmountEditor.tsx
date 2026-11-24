@@ -5,6 +5,7 @@ import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { cx } from '../../ui/cx';
 import { inputBareCompactClass } from '../../ui/Field';
+import { SegmentedControl } from '../../ui/SegmentedControl';
 import type { Amount } from './planModel';
 
 interface NumInputProps {
@@ -78,29 +79,19 @@ export function AmountEditor({ item, name, disabled, onChange, onPendingChange }
     setPending(next);
     onPendingChange?.(next !== null);
   };
-  const btn = (unit: 'periods' | 'minutes', text: string, aria: string) => (
-    <button
-      type="button"
-      aria-pressed={(unit === 'minutes') === minutes}
-      aria-label={aria}
-      disabled={disabled}
-      onClick={() => choose(unit)}
-      className={cx(
-        'h-9 px-2.5 text-xs font-semibold first:rounded-l-lg last:rounded-r-lg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand',
-        (unit === 'minutes') === minutes ? 'bg-brand text-on-brand' : 'bg-white text-ink-soft hover:bg-surface',
-        'disabled:cursor-not-allowed disabled:opacity-60',
-      )}
-    >
-      {text}
-    </button>
-  );
-
   return (
     <div className="flex flex-wrap items-center gap-2">
-      <div role="group" aria-label={label('unit')} className="flex overflow-hidden rounded-lg border border-line-strong">
-        {btn('periods', t('amount.periods'), label('periodsUnit'))}
-        {btn('minutes', t('amount.time'), label('timeUnit'))}
-      </div>
+      <SegmentedControl
+        size="sm"
+        aria-label={label('unit')}
+        value={minutes ? 'minutes' : 'periods'}
+        disabled={disabled}
+        onChange={choose}
+        options={[
+          { value: 'periods', label: t('amount.periods'), ariaLabel: label('periodsUnit') },
+          { value: 'minutes', label: t('amount.time'), ariaLabel: label('timeUnit') },
+        ]}
+      />
       {minutes ? (
         <>
           <NumInput

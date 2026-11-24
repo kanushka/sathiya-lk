@@ -31,10 +31,6 @@ export async function unlinkTeacher(schoolId: string, teacherId: string): Promis
   await call('unlinkTeacher', { schoolId, teacherId });
 }
 
-export async function linkSelf(schoolId: string, teacherId: string): Promise<void> {
-  await call('linkSelf', { schoolId, teacherId });
-}
-
 export async function updateTeacher(schoolId: string, teacherId: string, teacher: TeacherInput): Promise<void> {
   const { title, nameSi, phone, email, minPerWeek, ...rest } = teacher;
   await updateDoc(doc(db, paths.teachers(schoolId), teacherId), {

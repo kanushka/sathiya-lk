@@ -17,7 +17,7 @@ export function InviteLinkCard({ schoolId }: { schoolId: string }) {
   const headingId = useId();
   const link = useJoinLink(schoolId);
   const [busy, setBusy] = useState<Action | null>(null);
-  const [confirming, setConfirming] = useState<Action | null>(null);
+  const [confirming, setConfirming] = useState(false);
   const [failed, setFailed] = useState(false);
   const [created, setCreated] = useState<string | null>(null);
   const listened = link.data?.token;
@@ -34,7 +34,7 @@ export function InviteLinkCard({ schoolId }: { schoolId: string }) {
     try {
       const res = await api.setJoinLink(schoolId, action);
       setCreated(action === 'create' && res.token ? res.token : null);
-      setConfirming(null);
+      setConfirming(false);
     } catch {
       setFailed(true);
     } finally {
@@ -55,11 +55,8 @@ export function InviteLinkCard({ schoolId }: { schoolId: string }) {
           <div className="mt-3">
             <CopyLink url={schoolJoinUrl(window.location.origin, schoolId, token)} copyLabel={t('inviteLink.copy')} hint={t('inviteLink.shareHint')} />
           </div>
-          <div className="mt-3 flex flex-wrap gap-2">
-            <Button size="sm" onClick={() => setConfirming('create')}>
-              {t('inviteLink.replace')}
-            </Button>
-            <Button size="sm" variant="ghost" onClick={() => setConfirming('off')}>
+          <div className="mt-3">
+            <Button size="sm" variant="danger" onClick={() => setConfirming(true)}>
               {t('inviteLink.off')}
             </Button>
           </div>
@@ -79,21 +76,21 @@ export function InviteLinkCard({ schoolId }: { schoolId: string }) {
         <Modal
           open
           width={460}
-          title={t(confirming === 'create' ? 'inviteLink.confirmNewTitle' : 'inviteLink.confirmOffTitle')}
-          onClose={() => setConfirming(null)}
+          title={t('inviteLink.confirmOffTitle')}
+          onClose={() => setConfirming(false)}
           busy={busy !== null}
           footer={
             <>
-              <Button onClick={() => setConfirming(null)} disabled={busy !== null}>
+              <Button onClick={() => setConfirming(false)} disabled={busy !== null}>
                 {t('inviteLink.cancel')}
               </Button>
-              <Button variant={confirming === 'off' ? 'dangerSolid' : 'primary'} loading={busy === confirming} onClick={() => void run(confirming)}>
-                {t(confirming === 'create' ? 'inviteLink.confirmNew' : 'inviteLink.confirmOff')}
+              <Button variant="dangerSolid" loading={busy === 'off'} onClick={() => void run('off')}>
+                {t('inviteLink.confirmOff')}
               </Button>
             </>
           }
         >
-          <p className="m-0 text-sm text-ink-soft">{t(confirming === 'create' ? 'inviteLink.confirmNewBody' : 'inviteLink.confirmOffBody')}</p>
+          <p className="m-0 text-sm text-ink-soft">{t('inviteLink.confirmOffBody')}</p>
           {failed && <FormError className="mt-3">{t('inviteLink.failed')}</FormError>}
         </Modal>
       )}

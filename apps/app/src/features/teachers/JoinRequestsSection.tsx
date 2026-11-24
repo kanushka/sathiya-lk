@@ -9,6 +9,8 @@ import { accountActionError } from './accountErrors';
 import * as api from './api';
 import type { JoinRequestDoc } from './useJoinRequests';
 
+const VISIBLE = 3;
+
 export interface JoinRequestsProps {
   schoolId: string;
   requests: JoinRequestDoc[];
@@ -22,6 +24,8 @@ export function JoinRequests({ schoolId, requests, teachers, readOnly }: JoinReq
   const toast = useToast();
   const headingId = useId();
   const [busy, setBusy] = useState<{ uid: string; approve: boolean } | null>(null);
+  const [expanded, setExpanded] = useState(false);
+  const listId = useId();
 
   if (requests.length === 0) return null;
 
@@ -38,6 +42,8 @@ export function JoinRequests({ schoolId, requests, teachers, readOnly }: JoinReq
   }
 
   const sorted = [...requests].sort((a, b) => a.createdAt - b.createdAt);
+  const hidden = sorted.length - VISIBLE;
+  const shown = expanded || hidden <= 0 ? sorted : sorted.slice(0, VISIBLE);
 
   return (
     <section aria-labelledby={headingId} className="mb-5 rounded-[14px] border border-warning-line bg-warning-soft/40 p-5">
@@ -45,8 +51,8 @@ export function JoinRequests({ schoolId, requests, teachers, readOnly }: JoinReq
         {t('requests.title', { count: requests.length })}
       </h2>
       <p className="mb-0 mt-1 text-sm text-ink-soft">{t('requests.body')}</p>
-      <ul className="m-0 mt-3 list-none p-0">
-        {sorted.map((r) => {
+      <ul id={listId} className="m-0 mt-3 list-none p-0">
+        {shown.map((r) => {
           const teacher = teachers.find((x) => x.id === r.teacherId);
           return (
             <li key={r.uid} className="flex flex-wrap items-center gap-x-4 gap-y-2 border-t border-line-soft py-3 text-sm first:border-t-0">
@@ -71,6 +77,13 @@ export function JoinRequests({ schoolId, requests, teachers, readOnly }: JoinReq
           );
         })}
       </ul>
+      {hidden > 0 && (
+        <div className="border-t border-line-soft pt-3">
+          <Button variant="link" aria-expanded={expanded} aria-controls={listId} onClick={() => setExpanded((v) => !v)}>
+            {expanded ? t('requests.showFewer') : t('requests.showAll', { count: sorted.length })}
+          </Button>
+        </div>
+      )}
     </section>
   );
 }

@@ -8,6 +8,7 @@ import { rovingKeyDown } from './roving';
 export interface SegmentedOption<V extends string = string> {
   value: V;
   label: ReactNode;
+  ariaLabel?: string;
 }
 
 export interface SegmentedControlProps<V extends string = string> {
@@ -52,6 +53,7 @@ export function SegmentedControl<V extends string = string>({
             type="button"
             role="radio"
             aria-checked={checked}
+            aria-label={o.ariaLabel}
             disabled={disabled}
             tabIndex={checked || (!hasSelection && i === 0) ? 0 : -1}
             onClick={() => onChange(o.value)}

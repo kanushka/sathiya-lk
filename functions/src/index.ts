@@ -26,4 +26,3 @@ export { decideJoinRequest } from './decideJoinRequest';
 export { createTeacherLink } from './createTeacherLink';
 export { cancelTeacherLink } from './cancelTeacherLink';
 export { unlinkTeacher } from './unlinkTeacher';
-export { linkSelf } from './linkSelf';

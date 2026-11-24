@@ -133,11 +133,11 @@ export const en = {
       },
       {
         q: "Who can see our school's data?",
-        a: "Only people your school's administrators add. Administrators manage the timetable; teachers see their own timetable and the school's timetables. The only public details are your school's name, district and whether it is active, so the school can be named on invite links and found when someone reports a school. We do not sell your data.",
+        a: "Only people your school's administrators add. Administrators manage the timetable. Teachers see their own timetable and the school's timetables. The only public details are your school's name, district and whether it is active, so the school can be named on invite links and found when someone reports a school. We do not sell your data.",
       },
       {
         q: 'Do teachers need a smartphone?',
-        a: "No. Teachers with a phone can check today's periods and their week any time, with nothing to install. For anyone else, print their timetable. Building the timetable is made for a laptop or desktop; tablets work too.",
+        a: "No. Teachers with a phone can check today's periods and their week any time, with nothing to install. For anyone else, print their timetable. Building the timetable is made for a laptop or desktop, but tablets work too.",
       },
       {
         q: 'Can we use it in Sinhala?',
@@ -145,7 +145,7 @@ export const en = {
       },
       {
         q: 'How do teachers log in?',
-        a: "Teachers sign in with Google or with an email and password. Your administrator shares the school's invite link, or a personal link made for one teacher. A teacher whose email matches their record is linked at once; anyone else enters their staff ID and waits for an administrator to approve. Teachers who only need a printed timetable don't need an account.",
+        a: "Teachers sign in with Google or with an email and password. Your administrator shares the school's invite link, or a personal link made for one teacher. A teacher whose email matches their record is linked at once. Anyone else enters their staff ID and waits for an administrator to approve. Teachers who only need a printed timetable don't need an account.",
       },
     ],
     report: 'Seen a fake or duplicate school registration?',
@@ -240,7 +240,7 @@ export const en = {
         body: [
           'School details: name in English and Sinhala, district, grades offered, staff ID prefix, logo and colours.',
           'Accounts (administrators and teachers who sign in): email address, your name as shown on your Google account if you sign in with Google, and the schools you belong to and your role in each. For administrators we also record which version of the Terms & Conditions and Privacy Policy was accepted, and when.',
-          'Teachers: name, staff ID, subjects, grades, and for teachers who link an account, the time they last logged in; phone numbers and email addresses only if your school chooses to add them.',
+          'Teachers: name, staff ID, subjects, grades, and for teachers who link an account, the time they last logged in. Phone numbers and email addresses are kept only if your school chooses to add them.',
           "Join requests: when someone asks to join a school with its invite link, their email address, name and the staff ID they entered. The request and the administrator's decision are kept.",
           'Timetables: subjects, grades, classes, period times and timetable entries. Firebase Authentication also keeps the records it needs to let people sign in.',
           'We do not collect National Identity Card (NIC) numbers. Please do not enter them anywhere in Sathiya.',

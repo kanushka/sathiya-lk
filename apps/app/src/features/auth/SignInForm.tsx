@@ -157,7 +157,7 @@ export function SignInForm({ inAppBrowser = false, onCreateAccount }: SignInForm
       )}
       <p className="mb-0 mt-3 text-center text-sm text-ink-muted">
         {t('signIn.newSchool')}{' '}
-        <Link to="/register" className="font-semibold">
+        <Link to="/register" className="font-semibold underline">
           {t('signIn.register')}
         </Link>
       </p>

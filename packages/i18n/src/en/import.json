@@ -114,7 +114,7 @@
     "3. Staff ID: leave blank to number teachers automatically.",
     "4. Subjects: separate with commas, or with semicolons (;) if a subject name has a comma. Use the English, Sinhala or short name of a subject in this file or already in Sathiya.",
     "5. Grades: e.g. 6-9, 11. Max periods/day: blank means 7. Primary teacher: Yes or No.",
-    "6. Staff ID, Phone and Grades are formatted as Plain text so Excel doesn't turn 6-9 into a date or drop a phone's leading 0. Keep that formatting; if you paste data, use Paste Values or format those columns as Plain text.",
+    "6. Staff ID, Phone and Grades are formatted as Plain text so Excel doesn't turn 6-9 into a date or drop a phone's leading 0. Keep that formatting. If you paste data, use Paste Values or format those columns as Plain text.",
     "7. Don't change the column headings. Up to 200 rows per sheet.",
     "8. Save as .xlsx. If you save a CSV instead, choose \"CSV UTF-8\" so Sinhala text is kept."
   ]

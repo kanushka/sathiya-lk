@@ -14,7 +14,7 @@
     "taken": "This staff ID is already linked to an account. Ask your school admin to unlink it if it should be yours.",
     "submit": "Send request",
     "sending": "Sending…",
-    "hint": "Already sent a request? Sending it again is fine; your admin sees only the latest."
+    "hint": "Already sent a request? Sending it again is fine. Your admin sees only the latest."
   },
   "pending": {
     "title": "Waiting for your school admin",
