@@ -53,3 +53,19 @@ test('grades and templates are usable on a phone', async ({ page }) => {
   expect(box!.x + box!.width).toBeLessThanOrEqual(375);
   await shot(page, 'phone-templates');
 });
+
+test('Sinhala card labels never spill into the next row', async ({ page }) => {
+  await loginAdmin(page, ADMIN.email, ADMIN.password);
+  await page.goto('/admin/teachers');
+  await page.getByRole('button', { name: 'Open menu' }).tap();
+  await page.getByRole('button', { name: /^Language/ }).tap();
+  await page.getByRole('button', { name: 'මෙනුව වසන්න' }).tap();
+  for (const path of ['/admin/teachers', '/admin/members']) {
+    await page.goto(path);
+    await expect(page.locator('td[data-label]').first()).toBeVisible();
+    const spilled = await page.locator('td[data-label]').evaluateAll((cells) => cells.filter((c) => c.scrollHeight > c.clientHeight + 1).length);
+    expect(spilled, path).toBe(0);
+  }
+  await page.getByRole('button', { name: 'මෙනුව විවෘත කරන්න' }).tap();
+  await page.getByRole('button', { name: /^භාෂාව/ }).tap();
+});

@@ -101,7 +101,7 @@ export function DefaultSubjectsPage({ doc: injected, writer = firestorePlatformW
       ) : list.length === 0 ? (
         <EmptyState icon="search" title={t('subjects.empty')} body={t('subjects.emptyBody')} />
       ) : (
-        <Table className="min-w-[640px]">
+        <Table className="md:min-w-[640px]">
           <THead>
             <tr>
               <Th>{t('subjects.columns.nameEn')}</Th>

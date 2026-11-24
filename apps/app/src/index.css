@@ -128,12 +128,12 @@ a {
     padding: 4px 0;
     overflow-wrap: anywhere;
   }
-  .phone-cards td:empty {
+  .phone-cards td:empty,
+  .phone-cards td[data-label]:empty {
     display: none;
   }
   .phone-cards td[data-label] {
-    position: relative;
-    min-height: 26px;
+    display: flow-root;
     padding-left: calc(7rem + 12px);
   }
   .phone-cards td:first-child {
@@ -141,10 +141,10 @@ a {
   }
   .phone-cards td[data-label]::before {
     content: attr(data-label);
-    position: absolute;
-    left: 0;
-    top: 7px;
+    float: left;
     width: 7rem;
+    margin-left: calc(-7rem - 12px);
+    padding-top: 3px;
     font-family: Inter, 'Noto Sans Sinhala', system-ui, sans-serif;
     font-size: 11px;
     font-weight: 700;
