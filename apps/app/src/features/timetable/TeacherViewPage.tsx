@@ -257,7 +257,7 @@ function TeacherView({ teacher, teachers, template }: { teacher: Teacher; teache
   }
 
   function loadBar(d: DayIndex) {
-    const load = teacherDayLoad(teacher.id, d, entries);
+    const load = teacherDayLoad(teacher.id, d, entries, ctx);
     const max = teacher.maxPerDay;
     const over = load > max;
     const value = t('teacherView.loadValue', { load, max });

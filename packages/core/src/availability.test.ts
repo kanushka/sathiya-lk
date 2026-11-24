@@ -2,8 +2,8 @@
 // Copyright (C) 2026 Kanushka Gayan
 
 import { describe, expect, it } from 'vitest';
-import { C, ctx, entries, entry, S, T } from './fixtures';
-import { classOptionsForTeacherSlot, matchClassPeriod, preferredTeacherFor, teacherClassOptions, teacherDayLoad, teacherOptionsForSlot, teachesSubject } from './availability';
+import { C, ctx, entries, entry, mahasen, S, T } from './fixtures';
+import { classOptionsForTeacherSlot, matchClassPeriod, preferredTeacherFor, teacherClassOptions, teacherDayLoad, teacherLoad, teacherOptionsForSlot, teachesSubject } from './availability';
 import type { DayIndex, Entry, Teacher } from './types';
 
 const teacher = (id: string): Teacher => ctx.teachers.find((t) => t.id === id)!;
@@ -32,6 +32,41 @@ describe('teacherDayLoad', () => {
     expect(teacherDayLoad(T.perera, 3, entries)).toBe(2);
     expect(teacherDayLoad(T.ananda, 0, entries)).toBe(1);
     expect(teacherDayLoad(T.herath, 2, entries)).toBe(0);
+  });
+
+  it('ignores own-class slots in classTeacherAll grades', () => {
+    const own = [1, 2, 3, 4, 5, 6, 7, 8, 9].map((p) => entry(`m-${p}`, 0, p, ['mh-c-1a'], [[mahasen.S.maths, 'mh-t-1a']]));
+    expect(teacherDayLoad('mh-t-1a', 0, own, mahasen.ctx)).toBe(0);
+    expect(teacherDayLoad('mh-t-1a', 0, own)).toBe(9);
+  });
+
+  it('still counts slots in other classes for a classTeacherAll class teacher', () => {
+    const other = [entry('m-x', 0, 1, ['mh-c-1b'], [[mahasen.S.maths, 'mh-t-1a']])];
+    expect(teacherDayLoad('mh-t-1a', 0, other, mahasen.ctx)).toBe(1);
+  });
+});
+
+describe('teacherLoad', () => {
+  it('sums minutes across templates', () => {
+    const es = [
+      entry('l-1', 0, 1, ['mh-c-1a'], [[mahasen.S.maths, 'mh-t-1a']]),
+      entry('l-2', 0, 2, ['mh-c-1a'], [[mahasen.S.maths, 'mh-t-1a']]),
+    ];
+    expect(teacherLoad('mh-t-1a', es, mahasen.ctx)).toEqual({ entries: 2, minutes: 60 + 15 });
+    expect(teacherLoad('mh-t-1b', es, mahasen.ctx)).toEqual({ entries: 0, minutes: 0 });
+  });
+
+  it('uses each entry first class template', () => {
+    const es = [
+      entry('l-1', 0, 1, ['mh-c-1a'], [[mahasen.S.maths, 'mh-t-1a']]),
+      entry('l-2', 0, 1, [C.c6a], [[S.maths, T.perera]]),
+    ];
+    const both = { ...mahasen.ctx, templates: [...mahasen.ctx.templates, ...ctx.templates], classes: [...mahasen.ctx.classes, ...ctx.classes], grades: [...mahasen.ctx.grades, ...ctx.grades], teachers: [...mahasen.ctx.teachers, ...ctx.teachers], subjects: [...mahasen.ctx.subjects, ...ctx.subjects] };
+    const a = teacherLoad('mh-t-1a', es, both);
+    const b = teacherLoad(T.perera, es, both);
+    expect(a).toEqual({ entries: 1, minutes: 60 });
+    expect(b.entries).toBe(1);
+    expect(b.minutes).toBeGreaterThan(0);
   });
 });
 

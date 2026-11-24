@@ -73,7 +73,7 @@ export function pinSlots(args: PinArgs): PinSlot[] {
     let tight = { teacherId: '', load: 0, max: 0 };
     let tightGap = -Infinity;
     for (const t of specTeachers) {
-      const load = teacherDayLoad(t.id, day, entries);
+      const load = teacherDayLoad(t.id, day, entries, ctx);
       if (load - t.maxPerDay > tightGap) {
         tightGap = load - t.maxPerDay;
         tight = { teacherId: t.id, load, max: t.maxPerDay };
@@ -120,7 +120,7 @@ export function suggestPins(args: PinArgs & { count: number; teacherId?: string 
   const load = new Map<DayIndex, Map<string, number>>();
   const subjectCount = new Map<DayIndex, number>();
   for (const day of DAYS) {
-    load.set(day, new Map(specTeachers.map((t) => [t.id, teacherDayLoad(t.id, day, entries)])));
+    load.set(day, new Map(specTeachers.map((t) => [t.id, teacherDayLoad(t.id, day, entries, ctx)])));
     subjectCount.set(day, entries.filter((e) => e.day === day && e.classIds.includes(baseId) && hasSubjectThatDay(e, spec)).length);
   }
   const atLimit = (day: DayIndex) => specTeachers.some((t) => load.get(day)!.get(t.id)! >= t.maxPerDay);

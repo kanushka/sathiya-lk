@@ -48,7 +48,7 @@ export function warnings(entries: Entry[], ctx: SchoolContext): Warning[] {
   const out: Warning[] = [];
   for (const t of ctx.teachers) {
     for (const day of DAYS) {
-      const load = teacherDayLoad(t.id, day, entries);
+      const load = teacherDayLoad(t.id, day, entries, ctx);
       if (load > t.maxPerDay) out.push({ kind: 'over-limit', refId: t.id, day, detail: `${load} periods on ${DAY_NAMES[day]}, limit ${t.maxPerDay}` });
     }
   }

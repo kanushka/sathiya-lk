@@ -4,7 +4,8 @@
 import { findConflicts } from './clash';
 import { findClass, gradeOf, templateOf } from './lookup';
 import { effectivePlan } from './plan';
-import { bestOverlapPeriod, periodsFor, toMinutes } from './time';
+import { staffingFor } from './staffing';
+import { bestOverlapPeriod, periodsFor, slotMinutes, toMinutes } from './time';
 import type { DayIndex, Entry, PeriodTemplate, PlanItem, SchoolClass, SchoolContext, Teacher } from './types';
 
 export type UnavailableReason = 'busy' | 'limit' | 'not-qualified';
@@ -53,8 +54,29 @@ export function teachesSubject(t: Teacher, subjectId: string, grade: number): bo
   return t.isPrimary || t.subjectIds.includes(subjectId);
 }
 
-export function teacherDayLoad(teacherId: string, day: DayIndex, entries: Entry[]): number {
-  return entries.filter((e) => e.day === day && e.lessons.some((l) => l.teacherId === teacherId)).length;
+function isExemptOwnClass(teacherId: string, e: Entry, ctx: SchoolContext): boolean {
+  return e.classIds.some((id) => {
+    const cls = findClass(ctx, id);
+    const grade = cls && gradeOf(ctx, cls);
+    return cls?.classTeacherId === teacherId && grade !== undefined && staffingFor(grade, ctx).mode === 'classTeacherAll';
+  });
+}
+
+export function teacherDayLoad(teacherId: string, day: DayIndex, entries: Entry[], ctx?: SchoolContext): number {
+  return entries.filter((e) => e.day === day && e.lessons.some((l) => l.teacherId === teacherId) && !(ctx && isExemptOwnClass(teacherId, e, ctx))).length;
+}
+
+export function teacherLoad(teacherId: string, entries: Entry[], ctx: SchoolContext): { entries: number; minutes: number } {
+  let count = 0;
+  let minutes = 0;
+  for (const e of entries) {
+    if (!e.lessons.some((l) => l.teacherId === teacherId)) continue;
+    count += 1;
+    const cls = findClass(ctx, e.classIds[0] ?? '');
+    const template = cls && templateOf(ctx, cls);
+    if (template) minutes += slotMinutes(template, e.day, e.period);
+  }
+  return { entries: count, minutes };
 }
 
 export function teacherOptionsForSlot(args: { ctx: SchoolContext; entries: Entry[]; classIds: string[]; day: DayIndex; period: number; subjectId: string; editingEntryId?: string }): { available: TeacherOption[]; unavailable: TeacherOption[] } {
@@ -70,7 +92,7 @@ export function teacherOptionsForSlot(args: { ctx: SchoolContext; entries: Entry
   const available: TeacherOption[] = [];
   const unavailable: TeacherOption[] = [];
   for (const teacher of ctx.teachers) {
-    const loadToday = teacherDayLoad(teacher.id, day, entries);
+    const loadToday = teacherDayLoad(teacher.id, day, entries, ctx);
     if (grade === undefined || !teachesSubject(teacher, subjectId, grade)) {
       unavailable.push({ teacher, loadToday, reason: 'not-qualified' });
       continue;

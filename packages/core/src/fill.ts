@@ -25,7 +25,7 @@ export function fillWithClassTeacher(args: { ctx: SchoolContext; entries: Entry[
     for (const { period } of periodsFor(template, day)) {
       const probe: EntryDraft = { day, period, classIds: [classId], lessons: [{ subjectId: '', teacherId }] };
       if (findConflicts(probe, all, ctx).length > 0) continue;
-      if (teacherDayLoad(teacherId, day, all) >= teacher.maxPerDay) continue;
+      if (teacherDayLoad(teacherId, day, all, ctx) >= teacher.maxPerDay) continue;
       const pick = remaining.reduce<(typeof remaining)[number] | undefined>((best, r) => (r.need > 0 && (!best || r.need > best.need) ? r : best), undefined);
       if (!pick) continue;
       pick.need -= 1;
