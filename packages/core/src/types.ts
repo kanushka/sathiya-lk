@@ -33,5 +33,8 @@ export interface Entry { id: string; day: DayIndex; period: number; classIds: st
 export type EntryDraft = Omit<Entry, 'id' | 'teacherIds'> & { id?: string };
 export interface Year { id: string; label: string; status: 'draft' | 'published'; publishedAt?: number }
 export interface Member { uid: string; role: 'admin' | 'teacher'; teacherId?: string; email?: string; name?: string }
-export interface Claims { sid?: string; role?: 'admin' | 'teacher'; tid?: string; super?: boolean }
+export type SchoolRole = 'a' | 't';
+export interface Membership { r: SchoolRole; t?: string }
+export interface Claims { schools?: Record<string, Membership>; super?: boolean }
+export interface JoinRequest { uid: string; email: string; name?: string; staffId: string; teacherId: string; createdAt: number }
 export interface SchoolContext { school: School; teachers: Teacher[]; subjects: Subject[]; templates: PeriodTemplate[]; grades: Grade[]; classes: SchoolClass[] }

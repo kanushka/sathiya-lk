@@ -10,6 +10,7 @@ export * from './census';
 export * from './email';
 export * from './yearLabel';
 export * from './staff';
+export * from './membership';
 export * from './standardSubjects';
 export * from './subjectShort';
 export * from './color';
