@@ -5,6 +5,7 @@ import { useEffect, useId, useRef, type MouseEvent, type ReactNode } from 'react
 import { createPortal } from 'react-dom';
 import { useTranslation } from 'react-i18next';
 import { IconButton } from './IconButton';
+import { useDialogTrap } from './useDialogTrap';
 
 export interface ModalProps {
   open: boolean;
@@ -16,25 +17,6 @@ export interface ModalProps {
   zoom?: number;
   busy?: boolean;
   children: ReactNode;
-}
-
-const focusable =
-  'a[href], button:not([disabled]), input:not([disabled]):not([type="hidden"]), select:not([disabled]), textarea:not([disabled]), [tabindex]:not([tabindex="-1"])';
-
-const stack: symbol[] = [];
-
-function inertOutside(keep: HTMLElement): () => void {
-  const changed: Element[] = [];
-  for (const el of Array.from(document.body.children)) {
-    if (el === keep || el.hasAttribute('inert') || el.matches('[aria-live], script')) continue;
-    el.setAttribute('inert', '');
-    changed.push(el);
-  }
-  return () => changed.forEach((el) => el.removeAttribute('inert'));
-}
-
-function focusables(root: HTMLElement): HTMLElement[] {
-  return Array.from(root.querySelectorAll<HTMLElement>(focusable)).filter((el) => !el.closest('[data-menu-panel]'));
 }
 
 export function Modal(props: ModalProps) {
@@ -52,52 +34,7 @@ function ModalPanel({ title, subtitle, onClose, footer, width = 560, zoom, busy 
   const onCloseRef = useRef(onClose);
   onCloseRef.current = busy ? () => undefined : onClose;
 
-  useEffect(() => {
-    const id = Symbol('modal');
-    stack.push(id);
-    const previous = document.activeElement as HTMLElement | null;
-    const panel = panelRef.current;
-    const restoreInert = backdropRef.current ? inertOutside(backdropRef.current) : undefined;
-    const first = (bodyRef.current && focusables(bodyRef.current)[0]) ?? (panel && focusables(panel)[0]) ?? panel;
-    first?.focus();
-    const overflow = document.body.style.overflow;
-    document.body.style.overflow = 'hidden';
-
-    function onKeyDown(e: KeyboardEvent) {
-      if (stack[stack.length - 1] !== id || !panel) return;
-      if (e.key === 'Escape') {
-        e.preventDefault();
-        onCloseRef.current();
-        return;
-      }
-      if (e.key !== 'Tab') return;
-      const items = focusables(panel);
-      const head = items[0];
-      const tail = items[items.length - 1];
-      if (!head || !tail) {
-        e.preventDefault();
-        panel.focus();
-        return;
-      }
-      const active = document.activeElement;
-      if (e.shiftKey && (active === head || !panel.contains(active))) {
-        e.preventDefault();
-        tail.focus();
-      } else if (!e.shiftKey && (active === tail || !panel.contains(active))) {
-        e.preventDefault();
-        head.focus();
-      }
-    }
-
-    document.addEventListener('keydown', onKeyDown);
-    return () => {
-      document.removeEventListener('keydown', onKeyDown);
-      restoreInert?.();
-      stack.splice(stack.indexOf(id), 1);
-      document.body.style.overflow = overflow;
-      previous?.focus?.();
-    };
-  }, []);
+  useDialogTrap({ panelRef, containerRef: backdropRef, initialFocusRef: bodyRef, onClose: () => onCloseRef.current() });
 
   // A loading button is disabled, which drops focus to <body>; keep it in the dialog.
   useEffect(() => {
