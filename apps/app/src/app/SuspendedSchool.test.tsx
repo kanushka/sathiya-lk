@@ -21,6 +21,7 @@ const state = vi.hoisted(() => ({
 
 vi.mock('../lib/firebase', () => ({ app: {}, auth: {}, db: {}, functions: {}, storage: {} }));
 vi.mock('./AuthProvider', () => ({ useAuth: () => ({ claims: state.claims, signOut: state.signOut }) }));
+vi.mock('./memberSchools', () => ({ fetchSchoolNames: vi.fn(async (ids: string[]) => Object.fromEntries(ids.map((id) => [id, { s1: 'Siripura', s2: 'Royal College' }[id] ?? id]))) }));
 vi.mock('../features/auth/api', () => ({ getDirectorySchool: vi.fn(async () => null), searchSchools: vi.fn(async () => []), reportSchool: vi.fn() }));
 vi.mock('../lib/firestore', () => ({
   useDoc: (path: string | null) => {
@@ -45,6 +46,7 @@ function renderProvider(scope?: 'full' | 'school') {
         <I18nextProvider i18n={testI18n}>
           <ToastProvider>
             <Routes>
+              <Route path="/s/s2/admin" element={<p>other school</p>} />
               <Route
                 path="/s/:sid"
                 element={
@@ -93,6 +95,21 @@ describe('suspended school gate', () => {
     await userEvent.keyboard('{Escape}');
     await userEvent.click(screen.getByRole('button', { name: 'Sign out' }));
     expect(state.signOut).toHaveBeenCalled();
+  });
+
+  it('shows no school switcher to a member of one school', () => {
+    state.claims = { schools: { s1: { r: 'a' } } };
+    renderProvider();
+    expect(screen.queryByRole('combobox', { name: /^School/ })).not.toBeInTheDocument();
+  });
+
+  it('lets a member of several schools switch to another school', async () => {
+    state.claims = { schools: { s1: { r: 'a' }, s2: { r: 'a' } } };
+    const user = userEvent.setup();
+    renderProvider();
+    await user.click(await screen.findByRole('combobox', { name: /^School/ }));
+    await user.click(await screen.findByRole('option', { name: 'Royal College · Admin' }));
+    expect(await screen.findByText('other school')).toBeInTheDocument();
   });
 
   it('never blocks a super admin', () => {

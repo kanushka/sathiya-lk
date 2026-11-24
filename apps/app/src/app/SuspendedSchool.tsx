@@ -8,6 +8,7 @@ import { BrandMark, LanguageToggle } from '../features/auth/AuthChrome';
 import { ReportSchoolModal } from '../features/auth/ReportSchoolModal';
 import { webUrl } from '../lib/urls';
 import { Button } from '../ui/Button';
+import { SchoolSwitcher } from '../ui/SchoolSwitcher';
 import { useAuth } from './AuthProvider';
 import { useLang } from './LangProvider';
 
@@ -27,6 +28,7 @@ export function SuspendedSchool({ sid, school }: { sid: string; school: Pick<Sch
         <p className="mb-1 mt-0 font-semibold text-ink">{pickName(school, lang)}</p>
         <p className="mb-6 mt-0 text-sm leading-normal text-ink-soft">{t('suspended.body')}</p>
         <div className="flex flex-col gap-3">
+          <SchoolSwitcher current={sid} className="w-full" />
           <a
             className="font-semibold text-brand underline underline-offset-2"
             href={webUrl(`${lang === 'si' ? '/si' : ''}/contact/`)}
