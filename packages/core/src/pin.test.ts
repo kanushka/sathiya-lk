@@ -2,7 +2,7 @@
 // Copyright (C) 2026 Kanushka Gayan
 
 import { describe, expect, it } from 'vitest';
-import { C, ctx, entries, entries6B, entry, S, T } from './fixtures';
+import { C, ctx, entries, entries6B, entry, mahasen, S, T } from './fixtures';
 import { classRemaining, groupSpecIsCurrent, latestGroupSpec, matchesSpec, pinProgress, pinSlots, singleSpec, specDraft, suggestPins, teacherPinSlots, type PinSpec } from './pin';
 import type { Entry } from './types';
 
@@ -50,6 +50,17 @@ describe('pinSlots', () => {
 });
 
 describe('suggestPins', () => {
+  it('with a minutes budget picks slots whose minutes fit and stops when none do', () => {
+    const spec = singleSpec('mh-c-1a', mahasen.S.maths, 'mh-t-1a');
+    const picks = suggestPins({ ctx: mahasen.ctx, entries: [], spec, count: 99, minutes: 50 });
+    expect(picks).toEqual([
+      { day: 0, period: 2 },
+      { day: 1, period: 2 },
+      { day: 2, period: 2 },
+    ]);
+    expect(suggestPins({ ctx: mahasen.ctx, entries: [], spec, count: 99, minutes: 5 })).toEqual([]);
+  });
+
   it('spreads picks one per day before doubling up, earliest free period first', () => {
     expect(suggestPins({ ...target, entries: [], count: 3 })).toEqual([
       { day: 0, period: 1 },
@@ -105,16 +116,22 @@ describe('suggestPins', () => {
 });
 
 describe('pinProgress', () => {
+  it('reports minute items in minutes with their unit', () => {
+    const spec = singleSpec('mh-c-1a', mahasen.S.maths, 'mh-t-1a');
+    const es = [entry('m1', 0, 2, ['mh-c-1a'], [[mahasen.S.maths, 'mh-t-1a']])];
+    expect(pinProgress({ ctx: mahasen.ctx, entries: es, spec })).toMatchObject({ placed: 15, needed: 190, left: 175, unit: 'minutes' });
+  });
+
   it('counts placed lessons of the subject against the plan, with left and over', () => {
-    expect(pinProgress({ ctx, entries: entries6B, spec: singleSpec(C.c6b, S.sinhala, T.ranasinghe) })).toEqual({ placed: 5, needed: 5, left: 0, over: 0, full: [] });
+    expect(pinProgress({ ctx, entries: entries6B, spec: singleSpec(C.c6b, S.sinhala, T.ranasinghe) })).toEqual({ placed: 5, needed: 5, left: 0, over: 0, full: [], unit: 'periods' });
     const extra = [...entries6B, entry('x1', 2, 4, [C.c6b], [[S.sinhala, T.ranasinghe]]), entry('x2', 3, 7, [C.c6b], [[S.sinhala, T.rSilva]])];
-    expect(pinProgress({ ctx, entries: extra, spec: singleSpec(C.c6b, S.sinhala, T.ranasinghe) })).toEqual({ placed: 7, needed: 5, left: 0, over: 2, full: [] });
-    expect(pinProgress({ ctx, entries: [], spec: singleSpec(C.c6b, S.science, T.gunasekara) })).toEqual({ placed: 0, needed: 5, left: 5, over: 0, full: [] });
+    expect(pinProgress({ ctx, entries: extra, spec: singleSpec(C.c6b, S.sinhala, T.ranasinghe) })).toEqual({ placed: 7, needed: 5, left: 0, over: 2, full: [], unit: 'periods' });
+    expect(pinProgress({ ctx, entries: [], spec: singleSpec(C.c6b, S.science, T.gunasekara) })).toEqual({ placed: 0, needed: 5, left: 5, over: 0, full: [], unit: 'periods' });
   });
 
   it('does not count a lesson outside the class template', () => {
     const orphan = entry('o', 4, 8, [C.c6c], [[S.science, T.gunasekara]]);
-    expect(pinProgress({ ctx, entries: [orphan], spec: singleSpec(C.c6c, S.science, T.gunasekara) })).toEqual({ placed: 0, needed: 5, left: 5, over: 0, full: [] });
+    expect(pinProgress({ ctx, entries: [orphan], spec: singleSpec(C.c6c, S.science, T.gunasekara) })).toEqual({ placed: 0, needed: 5, left: 5, over: 0, full: [], unit: 'periods' });
   });
 });
 
@@ -205,8 +222,8 @@ describe('suggestPins for a group spec', () => {
 
 describe('pinProgress for a group spec', () => {
   it('counts the group row', () => {
-    expect(pinProgress({ ...gArgs, entries: entries6B })).toEqual({ placed: 3, needed: 3, left: 0, over: 0, full: [{ classId: C.c6b, placed: 3, needed: 3, left: 0 }] });
-    expect(pinProgress({ ...gArgs, entries: [] })).toEqual({ placed: 0, needed: 3, left: 3, over: 0, full: [] });
+    expect(pinProgress({ ...gArgs, entries: entries6B })).toEqual({ placed: 3, needed: 3, left: 0, over: 0, full: [{ classId: C.c6b, placed: 3, needed: 3, left: 0, unit: 'periods' }], unit: 'periods' });
+    expect(pinProgress({ ...gArgs, entries: [] })).toEqual({ placed: 0, needed: 3, left: 3, over: 0, full: [], unit: 'periods' });
   });
 });
 
@@ -227,7 +244,7 @@ describe('pinProgress with joined classes', () => {
       needed: 3,
       left: 0,
       over: 0,
-      full: [{ classId: C.c6b, placed: 3, needed: 3, left: 0 }],
+      full: [{ classId: C.c6b, placed: 3, needed: 3, left: 0, unit: 'periods' }], unit: 'periods',
     });
     const english = { classIds: [C.c6a, C.c6b], lessons: [{ subjectId: S.english, teacherId: T.wijesekara }] };
     expect(pinProgress({ ctx, entries: entries6B, spec: english })).toMatchObject({ placed: 0, needed: 5, left: 0, full: [{ classId: C.c6b, placed: 5, needed: 5 }] });
@@ -235,7 +252,7 @@ describe('pinProgress with joined classes', () => {
 
   it('takes the smallest remaining count across the base and joined classes', () => {
     const science = { classIds: [C.c6a, C.c6b], lessons: [{ subjectId: S.science, teacherId: T.gunasekara }] };
-    expect(pinProgress({ ctx, entries: entries6B, spec: science })).toEqual({ placed: 0, needed: 5, left: 2, over: 0, full: [] });
+    expect(pinProgress({ ctx, entries: entries6B, spec: science })).toEqual({ placed: 0, needed: 5, left: 2, over: 0, full: [], unit: 'periods' });
   });
 
   it('caps suggestions at the joined minimum', () => {
@@ -247,13 +264,13 @@ describe('pinProgress with joined classes', () => {
 
 describe('classRemaining', () => {
   it('counts a class against its plan for a subject or group', () => {
-    expect(classRemaining({ ctx, entries: entries6B, classId: C.c6b, item: { groupKey: 'aesthetic' } })).toEqual({ classId: C.c6b, placed: 3, needed: 3, left: 0 });
-    expect(classRemaining({ ctx, entries: entries6B, classId: C.c6b, item: { subjectId: S.science } })).toEqual({ classId: C.c6b, placed: 3, needed: 5, left: 2 });
-    expect(classRemaining({ ctx, entries: entries6B, classId: C.c6a, item: { subjectId: S.science } })).toEqual({ classId: C.c6a, placed: 0, needed: 5, left: 5 });
+    expect(classRemaining({ ctx, entries: entries6B, classId: C.c6b, item: { groupKey: 'aesthetic' } })).toEqual({ classId: C.c6b, placed: 3, needed: 3, left: 0, unit: 'periods' });
+    expect(classRemaining({ ctx, entries: entries6B, classId: C.c6b, item: { subjectId: S.science } })).toEqual({ classId: C.c6b, placed: 3, needed: 5, left: 2, unit: 'periods' });
+    expect(classRemaining({ ctx, entries: entries6B, classId: C.c6a, item: { subjectId: S.science } })).toEqual({ classId: C.c6a, placed: 0, needed: 5, left: 5, unit: 'periods' });
   });
 
   it('reports no room when the class plan lacks the item', () => {
-    expect(classRemaining({ ctx, entries: [], classId: C.c1a, item: { subjectId: S.science } })).toEqual({ classId: C.c1a, placed: 0, needed: 0, left: 0 });
+    expect(classRemaining({ ctx, entries: [], classId: C.c1a, item: { subjectId: S.science } })).toEqual({ classId: C.c1a, placed: 0, needed: 0, left: 0, unit: 'periods' });
   });
 });
 

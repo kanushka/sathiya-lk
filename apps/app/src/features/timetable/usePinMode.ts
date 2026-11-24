@@ -3,6 +3,7 @@
 
 import {
   effectivePlan,
+  formatAmountPair,
   pickName,
   pinProgress,
   pinSlots,
@@ -88,9 +89,9 @@ export function usePinMode(args: {
   const fullNote = useMemo(
     () =>
       (progress?.full ?? [])
-        .map((f) => t('pin.classFull', { class: ctx.classes.find((c) => c.id === f.classId)?.name ?? f.classId, placed: f.placed, needed: f.needed }))
+        .map((f) => t('pin.classFull', { class: ctx.classes.find((c) => c.id === f.classId)?.name ?? f.classId, progress: formatAmountPair(f.placed, f.needed, f.unit, lang) }))
         .join(', '),
-    [progress, ctx, t],
+    [progress, ctx, t, lang],
   );
   const slotAt = useCallback((day: DayIndex, n: number) => slots.find((s) => s.day === day && s.period === n), [slots]);
   const cellAt = useCallback((day: DayIndex, n: number) => slotAt(day, n)?.cell, [slotAt]);
@@ -103,7 +104,7 @@ export function usePinMode(args: {
         const s = slots.find((x) => x.day === r.day && x.classPeriod === r.period);
         if (s && s.cell.kind === 'free') out.push({ day: s.day, period: s.period });
       }
-      return out.slice(0, progress?.left ?? 0);
+      return progress?.unit === 'minutes' ? out : out.slice(0, progress?.left ?? 0);
     },
     [slots, progress],
   );
@@ -208,7 +209,8 @@ export function usePinMode(args: {
 
   const suggest = useCallback(() => {
     if (!target || !progress || !names) return;
-    const picks = suggestPins({ ctx, entries, spec: target, count: progress.left, ...(teacherViewId === null ? {} : { teacherId: teacherViewId }) });
+    const budget = progress.unit === 'minutes' ? { count: slots.length, minutes: progress.left } : { count: progress.left };
+    const picks = suggestPins({ ctx, entries, spec: target, ...budget, ...(teacherViewId === null ? {} : { teacherId: teacherViewId }) });
     const shown = toRows(picks).length;
     setRawSuggested(picks);
     setMessage(
@@ -218,7 +220,7 @@ export function usePinMode(args: {
           ? t('pin.noSuggest', { teacher: names.teacher })
           : t('pin.noSuggestGroup', { group: names.subject }),
     );
-  }, [target, progress, names, ctx, entries, t, teacherViewId, toRows]);
+  }, [target, progress, names, ctx, entries, t, teacherViewId, toRows, slots]);
 
   const pinSuggested = useCallback(async () => {
     if (!target || !names) return;

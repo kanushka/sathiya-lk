@@ -4,6 +4,8 @@
 import {
   blockMates,
   classRemaining,
+  formatAmount,
+  formatAmountPair,
   periodsFor,
   pickName,
   pinProgress,
@@ -113,9 +115,11 @@ function TeacherAssignPickerBody({ teacherId, slot, entries, onClose, onSave, on
     if (!teacher) return [];
     const rows = teacherSubjects(teacher, ctx).map((s) => {
       const options = teacherClassOptions({ ctx, entries, teacherId, subjectId: s.id });
-      const left = options.reduce((sum, o) => sum + pinProgress({ ctx, entries, spec: specFor(o, teacherId) }).left, 0);
+      const progresses = options.map((o) => pinProgress({ ctx, entries, spec: specFor(o, teacherId) }));
+      const left = progresses.reduce((sum, p) => sum + p.left, 0);
+      const unit = progresses.find((p) => p.unit === 'minutes')?.unit ?? 'periods';
       const classes = t('teacherAssign.classCount', { count: options.length });
-      const note = options.length === 0 ? t('teacherAssign.noClasses') : left > 0 ? t('teacherAssign.subjectNeed', { count: left, classes }) : t('teacherAssign.subjectDone', { classes });
+      const note = options.length === 0 ? t('teacherAssign.noClasses') : left > 0 ? t('teacherAssign.subjectNeed', { count: left, amount: formatAmount(left, unit, lang), classes }) : t('teacherAssign.subjectDone', { classes });
       return { id: s.id, name: pickName(s, lang), color: s.color, left, note };
     });
     return [...rows.filter((r) => r.left > 0), ...rows.filter((r) => r.left === 0)];
@@ -145,7 +149,7 @@ function TeacherAssignPickerBody({ teacherId, slot, entries, onClose, onSave, on
         period: here?.period ?? null,
         ok: cell.kind === 'free',
         note: `${slotNote} · ${t('teacherAssign.weekFree', { count: freeCount })}`,
-        need: progress.left > 0 ? t('picker.needs', { count: progress.left }) : t('picker.done', { placed: progress.placed, needed: progress.needed }),
+        need: progress.left > 0 ? t('picker.needs', { amount: formatAmount(progress.left, progress.unit, lang) }) : t('picker.done', { progress: formatAmountPair(progress.placed, progress.needed, progress.unit, lang) }),
         needed: progress.left > 0,
       };
     });
@@ -477,7 +481,7 @@ function TeacherAssignPickerBody({ teacherId, slot, entries, onClose, onSave, on
                   const on = mates.includes(m.id);
                   const room = classRemaining({ ctx, entries, classId: m.id, item: { subjectId: selected.option.subjectId } });
                   if (!on && room.left === 0) {
-                    return <FullMateChip key={m.id} name={m.name} placed={room.placed} needed={room.needed} />;
+                    return <FullMateChip key={m.id} name={m.name} placed={room.placed} needed={room.needed} unit={room.unit} />;
                   }
                   return (
                     <ToggleChip key={m.id} pressed={on} onToggle={() => setMates((cur) => (on ? cur.filter((x) => x !== m.id) : [...cur, m.id]))}>

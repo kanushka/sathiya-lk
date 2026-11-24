@@ -24,7 +24,7 @@ function overlay(cell: TeacherPinCell, extra: { suggested?: boolean; left?: numb
     t,
     tc,
     names: extra.classes ? { ...names, classes: extra.classes } : names,
-    progress: { placed: 3, needed: 5, left: extra.left ?? 2, over: 0, full: extra.full ? [{ classId: C.c6a, placed: 5, needed: 5, left: 0 }] : [] },
+    progress: { placed: 3, needed: 5, left: extra.left ?? 2, over: 0, full: extra.full ? [{ classId: C.c6a, placed: 5, needed: 5, left: 0, unit: 'periods' }] : [], unit: 'periods' },
     suggested: extra.suggested ?? false,
     ...(extra.classNote ? { classNote: extra.classNote } : {}),
     ...(extra.teacherView ? { teacherView: true } : {}),

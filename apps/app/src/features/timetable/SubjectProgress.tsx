@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
 // Copyright (C) 2026 Kanushka Gayan
 
-import { classPlacement, type Entry, type PlanItem, type SchoolClass } from '@sathiya/core';
+import { classPlacement, formatAmountPair, type Entry, type PlanItem, type SchoolClass } from '@sathiya/core';
 import { useTranslation } from 'react-i18next';
 import { cx } from '../../ui/cx';
 import { IconButton } from '../../ui/IconButton';
@@ -21,7 +21,10 @@ export function SubjectProgress({ cls, entries, onPin, onStop, activeKey }: Subj
   const { t } = useTranslation('timetable');
   const { lang } = useLang();
   const ctx = useSchool();
-  const { rows, placed, needed: total } = classPlacement(cls, entries, ctx);
+  const { rows } = classPlacement(cls, entries, ctx);
+  const periodRows = rows.filter((r) => r.unit === 'periods');
+  const placed = periodRows.reduce((n, r) => n + Math.min(r.placed, r.needed), 0);
+  const total = periodRows.reduce((n, r) => n + r.needed, 0);
 
   return (
     <section className="rounded-[14px] border border-line bg-white p-4">
@@ -49,8 +52,8 @@ export function SubjectProgress({ cls, entries, onPin, onStop, activeKey }: Subj
               <span className="h-1.5 w-[70px] overflow-hidden rounded-full bg-surface-3" aria-hidden="true">
                 <span data-bar className={cx('block h-1.5', over ? 'bg-danger' : done ? 'bg-fill-success' : 'bg-fill-warning')} style={{ width: `${pct}%` }} />
               </span>
-              <b data-over={over || undefined} className={cx('w-9 text-right text-[13px]', over ? 'text-danger' : done ? 'text-success' : 'text-warning')}>
-                {t('progress.count', { placed: r.placed, needed: r.needed })}
+              <b data-over={over || undefined} className={cx('min-w-9 whitespace-nowrap text-right text-[13px]', over ? 'text-danger' : done ? 'text-success' : 'text-warning')}>
+                {t('progress.count', { progress: formatAmountPair(r.placed, r.needed, r.unit, lang) })}
               </b>
               {onPin && (
                 <span className="flex w-9 shrink-0 justify-end">

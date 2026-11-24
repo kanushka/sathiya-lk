@@ -2,7 +2,7 @@
 // Copyright (C) 2026 Kanushka Gayan
 
 import { periodsFor, singleSpec, type DayIndex, type Entry } from '@sathiya/core';
-import { C, ctx, entries6B, entry, S, T, TPL } from '@sathiya/core/fixtures';
+import { C, ctx, entries6B, entry, mahasen, S, T, TPL } from '@sathiya/core/fixtures';
 import { act, screen, waitFor } from '@testing-library/react';
 import { describe, expect, it, vi } from 'vitest';
 import { ApiError } from '../../lib/callable';
@@ -18,7 +18,7 @@ function Probe() {
   return null;
 }
 
-function setup(api: Partial<TimetableApi> = {}, es: Entry[] = entries6B, view: PinView = { kind: 'class' }) {
+function setup(api: Partial<TimetableApi> = {}, es: Entry[] = entries6B, view: PinView = { kind: 'class' }, schoolCtx = ctx) {
   viewArg = view;
   const full: TimetableApi = {
     saveEntry: vi.fn().mockResolvedValue({ entryId: 'new' }),
@@ -29,7 +29,7 @@ function setup(api: Partial<TimetableApi> = {}, es: Entry[] = entries6B, view: P
     <TimetableApiContext.Provider value={full}>
       <Probe />
     </TimetableApiContext.Provider>,
-    { ctx, entries: es },
+    { ctx: schoolCtx, entries: es },
   );
   return full;
 }
@@ -44,7 +44,7 @@ describe('usePinMode', () => {
     expect(pin.cellAt(2, 4)).toBeUndefined();
     act(() => pin.start(science));
     expect(pin.target).toEqual(science);
-    expect(pin.progress).toEqual({ placed: 3, needed: 5, left: 2, over: 0, full: [] });
+    expect(pin.progress).toEqual({ placed: 3, needed: 5, left: 2, over: 0, full: [], unit: 'periods' });
     expect(cell(2, 4)).toBe('free');
     expect(cell(4, 1)).toBe('pinned');
     expect(cell(0, 1)).toBe('taken');
@@ -135,7 +135,7 @@ describe('usePinMode', () => {
     });
     expect(api.saveEntry).toHaveBeenCalledTimes(2);
     expect(pin.suggested).toEqual([]);
-    expect(pin.progress).toEqual({ placed: 5, needed: 5, left: 0, over: 0, full: [] });
+    expect(pin.progress).toEqual({ placed: 5, needed: 5, left: 0, over: 0, full: [], unit: 'periods' });
     expect(pin.message).toBe('Pinned 2 Science lessons.');
   });
 
@@ -172,7 +172,7 @@ describe('usePinMode', () => {
       await pin.pinSuggested();
     });
     expect(api.saveEntry).toHaveBeenCalledTimes(2);
-    expect(pin.progress).toEqual({ placed: 5, needed: 5, left: 0, over: 0, full: [] });
+    expect(pin.progress).toEqual({ placed: 5, needed: 5, left: 0, over: 0, full: [], unit: 'periods' });
     expect(pin.suggested).toEqual([]);
   });
 
@@ -380,5 +380,30 @@ describe('usePinMode in the teacher view', () => {
     const s = pin.suggested[0]!;
     expect(pin.isSuggested(s.day, s.period)).toBe(true);
     expect(pin.cellAt(s.day, s.period)?.kind).toBe('free');
+  });
+});
+
+describe('usePinMode with a minutes target', () => {
+  const maths = singleSpec('mh-c-1a', mahasen.S.maths, 'mh-t-1a');
+
+  it('suggests slots within the remaining minutes and labels the rest in minutes', () => {
+    setup({}, [], { kind: 'class' }, mahasen.ctx);
+    act(() => pin.start(maths));
+    expect(pin.progress).toMatchObject({ placed: 0, needed: 190, left: 190, unit: 'minutes' });
+    act(() => pin.suggest());
+    expect(pin.suggested.length).toBeGreaterThan(0);
+    expect(pin.suggested.length).toBeLessThan(190);
+    const minutes = pin.suggested.reduce((n, s) => n + (s.period === 1 ? 60 : [0, 60, 15, 30, 10, 55, 10, 20][s.period]!), 0);
+    expect(minutes).toBeLessThanOrEqual(190);
+  });
+
+  it('notes a full joined class in minutes', () => {
+    const es = [entry('m1', 0, 1, ['mh-c-1b'], [[mahasen.S.maths, 'mh-t-1a']])];
+    const spec = { ...maths, classIds: ['mh-c-1a', 'mh-c-1b'] };
+    const full = [1, 2, 3].flatMap((d) => [1, 5].map((p) => entry(`f${d}${p}`, d as DayIndex, p, ['mh-c-1b'], [[mahasen.S.maths, 'mh-t-1a']])));
+    setup({}, [...es, ...full], { kind: 'class' }, mahasen.ctx);
+    act(() => pin.start(spec));
+    expect(pin.progress?.full[0]?.unit).toBe('minutes');
+    expect(pin.fullNote).toMatch(/1b already has .*h/i);
   });
 });
