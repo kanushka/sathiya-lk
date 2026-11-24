@@ -17,7 +17,7 @@ export function fillWithClassTeacher(args: { ctx: SchoolContext; entries: Entry[
   const template = cls && templateOf(ctx, cls);
   if (!cls || !teacherId || !teacher || !grade || !template) return [];
   const remaining = classPlacement(cls, args.entries, ctx).rows.flatMap((r) =>
-    r.item.kind === 'subject' ? [{ subjectId: r.item.subjectId, need: r.needed - r.placed }] : [],
+    r.item.kind === 'subject' && r.unit === 'periods' ? [{ subjectId: r.item.subjectId, need: r.needed - r.placed }] : [],
   );
   const all: Entry[] = [...args.entries];
   const drafts: EntryDraft[] = [];
