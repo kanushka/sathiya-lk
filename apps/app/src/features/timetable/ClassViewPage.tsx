@@ -39,7 +39,7 @@ import { blockKey, blockStateFor, isBlock, type BlockState } from './blockState'
 import { classCellView } from './labels';
 import { OutsideTemplateList } from './OutsideTemplateList';
 import { OUTSIDE_TEMPLATE_ID, pickInitial, rememberLast, useAdminBase } from './paths';
-import { PinHeader, PinSection } from './PinPanel';
+import { PinHeader, PinSection, PinSpacer } from './PinPanel';
 import { pinOverlayCell } from './pinOverlay';
 import { SlotPicker } from './SlotPicker';
 import { SubjectProgress } from './SubjectProgress';
@@ -362,6 +362,7 @@ function ClassView({ cls, classes }: { cls: SchoolClass; classes: SchoolClass[] 
           </p>
         </Modal>
       )}
+      <PinSpacer active={!!pin.target} />
     </div>
   );
 }

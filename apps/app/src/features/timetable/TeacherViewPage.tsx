@@ -39,7 +39,7 @@ import type { CellView } from './Cell';
 import { classNames } from './labels';
 import { OutsideTemplateList } from './OutsideTemplateList';
 import { pickInitial, rememberLast, useAdminBase } from './paths';
-import { PinHeader, PinSection } from './PinPanel';
+import { PinHeader, PinSection, PinSpacer } from './PinPanel';
 import { pinOverlayCell } from './pinOverlay';
 import { TeacherAssignPicker } from './TeacherAssignPicker';
 import { TeacherSlotPicker } from './TeacherSlotPicker';
@@ -454,6 +454,7 @@ function TeacherView({ teacher, teachers, template }: { teacher: Teacher; teache
           </ul>
         </Modal>
       )}
+      <PinSpacer active={!!pin.target} />
     </div>
   );
 }
