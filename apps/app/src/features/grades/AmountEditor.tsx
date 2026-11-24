@@ -55,9 +55,10 @@ export interface AmountEditorProps {
   name?: string;
   disabled: boolean;
   onChange: (next: Amount) => void;
+  onPendingChange?: (pending: boolean) => void;
 }
 
-export function AmountEditor({ item, name, disabled, onChange }: AmountEditorProps) {
+export function AmountEditor({ item, name, disabled, onChange, onPendingChange }: AmountEditorProps) {
   const { t } = useTranslation('grades');
   const [pending, setPending] = useState<'periods' | 'minutes' | null>(null);
   const stored = item.unit === 'minutes' ? 'minutes' : 'periods';
@@ -69,9 +70,14 @@ export function AmountEditor({ item, name, disabled, onChange }: AmountEditorPro
   const emit = (next: Amount) => {
     if (pending && next.perWeek <= 0) return;
     setPending(null);
+    onPendingChange?.(false);
     onChange(next);
   };
-  const choose = (unit: 'periods' | 'minutes') => setPending(unit === stored ? null : unit);
+  const choose = (unit: 'periods' | 'minutes') => {
+    const next = unit === stored ? null : unit;
+    setPending(next);
+    onPendingChange?.(next !== null);
+  };
   const btn = (unit: 'periods' | 'minutes', text: string, aria: string) => (
     <button
       type="button"

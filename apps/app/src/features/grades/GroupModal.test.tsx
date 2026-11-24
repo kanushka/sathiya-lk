@@ -47,4 +47,15 @@ describe('GroupModal time target', () => {
     await user.click(within(dialog).getByRole('button', { name: 'Save group' }));
     expect(onSave).toHaveBeenCalledWith(expect.objectContaining({ unit: 'minutes', perWeek: 80 }));
   });
+
+  it('does not save while a unit switch has no amount yet', async () => {
+    const { onSave, user } = setup();
+    const dialog = screen.getByRole('dialog');
+    await user.click(within(dialog).getByRole('button', { name: 'Time' }));
+    await user.click(within(dialog).getByRole('button', { name: 'Save group' }));
+    expect(onSave).not.toHaveBeenCalled();
+    await user.click(within(dialog).getByRole('button', { name: 'Periods' }));
+    await user.click(within(dialog).getByRole('button', { name: 'Save group' }));
+    expect(onSave).toHaveBeenCalledWith(expect.objectContaining({ perWeek: 2 }));
+  });
 });

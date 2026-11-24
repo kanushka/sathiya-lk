@@ -33,6 +33,7 @@ export function GroupModal({ initial, subjects, newKey, onSave, onClose }: Group
   });
   const [options, setOptions] = useState<string[]>(initial?.optionSubjectIds ?? []);
   const [submitted, setSubmitted] = useState(false);
+  const [amountPending, setAmountPending] = useState(false);
 
   const byId = new Map(subjects.map((s) => [s.id, s]));
   const nameError = nameEn.trim() || nameSi.trim() ? null : t('common:names.missing');
@@ -41,7 +42,7 @@ export function GroupModal({ initial, subjects, newKey, onSave, onClose }: Group
   function submit(e: FormEvent) {
     e.preventDefault();
     setSubmitted(true);
-    if (nameError || optionsError) return;
+    if (nameError || optionsError || amountPending) return;
     const group: Group = {
       kind: 'group',
       key: initial?.key ?? newKey(),
@@ -75,7 +76,7 @@ export function GroupModal({ initial, subjects, newKey, onSave, onClose }: Group
           <span id="group-target" className="text-[13px] font-semibold text-ink">
             {t('group.target')}
           </span>
-          <AmountEditor item={amount} disabled={false} onChange={setAmount} />
+          <AmountEditor item={amount} disabled={false} onChange={setAmount} onPendingChange={setAmountPending} />
         </div>
         <Field label={t('group.options')} error={submitted ? optionsError : null}>
           <MultiSelect
