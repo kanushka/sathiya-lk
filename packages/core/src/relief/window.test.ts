@@ -65,7 +65,22 @@ describe('lessonsForLeave', () => {
     const primary = primaryTemplate.rows.find((r) => r.type === 'period')!;
     const mixed = snap([cell(1, primary.start, primary.end, 'p'), cell(5, '10:50', '11:30', 'd')]);
     expect(lessonsForLeave(mixed, 1, 'afternoon').map((c) => c.entryId)).toEqual(['d']);
-    expect(lessonsForLeave(mixed, 1, 'late').map((c) => c.entryId)).toEqual(toMinutes(primary.start) < m('08:45') ? ['p'] : []);
+    expect(lessonsForLeave(mixed, 1, 'late').map((c) => c.entryId)).toEqual(['p']);
+  });
+
+  it('primary-template cells follow interval edges', () => {
+    const mixed = snap([cell(1, '07:45', '08:20', 'p1'), cell(6, '10:40', '11:05', 'p6'), cell(7, '11:05', '11:30', 'p7')]);
+    const ids = (t: Parameters<typeof lessonsForLeave>[2]) => lessonsForLeave(mixed, 1, t).map((c) => c.entryId);
+    expect(ids('morning')).toEqual(['p1']);
+    expect(ids('afternoon')).toEqual(['p7']);
+    expect(ids('full')).toEqual(['p1', 'p6', 'p7']);
+  });
+
+  it('without an interval row splits at the midpoint', () => {
+    const periods = rows.filter((r) => r.type === 'period');
+    const s2 = { ...snap([cell(3, '09:10', '09:50', 'm1'), cell(5, '10:30', '11:00', 'straddle'), cell(6, '10:50', '11:30', 'x'), cell(7, '10:37', '11:30', 'y'), cell(8, '10:50', '11:30', 'z')]), rows: { 0: periods, 1: periods, 2: periods, 3: periods, 4: periods } };
+    expect(lessonsForLeave(s2, 1, 'morning').map((c) => c.entryId)).toEqual(['m1']);
+    expect(lessonsForLeave(s2, 1, 'afternoon').map((c) => c.entryId)).toEqual(['x', 'y', 'z']);
   });
 });
 

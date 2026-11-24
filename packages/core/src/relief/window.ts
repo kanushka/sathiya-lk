@@ -9,29 +9,49 @@ export interface Window { start: number; end: number }
 
 const SHORT_LEAVE = 60;
 
-export function leaveWindow(type: LeaveType, rows: TemplateRow[]): Window {
+function dayBounds(rows: TemplateRow[]): Window | null {
   const periods = rows.filter((r) => r.type === 'period');
   const first = periods[0];
   const last = periods[periods.length - 1];
-  if (!first || !last) return { start: 0, end: 0 };
-  const dayStart = toMinutes(first.start);
-  const dayEnd = toMinutes(last.end);
-  if (type === 'full') return { start: dayStart, end: dayEnd };
-  if (type === 'late') return { start: dayStart, end: dayStart + SHORT_LEAVE };
-  if (type === 'early') return { start: dayEnd - SHORT_LEAVE, end: dayEnd };
+  return first && last ? { start: toMinutes(first.start), end: toMinutes(last.end) } : null;
+}
+
+function mainInterval(rows: TemplateRow[], day: Window): Window {
   let main: Window | undefined;
   for (const r of rows) {
     if (r.type !== 'interval') continue;
     const w = { start: toMinutes(r.start), end: toMinutes(r.end) };
     if (!main || w.end - w.start > main.end - main.start) main = w;
   }
-  const split = main ?? { start: Math.floor((dayStart + dayEnd) / 2), end: Math.floor((dayStart + dayEnd) / 2) };
-  return type === 'morning' ? { start: dayStart, end: split.end } : { start: split.start, end: dayEnd };
+  const mid = Math.floor((day.start + day.end) / 2);
+  return main ?? { start: mid, end: mid };
+}
+
+export function leaveWindow(type: LeaveType, rows: TemplateRow[]): Window {
+  const day = dayBounds(rows);
+  if (!day) return { start: 0, end: 0 };
+  if (type === 'full') return day;
+  if (type === 'late') return { start: day.start, end: day.start + SHORT_LEAVE };
+  if (type === 'early') return { start: day.end - SHORT_LEAVE, end: day.end };
+  const split = mainInterval(rows, day);
+  return type === 'morning' ? { start: day.start, end: split.end } : { start: split.start, end: day.end };
 }
 
 export function lessonsForLeave(snap: TeacherSnapshot, day: DayIndex, type: LeaveType): SnapshotCell[] {
-  const w = leaveWindow(type, snap.rows[day] ?? []);
-  return snap.cells.filter((c) => c.day === day && overlaps(w, { start: toMinutes(c.start), end: toMinutes(c.end) }));
+  const rows = snap.rows[day] ?? [];
+  const bounds = dayBounds(rows);
+  if (!bounds) return [];
+  const today = snap.cells.filter((c) => c.day === day);
+  if (type === 'morning') {
+    const split = mainInterval(rows, bounds);
+    return today.filter((c) => toMinutes(c.end) <= split.start);
+  }
+  if (type === 'afternoon') {
+    const split = mainInterval(rows, bounds);
+    return today.filter((c) => toMinutes(c.start) >= split.end);
+  }
+  const w = leaveWindow(type, rows);
+  return today.filter((c) => overlaps(w, { start: toMinutes(c.start), end: toMinutes(c.end) }));
 }
 
 export function reliefSlots(leaves: Leave[], snaps: Map<string, TeacherSnapshot>, day: DayIndex): Relief[] {
