@@ -276,6 +276,16 @@ describe('relief page', () => {
     expect(screen.queryByText(/Only today's relief can be edited/)).not.toBeInTheDocument();
   });
 
+  it('asks to save before printing unsaved changes', async () => {
+    const user = setup();
+    expect(screen.getByRole('link', { name: 'Print' })).toBeInTheDocument();
+    await markMorning(user);
+    expect(screen.queryByRole('link', { name: 'Print' })).not.toBeInTheDocument();
+    const print = screen.getByRole('button', { name: 'Print' });
+    expect(print).toBeDisabled();
+    expect(print).toHaveAccessibleDescription('Save first to print');
+  });
+
   it('shows no email for a teacher without email or account', () => {
     const saved: ReliefDay = {
       date: '2026-11-24', day: TUE,

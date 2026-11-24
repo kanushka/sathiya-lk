@@ -59,6 +59,7 @@ export function ReliefPage() {
   const base = useAdminBase();
   const [params, setParams] = useSearchParams();
   const [today, setToday] = useState(() => colomboToday(new Date()));
+  const [unsaved, setUnsaved] = useState(false);
 
   useEffect(() => {
     const check = () => setToday((prev) => {
@@ -102,12 +103,22 @@ export function ReliefPage() {
             onChange={(e) => pickDate(e.target.value)}
             className={`${inputClass} w-auto`}
           />
-          {day !== null && published && (
+          {day !== null && published && (unsaved ? (
+            <>
+              <span id="relief-print-hint" className="hidden text-[13px] text-ink-muted sm:inline">
+                {t('printSaveFirst')}
+              </span>
+              <Button disabled aria-label={t('print')} aria-describedby="relief-print-hint" title={t('printSaveFirst')}>
+                <Icon name="print" size={16} />
+                <span className="hidden sm:inline">{t('print')}</span>
+              </Button>
+            </>
+          ) : (
             <LinkButton to={`${base}/print/relief/${date}`} aria-label={t('print')}>
               <Icon name="print" size={16} />
               <span className="hidden sm:inline">{t('print')}</span>
             </LinkButton>
-          )}
+          ))}
         </>
       }
     />
@@ -119,7 +130,7 @@ export function ReliefPage() {
     if (!published || !yid) return <EmptyState icon="calendar" title={t('empty.unpublished')} body={t('empty.unpublishedBody')} action={<DashboardLink base={base} />} />;
     if (data.loading) return <LoadingState />;
     if (data.error) return <Alert tone="danger">{t('loadFailed')}</Alert>;
-    return <ReliefDayEditor key={date} sid={school.id} yid={yid} date={date} day={day} readOnly={viewOnly || !isToday} data={data} base={base} />;
+    return <ReliefDayEditor key={date} sid={school.id} yid={yid} date={date} day={day} readOnly={viewOnly || !isToday} data={data} base={base} onDirty={setUnsaved} />;
   })();
 
   return (
@@ -147,9 +158,10 @@ interface EditorProps {
   readOnly: boolean;
   data: ReliefDayState;
   base: string;
+  onDirty(dirty: boolean): void;
 }
 
-function ReliefDayEditor({ sid, yid, date, day, readOnly, data, base }: EditorProps) {
+function ReliefDayEditor({ sid, yid, date, day, readOnly, data, base, onDirty }: EditorProps) {
   const { t, i18n } = useTranslation('relief');
   const { t: tc } = useTranslation('common');
   const lang = i18n.language === 'si' ? 'si' : 'en';
@@ -169,6 +181,11 @@ function ReliefDayEditor({ sid, yid, date, day, readOnly, data, base }: EditorPr
   const current = draft ?? saved;
 
   const awaiting = lastSave !== null && doc?.updatedAt !== lastSave.updatedAt;
+  const dirty = (!awaiting && gone.length > 0) || !sameDraft(current, awaiting ? lastSave.draft : saved);
+  useEffect(() => {
+    onDirty(!readOnly && dirty);
+  }, [onDirty, readOnly, dirty]);
+  useEffect(() => () => onDirty(false), [onDirty]);
   useEffect(() => {
     if (lastSave === null || doc?.updatedAt !== lastSave.updatedAt) return;
     if (draft && sameDraft(draft, lastSave.draft)) setDraft(null);
@@ -232,7 +249,6 @@ function ReliefDayEditor({ sid, yid, date, day, readOnly, data, base }: EditorPr
   };
 
   const uncovered = current.reliefs.filter((r) => r.reliefTeacherId === null).length;
-  const dirty = (!awaiting && gone.length > 0) || !sameDraft(current, awaiting ? lastSave.draft : saved);
 
   async function save() {
     setSaving(true);

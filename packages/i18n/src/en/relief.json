@@ -2,6 +2,7 @@
   "title": "Relief",
   "date": "Day",
   "print": "Print",
+  "printSaveFirst": "Save first to print",
   "today": "Today",
   "viewOnly": "Past day · view only",
   "loadFailed": "Could not load relief. Check your connection and try again.",
