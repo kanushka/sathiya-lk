@@ -31,9 +31,9 @@ const day = (reliefs: Relief[]): ReliefDay => ({
   updatedBy: 'u',
 });
 
-function setup(doc: ReliefDay | undefined, lang: 'en' | 'si' = 'en') {
-  vi.mocked(useDoc).mockReturnValue({ data: doc, loading: false });
-  return renderWithSchool(<PrintReliefPage />, { ctx, lang, yearId: 'y-2026', route: '/s/siripura/admin/print/relief/2026-11-24', path: '/s/:sid/admin/print/relief/:date' });
+function setup(doc: ReliefDay | undefined, lang: 'en' | 'si' = 'en', date = '2026-11-24', state: { error?: Error } = {}) {
+  vi.mocked(useDoc).mockReturnValue({ data: doc, loading: false, ...state });
+  return renderWithSchool(<PrintReliefPage />, { ctx, lang, yearId: 'y-2026', route: `/s/siripura/admin/print/relief/${date}`, path: '/s/:sid/admin/print/relief/:date' });
 }
 
 const bodyRows = () => screen.getAllByRole('row').slice(1);
@@ -78,5 +78,28 @@ describe('PrintReliefPage', () => {
   it('shows an empty state when no relief is recorded', () => {
     setup(undefined);
     expect(screen.getByText('No relief recorded for this day')).toBeInTheDocument();
+  });
+
+  it('shows the heading and the date', () => {
+    setup(day([relief('e1', 1, '07:45', '08:30', C.c6a, S.maths, T.bandara)]));
+    expect(screen.getByRole('heading', { name: 'Relief periods' })).toBeInTheDocument();
+    expect(screen.getByText(/Tuesday,? 24 November 2026/)).toBeInTheDocument();
+  });
+
+  it('treats a malformed date as not found', () => {
+    setup(day([relief('e1', 1, '07:45', '08:30', C.c6a, S.maths, T.bandara)]), 'en', 'garbage');
+    expect(screen.getByText('No relief recorded for this day')).toBeInTheDocument();
+  });
+
+  it('falls back to the English short name when a subject has no Sinhala name', () => {
+    const c: SchoolContext = { ...ctx, subjects: ctx.subjects.map((s) => (s.id === S.maths ? { ...s, nameSi: '' } : s)) };
+    vi.mocked(useDoc).mockReturnValue({ data: day([relief('e1', 1, '07:45', '08:30', C.c6a, S.maths, T.bandara)]), loading: false });
+    renderWithSchool(<PrintReliefPage />, { ctx: c, lang: 'si', yearId: 'y-2026', route: '/s/siripura/admin/print/relief/2026-11-24', path: '/s/:sid/admin/print/relief/:date' });
+    expect(within(bodyRows()[0]!).getAllByRole('cell')[4]).toHaveTextContent('Maths');
+  });
+
+  it('shows the error state', () => {
+    setup(undefined, 'en', '2026-11-24', { error: new Error('x') });
+    expect(screen.getByText('Could not load the timetable')).toBeInTheDocument();
   });
 });

@@ -8,6 +8,7 @@ import { useLang } from '../../app/LangProvider';
 import { useSchool } from '../../app/SchoolProvider';
 import { useDoc } from '../../lib/firestore';
 import { PrintPage } from './PrintPage';
+import { SheetHeader } from './SheetHeader';
 import './print.css';
 
 const cmp = (a: string, b: string) => a.localeCompare(b, undefined, { numeric: true });
@@ -24,8 +25,9 @@ export function PrintReliefPage() {
   const { date = '' } = useParams();
   const [params] = useSearchParams();
   const yid = school.activeYearId;
-  const { data, loading, error } = useDoc<ReliefDay>(yid ? paths.reliefDay(school.id, yid, date) : null);
-  const status = error ? 'error' : loading ? 'loading' : data ? 'ready' : 'notFound';
+  const validDate = /^\d{4}-\d{2}-\d{2}$/.test(date) && !Number.isNaN(Date.parse(date));
+  const { data, loading, error } = useDoc<ReliefDay>(yid && validDate ? paths.reliefDay(school.id, yid, date) : null);
+  const status = error ? 'error' : loading ? 'loading' : data && validDate ? 'ready' : 'notFound';
 
   const teacherName = (id: string) => {
     const n = data?.names[id];
@@ -36,7 +38,7 @@ export function PrintReliefPage() {
   const subjectName = (id: string) => {
     const s = subjectById.get(id);
     if (!s) return '';
-    return lang === 'si' ? pickName(s, 'si') || s.short : s.short || pickName(s, lang);
+    return lang === 'si' ? s.nameSi?.trim() || s.short || s.nameEn : s.short || pickName(s, lang);
   };
 
   const rows = (data?.reliefs ?? [])
@@ -53,17 +55,7 @@ export function PrintReliefPage() {
   return (
     <PrintPage status={status} auto={params.get('auto') === '1'} icon="teacherView" notFoundTitle={t('relief.emptyTitle')} notFoundBody={t('relief.emptyBody')}>
       <div className="print-sheet print-relief">
-        <header style={{ display: 'flex', alignItems: 'center', gap: 16, paddingBottom: 14, borderBottom: '3px solid var(--brand)' }}>
-          {school.logoUrl && <img data-testid="school-logo" src={school.logoUrl} alt="" width={56} height={56} style={{ objectFit: 'contain' }} />}
-          <div style={{ flex: 1 }}>
-            <p style={{ margin: 0, fontSize: 20, fontWeight: 800 }}>{pickName(school, 'en')}</p>
-            {school.nameEn.trim() && school.nameSi && <p style={{ margin: '2px 0 0', fontSize: 14, color: '#3B4560' }}>{school.nameSi}</p>}
-          </div>
-          <div style={{ textAlign: 'right' }}>
-            <h1 style={{ margin: 0, fontSize: 30, fontWeight: 800, color: 'var(--brand)', lineHeight: 1 }}>{t('relief.title')}</h1>
-            <p style={{ margin: '4px 0 0', fontSize: 13, color: '#3B4560' }}>{longDate(date, lang)}</p>
-          </div>
-        </header>
+        <SheetHeader schoolName={school} {...(school.logoUrl ? { logoUrl: school.logoUrl } : {})} title={t('relief.title')} subtitle={validDate ? longDate(date, lang) : ''} />
 
         <table style={{ width: '100%', borderCollapse: 'collapse', marginTop: 16 }}>
           <thead>
