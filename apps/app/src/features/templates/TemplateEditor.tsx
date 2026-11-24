@@ -8,6 +8,7 @@ import { Button } from '../../ui/Button';
 import { cx } from '../../ui/cx';
 import { inputBareCompactClass } from '../../ui/Field';
 import { IconButton } from '../../ui/IconButton';
+import { PHONE_QUERY, useMediaQuery } from '../../ui/PhoneNotice';
 import { SegmentedControl } from '../../ui/SegmentedControl';
 import { Tabs } from '../../ui/Tabs';
 import { appendRow, DAY_INDEXES, toPerDay, type TemplateDraft, type ValidationError } from './model';
@@ -25,6 +26,7 @@ export function TemplateEditor({ draft, errors, readOnly, onChange }: TemplateEd
   const { t } = useTranslation('templates');
   const { t: tc } = useTranslation('common');
   const [day, setDay] = useState<DayIndex>(0);
+  const isPhone = useMediaQuery(PHONE_QUERY);
   const perDay = draft.mode === 'perDay' && draft.days !== undefined;
   const rows = perDay ? draft.days![day] : draft.rows;
 
@@ -70,13 +72,17 @@ export function TemplateEditor({ draft, errors, readOnly, onChange }: TemplateEd
         {rows.map((r, i) => {
           if (r.type === 'period') periodNo += 1;
           const n = i + 1;
+          const remove = (
+            <IconButton icon="close" size="sm" label={t('editor.remove', { n })} onClick={() => setRows(rows.filter((_, j) => j !== i))} />
+          );
           return (
             <div
               key={i}
               data-testid="template-row"
               className={cx('flex flex-wrap items-center gap-x-3 gap-y-1.5 rounded-lg px-3 py-2 md:flex-nowrap md:gap-y-0', r.type === 'interval' ? 'bg-warning-soft' : 'bg-surface', rowErrors(i) && 'ring-2 ring-danger')}
             >
-              <strong className="order-first min-w-0 flex-1 basis-[calc(100%-3.5rem)] text-sm md:order-none md:w-[110px] md:flex-none md:basis-auto">{r.type === 'period' ? tc('periods.period') + ' ' + periodNo : tc('periods.interval')}</strong>
+              <strong className="min-w-0 flex-1 basis-[calc(100%-3.5rem)] text-sm md:w-[110px] md:flex-none md:basis-auto">{r.type === 'period' ? tc('periods.period') + ' ' + periodNo : tc('periods.interval')}</strong>
+              {!readOnly && isPhone && remove}
               <input
                 type="time"
                 className={timeClass}
@@ -95,15 +101,7 @@ export function TemplateEditor({ draft, errors, readOnly, onChange }: TemplateEd
                 onChange={(e) => patchRow(i, { end: e.target.value })}
               />
               <span className="flex-1 text-[13px] text-ink-soft">{/^\d\d:\d\d$/.test(r.start) && /^\d\d:\d\d$/.test(r.end) ? t('editor.minutes', { n: Math.max(toMinutes(r.end) - toMinutes(r.start), 0) }) : ''}</span>
-              {!readOnly && (
-                <IconButton
-                  icon="close"
-                  size="sm"
-                  label={t('editor.remove', { n })}
-                  className="order-first md:order-none"
-                  onClick={() => setRows(rows.filter((_, j) => j !== i))}
-                />
-              )}
+              {!readOnly && !isPhone && remove}
             </div>
           );
         })}

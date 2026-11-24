@@ -4,6 +4,7 @@ import { ctx, entries, TPL } from '@sathiya/core/fixtures';
 import { fireEvent, screen, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { installMatchMedia } from '../../test/matchMedia';
 import { renderWithSchool } from '../../test/renderWithSchool';
 import * as api from './api';
 import { TemplatesPage } from './TemplatesPage';
@@ -25,6 +26,21 @@ function setup() {
 }
 
 describe('templates page', () => {
+  it.each([
+    [375, ['Remove row 1', 'Start, row 1', 'End, row 1']],
+    [1280, ['Start, row 1', 'End, row 1', 'Remove row 1']],
+  ])('tab order in a period row follows the layout at %ipx', (width, order) => {
+    const restore = installMatchMedia(width);
+    try {
+      setup();
+      const row = screen.getAllByTestId('template-row')[0]!;
+      const names = Array.from(row.querySelectorAll('input,button')).map((el) => el.getAttribute('aria-label'));
+      expect(names).toEqual(order);
+    } finally {
+      restore();
+    }
+  });
+
   it('lets the list and editor take the full width on phones', () => {
     setup();
     const editor = screen.getAllByTestId('template-row')[0]!.closest('section')!;
