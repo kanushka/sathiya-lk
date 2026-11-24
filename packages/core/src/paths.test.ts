@@ -13,6 +13,10 @@ describe('paths', () => {
     expect(paths.publishedClass('s1', 'y1', 'c1')).toBe('schools/s1/years/y1/publishedClasses/c1');
     expect(paths.publishedTeacher('s1', 'y1', 't1')).toBe('schools/s1/years/y1/publishedTeachers/t1');
     expect(paths.user('u1')).toBe('users/u1');
+    expect(paths.reliefDays('s1', 'y1')).toBe('schools/s1/years/y1/reliefDays');
+    expect(paths.reliefDay('s1', 'y1', '2026-03-02')).toBe('schools/s1/years/y1/reliefDays/2026-03-02');
+    expect(paths.reliefStats('s1', 'y1')).toBe('schools/s1/years/y1/reliefMeta/stats');
+    expect(paths.reliefNotified('s1', 'y1', '2026-03-02')).toBe('schools/s1/years/y1/reliefMeta/notified_2026-03-02');
     expect(paths.publishedClasses('s1', 'y1')).toBe('schools/s1/years/y1/publishedClasses');
     expect(paths.publishedTeachers('s1', 'y1')).toBe('schools/s1/years/y1/publishedTeachers');
     expect(paths.directory('s1')).toBe('schoolDirectory/s1');

@@ -41,3 +41,11 @@ export interface Claims { schools?: Record<string, Membership>; super?: boolean 
 export interface JoinRequest { uid: string; email: string; name?: string; staffId: string; teacherId: string; createdAt: number; status: 'pending' | 'rejected'; decidedAt?: number }
 export interface JoinLink { hash: string; token: string; createdAt: number; createdBy: string }
 export interface SchoolContext { school: School; teachers: Teacher[]; subjects: Subject[]; templates: PeriodTemplate[]; grades: Grade[]; classes: SchoolClass[] }
+
+export const LEAVE_TYPES = ['full', 'morning', 'afternoon', 'late', 'early'] as const;
+export type LeaveType = (typeof LEAVE_TYPES)[number];
+export interface Leave { teacherId: string; type: LeaveType; entryIds: string[] }
+export interface Relief { entryId: string; absentTeacherId: string; day: DayIndex; period: number; start: Hhmm; end: Hhmm; classIds: string[]; subjectId: string; groupKey?: string; reliefTeacherId: string | null }
+export interface ReliefDay { date: string; day: DayIndex; leaves: Leave[]; reliefs: Relief[]; names: Record<string, { en: string; si?: string }>; updatedAt: number; updatedBy: string }
+export interface ReliefStats { counts: Record<string, number> }
+export interface ReliefNotified { sent: Record<string, { key: string; at: number }> }
