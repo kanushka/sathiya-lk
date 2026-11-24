@@ -24,7 +24,7 @@ import { callOpts } from './lib/callOptions';
 import { docId, docIdList, fail, invalid, obj, requireSchoolAdmin, str } from './lib/guards';
 import { loadContext, loadTeacherSnapshots } from './lib/loadContext';
 import { runTx } from './lib/tx';
-import { enqueueReliefMail } from './relief/mailQueue';
+import { queueReliefMails } from './relief/mailQueue';
 
 const MAX_LEAVES = 50;
 const MAX_RELIEFS = 300;
@@ -175,9 +175,7 @@ export const saveReliefDay = onCall(callOpts, async (req): Promise<SaveReliefDay
     return { updatedAt: savedAt, changed: changedIds };
   });
 
-  const withEmail = changed.filter((t) => hasEmail.has(t));
-  const skippedNoEmail = changed.length - withEmail.length;
-  await Promise.all(withEmail.map((teacherId) => enqueueReliefMail({ sid, yid, date, teacherId, savedAt: updatedAt })));
+  const queued = await queueReliefMails({ sid, yid, date, savedAt: updatedAt }, changed.filter((t) => hasEmail.has(t)));
 
-  return { updatedAt, queued: withEmail.length, skippedNoEmail, uncovered: reliefs.filter((r) => r.reliefTeacherId === null).length };
+  return { updatedAt, queued, skippedNoEmail: changed.length - queued, uncovered: reliefs.filter((r) => r.reliefTeacherId === null).length };
 });
