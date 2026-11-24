@@ -6,6 +6,7 @@ import { createPortal } from 'react-dom';
 import { useTranslation } from 'react-i18next';
 import { cx } from './cx';
 import { IconButton } from './IconButton';
+import { PHONE_QUERY, useMediaQuery } from './PhoneNotice';
 import { useDialogTrap } from './useDialogTrap';
 
 export interface ModalProps {
@@ -37,7 +38,14 @@ function ModalPanel({ title, subtitle, onClose, footer, width = 560, zoom, busy 
   const onCloseRef = useRef(onClose);
   onCloseRef.current = busy ? () => undefined : onClose;
 
-  useDialogTrap({ panelRef, containerRef: backdropRef, initialFocusRef: bodyRef, onClose: () => onCloseRef.current() });
+  const isPhone = useMediaQuery(PHONE_QUERY);
+  useDialogTrap({
+    panelRef,
+    containerRef: backdropRef,
+    initialFocusRef: bodyRef,
+    focusPanel: isPhone && !fullScreen,
+    onClose: () => onCloseRef.current(),
+  });
 
   // A loading button is disabled, which drops focus to <body>; keep it in the dialog.
   useEffect(() => {
@@ -60,7 +68,7 @@ function ModalPanel({ title, subtitle, onClose, footer, width = 560, zoom, busy 
       style={zoom && zoom !== 1 ? { zoom } : undefined}
       className={cx(
         'fixed inset-0 z-50 flex',
-        fullScreen ? 'bg-white' : 'items-center justify-center overflow-y-auto bg-navy/45 p-4 sm:p-8',
+        fullScreen ? 'bg-white' : 'items-end overflow-y-auto bg-navy/45 md:items-center md:justify-center md:p-8',
       )}
       onMouseDown={onBackdropDown}
       onClick={onBackdropClick}
@@ -77,10 +85,10 @@ function ModalPanel({ title, subtitle, onClose, footer, width = 560, zoom, busy 
           'flex w-full flex-col overflow-hidden bg-white outline-none',
           fullScreen
             ? 'h-full pb-[env(safe-area-inset-bottom)]'
-            : 'my-auto max-h-[calc(100vh-2rem)] rounded-[18px] shadow-[0_30px_80px_-30px_rgba(20,33,61,.6)]',
+            : 'max-h-[90dvh] rounded-t-[18px] pb-[env(safe-area-inset-bottom)] shadow-[0_30px_80px_-30px_rgba(20,33,61,.6)] md:my-auto md:max-h-[calc(100vh-2rem)] md:rounded-[18px] md:pb-0',
         )}
       >
-        <header className={cx('flex items-center justify-between gap-4 border-b border-line-soft', fullScreen ? 'px-4 py-3' : 'px-7 py-5')}>
+        <header className={cx('flex items-center justify-between gap-4 border-b border-line-soft', fullScreen ? 'px-4 py-3' : 'px-5 py-4 md:px-7 md:py-5')}>
           <div className="min-w-0">
             <h2 id={titleId} className={cx('m-0 font-bold text-ink', fullScreen ? 'truncate text-base' : 'text-xl')}>
               {title}
@@ -96,11 +104,11 @@ function ModalPanel({ title, subtitle, onClose, footer, width = 560, zoom, busy 
             className={fullScreen ? 'h-11 w-11 shrink-0' : undefined}
           />
         </header>
-        <div ref={bodyRef} className={cx('min-h-0 flex-1 overflow-y-auto', !fullScreen && 'px-7 py-6')}>
+        <div ref={bodyRef} className={cx('min-h-0 flex-1 overflow-y-auto', !fullScreen && 'px-5 py-5 md:px-7 md:py-6')}>
           {children}
         </div>
         {footer && (
-          <footer className="flex items-center justify-end gap-3 border-t border-line-soft bg-surface px-7 py-4">
+          <footer className="flex items-center justify-end gap-3 border-t border-line-soft bg-surface px-5 py-3 md:px-7 md:py-4">
             {footer}
           </footer>
         )}

@@ -3,12 +3,13 @@
 
 import { screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
-import { describe, expect, it, vi } from 'vitest';
+import { afterEach, describe, expect, it, vi } from 'vitest';
 import { renderWithI18n } from '../test/render';
 import { useState } from 'react';
 import { createPortal } from 'react-dom';
 import { Button } from './Button';
 import { Modal } from './Modal';
+import { installMatchMedia } from '../test/matchMedia';
 
 function setup() {
   const onClose = vi.fn();
@@ -169,6 +170,43 @@ describe('Modal', () => {
       expect(root.closest('[inert]')).not.toBeNull();
       await user.keyboard('{Escape}');
       expect(document.querySelector('[inert]')).toBeNull();
+    });
+  });
+
+  describe('on phones', () => {
+    let restore: () => void;
+    afterEach(() => restore());
+
+    function open(width: number) {
+      restore = installMatchMedia(width);
+      renderWithI18n(
+        <Modal open title="Edit teacher" onClose={() => undefined} footer={<button>Save</button>}>
+          <input aria-label="Name" />
+        </Modal>,
+      );
+    }
+
+    it('renders the panel as a bottom sheet', () => {
+      open(375);
+      expect(screen.getByTestId('modal-backdrop')).toHaveClass('items-end', 'md:items-center');
+      expect(screen.getByRole('dialog')).toHaveClass('rounded-t-[18px]', 'max-h-[90dvh]', 'md:rounded-[18px]');
+    });
+
+    it('focuses the panel instead of the first input', () => {
+      open(375);
+      expect(screen.getByRole('dialog', { name: 'Edit teacher' })).toHaveFocus();
+    });
+
+    it('still focuses the first input on desktop', () => {
+      open(1280);
+      expect(screen.getByLabelText('Name')).toHaveFocus();
+    });
+
+    it('scrolls tall content inside the body and keeps the footer outside it', () => {
+      open(375);
+      const body = screen.getByLabelText('Name').parentElement!;
+      expect(body).toHaveClass('overflow-y-auto', 'min-h-0');
+      expect(body).not.toContainElement(screen.getByRole('button', { name: 'Save' }));
     });
   });
 });
