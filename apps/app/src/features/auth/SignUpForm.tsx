@@ -11,6 +11,7 @@ import { emptyAccount, type AccountDraft } from '../register/model';
 import { StepAccount } from '../register/StepAccount';
 import { VerifyEmailGate } from '../register/VerifyEmailGate';
 import { sendAuthEmail } from './authEmail';
+import { detailCode } from './errors';
 import { returnPathFrom, useFinishSignIn } from './returnPath';
 
 export function SignUpForm({ onSignIn }: { onSignIn(): void }) {
@@ -23,6 +24,7 @@ export function SignUpForm({ onSignIn }: { onSignIn(): void }) {
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<{ field: 'email' | 'password' | null; message: string } | null>(null);
   const [verifying, setVerifying] = useState(false);
+  const [sendError, setSendError] = useState<string | null>(null);
 
   async function submit() {
     setBusy(true);
@@ -35,12 +37,19 @@ export function SignUpForm({ onSignIn }: { onSignIn(): void }) {
       setBusy(false);
       return;
     }
-    await sendAuthEmail({ kind: 'verify', lang, continuePath }).catch(() => undefined);
+    try {
+      await sendAuthEmail({ kind: 'verify', lang, continuePath });
+      setSendError(null);
+    } catch (err) {
+      setSendError(tr(detailCode(err) === 'rate-limited' ? 'errors.rateLimited' : 'verify.firstSendFailed'));
+    }
     setBusy(false);
     setVerifying(true);
   }
 
-  if (verifying) return <VerifyEmailGate email={account.email.trim()} purpose="signUp" continuePath={continuePath} onConfirmed={finish} />;
+  if (verifying) {
+    return <VerifyEmailGate email={account.email.trim()} purpose="signUp" continuePath={continuePath} initialError={sendError} onConfirmed={finish} />;
+  }
 
   return (
     <>

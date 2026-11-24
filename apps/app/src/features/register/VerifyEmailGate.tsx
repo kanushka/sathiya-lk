@@ -13,14 +13,15 @@ export interface VerifyEmailGateProps {
   email?: string | null;
   purpose?: 'register' | 'signUp';
   continuePath?: string;
+  initialError?: string | null;
   onConfirmed(): void | Promise<void>;
 }
 
-export function VerifyEmailGate({ email, purpose = 'register', continuePath, onConfirmed }: VerifyEmailGateProps) {
+export function VerifyEmailGate({ email, purpose = 'register', continuePath, initialError = null, onConfirmed }: VerifyEmailGateProps) {
   const { t } = useTranslation('register');
   const { lang } = useLang();
   const [busy, setBusy] = useState<'confirm' | 'resend' | null>(null);
-  const [message, setMessage] = useState<{ kind: 'info' | 'error'; text: string } | null>(null);
+  const [message, setMessage] = useState<{ kind: 'info' | 'error'; text: string } | null>(initialError ? { kind: 'error', text: initialError } : null);
 
   async function confirm() {
     setBusy('confirm');

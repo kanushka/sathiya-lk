@@ -220,6 +220,24 @@ describe('create account', () => {
     expect(await screen.findByTestId('where')).toHaveTextContent('/s/s1/admin');
   });
 
+  it('keeps the new account when the first verification email fails, and Send again retries only the email', async () => {
+    vi.mocked(sendAuthEmail).mockRejectedValueOnce(new Error('mail down'));
+    const user = userEvent.setup();
+    renderAuth(<LoginPage />, { signedIn: true });
+    await user.click(screen.getByRole('button', { name: 'Create account' }));
+    await user.type(screen.getByLabelText('Your name'), 'Nimal');
+    await user.type(screen.getByLabelText('Email'), 'nimal@siripura.lk');
+    await user.type(screen.getByLabelText('Password'), 'secret12');
+    await user.click(screen.getByRole('checkbox'));
+    await user.click(screen.getByRole('button', { name: 'Create account' }));
+    expect(await screen.findByRole('heading', { name: 'Check your email' })).toBeInTheDocument();
+    expect(screen.getByRole('alert')).toHaveTextContent('could not send the confirmation email');
+    await user.click(screen.getByRole('button', { name: 'Send again' }));
+    expect(await screen.findByText('Verification email sent.')).toBeInTheDocument();
+    expect(sendAuthEmail).toHaveBeenCalledTimes(2);
+    expect(registerApi.createAccount).toHaveBeenCalledTimes(1);
+  });
+
   it('shows an email-in-use error and can go back to sign in', async () => {
     const user = userEvent.setup();
     vi.mocked(registerApi.createAccount).mockRejectedValue(Object.assign(new Error('x'), { code: 'auth/email-already-in-use' }));
