@@ -56,6 +56,7 @@ describe('Sidebar', () => {
       '/admin',
       '/admin/timetable/class',
       '/admin/timetable/teacher',
+      '/admin/relief',
       '/admin/teachers',
       '/admin/subjects',
       '/admin/grades',
