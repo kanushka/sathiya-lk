@@ -106,6 +106,14 @@ describe('PhoneTopBar and PhoneMenu', () => {
     expect(document.body.style.overflow).toBe('');
   });
 
+  it('closes after tapping the link for the current page', async () => {
+    const user = userEvent.setup();
+    renderBar();
+    await user.click(screen.getByRole('button', { name: 'Open menu' }));
+    await user.click(within(menu()!).getByRole('link', { name: 'Dashboard' }));
+    expect(menu()).toBeNull();
+  });
+
   it('Escape with the year list open closes only the list', async () => {
     const user = userEvent.setup();
     renderBar();

@@ -52,13 +52,14 @@ describe('phone shell', () => {
     expect(sidebar.parentElement).toHaveClass('hidden', 'md:block');
   });
 
-  it('has no desktop minimum width', () => {
+  it('keeps the 1024px minimum width only from md up', () => {
     const { container } = render(
       <MemoryRouter>
         <AdminLayout />
       </MemoryRouter>,
     );
-    expect(container.innerHTML).not.toContain('min-w-[1024px]');
+    expect(container.firstElementChild).toHaveClass('md:min-w-[1024px]');
+    expect(container.firstElementChild).not.toHaveClass('min-w-[1024px]');
   });
 });
 

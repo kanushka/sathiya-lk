@@ -22,7 +22,7 @@ export function useReadOnly(): boolean {
 function Shell({ basePath, readOnly = false }: AdminLayoutProps) {
   return (
     <ReadOnlyCtx.Provider value={readOnly}>
-      <div className="flex min-h-screen flex-col bg-[#F6F6F4] font-sans text-ink">
+      <div className="flex min-h-screen md:min-w-[1024px] flex-col bg-[#F6F6F4] font-sans text-ink">
         {!readOnly && <AnnouncementBanner />}
         <PhoneTopBar basePath={basePath} readOnly={readOnly} />
         <div className="flex flex-1">

@@ -93,6 +93,7 @@ export function PhoneMenu({ basePath, readOnly, onClose }: PhoneMenuProps) {
                   key={i.path}
                   to={navHref(basePath, i.path)}
                   end={i.path === '/admin'}
+                  onClick={onClose}
                   className={({ isActive }) => cx(linkBase, item, isActive && linkActive)}
                 >
                   <Icon name={i.icon} size={20} />
@@ -105,7 +106,7 @@ export function PhoneMenu({ basePath, readOnly, onClose }: PhoneMenuProps) {
 
       <div className="mt-auto flex flex-col gap-0.5 border-t border-line-soft px-2 py-3">
         {claims.tid && !readOnly && (
-          <NavLink to="/me" className={cx(linkBase, item)}>
+          <NavLink to="/me" onClick={onClose} className={cx(linkBase, item)}>
             <Icon name="calendar" size={20} />
             {t('nav.myTimetable')}
           </NavLink>
