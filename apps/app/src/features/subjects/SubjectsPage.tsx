@@ -98,7 +98,7 @@ export function SubjectsPage() {
       ) : subjects.length === 0 ? (
         <EmptyState icon="subjects" title={t('page.empty')} body={t('page.emptyBody')} action={readOnly ? undefined : add} />
       ) : (
-        <Table className="min-w-[720px]">
+        <Table className="md:min-w-[720px]">
           <THead>
             <tr>
               <Th className="w-16">{t('page.cols.colour')}</Th>
