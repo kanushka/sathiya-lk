@@ -38,6 +38,12 @@ const teaching = (classIds: string[], entryId: string): BusyDetail => ({ kind: '
 describe('pinOverlayCell', () => {
   const free = { kind: 'free', load: 1, max: 6, limit: false, teacherId: T.gunasekara, subjectThatDay: false } as const;
 
+  it('says choose, not click, on suggested cells', () => {
+    const o = overlay(free, { suggested: true });
+    renderWithI18n(<>{o.content}</>);
+    expect(screen.getByText('Choose to pin')).toBeInTheDocument();
+  });
+
   it('marks a free cell over plan but still clickable when only the base class is complete', () => {
     const o = overlay(free, { left: 0 });
     expect(o.label).toContain('over plan');

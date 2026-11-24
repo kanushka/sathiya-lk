@@ -30,9 +30,10 @@ describe('PinBar', () => {
     expect(bar()).toHaveClass('fixed', 'inset-x-0', 'bottom-0', 'md:sticky', 'md:top-0', 'md:bottom-auto', 'md:rounded-[14px]');
   });
 
-  it('hides the detail line and the meter on phones', () => {
+  it('keeps the detail line to one truncated line and hides the meter on phones', () => {
     setup({ detail: 'Buddhism: Mr. A' });
-    expect(screen.getByText('Buddhism: Mr. A')).toHaveClass('hidden', 'md:block');
+    expect(screen.getByText('Buddhism: Mr. A')).toHaveClass('truncate', 'md:whitespace-normal');
+    expect(screen.getByText('Buddhism: Mr. A')).not.toHaveClass('hidden');
     expect(screen.getByRole('meter', { hidden: true })).toHaveClass('hidden', 'md:block');
   });
 

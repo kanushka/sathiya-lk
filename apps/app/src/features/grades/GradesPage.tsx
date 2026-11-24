@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
 // Copyright (C) 2026 Kanushka Gayan
 import type { PeriodTemplate, PlanItem, SchoolClass } from '@sathiya/core';
-import { useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useSchool } from '../../app/SchoolProvider';
 import { useReadOnly } from '../../ui/AdminLayout';
@@ -10,6 +10,7 @@ import { EmptyState } from '../../ui/EmptyState';
 import { LinkButton } from '../../ui/LinkButton';
 import { LoadingState } from '../../ui/LoadingState';
 import { PageHeader } from '../../ui/PageHeader';
+import { PHONE_QUERY, useMediaQuery } from '../../ui/PhoneNotice';
 import { useAdminBase } from '../timetable/paths';
 import { useToast } from '../../ui/Toast';
 import { DeleteSetupModal } from '../teachers/DeleteSetupModal';
@@ -35,6 +36,15 @@ export function GradesPage() {
   const sid = school.school.id;
   const grades = [...school.grades].sort((a, b) => a.number - b.number);
   const grade = grades.find((g) => g.id === selectedId) ?? grades[0];
+  const isPhone = useMediaQuery(PHONE_QUERY);
+  const railRef = useRef<HTMLElement>(null);
+
+  useEffect(() => {
+    const rail = railRef.current;
+    const current = rail?.querySelector<HTMLElement>('[aria-current="page"]');
+    if (!isPhone || !rail || !current) return;
+    rail.scrollTo({ left: current.offsetLeft - (rail.clientWidth - current.offsetWidth) / 2, behavior: 'smooth' });
+  }, [isPhone, grade?.id]);
   const gradeClasses = grade ? school.classes.filter((c) => c.gradeId === grade.id).sort((a, b) => a.name.localeCompare(b.name)) : [];
   const defaultTemplate = school.templates.find((x) => x.isDefault) ?? school.templates[0];
   const classTemplates = gradeClasses.flatMap((c) => school.templates.filter((x) => x.id === c.templateId));
@@ -76,7 +86,7 @@ export function GradesPage() {
     <div>
       <PageHeader title={t('page.heading')} actions={addGradeButton || undefined} />
       <div className="flex flex-col gap-4 md:min-h-[600px] md:flex-row md:gap-6">
-      <nav aria-label={t('rail.title')} className="-mx-1 flex gap-1 overflow-x-auto border-b border-line-soft px-1 pb-2 md:mx-0 md:block md:w-[150px] md:shrink-0 md:border-b-0 md:border-r md:px-0 md:pb-0 md:pr-2.5">
+      <nav ref={railRef} aria-label={t('rail.title')} className="-mx-1.5 flex gap-1 overflow-x-auto border-b border-line-soft px-1.5 pb-2 pt-1.5 md:mx-0 md:block md:pt-0 md:w-[150px] md:shrink-0 md:border-b-0 md:border-r md:px-0 md:pb-0 md:pr-2.5">
         <p className="mx-2 mb-2.5 hidden text-[11px] font-bold uppercase tracking-widest text-ink-muted md:block">{t('rail.title')}</p>
         {grades.map((g) => (
           <button
