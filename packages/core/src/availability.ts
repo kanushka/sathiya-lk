@@ -3,8 +3,8 @@
 
 import { findConflicts } from './clash';
 import { findClass, gradeOf, templateOf } from './lookup';
-import { effectivePlan } from './plan';
-import { staffingFor } from './staffing';
+import { effectivePlan, entryPlanKey, planKey } from './plan';
+import { isMinutes, staffingFor } from './staffing';
 import { bestOverlapPeriod, periodsFor, slotMinutes, toMinutes } from './time';
 import type { DayIndex, Entry, PeriodTemplate, PlanItem, SchoolClass, SchoolContext, Teacher } from './types';
 
@@ -66,17 +66,25 @@ export function teacherDayLoad(teacherId: string, day: DayIndex, entries: Entry[
   return entries.filter((e) => e.day === day && e.lessons.some((l) => l.teacherId === teacherId) && !(ctx && isExemptOwnClass(teacherId, e, ctx))).length;
 }
 
-export function teacherLoad(teacherId: string, entries: Entry[], ctx: SchoolContext): { entries: number; minutes: number } {
+export function teacherLoad(teacherId: string, entries: Entry[], ctx: SchoolContext): { entries: number; minutes: number; timedMinutes: number } {
   let count = 0;
   let minutes = 0;
+  let timedMinutes = 0;
   for (const e of entries) {
     if (!e.lessons.some((l) => l.teacherId === teacherId)) continue;
     count += 1;
     const cls = findClass(ctx, e.classIds[0] ?? '');
     const template = cls && templateOf(ctx, cls);
-    if (template) minutes += slotMinutes(template, e.day, e.period);
+    if (!cls || !template) continue;
+    const slot = slotMinutes(template, e.day, e.period);
+    minutes += slot;
+    const grade = gradeOf(ctx, cls);
+    const plan = grade ? effectivePlan(cls, grade) : [];
+    const key = entryPlanKey(e, plan);
+    const item = key === null ? undefined : plan.find((p) => planKey(p) === key);
+    if (item && isMinutes(item)) timedMinutes += slot;
   }
-  return { entries: count, minutes };
+  return { entries: count, minutes, timedMinutes };
 }
 
 export function teacherOptionsForSlot(args: { ctx: SchoolContext; entries: Entry[]; classIds: string[]; day: DayIndex; period: number; subjectId: string; editingEntryId?: string }): { available: TeacherOption[]; unavailable: TeacherOption[] } {

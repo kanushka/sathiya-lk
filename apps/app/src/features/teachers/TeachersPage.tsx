@@ -49,9 +49,11 @@ export function TeachersPage() {
     if (params.has('new')) setParams((p) => (p.delete('new'), p), { replace: true });
   }, [params, setParams]);
 
+  const loads = useMemo(() => new Map(state.teachers.map((x) => [x.id, teacherLoad(x.id, entries, state)])), [state, entries]);
   const loadText = (x: Teacher) => {
-    const load = teacherLoad(x.id, entries, state);
-    return load.minutes > 0 ? `${load.entries} · ${formatAmount(load.minutes, 'minutes', lang)}` : String(load.entries);
+    const load = loads.get(x.id);
+    if (!load) return '0';
+    return load.timedMinutes > 0 ? `${load.entries} · ${formatAmount(load.timedMinutes, 'minutes', lang)}` : String(load.entries);
   };
 
   const subjectName = useMemo(() => new Map(subjects.map((s) => [s.id, pickName(s, lang)])), [subjects, lang]);

@@ -52,8 +52,8 @@ describe('teacherLoad', () => {
       entry('l-1', 0, 1, ['mh-c-1a'], [[mahasen.S.maths, 'mh-t-1a']]),
       entry('l-2', 0, 2, ['mh-c-1a'], [[mahasen.S.maths, 'mh-t-1a']]),
     ];
-    expect(teacherLoad('mh-t-1a', es, mahasen.ctx)).toEqual({ entries: 2, minutes: 60 + 15 });
-    expect(teacherLoad('mh-t-1b', es, mahasen.ctx)).toEqual({ entries: 0, minutes: 0 });
+    expect(teacherLoad('mh-t-1a', es, mahasen.ctx)).toEqual({ entries: 2, minutes: 60 + 15, timedMinutes: 60 + 15 });
+    expect(teacherLoad('mh-t-1b', es, mahasen.ctx)).toEqual({ entries: 0, minutes: 0, timedMinutes: 0 });
   });
 
   it('uses each entry first class template', () => {
@@ -64,9 +64,10 @@ describe('teacherLoad', () => {
     const both = { ...mahasen.ctx, templates: [...mahasen.ctx.templates, ...ctx.templates], classes: [...mahasen.ctx.classes, ...ctx.classes], grades: [...mahasen.ctx.grades, ...ctx.grades], teachers: [...mahasen.ctx.teachers, ...ctx.teachers], subjects: [...mahasen.ctx.subjects, ...ctx.subjects] };
     const a = teacherLoad('mh-t-1a', es, both);
     const b = teacherLoad(T.perera, es, both);
-    expect(a).toEqual({ entries: 1, minutes: 60 });
+    expect(a).toEqual({ entries: 1, minutes: 60, timedMinutes: 60 });
     expect(b.entries).toBe(1);
     expect(b.minutes).toBeGreaterThan(0);
+    expect(b.timedMinutes).toBe(0);
   });
 });
 

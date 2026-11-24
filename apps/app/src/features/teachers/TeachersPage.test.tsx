@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
 // Copyright (C) 2026 Kanushka Gayan
-import { formatAmount, teacherLoad, usageCount } from '@sathiya/core';
-import { T, ctx, entries } from '@sathiya/core/fixtures';
+import { teacherLoad, usageCount } from '@sathiya/core';
+import { T, ctx, entries, entry, mahasen } from '@sathiya/core/fixtures';
 import { fireEvent, screen, waitFor, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
@@ -190,10 +190,18 @@ describe('teachers page', () => {
     expect(load.entries).toBeGreaterThan(0);
     const row = screen.getByText('Mrs. N. Perera').closest('tr')!;
     expect(within(row).getByText('min 12/wk')).toBeInTheDocument();
-    const expected = load.minutes > 0 ? `${load.entries} · ${formatAmount(load.minutes, 'minutes', 'en')}` : String(load.entries);
+    expect(load.timedMinutes).toBe(0);
+    const expected = String(load.entries);
     expect(within(row).getAllByRole('cell')[5]).toHaveTextContent(expected);
     const other = screen.getByText('Mr. R. Silva').closest('tr')!;
     expect(within(other).queryByText(/min \d+\/wk/)).not.toBeInTheDocument();
+  });
+
+  it('shows minutes only for teachers with time-grade slots', () => {
+    const es = [entry('m1', 0, 1, ['mh-c-1a'], [[mahasen.S.maths, 'mh-t-1a']])];
+    renderWithSchool(<TeachersPage />, { ctx: mahasen.ctx, entries: es });
+    expect(within(screen.getByText('Mrs. Grade 1A Teacher').closest('tr')!).getAllByRole('cell')[5]).toHaveTextContent('1 · 1h');
+    expect(within(screen.getByText('Mrs. Grade 1B Teacher').closest('tr')!).getAllByRole('cell')[5]).toHaveTextContent(/^0$/);
   });
 
   it('saves min per week, and validates it against max per day', async () => {
