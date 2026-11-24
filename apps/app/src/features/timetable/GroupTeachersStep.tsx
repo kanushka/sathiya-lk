@@ -5,6 +5,7 @@ import {
   blockMates,
   classPlacement,
   classRemaining,
+  formatAmountPair,
   latestGroupSpec,
   pickName,
   pinSlots,
@@ -32,7 +33,7 @@ import { Icon } from '../../ui/Icon';
 import { FullMateChip } from './FullMateChip';
 import { blockerText, classNames } from './conflictLabel';
 import { limitWarning, planItemColor, teacherReason } from './labels';
-import { initials, type GroupItem } from './pickerData';
+import { initials, pickNeed, type GroupItem } from './pickerData';
 
 export interface GroupTeachersStepProps {
   classId: string;
@@ -178,7 +179,7 @@ export function GroupTeachersStep(props: GroupTeachersStepProps) {
     note = t('assign.groupDuplicate');
     tone = 'bad';
   } else if (fullMate) {
-    note = t('assign.mateFull', { class: fullMate.m.name, placed: fullMate.room.placed, needed: fullMate.room.needed });
+    note = t('assign.mateFull', { class: fullMate.m.name, progress: formatAmountPair(fullMate.room.placed, fullMate.room.needed, fullMate.room.unit, lang) });
     tone = 'bad';
   } else if (slot && where && spec) {
     const cell = pinSlots({ ctx, entries, spec }).find((s) => s.day === slot.day && s.period === slot.period)?.cell;
@@ -234,9 +235,7 @@ export function GroupTeachersStep(props: GroupTeachersStepProps) {
 
   const progress = classPlacement(cls, entries, ctx).rows.find((r) => r.key === planKey(item));
   const need = progress
-    ? progress.placed < progress.needed
-      ? t('picker.needs', { count: progress.needed - progress.placed })
-      : t('picker.done', { placed: progress.placed, needed: progress.needed })
+    ? pickNeed(t, progress, lang)
     : '';
   const groupName = pickName(item, lang);
 
@@ -438,7 +437,7 @@ export function GroupTeachersStep(props: GroupTeachersStepProps) {
               const on = classIds.includes(m.id);
               const room = classRemaining({ ctx, entries, classId: m.id, item: { groupKey: item.key } });
               if (!on && room.left === 0) {
-                return <FullMateChip key={m.id} name={m.name} placed={room.placed} needed={room.needed} />;
+                return <FullMateChip key={m.id} name={m.name} placed={room.placed} needed={room.needed} unit={room.unit} />;
               }
               const busy = !!slot && entries.some((e) => e.day === slot.day && e.period === slot.period && e.classIds.includes(m.id));
               return (

@@ -299,3 +299,95 @@ export const entries: Entry[] = [
   entry('e-1a-0-1', 0, 1, [C.c1a], [[S.sinhala, T.wickramasinghe]]),
   entry('e-1a-1-3', 1, 3, [C.c1a], [[S.maths, T.wickramasinghe]]),
 ];
+
+const MS = {
+  motherTongue: 'mh-s-mother-tongue',
+  english: 'mh-s-english',
+  secondLanguage: 'mh-s-second-language',
+  maths: 'mh-s-maths',
+  religion: 'mh-s-religion',
+  environment: 'mh-s-environment',
+  aesthetic: 'mh-s-aesthetic',
+  health: 'mh-s-health',
+  coCurricular: 'mh-s-co-curricular',
+} as const;
+
+const activity = (start: string, end: string, nameEn: string, subjectId?: string): TemplateRow => ({
+  type: 'activity',
+  start,
+  end,
+  nameEn,
+  ...(subjectId ? { subjectId } : {}),
+});
+
+const mahasenTemplate: PeriodTemplate = {
+  id: 'mh-tpl-grade1',
+  name: 'Grade 1',
+  isDefault: true,
+  mode: 'same',
+  rows: [
+    activity('07:30', '07:45', 'Assembly'),
+    activity('07:45', '07:55', 'Health & PE', MS.health),
+    activity('07:55', '08:15', 'School meal'),
+    p('08:15', '09:15'),
+    p('09:15', '09:30'),
+    p('09:30', '10:00'),
+    p('10:00', '10:10'),
+    interval('10:10', '10:20'),
+    p('10:20', '11:15'),
+    p('11:15', '11:25'),
+    p('11:25', '11:45'),
+  ],
+};
+
+const mahasenSubjects: Subject[] = [
+  subject(MS.motherTongue, 'Mother tongue', 'මව් භාෂාව', 'Mother tongue', '#F2E2E7'),
+  subject(MS.english, 'English', 'ඉංග්‍රීසි', 'English', '#E3E9D2'),
+  subject(MS.secondLanguage, 'Second language', 'දෙවන භාෂාව', 'Second lang', '#F0E6DA'),
+  subject(MS.maths, 'Mathematics', 'ගණිතය', 'Maths', '#D4ECEA'),
+  subject(MS.religion, 'Religion', 'ආගම', 'Religion', '#FBEAC9'),
+  subject(MS.environment, 'Environment', 'පරිසරය', 'Environment', '#E2EEE0'),
+  subject(MS.aesthetic, 'Aesthetic', 'සෞන්දර්ය', 'Aesthetic', '#EBDDF2'),
+  subject(MS.health, 'Health & PE', 'සෞඛ්‍ය හා ශාරීරික අධ්‍යාපනය', 'Health & PE', '#DDEFF2'),
+  subject(MS.coCurricular, 'Co-curricular', 'සහ-විෂය', 'Co-curr', '#E9E9E9'),
+];
+
+const mahasenTeachers: Teacher[] = [
+  teacher('mh-t-1a', 'MH001', 'Mrs', 'Grade 1A Teacher', [], [1], 12, true),
+  teacher('mh-t-1b', 'MH002', 'Mrs', 'Grade 1B Teacher', [], [1], 12, true),
+  teacher('mh-t-1c', 'MH003', 'Mrs', 'Grade 1C Teacher', [], [1], 12, true),
+];
+
+const mahasenGrade: Grade = {
+  id: 'mh-g-1',
+  number: 1,
+  plan: [
+    { kind: 'subject', subjectId: MS.motherTongue, perWeek: 300, unit: 'minutes' },
+    { kind: 'subject', subjectId: MS.english, perWeek: 50, unit: 'minutes', perDay: 10 },
+    { kind: 'subject', subjectId: MS.secondLanguage, perWeek: 30, unit: 'minutes' },
+    { kind: 'subject', subjectId: MS.maths, perWeek: 190, unit: 'minutes' },
+    { kind: 'subject', subjectId: MS.religion, perWeek: 75, unit: 'minutes' },
+    { kind: 'subject', subjectId: MS.environment, perWeek: 275, unit: 'minutes' },
+    { kind: 'subject', subjectId: MS.aesthetic, perWeek: 50, unit: 'minutes' },
+    { kind: 'subject', subjectId: MS.health, perWeek: 50, unit: 'minutes', perDay: 10 },
+    { kind: 'subject', subjectId: MS.coCurricular, perWeek: 30, unit: 'minutes' },
+  ],
+};
+
+export const mahasen: { ctx: SchoolContext; S: typeof MS } = {
+  S: MS,
+  ctx: {
+    school: { ...school, id: 'mahasen', nameEn: 'Mahasen Vidyalaya', grades: [1] },
+    teachers: mahasenTeachers,
+    subjects: mahasenSubjects,
+    templates: [mahasenTemplate],
+    grades: [mahasenGrade],
+    classes: ['A', 'B', 'C'].map((l, i) => ({
+      id: `mh-c-1${l.toLowerCase()}`,
+      gradeId: mahasenGrade.id,
+      name: `1${l}`,
+      classTeacherId: mahasenTeachers[i]!.id,
+      templateId: mahasenTemplate.id,
+    })),
+  },
+};

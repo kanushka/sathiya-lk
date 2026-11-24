@@ -4,9 +4,14 @@ import { paths, type Grade, type PlanItem, type SchoolClass } from '@sathiya/cor
 import { addDoc, collection, deleteField, doc, updateDoc } from 'firebase/firestore';
 import { db } from '../../lib/firebase';
 
+const timing = (p: PlanItem) => ({
+  ...(p.unit === 'minutes' ? { unit: 'minutes' as const } : {}),
+  ...(p.unit === 'minutes' && p.perDay !== undefined ? { perDay: p.perDay } : {}),
+});
+
 export function cleanPlan(plan: PlanItem[]): PlanItem[] {
   return plan.map((p) => {
-    if (p.kind === 'subject') return { kind: 'subject', subjectId: p.subjectId, perWeek: p.perWeek };
+    if (p.kind === 'subject') return { kind: 'subject', subjectId: p.subjectId, perWeek: p.perWeek, ...timing(p) };
     const nameSi = p.nameSi?.trim();
     return {
       kind: 'group',
@@ -15,8 +20,17 @@ export function cleanPlan(plan: PlanItem[]): PlanItem[] {
       ...(nameSi ? { nameSi } : {}),
       optionSubjectIds: [...p.optionSubjectIds],
       perWeek: p.perWeek,
+      ...timing(p),
     };
   });
+}
+
+export type GradeStaffing = NonNullable<Grade['staffing']>;
+
+export function cleanStaffing(staffing: GradeStaffing): GradeStaffing {
+  return staffing.mode === 'classTeacherPlusSpecialists'
+    ? { mode: staffing.mode, specialistSubjectIds: [...(staffing.specialistSubjectIds ?? [])] }
+    : { mode: staffing.mode };
 }
 
 export async function addGrade(schoolId: string, number: number): Promise<void> {
@@ -26,6 +40,10 @@ export async function addGrade(schoolId: string, number: number): Promise<void> 
 
 export async function saveGradePlan(schoolId: string, gradeId: string, plan: PlanItem[]): Promise<void> {
   await updateDoc(doc(db, paths.grades(schoolId), gradeId), { plan: cleanPlan(plan) });
+}
+
+export async function saveGradeStaffing(schoolId: string, gradeId: string, staffing: GradeStaffing): Promise<void> {
+  await updateDoc(doc(db, paths.grades(schoolId), gradeId), { staffing: cleanStaffing(staffing) });
 }
 
 export type NewClass = Pick<SchoolClass, 'gradeId' | 'name' | 'templateId' | 'classTeacherId'>;

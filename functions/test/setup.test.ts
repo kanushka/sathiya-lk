@@ -36,6 +36,16 @@ describe('deleteSetupItem', () => {
     expect(await admin.call('deleteSetupItem', { schoolId: sid, kind: 'subject', id: S.islam })).toEqual({ deleted: false, usedIn: 2 });
   });
 
+  it('refuses a subject referenced by activity rows in any day', async () => {
+    const { admin, sid } = await seededSchool();
+    await adminDb.doc(`${paths.subjects(sid)}/s-act`).set({ nameEn: 'Activity subject', short: 'A', color: '#ffffff' });
+    const act = { type: 'activity', start: '07:15', end: '07:45', nameEn: 'Assembly', subjectId: 's-act' };
+    const rows = [act, { type: 'period', start: '07:45', end: '08:30' }];
+    await adminDb.doc(`${paths.templates(sid)}/tpl-act`).set({ name: 'Act', isDefault: false, mode: 'perDay', rows, days: { 0: rows, 1: rows, 2: [{ type: 'period', start: '07:45', end: '08:30' }], 3: rows, 4: rows } });
+    expect(await admin.call('deleteSetupItem', { schoolId: sid, kind: 'subject', id: 's-act' })).toEqual({ deleted: false, usedIn: 4 });
+    expect((await adminDb.doc(`${paths.subjects(sid)}/s-act`).get()).exists).toBe(true);
+  });
+
   it('refuses a class teacher, the default template and a template in use', async () => {
     const { admin, sid } = await seededSchool();
     expect(await admin.call('deleteSetupItem', { schoolId: sid, kind: 'teacher', id: T.bandara })).toEqual({ deleted: false, usedIn: 1 });

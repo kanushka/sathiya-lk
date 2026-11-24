@@ -29,6 +29,18 @@ describe('createTeacher', () => {
     await expectFnError(admin.call('createTeacher', { schoolId: sid, teacher: { ...teacherInput('SCC027'), title: 'King' as never } }), 'invalid-argument', 'invalid');
   });
 
+  it('stores minPerWeek, accepts it absent, and rejects it above maxPerDay x 5', async () => {
+    const { admin, sid } = await adminWithSchool();
+    const { teacherId } = await admin.call('createTeacher', { schoolId: sid, teacher: { ...teacherInput('SCC040'), minPerWeek: 20 } });
+    expect((await adminDb.doc(`${paths.teachers(sid)}/${teacherId}`).get()).data()).toMatchObject({ maxPerDay: 6, minPerWeek: 20 });
+    const { teacherId: bare } = await admin.call('createTeacher', { schoolId: sid, teacher: teacherInput('SCC041') });
+    expect((await adminDb.doc(`${paths.teachers(sid)}/${bare}`).get()).data()).not.toHaveProperty('minPerWeek');
+    const { teacherId: edge } = await admin.call('createTeacher', { schoolId: sid, teacher: { ...teacherInput('SCC042'), minPerWeek: 30 } });
+    expect((await adminDb.doc(`${paths.teachers(sid)}/${edge}`).get()).data()?.minPerWeek).toBe(30);
+    await expectFnError(admin.call('createTeacher', { schoolId: sid, teacher: { ...teacherInput('SCC043'), minPerWeek: 31 } }), 'invalid-argument', 'invalid');
+    await expectFnError(admin.call('createTeacher', { schoolId: sid, teacher: { ...teacherInput('SCC044'), minPerWeek: -1 } }), 'invalid-argument', 'invalid');
+  });
+
   it('takes the name in English, Sinhala or both, but not neither', async () => {
     const { admin, sid } = await adminWithSchool();
     const { teacherId } = await admin.call('createTeacher', { schoolId: sid, teacher: { ...teacherInput('SCC030'), name: '', nameSi: 'ජී. ජයසේකර', title: 'Mr' } });

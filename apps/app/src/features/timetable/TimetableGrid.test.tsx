@@ -2,9 +2,9 @@
 // Copyright (C) 2026 Kanushka Gayan
 
 import type { DayIndex, TemplateRow } from '@sathiya/core';
-import { defaultTemplate, shortFridayTemplate } from '@sathiya/core/fixtures';
+import { defaultTemplate, mahasen, shortFridayTemplate } from '@sathiya/core/fixtures';
 import { rowsFor } from '@sathiya/core';
-import { fireEvent, screen } from '@testing-library/react';
+import { cleanup, fireEvent, screen } from '@testing-library/react';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { installMatchMedia, resizeTo } from '../../test/matchMedia';
 import { renderWithI18n } from '../../test/render';
@@ -33,6 +33,59 @@ describe('TimetableGrid', () => {
     setup();
     const intervals = screen.getAllByText(/^Interval ·/);
     expect(intervals.length).toBe(rows[0].filter((r) => r.type === 'interval').length);
+  });
+
+  it('shows an activity row with its name across the class', () => {
+    const tpl = mahasen.ctx.templates[0]!;
+    const mh = Object.fromEntries(days.map((d) => [d, rowsFor(tpl, d)])) as Record<DayIndex, TemplateRow[]>;
+    setup({ rows: mh });
+    expect(screen.getByText('Assembly')).toBeInTheDocument();
+    expect(screen.getByText('School meal')).toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: /Assembly/ })).toBeNull();
+    expect(screen.getAllByText(/^Interval ·/)).toHaveLength(1);
+    expect(screen.getAllByRole('button')).toHaveLength(tpl.rows.filter((r) => r.type === 'period').length * 5);
+  });
+
+  it('does not number activity rows as periods', () => {
+    const withActivity = Object.fromEntries(
+      days.map((d) => {
+        const [first, ...rest] = rows[d];
+        return [d, [first!, { type: 'activity', start: first!.end, end: first!.end, nameEn: 'Assembly' } as TemplateRow, ...rest]];
+      }),
+    ) as Record<DayIndex, TemplateRow[]>;
+    setup({ rows: withActivity });
+    const nPeriods = rows[0].filter((r) => r.type === 'period').length;
+    expect(screen.getAllByRole('button').length).toBe(nPeriods * 5);
+    expect(screen.getByRole('button', { name: new RegExp(`Monday, period ${nPeriods},`) })).toBeInTheDocument();
+    expect(screen.getByText('Assembly')).toBeInTheDocument();
+    expect(screen.getAllByText(/^Interval ·/).length).toBe(rows[0].filter((r) => r.type === 'interval').length);
+  });
+
+  it('keeps every period when the day with most rows has fewer periods', () => {
+    const act = (nameEn: string) => ({ type: 'activity', start: '07:00', end: '07:10', nameEn }) as TemplateRow;
+    const p = (n: number): TemplateRow => ({ type: 'period', start: `0${7 + n}:00`, end: `0${7 + n}:40` });
+    const four = [p(1), p(2), p(3), p(4)];
+    const mon = [act('A'), p(1), act('B'), p(2), act('C')];
+    setup({ rows: { 0: mon, 1: four, 2: four, 3: four, 4: four } });
+    expect(screen.getByRole('button', { name: /Tuesday, period 4,/ })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: /Friday, period 3,/ })).toBeInTheDocument();
+  });
+
+  it('renders a gap row per weekday when activity names or times differ', () => {
+    const act = (nameEn: string, end = '07:10'): TemplateRow => ({ type: 'activity', start: '07:00', end, nameEn });
+    const per: TemplateRow = { type: 'period', start: '07:10', end: '07:50' };
+    const week = (f: (d: DayIndex) => TemplateRow) => Object.fromEntries(days.map((d) => [d, [f(d), per]])) as Record<DayIndex, TemplateRow[]>;
+    setup({ rows: week((d) => (d === 1 ? act('Choir') : act('Assembly'))) });
+    expect(screen.getAllByText('Assembly')).toHaveLength(4);
+    expect(screen.getByText('Choir')).toBeInTheDocument();
+    cleanup();
+    setup({ rows: week((d) => act('Assembly', d === 1 ? '07:05' : '07:10')) });
+    expect(screen.getAllByText('Assembly')).toHaveLength(5);
+    expect(screen.getByText('07:00–07:05')).toBeInTheDocument();
+    expect(screen.getAllByText('07:00–07:10')).toHaveLength(4);
+    cleanup();
+    setup({ rows: week(() => act('Assembly')) });
+    expect(screen.getAllByText('Assembly')).toHaveLength(1);
   });
 
   it('renders 5 day headers and a button per slot', () => {

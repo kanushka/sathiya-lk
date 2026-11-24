@@ -3,9 +3,12 @@
 
 import {
   effectivePlan,
+  formatAmount,
+  formatAmountPair,
   pickName,
   pinProgress,
   pinSlots,
+  slotMinutes,
   specDraft,
   suggestPins,
   teacherDisplayName,
@@ -53,6 +56,7 @@ export interface PinMode {
   names: PinNames | null;
   cellAt(day: DayIndex, n: number): TeacherPinCell | undefined;
   periodAt(day: DayIndex, n: number): number | null;
+  minutesAt(day: DayIndex, n: number): number | null;
   isSuggested(day: DayIndex, n: number): boolean;
   start(target: PinSpec): void;
   stop(): void;
@@ -88,24 +92,43 @@ export function usePinMode(args: {
   const fullNote = useMemo(
     () =>
       (progress?.full ?? [])
-        .map((f) => t('pin.classFull', { class: ctx.classes.find((c) => c.id === f.classId)?.name ?? f.classId, placed: f.placed, needed: f.needed }))
+        .map((f) => t('pin.classFull', { class: ctx.classes.find((c) => c.id === f.classId)?.name ?? f.classId, progress: formatAmountPair(f.placed, f.needed, f.unit, lang) }))
         .join(', '),
-    [progress, ctx, t],
+    [progress, ctx, t, lang],
   );
   const slotAt = useCallback((day: DayIndex, n: number) => slots.find((s) => s.day === day && s.period === n), [slots]);
   const cellAt = useCallback((day: DayIndex, n: number) => slotAt(day, n)?.cell, [slotAt]);
   const periodAt = useCallback((day: DayIndex, n: number) => slotAt(day, n)?.classPeriod ?? null, [slotAt]);
 
+  const baseTemplate = useMemo(() => {
+    const base = target ? ctx.classes.find((c) => c.id === target.classIds[0]) : undefined;
+    return base ? ctx.templates.find((x) => x.id === base.templateId) : undefined;
+  }, [ctx, target]);
+  const minutesAt = useCallback(
+    (day: DayIndex, n: number) => {
+      const period = slotAt(day, n)?.classPeriod;
+      return progress?.unit === 'minutes' && baseTemplate && period != null ? slotMinutes(baseTemplate, day, period) : null;
+    },
+    [slotAt, progress, baseTemplate],
+  );
+
   const toRows = useCallback(
     (picks: Slot[]) => {
       const out: Slot[] = [];
+      let budget = progress?.left ?? 0;
       for (const r of picks) {
         const s = slots.find((x) => x.day === r.day && x.classPeriod === r.period);
-        if (s && s.cell.kind === 'free') out.push({ day: s.day, period: s.period });
+        if (!s || s.cell.kind !== 'free') continue;
+        if (progress?.unit === 'minutes') {
+          const m = baseTemplate && s.classPeriod !== null ? slotMinutes(baseTemplate, s.day, s.classPeriod) : 0;
+          if (m > budget) break;
+          budget -= m;
+        }
+        out.push({ day: s.day, period: s.period });
       }
-      return out.slice(0, progress?.left ?? 0);
+      return progress?.unit === 'minutes' ? out : out.slice(0, progress?.left ?? 0);
     },
-    [slots, progress],
+    [slots, progress, baseTemplate],
   );
   const suggested = useMemo(() => toRows(rawSuggested), [toRows, rawSuggested]);
   const seq = useRef(0);
@@ -198,17 +221,23 @@ export function usePinMode(args: {
           setMessage(fullNote);
           return;
         }
+        const minutes = minutesAt(day, n);
+        if (progress && progress.left > 0 && minutes !== null && minutes > progress.left) {
+          setMessage(t('pin.tooLong', { ...where, amount: formatAmount(progress.left, 'minutes', lang) }));
+          return;
+        }
         setRawSuggested((list) => list.filter((s) => s.day !== day || s.period !== period));
         const ok = await save(specDraft(target, day, period));
         if (latest()) setMessage(ok ? t('pin.pinned', where) : '');
       }
     },
-    [cellAt, periodAt, target, names, progress, fullNote, tc, remove, save, t],
+    [cellAt, periodAt, minutesAt, target, names, progress, fullNote, tc, remove, save, t, lang],
   );
 
   const suggest = useCallback(() => {
     if (!target || !progress || !names) return;
-    const picks = suggestPins({ ctx, entries, spec: target, count: progress.left, ...(teacherViewId === null ? {} : { teacherId: teacherViewId }) });
+    const budget = progress.unit === 'minutes' ? { count: slots.length, minutes: progress.left } : { count: progress.left };
+    const picks = suggestPins({ ctx, entries, spec: target, ...budget, ...(teacherViewId === null ? {} : { teacherId: teacherViewId }) });
     const shown = toRows(picks).length;
     setRawSuggested(picks);
     setMessage(
@@ -218,7 +247,7 @@ export function usePinMode(args: {
           ? t('pin.noSuggest', { teacher: names.teacher })
           : t('pin.noSuggestGroup', { group: names.subject }),
     );
-  }, [target, progress, names, ctx, entries, t, teacherViewId, toRows]);
+  }, [target, progress, names, ctx, entries, t, teacherViewId, toRows, slots]);
 
   const pinSuggested = useCallback(async () => {
     if (!target || !names) return;
@@ -233,5 +262,5 @@ export function usePinMode(args: {
     setMessage(done > 0 ? t('pin.pinnedMany', { count: done, subject: names.subject }) : '');
   }, [target, names, suggested, periodAt, save, t]);
 
-  return { target, progress, fullNote, suggested, message, names, cellAt, periodAt, isSuggested, start, stop, toggle, suggest, pinSuggested };
+  return { target, progress, fullNote, suggested, message, names, cellAt, periodAt, minutesAt, isSuggested, start, stop, toggle, suggest, pinSuggested };
 }

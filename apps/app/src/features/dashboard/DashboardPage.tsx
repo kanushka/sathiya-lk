@@ -1,5 +1,6 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
 // Copyright (C) 2026 Kanushka Gayan
+import { formatSummary } from '@sathiya/core';
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Link } from 'react-router-dom';
@@ -123,7 +124,7 @@ export function DashboardPage() {
                         to={`${base}/timetable/class?c=${c.id}`}
                         className={cx('inline-flex gap-1.5 rounded-lg px-2.5 py-1.5 text-[13px] font-bold no-underline', chipClass[c.status])}
                       >
-                        {c.name} <span className="font-medium opacity-80">{c.placed}/{c.needed}</span>
+                        {c.name} <span className="font-medium opacity-80">{formatSummary(c.summary, lang)}</span>
                       </Link>
                     ))}
                   </div>

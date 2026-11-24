@@ -4,7 +4,7 @@
 import { describe, expect, it } from 'vitest';
 import { withTeacherIds } from './clash';
 import { fillWithClassTeacher } from './fill';
-import { C, ctx, entries, entries6B, T } from './fixtures';
+import { C, ctx, entries, entries6B, mahasen, T } from './fixtures';
 import { buildSnapshots } from './publish';
 import type { Entry, Year } from './types';
 
@@ -28,6 +28,13 @@ describe('buildSnapshots', () => {
     expect(sixB.cells.find((c) => c.day === 0 && c.period === 5)?.start).toBe('10:50');
     expect(sixB).toMatchObject({ className: '6B', gradeNumber: 6, classTeacher: 'Mrs. N. Perera', yearLabel: '2026', schoolName: { nameEn: 'Siripura Central College', nameSi: 'සිරිපුර මධ්‍ය විද්‍යාලය' } });
     expect(sixB.cells.find((c) => c.day === 0 && c.period === 1)).toEqual({ day: 0, period: 1, start: '07:45', end: '08:30', title: 'Maths', titleSi: 'ගණිතය', sub: 'Mrs. N. Perera', color: '#D4ECEA', isGroup: false });
+  });
+
+  it('keeps activity rows in class snapshots', () => {
+    const { classes: mh } = buildSnapshots(mahasen.ctx, [], year);
+    const rows = mahasen.ctx.templates[0]!.rows;
+    expect(mh[0]!.rows[0]).toEqual(rows);
+    expect(mh[0]!.rows[0].filter((r) => r.type === 'activity').map((r) => r.nameEn)).toEqual(['Assembly', 'Health & PE', 'School meal']);
   });
 
   it('sorts cells by day then start', () => {

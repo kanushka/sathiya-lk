@@ -13,6 +13,7 @@ export type TeacherColumn =
   | 'subjects'
   | 'grades'
   | 'maxPerDay'
+  | 'minPerWeek'
   | 'isPrimary';
 export type ImportColumn = SubjectColumn | TeacherColumn;
 
@@ -38,6 +39,7 @@ export type ImportErrorCode =
   | 'gradeFormat'
   | 'gradeNotInSchool'
   | 'maxPerDay'
+  | 'minPerWeek'
   | 'primaryValue'
   | 'phone'
   | 'email'
@@ -106,6 +108,7 @@ export const IMPORT_COLUMNS: {
     { key: 'subjects', en: 'Subjects', si: 'විෂයන්', aliases: ['විෂයයන්'], required: false },
     { key: 'grades', en: 'Grades', si: 'ශ්‍රේණි', required: false },
     { key: 'maxPerDay', en: 'Max periods/day', si: 'දිනකට උපරිම කාලච්ඡේද', required: false },
+    { key: 'minPerWeek', en: 'Min periods/week', si: 'සතියකට අවම කාලච්ඡේද', required: false },
     { key: 'isPrimary', en: 'Primary teacher?', si: 'ප්‍රාථමික ගුරුවරයෙක්ද?', required: false },
   ],
 };

@@ -1,20 +1,19 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
 // Copyright (C) 2026 Kanushka Gayan
-import { pickName, type Lang, type PlanItem, type Subject } from '@sathiya/core';
+import { formatAmount, pickName, type Lang, type PlanItem, type Subject } from '@sathiya/core';
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Badge } from '../../ui/Badge';
-import { cx } from '../../ui/cx';
 import { LinkButton } from '../../ui/LinkButton';
 import { useAdminBase } from '../timetable/paths';
 import { Button } from '../../ui/Button';
 import { Chip } from '../../ui/Chip';
-import { inputBareCompactClass } from '../../ui/Field';
 import { IconButton } from '../../ui/IconButton';
 import { MultiSelect } from '../../ui/MultiSelect';
 import { Select } from '../../ui/Select';
 import { GroupModal } from './GroupModal';
-import { newGroupKey, planFit, planTotal, type PlanCapacity, type PlanFit } from './planModel';
+import { AmountEditor } from './AmountEditor';
+import { applyAmount, newGroupKey, planFit, planMinutes, planTotal, type PlanCapacity, type PlanFit } from './planModel';
 
 type Group = Extract<PlanItem, { kind: 'group' }>;
 
@@ -24,36 +23,6 @@ export interface PlanEditorProps {
   subjects: Subject[];
   readOnly: boolean;
   onChange: (plan: PlanItem[]) => void;
-}
-
-function PerWeekInput({ label, value, disabled, onCommit }: { label: string; value: number; disabled: boolean; onCommit: (n: number) => void }) {
-  const [draft, setDraft] = useState<string | null>(null);
-
-  function commit() {
-    if (draft === null) return;
-    const text = draft.trim();
-    setDraft(null);
-    if (!/^\d+$/.test(text)) return;
-    const n = Number(text);
-    if (n !== value) onCommit(n);
-  }
-
-  return (
-    <input
-      type="number"
-      min={0}
-      aria-label={label}
-      value={draft ?? value}
-      disabled={disabled}
-      className={cx(inputBareCompactClass, 'h-9 w-14 text-center font-bold')}
-      onChange={(e) => setDraft(e.target.value)}
-      onBlur={commit}
-      onKeyDown={(e) => {
-        if (e.key === 'Enter') e.currentTarget.blur();
-        if (e.key === 'Escape') setDraft(null);
-      }}
-    />
-  );
 }
 
 const fitColor: Record<PlanFit, string> = {
@@ -71,7 +40,9 @@ export function PlanEditor({ plan, capacity, subjects, readOnly, onChange }: Pla
   const byId = new Map(subjects.map((s) => [s.id, s]));
   const subjectName = (id: string) => (byId.get(id) ? pickName(byId.get(id)!, lang) : id);
   const total = planTotal(plan);
+  const timed = planMinutes(plan);
   const fit = planFit(total, capacity);
+  const showPeriods = total > 0 || timed === 0;
   const usedSubjects = new Set(plan.flatMap((p) => (p.kind === 'subject' ? [p.subjectId] : [])));
   const unused = subjects.filter((s) => !usedSubjects.has(s.id)).sort((a, b) => pickName(a, lang).localeCompare(pickName(b, lang)));
 
@@ -85,10 +56,15 @@ export function PlanEditor({ plan, capacity, subjects, readOnly, onChange }: Pla
       <div className="mb-1.5 flex flex-wrap items-end justify-between gap-3">
         <h3 className="m-0 text-[17px] font-bold">{t('plan.title')}</h3>
         <p className="m-0 text-sm">
-          <b data-testid="plan-total" data-fit={fit} className={`text-lg ${fitColor[fit]}`}>
-            {total} / {capacity.min === capacity.max ? capacity.max : `${capacity.min}–${capacity.max}`}
-          </b>{' '}
-          {t('plan.periodsInWeek')}
+          {showPeriods && (
+            <>
+              <b data-testid="plan-total" data-fit={fit} className={`text-lg ${fitColor[fit]}`}>
+                {total} / {capacity.min === capacity.max ? capacity.max : `${capacity.min}–${capacity.max}`}
+              </b>{' '}
+              {t('plan.periodsInWeek')}
+            </>
+          )}
+          {timed > 0 && <span className={showPeriods ? 'ml-1.5 text-ink-soft' : 'text-ink-soft'} data-testid="plan-timed">{t(showPeriods ? 'plan.timedTotal' : 'plan.timedOnly', { amount: formatAmount(timed, 'minutes', lang) })}</span>}
         </p>
       </div>
       <p className="mb-4 text-sm text-ink-soft">{t('plan.intro')}</p>
@@ -101,7 +77,7 @@ export function PlanEditor({ plan, capacity, subjects, readOnly, onChange }: Pla
           return (
             <div
               key={p.kind === 'group' ? `g:${p.key}` : `s:${p.subjectId}`}
-              className={`flex flex-wrap items-center gap-x-3.5 gap-y-2 border-b border-line-soft px-3.5 py-2.5 md:flex-nowrap md:gap-y-0 ${p.kind === 'group' ? 'bg-warning-soft/40' : ''}`}
+              className={`flex flex-wrap items-center gap-x-3.5 gap-y-2 border-b border-line-soft px-3.5 py-2.5 ${p.kind === 'group' ? 'bg-warning-soft/40' : ''}`}
             >
               <span className="h-3.5 w-3.5 shrink-0 rounded" style={{ background: subject?.color ?? '#FBEAC9' }} />
               <div className="min-w-0 flex-1 basis-[calc(100%-2rem)] md:basis-auto">
@@ -136,13 +112,7 @@ export function PlanEditor({ plan, capacity, subjects, readOnly, onChange }: Pla
                   </>
                 )}
               </div>
-              <PerWeekInput
-                label={t('plan.perWeekFor', { name })}
-                value={p.perWeek}
-                disabled={readOnly}
-                onCommit={(perWeek) => replace(i, { ...p, perWeek })}
-              />
-              <span className="w-16 text-[13px] text-ink-soft">{t('plan.perWeek')}</span>
+              <AmountEditor item={p} name={name} disabled={readOnly} onChange={(next) => replace(i, applyAmount(p, next))} />
               {!readOnly && (
                 <div className="flex gap-1">
                   {p.kind === 'group' && (

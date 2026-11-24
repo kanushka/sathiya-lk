@@ -1,9 +1,10 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
 // Copyright (C) 2026 Kanushka Gayan
 
-import type { DayIndex, TemplateRow } from '@sathiya/core';
+import { activityName, type DayIndex, type Lang, type TemplateRow } from '@sathiya/core';
 import { useRef, type KeyboardEvent, type ReactNode } from 'react';
 import { useTranslation } from 'react-i18next';
+import { useMaybeLang } from '../../app/LangProvider';
 import { isComposing } from '../../ui/composing';
 import { cx } from '../../ui/cx';
 import { PHONE_QUERY, useMediaQuery } from '../../ui/PhoneNotice';
@@ -38,13 +39,27 @@ export interface TimetableGridProps {
 
 const DAYS: DayIndex[] = [0, 1, 2, 3, 4];
 
-type RefRow = { kind: 'interval'; start: string; end: string } | { kind: 'period'; n: number };
+type DayBand = { start: string; end: string; name: string };
+type RefRow = { kind: 'interval'; shared: boolean; days: Array<DayBand | null> } | { kind: 'period'; n: number };
 
 function periodTimes(rows: TemplateRow[]): Map<number, { start: string; end: string }> {
   const map = new Map<number, { start: string; end: string }>();
   let n = 0;
   for (const r of rows) if (r.type === 'period') map.set(++n, { start: r.start, end: r.end });
   return map;
+}
+
+function gapRow(rows: TemplateRow[], periodsBefore: number, k: number): TemplateRow | undefined {
+  let n = 0;
+  let seen = 0;
+  for (const r of rows) {
+    if (r.type === 'period') {
+      n++;
+      continue;
+    }
+    if (n === periodsBefore && seen++ === k) return r;
+  }
+  return undefined;
 }
 
 const DESKTOP_COLUMNS = '92px repeat(5,minmax(110px,1fr))';
@@ -55,14 +70,28 @@ export function TimetableGrid({ rows, cellsFor, selected, onSelect, onActivate, 
   const { t } = useTranslation('timetable');
   const { t: tc } = useTranslation('common');
   const isPhone = useMediaQuery(PHONE_QUERY);
+  const lang: Lang = useMaybeLang()?.lang ?? 'en';
   const root = useRef<HTMLDivElement>(null);
 
-  const refDay = DAYS.reduce((best, d) => (rows[d].length > rows[best].length ? d : best), 0 as DayIndex);
+  const periodCount = (d: DayIndex) => rows[d].filter((r) => r.type === 'period').length;
+  const refDay = DAYS.reduce(
+    (best, d) => (periodCount(d) > periodCount(best) || (periodCount(d) === periodCount(best) && rows[d].length > rows[best].length) ? d : best),
+    0 as DayIndex,
+  );
   const times = Object.fromEntries(DAYS.map((d) => [d, periodTimes(rows[d])])) as Record<DayIndex, ReturnType<typeof periodTimes>>;
   let n = 0;
-  const refRows: RefRow[] = rows[refDay].map((r) =>
-    r.type === 'interval' ? { kind: 'interval', start: r.start, end: r.end } : { kind: 'period', n: ++n },
-  );
+  let gap = 0;
+  const refRows: RefRow[] = rows[refDay].map((r) => {
+    if (r.type === 'period') {
+      gap = 0;
+      return { kind: 'period', n: ++n };
+    }
+    const at = DAYS.map((d) => gapRow(rows[d], n, gap));
+    gap++;
+    const days = at.map((x) => (x ? { start: x.start, end: x.end, name: activityName(x, lang) } : null));
+    const shared = at.every((x) => x?.type === r.type && x.nameEn === r.nameEn && x.nameSi === r.nameSi && x.start === r.start && x.end === r.end);
+    return { kind: 'interval', shared, days };
+  });
   const periodRows = refRows.filter((r): r is Extract<RefRow, { kind: 'period' }> => r.kind === 'period');
 
   const exists = (day: DayIndex, period: number) => times[day].has(period);
@@ -121,15 +150,36 @@ export function TimetableGrid({ rows, cellsFor, selected, onSelect, onActivate, 
         ))}
         {refRows.map((r, i) => {
           if (r.kind === 'interval') {
-            return (
-              <div
-                key={`i${i}`}
-                className="flex items-center gap-2.5 rounded-lg bg-warning-soft px-2.5 py-1 text-xs font-bold text-warning"
-                style={{ gridColumn: '1 / -1' }}
-              >
-                <span className={cx(isPhone && 'sticky left-2.5')}>{t('grid.interval', { time: `${r.start}–${r.end}` })}</span>
-              </div>
-            );
+            const bandClass = 'flex items-center gap-2.5 rounded-lg bg-warning-soft px-2.5 py-1 text-xs font-bold text-warning';
+            const bandText = (b: DayBand) =>
+              b.name ? (
+                <>
+                  <span>{b.name}</span>
+                  <span className="font-normal">{`${b.start}–${b.end}`}</span>
+                </>
+              ) : (
+                t('grid.interval', { time: `${b.start}–${b.end}` })
+              );
+            if (r.shared) {
+              return (
+                <div key={`i${i}`} className={bandClass} style={{ gridColumn: '1 / -1' }}>
+                  <span className={cx('flex gap-2.5', isPhone && 'sticky left-2.5')}>{bandText(r.days[0]!)}</span>
+                </div>
+              );
+            }
+            return [
+              <span key={`il${i}`} className={cx(isPhone && sticky)} />,
+              ...DAYS.map((d) => {
+                const b = r.days[d];
+                return b ? (
+                  <div key={`i${i}-${d}`} className={cx(bandClass, 'flex-wrap justify-center')}>
+                    {bandText(b)}
+                  </div>
+                ) : (
+                  <span key={`i${i}-${d}`} />
+                );
+              }),
+            ];
           }
           const refTime = times[refDay].get(r.n);
           return [

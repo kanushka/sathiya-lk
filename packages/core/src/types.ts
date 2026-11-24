@@ -21,12 +21,13 @@ export interface DefaultSubjectsDoc { subjects: DefaultSubject[]; updatedAt: num
 export interface TermsVersion { version: string; termsMd: string; privacyMd: string; publishedAt: number }
 export const TEACHER_TITLES = ['Mr', 'Mrs', 'Miss', 'Ms', 'Dr', 'Rev', 'Ven.'] as const;
 export type TeacherTitle = (typeof TEACHER_TITLES)[number];
-export interface Teacher { id: string; staffId: string; name: string; nameSi?: string; title?: TeacherTitle; isPrimary: boolean; subjectIds: string[]; grades: number[]; maxPerDay: number; phone?: string; email?: string; uid?: string; lastLoginAt?: number; inviteExpiresAt?: number }
+export interface Teacher { id: string; staffId: string; name: string; nameSi?: string; title?: TeacherTitle; isPrimary: boolean; subjectIds: string[]; grades: number[]; maxPerDay: number; minPerWeek?: number; phone?: string; email?: string; uid?: string; lastLoginAt?: number; inviteExpiresAt?: number }
 export interface Subject extends Bilingual { id: string; short: string; color: string }
-export interface TemplateRow { type: 'period' | 'interval'; start: Hhmm; end: Hhmm }
+export interface TemplateRow { type: 'period' | 'interval' | 'activity'; start: Hhmm; end: Hhmm; nameEn?: string; nameSi?: string; subjectId?: string }
 export interface PeriodTemplate { id: string; name: string; isDefault: boolean; mode: 'same' | 'perDay'; rows: TemplateRow[]; days?: Record<DayIndex, TemplateRow[]> }
-export type PlanItem = { kind: 'subject'; subjectId: string; perWeek: number } | { kind: 'group'; key: string; nameEn: string; nameSi?: string; optionSubjectIds: string[]; perWeek: number };
-export interface Grade { id: string; number: number; plan: PlanItem[] }
+export type PlanItem = { kind: 'subject'; subjectId: string; perWeek: number; unit?: 'minutes'; perDay?: number } | { kind: 'group'; key: string; nameEn: string; nameSi?: string; optionSubjectIds: string[]; perWeek: number; unit?: 'minutes'; perDay?: number };
+export type StaffingMode = 'classTeacherAll' | 'classTeacherPlusSpecialists' | 'subjectTeachers';
+export interface Grade { id: string; number: number; plan: PlanItem[]; staffing?: { mode: StaffingMode; specialistSubjectIds?: string[] } }
 export interface SchoolClass { id: string; gradeId: string; name: string; classTeacherId?: string; templateId: string; planOverride?: PlanItem[] }
 export interface Lesson { subjectId: string; teacherId: string | null }
 export interface Entry { id: string; day: DayIndex; period: number; classIds: string[]; lessons: Lesson[]; teacherIds: string[]; groupKey?: string }

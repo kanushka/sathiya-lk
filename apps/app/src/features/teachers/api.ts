@@ -36,12 +36,13 @@ export async function linkSelf(schoolId: string, teacherId: string): Promise<voi
 }
 
 export async function updateTeacher(schoolId: string, teacherId: string, teacher: TeacherInput): Promise<void> {
-  const { title, nameSi, phone, email, ...rest } = teacher;
+  const { title, nameSi, phone, email, minPerWeek, ...rest } = teacher;
   await updateDoc(doc(db, paths.teachers(schoolId), teacherId), {
     ...rest,
     title: title ? title : deleteField(),
     nameSi: nameSi ? nameSi : deleteField(),
     phone: phone ? phone : deleteField(),
     email: email ? email : deleteField(),
+    minPerWeek: minPerWeek === undefined ? deleteField() : minPerWeek,
   });
 }

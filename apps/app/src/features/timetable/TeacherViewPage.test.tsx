@@ -355,7 +355,7 @@ describe('TeacherViewPage', () => {
       expect(none).toHaveAttribute('aria-disabled', 'true');
       expect(none).toHaveTextContent('No 1A period');
       expect(cellNamed(/^Monday, period 5, 10:50–11:30: .*pinned, click to unpin$/)).toBeInTheDocument();
-      expect(screen.getByRole('meter', { name: 'Monday load' })).toHaveAttribute('aria-valuetext', '1/8');
+      expect(screen.getByRole('meter', { name: 'Monday load' })).toHaveAttribute('aria-valuetext', '0/8');
     });
 
     it('shows no class note where the class period matches the row', async () => {

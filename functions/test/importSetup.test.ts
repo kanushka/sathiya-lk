@@ -16,7 +16,7 @@ describe('importSetup', () => {
       subjectsVersion: NONE,
       subjects: [sub(2, { nameEn: 'Robotics', short: 'ROB' }), sub(3, { nameEn: 'Chess', nameSi: 'චෙස්' })],
       teachers: [
-        tch(2, { name: 'Nimal Silva', subjects: 'ROB', grades: '6-7' }),
+        tch(2, { name: 'Nimal Silva', subjects: 'ROB', grades: '6-7', minPerWeek: '12' }),
         tch(3, { name: 'Kamala Perera', isPrimary: 'yes', grades: '6' }),
       ],
     });
@@ -33,9 +33,10 @@ describe('importSetup', () => {
     const [t1, t2] = res.teachers;
     expect(t1).not.toHaveProperty('password');
     const doc1 = (await adminDb.doc(`${paths.teachers(sid)}/${t1!.teacherId}`).get()).data()!;
-    expect(doc1).toMatchObject({ staffId: t1!.staffId, name: 'Nimal Silva', subjectIds: [res.subjectIds[0]], grades: [6, 7] });
+    expect(doc1).toMatchObject({ staffId: t1!.staffId, name: 'Nimal Silva', subjectIds: [res.subjectIds[0]], grades: [6, 7], minPerWeek: 12 });
     const doc2 = (await adminDb.doc(`${paths.teachers(sid)}/${t2!.teacherId}`).get()).data()!;
     expect(doc2).toMatchObject({ isPrimary: true, subjectIds: [] });
+    expect(doc2).not.toHaveProperty('minPerWeek');
     expect(doc1.uid).toBeUndefined();
     expect((await adminDb.collection(paths.members(sid)).get()).size).toBe(1);
   });

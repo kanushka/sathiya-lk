@@ -204,6 +204,15 @@ describe('validateImport teacher errors', () => {
     for (const m of ['0', '11', 'x', '2.5']) expect(only({ ...okTeacher, maxPerDay: m })).toEqual([e('maxPerDay', 'maxPerDay')]);
     expect(one({ ...okTeacher, maxPerDay: '10' }).teachers[0]?.teacher.maxPerDay).toBe(10);
   });
+  it('reads optional min per week column', () => {
+    expect(one(okTeacher).teachers[0]?.teacher).not.toHaveProperty('minPerWeek');
+    expect(one({ ...okTeacher, minPerWeek: '' }).teachers[0]?.teacher).not.toHaveProperty('minPerWeek');
+    expect(one({ ...okTeacher, minPerWeek: '20' }).teachers[0]?.teacher.minPerWeek).toBe(20);
+    expect(one({ ...okTeacher, minPerWeek: '0' }).teachers[0]?.teacher.minPerWeek).toBe(0);
+    expect(one({ ...okTeacher, maxPerDay: '2', minPerWeek: '10' }).teachers[0]?.teacher.minPerWeek).toBe(10);
+    for (const m of ['x', '2.5', '-1', '36']) expect(only({ ...okTeacher, minPerWeek: m })).toEqual([e('minPerWeek', 'minPerWeek')]);
+    expect(only({ ...okTeacher, maxPerDay: '2', minPerWeek: '11' })).toEqual([e('minPerWeek', 'minPerWeek')]);
+  });
   it('primaryValue and accepted spellings', () => {
     expect(only({ ...okTeacher, isPrimary: 'maybe' })).toEqual([e('isPrimary', 'primaryValue')]);
     for (const v of ['yes', 'Y', 'TRUE', 'ඔව්']) expect(one({ ...okTeacher, isPrimary: v }).teachers[0]?.teacher.isPrimary).toBe(true);

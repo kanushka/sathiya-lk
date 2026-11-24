@@ -39,6 +39,7 @@ export interface PinOverlayInput {
   tc: TFunction;
   names: { subject: string; teacher: string; classes: string; base: string };
   progress: PinProgress | null;
+  slotMinutes?: number | null;
   suggested: boolean;
   classNote?: string;
   group?: boolean;
@@ -47,7 +48,7 @@ export interface PinOverlayInput {
 }
 
 export function pinOverlayCell(a: PinOverlayInput): GridOverlay | null {
-  const { cell: c, day, n, time, ctx, lang, t, tc, names, progress, suggested, classNote, group, teacherView, entryView } = a;
+  const { cell: c, day, n, time, ctx, lang, t, tc, names, progress, slotMinutes, suggested, classNote, group, teacherView, entryView } = a;
   if (!c) return null;
   const where = { day: tc(`days.long.${day}`), n, time };
   if (c.kind === 'none') {
@@ -99,6 +100,14 @@ export function pinOverlayCell(a: PinOverlayInput): GridOverlay | null {
       className: pinOver,
       content: <PinGlyph sub={t('pin.overPlan')} note={classNote} />,
       ...(progress.full.length > 0 ? { disabled: true } : {}),
+    };
+  }
+  if (progress && progress.unit === 'minutes' && slotMinutes != null && slotMinutes > progress.left) {
+    return {
+      label: `${label}, ${t('pin.noteTooLong')}`,
+      className: pinOver,
+      content: <PinGlyph sub={t('pin.tooLongCell')} note={classNote} />,
+      disabled: true,
     };
   }
   if (suggested) {

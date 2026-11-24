@@ -80,7 +80,7 @@ function TeacherSlotPickerBody({ onClose, teacherId, day, period, entries, editi
 
   const subject = ctx.subjects.find((s) => s.id === subjectId);
   const subjectName = (s: Subject) => pickName(s, lang);
-  const load = teacherDayLoad(teacher.id, day, entries.filter((e) => e.id !== editing.id));
+  const load = teacherDayLoad(teacher.id, day, entries.filter((e) => e.id !== editing.id), ctx);
   const atLimit = load >= teacher.maxPerDay;
   const free = options.filter((o) => o.free);
   const taken = options.filter((o) => !o.free);

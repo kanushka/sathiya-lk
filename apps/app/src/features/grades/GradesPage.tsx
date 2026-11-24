@@ -17,8 +17,9 @@ import * as api from './api';
 import { AddGradeModal } from './AddGradeModal';
 import { ClassCard } from './ClassCard';
 import { ClassPlanModal } from './ClassPlanModal';
-import { nextClassName, planCapacity } from './planModel';
+import { nextClassName, planCapacity, planIssues } from './planModel';
 import { PlanEditor } from './PlanEditor';
+import { StaffingCard } from './StaffingCard';
 
 type Dialog = { kind: 'addGrade' } | { kind: 'deleteGrade' } | { kind: 'plan'; cls: SchoolClass } | { kind: 'delete'; cls: SchoolClass } | null;
 
@@ -50,7 +51,13 @@ export function GradesPage() {
     }
   }
 
-  const savePlan = (plan: PlanItem[]) => grade && guard(() => api.saveGradePlan(sid, grade.id, plan));
+  const savePlan = (plan: PlanItem[]) => {
+    if (!grade) return;
+    const issue = planIssues(plan)[0];
+    if (issue) return void toast.show(t(`plan.errors.${issue.issue}`), 'error');
+    return guard(() => api.saveGradePlan(sid, grade.id, plan));
+  };
+  const saveStaffing = (staffing: api.GradeStaffing) => grade && guard(() => api.saveGradeStaffing(sid, grade.id, staffing));
 
   const addClass = () => {
     if (!grade || !defaultTemplate) return;
@@ -140,6 +147,8 @@ export function GradesPage() {
                 </div>
               )}
             </section>
+
+            <StaffingCard grade={grade} ctx={school} readOnly={readOnly} onChange={(st) => void saveStaffing(st)} />
 
             <section className="rounded-[14px] border border-line-soft bg-white p-4 md:p-5">
               <PlanEditor

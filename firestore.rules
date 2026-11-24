@@ -56,7 +56,9 @@ service cloud.firestore {
         allow read: if adminRead(sid);
         allow create: if adminWrite(sid);
         // The default template stays the default (deleteSetupItem also refuses to delete it).
+        // rows, days and mode change only through the saveTemplate callable, which remaps entries and blocks used periods.
         allow update: if adminWrite(sid)
+          && !request.resource.data.diff(resource.data).affectedKeys().hasAny(['rows', 'days', 'mode'])
           && (resource.data.get('isDefault', false) != true || request.resource.data.get('isDefault', false) == true);
       }
       match /classes/{id} {

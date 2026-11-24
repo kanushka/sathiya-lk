@@ -32,6 +32,7 @@ interface Form {
   subjectIds: string[];
   grades: number[];
   maxPerDay: string;
+  minPerWeek: string;
   phone: string;
   email: string;
 }
@@ -60,6 +61,7 @@ export function TeacherModal({ teacher, onClose }: TeacherModalProps) {
     subjectIds: teacher?.subjectIds ?? [],
     grades: teacher?.grades ?? [],
     maxPerDay: String(teacher?.maxPerDay ?? 7),
+    minPerWeek: teacher?.minPerWeek === undefined ? '' : String(teacher.minPerWeek),
     phone: teacher?.phone ?? '',
     email: teacher?.email ?? '',
   }));
@@ -71,6 +73,8 @@ export function TeacherModal({ teacher, onClose }: TeacherModalProps) {
   const set = <K extends keyof Form>(key: K, value: Form[K]) => setForm((f) => ({ ...f, [key]: value }));
 
   const maxPerDay = Number(form.maxPerDay);
+  const minPerWeek = form.minPerWeek.trim() === '' ? undefined : Number(form.minPerWeek);
+  const minPerWeekCap = Number.isInteger(maxPerDay) ? maxPerDay * 5 : 50;
   const errors = {
     name: form.name.trim() || form.nameSi.trim() ? null : t('common:names.missing'),
     staffId: teacher
@@ -83,6 +87,10 @@ export function TeacherModal({ teacher, onClose }: TeacherModalProps) {
     subjects: form.isPrimary || form.subjectIds.length > 0 ? null : t('modal.errors.subjects'),
     grades: form.grades.length > 0 ? null : t('modal.errors.grades'),
     maxPerDay: Number.isInteger(maxPerDay) && maxPerDay >= 1 && maxPerDay <= 10 ? null : t('modal.errors.maxPerDay'),
+    minPerWeek:
+      minPerWeek === undefined || (Number.isInteger(minPerWeek) && minPerWeek >= 0 && minPerWeek <= minPerWeekCap)
+        ? null
+        : t('modal.errors.minPerWeek', { max: minPerWeekCap }),
   };
   const valid = Object.values(errors).every((e) => e === null);
   const show = (key: keyof typeof errors) => (submitted ? errors[key] : null);
@@ -100,6 +108,7 @@ export function TeacherModal({ teacher, onClose }: TeacherModalProps) {
       subjectIds: form.isPrimary ? [] : form.subjectIds,
       grades: [...form.grades].sort((a, b) => a - b),
       maxPerDay,
+      ...(minPerWeek !== undefined ? { minPerWeek } : {}),
       ...(form.phone.trim() ? { phone: form.phone.trim() } : {}),
       ...(form.email.trim() ? { email: form.email.trim() } : {}),
     };
@@ -217,7 +226,7 @@ export function TeacherModal({ teacher, onClose }: TeacherModalProps) {
             </div>
             <FormError size="field" className="mt-1">{show('grades')}</FormError>
           </div>
-          <div className="grid grid-cols-3 gap-3">
+          <div className="grid grid-cols-2 gap-3">
             <Field label={t('modal.maxPerDay')} error={show('maxPerDay')}>
               <input
                 type="number"
@@ -226,6 +235,16 @@ export function TeacherModal({ teacher, onClose }: TeacherModalProps) {
                 className={inputClass}
                 value={form.maxPerDay}
                 onChange={(e) => set('maxPerDay', e.target.value)}
+              />
+            </Field>
+            <Field label={t('modal.minPerWeek')} error={show('minPerWeek')}>
+              <input
+                type="number"
+                min={0}
+                max={minPerWeekCap}
+                className={inputClass}
+                value={form.minPerWeek}
+                onChange={(e) => set('minPerWeek', e.target.value)}
               />
             </Field>
             <Field label={t('modal.phone')}>

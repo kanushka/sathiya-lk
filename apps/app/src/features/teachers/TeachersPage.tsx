@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
 // Copyright (C) 2026 Kanushka Gayan
-import { pickName, teacherDisplayName, teacherIdOf, teacherNameMissing, usageCount, type Lang, type Teacher } from '@sathiya/core';
+import { formatAmount, pickName, teacherDisplayName, teacherIdOf, teacherLoad, teacherNameMissing, usageCount, type Lang, type Teacher } from '@sathiya/core';
 import { useEffect, useMemo, useState } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
@@ -62,6 +62,13 @@ export function TeachersPage() {
   useEffect(() => {
     if (params.has('new')) setParams((p) => (p.delete('new'), p), { replace: true });
   }, [params, setParams]);
+
+  const loads = useMemo(() => new Map(state.teachers.map((x) => [x.id, teacherLoad(x.id, entries, state)])), [state, entries]);
+  const loadText = (x: Teacher) => {
+    const load = loads.get(x.id);
+    if (!load) return '0';
+    return load.timedMinutes > 0 ? `${load.entries} · ${formatAmount(load.timedMinutes, 'minutes', lang)}` : String(load.entries);
+  };
 
   const subjectName = useMemo(() => new Map(subjects.map((s) => [s.id, pickName(s, lang)])), [subjects, lang]);
   const sorted = useMemo(() => [...teachers].sort((a, b) => a.staffId.localeCompare(b.staffId)), [teachers]);
@@ -180,6 +187,7 @@ export function TeachersPage() {
               <Th>{t('page.cols.teaches')}</Th>
               <Th>{t('page.cols.grades')}</Th>
               <Th>{t('page.cols.maxPerDay')}</Th>
+              <Th>{t('page.cols.load')}</Th>
               <Th>{t('page.cols.classTeacher')}</Th>
               <Th>{t('page.cols.account')}</Th>
               {!readOnly && <Th>{t('page.cols.actions')}</Th>}
@@ -209,7 +217,11 @@ export function TeachersPage() {
                   )}
                 </Td>
                 <Td>{[...x.grades].sort((a, b) => a - b).join(', ')}</Td>
-                <Td>{x.maxPerDay}</Td>
+                <Td>
+                  {x.maxPerDay}
+                  {x.minPerWeek !== undefined && <span className="block text-xs text-ink-muted">{t('page.minPerWeek', { n: x.minPerWeek })}</span>}
+                </Td>
+                <Td>{loadText(x)}</Td>
                 <Td>{classes.filter((c) => c.classTeacherId === x.id).map((c) => c.name).join(', ')}</Td>
                 <Td>{status(x)}</Td>
                 {!readOnly && (

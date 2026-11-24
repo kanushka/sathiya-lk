@@ -11,6 +11,7 @@ export { checkCensusNo } from './checkCensusNo';
 export { saveEntry } from './saveEntry';
 export { deleteEntry } from './deleteEntry';
 export { deleteSetupItem } from './deleteSetupItem';
+export { saveTemplate } from './saveTemplate';
 export { publishYear } from './publishYear';
 export { reportSchool } from './reportSchool';
 export { sendAuthEmail } from './sendAuthEmail';

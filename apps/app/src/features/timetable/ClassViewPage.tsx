@@ -178,6 +178,7 @@ function ClassView({ cls, classes }: { cls: SchoolClass; classes: SchoolClass[] 
       tc,
       names: pin.names,
       progress: pin.progress,
+      slotMinutes: pin.minutesAt(day, period),
       suggested: pin.isSuggested(day, period),
       group: pinTarget?.groupKey !== undefined,
       entryView: (e) => classCellView(e, ctx, lang, t, plan),

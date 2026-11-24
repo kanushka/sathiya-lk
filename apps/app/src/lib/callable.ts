@@ -18,6 +18,8 @@ const apiCodes: readonly ApiErrorCode[] = [
   'link-invalid',
   'too-many-schools',
   'school-registered',
+  'template-in-use',
+  'template-too-many-moves',
 ];
 
 export class ApiError extends Error {

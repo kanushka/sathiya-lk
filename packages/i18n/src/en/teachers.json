@@ -15,6 +15,7 @@
       "teaches": "Teaches",
       "grades": "Grades",
       "maxPerDay": "Max / day",
+      "load": "Load",
       "classTeacher": "Class teacher",
       "actions": "Actions",
       "account": "Account"
@@ -26,7 +27,8 @@
     "alreadyLinked": "This teacher is already linked to an account. Unlink it first.",
     "tooManySchools": "That account already belongs to the most schools allowed (15).",
     "rateLimited": "Too many tries today. Try again tomorrow.",
-    "accountLinked": "That account is already linked to another teacher in this school."
+    "accountLinked": "That account is already linked to another teacher in this school.",
+    "minPerWeek": "min {{n}}/wk"
   },
   "modal": {
     "nameEn": "Name in English",
@@ -46,6 +48,7 @@
     "subjectsPlaceholder": "Add subjects",
     "grades": "Grades",
     "maxPerDay": "Max periods / day",
+    "minPerWeek": "Min periods / week (optional)",
     "phone": "Phone (optional)",
     "email": "Email (optional)",
     "save": "Save teacher",
@@ -59,7 +62,8 @@
       "staffIdTaken": "This staff ID is already used",
       "subjects": "Pick at least one subject",
       "grades": "Pick at least one grade",
-      "maxPerDay": "Enter a number from 1 to 10"
+      "maxPerDay": "Enter a number from 1 to 10",
+      "minPerWeek": "Enter a whole number from 0 to {{max}}"
     },
     "added": "Teacher added"
   },
