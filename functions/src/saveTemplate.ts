@@ -56,14 +56,14 @@ export const saveTemplate = onCall(callOpts, async (req): Promise<SaveTemplateRe
   const dryRun = data.dryRun === true;
 
   const subjectIds = [...new Set([...patch.rows, ...Object.values(patch.days ?? {}).flat()].flatMap((r) => (r.subjectId ? [r.subjectId] : [])))];
-  if (subjectIds.length > 0) {
-    const found = await db.getAll(...subjectIds.map((id) => db.doc(`${paths.subjects(sid)}/${id}`)));
-    if (found.some((d) => !d.exists)) invalid('Unknown subject on an activity row');
-  }
 
   const ref = db.doc(`${paths.templates(sid)}/${templateId}`);
   const yid = await latestYearId(sid);
   return runTx(async (tx) => {
+    if (subjectIds.length > 0) {
+      const found = await tx.getAll(...subjectIds.map((id) => db.doc(`${paths.subjects(sid)}/${id}`)));
+      if (found.some((d) => !d.exists)) invalid('Unknown subject on an activity row');
+    }
     const [snap, classes] = await Promise.all([tx.get(ref), tx.get(db.collection(paths.classes(sid)).where('templateId', '==', templateId))]);
     const entrySnap = classes.size > 0 && yid ? await tx.get(db.collection(paths.entries(sid, yid))) : undefined;
     if (!snap.exists) fail('not-found', 'invalid', 'Unknown template');
