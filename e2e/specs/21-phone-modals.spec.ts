@@ -42,6 +42,10 @@ test('every admin pop-up opens as a full-width sheet on a phone', async ({ page 
       }).length;
     });
     expect(overflowing, button).toBe(0);
+    const clipped = await dialog.evaluate((d) =>
+      [d, ...Array.from(d.children)].filter((el) => el.scrollWidth > el.clientWidth + 1).length,
+    );
+    expect(clipped, button).toBe(0);
     await page.keyboard.press('Escape');
     await expect(dialog).toBeHidden();
   }
