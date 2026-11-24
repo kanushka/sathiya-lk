@@ -43,7 +43,7 @@ export function PinBar({ title, detail, color, progress, fullNote, suggestedCoun
           {t('pin.mode')}
         </p>
         <p className="m-0 mt-0.5 truncate text-base font-bold md:whitespace-normal">{title}</p>
-        {detail && <p className="m-0 mt-0.5 hidden text-xs text-on-brand/80 md:block">{detail}</p>}
+        {detail && <p className="m-0 mt-0.5 truncate text-xs text-on-brand/80 md:whitespace-normal">{detail}</p>}
       </div>
       <div className="flex flex-col gap-1 md:min-w-[170px]">
         <span className="flex flex-wrap items-center gap-1.5 text-[13px] font-bold">

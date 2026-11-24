@@ -6,6 +6,7 @@ import userEvent from '@testing-library/user-event';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { pickOption } from '../../test/pickOption';
 import { call } from '../../lib/callable';
+import { installMatchMedia } from '../../test/matchMedia';
 import { renderWithSchool } from '../../test/renderWithSchool';
 import * as api from './api';
 import { GradesPage } from './GradesPage';
@@ -39,6 +40,23 @@ describe('grades page', () => {
     expect(nav).toHaveClass('flex', 'overflow-x-auto', 'md:block', 'md:w-[150px]');
     expect(nav.parentElement).toHaveClass('flex-col', 'md:flex-row');
     expect(screen.getByRole('button', { name: /^Grade 6\b/ })).toHaveAttribute('aria-current', 'page');
+  });
+
+  it('scrolls the selected grade into view on phones', async () => {
+    const restore = installMatchMedia(375);
+    const scrollTo = vi.fn();
+    Element.prototype.scrollTo = scrollTo;
+    try {
+      await openGrade6();
+      expect(scrollTo).toHaveBeenCalled();
+    } finally {
+      restore();
+    }
+  });
+
+  it('pads the grade switcher so focus rings are not clipped', async () => {
+    await openGrade6();
+    expect(screen.getByRole('navigation', { name: 'Grades' })).toHaveClass('pt-1.5', 'px-1.5', 'md:pt-0');
   });
 
   it('wraps plan rows so the per-week input fits on phones', async () => {

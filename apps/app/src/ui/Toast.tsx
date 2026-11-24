@@ -86,7 +86,7 @@ function ToastList({ toasts, onDismiss }: { toasts: ToastItem[]; onDismiss: (id:
   return (
     <div
       aria-live="polite"
-      className="pointer-events-none fixed bottom-4 left-1/2 z-[60] flex w-[min(420px,calc(100vw-32px))] -translate-x-1/2 flex-col gap-2"
+      className="pointer-events-none fixed left-1/2 top-[4.5rem] z-[60] md:bottom-4 md:top-auto flex w-[min(420px,calc(100vw-32px))] -translate-x-1/2 flex-col gap-2"
     >
       {toasts.map((toast) => (
         <div
