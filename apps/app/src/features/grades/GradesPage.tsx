@@ -68,16 +68,16 @@ export function GradesPage() {
   return (
     <div>
       <PageHeader title={t('page.heading')} actions={addGradeButton || undefined} />
-      <div className="flex min-h-[600px] gap-6">
-      <nav aria-label={t('rail.title')} className="w-[150px] shrink-0 border-r border-line-soft pr-2.5">
-        <p className="mx-2 mb-2.5 text-[11px] font-bold uppercase tracking-widest text-ink-muted">{t('rail.title')}</p>
+      <div className="flex flex-col gap-4 md:min-h-[600px] md:flex-row md:gap-6">
+      <nav aria-label={t('rail.title')} className="-mx-1 flex gap-1 overflow-x-auto border-b border-line-soft px-1 pb-2 md:mx-0 md:block md:w-[150px] md:shrink-0 md:border-b-0 md:border-r md:px-0 md:pb-0 md:pr-2.5">
+        <p className="mx-2 mb-2.5 hidden text-[11px] font-bold uppercase tracking-widest text-ink-muted md:block">{t('rail.title')}</p>
         {grades.map((g) => (
           <button
             key={g.id}
             type="button"
             aria-current={g.id === grade?.id ? 'page' : undefined}
             onClick={() => setSelectedId(g.id)}
-            className={`flex w-full items-center justify-between rounded-lg px-2.5 py-2 text-left text-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand focus-visible:ring-offset-2 ${
+            className={`flex min-h-11 shrink-0 items-center justify-between gap-2 whitespace-nowrap rounded-lg px-2.5 py-2 text-left text-sm md:min-h-0 md:w-full md:gap-0 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand focus-visible:ring-offset-2 ${
               g.id === grade?.id ? 'bg-brand/10 font-bold text-brand' : 'text-ink-soft hover:bg-surface'
             }`}
           >
@@ -103,7 +103,7 @@ export function GradesPage() {
               )}
             </div>
 
-            <section className="mb-5 rounded-[14px] border border-line-soft bg-white p-5">
+            <section className="mb-5 rounded-[14px] border border-line-soft bg-white p-4 md:p-5">
               <div className="mb-3.5 flex items-center justify-between">
                 <h3 className="m-0 text-[17px] font-bold">{t('classes.title')}</h3>
                 {!readOnly && defaultTemplate && (
@@ -141,7 +141,7 @@ export function GradesPage() {
               )}
             </section>
 
-            <section className="rounded-[14px] border border-line-soft bg-white p-5">
+            <section className="rounded-[14px] border border-line-soft bg-white p-4 md:p-5">
               <PlanEditor
                 plan={grade.plan}
                 capacity={planCapacity(capacityTemplates)}

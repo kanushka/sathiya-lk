@@ -3,6 +3,8 @@
     "joinRequests_one": "{{count}} join request",
     "joinRequests_other": "{{count}} join requests",
     "menu": "Menu",
+    "openMenu": "Open menu",
+    "closeMenu": "Close menu",
     "dashboard": "Dashboard",
     "groups": {
       "timetable": "Timetable",

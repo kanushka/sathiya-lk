@@ -93,7 +93,7 @@ export function SchoolsPage({ schools: injected, setStatus = defaultSetStatus }:
       ) : visible.length === 0 ? (
         <EmptyState icon="search" title={t('schools.empty')} body={t('schools.emptyBody')} />
       ) : (
-        <Table className="min-w-[820px]">
+        <Table className="md:min-w-[820px]">
           <THead>
             <tr>
               <Th>{t('schools.columns.school')}</Th>

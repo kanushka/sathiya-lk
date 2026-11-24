@@ -37,6 +37,8 @@ import { FullMateChip } from './FullMateChip';
 import { GroupTeachersStep } from './GroupTeachersStep';
 import { placeThenPin } from './placeThenPin';
 import { teacherSubjects, type GroupItem } from './pickerData';
+import { PHONE_QUERY, useMediaQuery } from '../../ui/PhoneNotice';
+import { focusStep } from './focusStep';
 
 export interface TeacherAssignPickerProps {
   teacherId: string;
@@ -149,9 +151,12 @@ function TeacherAssignPickerBody({ teacherId, slot, entries, onClose, onSave, on
     });
   }, [subjectId, ctx, entries, teacherId, slot.day, slot.row, lang, t]);
 
+  const isPhone = useMediaQuery(PHONE_QUERY);
+  const isPhoneRef = useRef(isPhone);
+  isPhoneRef.current = isPhone;
   useEffect(() => {
     if (groupFor) return;
-    (subjectId ? classInput : subjectInput).current?.focus();
+    focusStep((subjectId ? classInput : subjectInput).current, isPhoneRef.current);
   }, [subjectId, groupFor]);
 
   useEffect(() => {

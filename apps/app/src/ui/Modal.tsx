@@ -4,7 +4,10 @@
 import { useEffect, useId, useRef, type MouseEvent, type ReactNode } from 'react';
 import { createPortal } from 'react-dom';
 import { useTranslation } from 'react-i18next';
+import { cx } from './cx';
 import { IconButton } from './IconButton';
+import { PHONE_QUERY, useMediaQuery } from './PhoneNotice';
+import { useDialogTrap } from './useDialogTrap';
 
 export interface ModalProps {
   open: boolean;
@@ -15,26 +18,9 @@ export interface ModalProps {
   width?: number;
   zoom?: number;
   busy?: boolean;
+  fullScreen?: boolean;
+  closeLabel?: string;
   children: ReactNode;
-}
-
-const focusable =
-  'a[href], button:not([disabled]), input:not([disabled]):not([type="hidden"]), select:not([disabled]), textarea:not([disabled]), [tabindex]:not([tabindex="-1"])';
-
-const stack: symbol[] = [];
-
-function inertOutside(keep: HTMLElement): () => void {
-  const changed: Element[] = [];
-  for (const el of Array.from(document.body.children)) {
-    if (el === keep || el.hasAttribute('inert') || el.matches('[aria-live], script')) continue;
-    el.setAttribute('inert', '');
-    changed.push(el);
-  }
-  return () => changed.forEach((el) => el.removeAttribute('inert'));
-}
-
-function focusables(root: HTMLElement): HTMLElement[] {
-  return Array.from(root.querySelectorAll<HTMLElement>(focusable)).filter((el) => !el.closest('[data-menu-panel]'));
 }
 
 export function Modal(props: ModalProps) {
@@ -42,7 +28,7 @@ export function Modal(props: ModalProps) {
   return createPortal(<ModalPanel {...props} />, document.body);
 }
 
-function ModalPanel({ title, subtitle, onClose, footer, width = 560, zoom, busy = false, children }: ModalProps) {
+function ModalPanel({ title, subtitle, onClose, footer, width = 560, zoom, busy = false, fullScreen = false, closeLabel, children }: ModalProps) {
   const { t } = useTranslation('shell');
   const titleId = useId();
   const panelRef = useRef<HTMLElement>(null);
@@ -52,52 +38,14 @@ function ModalPanel({ title, subtitle, onClose, footer, width = 560, zoom, busy 
   const onCloseRef = useRef(onClose);
   onCloseRef.current = busy ? () => undefined : onClose;
 
-  useEffect(() => {
-    const id = Symbol('modal');
-    stack.push(id);
-    const previous = document.activeElement as HTMLElement | null;
-    const panel = panelRef.current;
-    const restoreInert = backdropRef.current ? inertOutside(backdropRef.current) : undefined;
-    const first = (bodyRef.current && focusables(bodyRef.current)[0]) ?? (panel && focusables(panel)[0]) ?? panel;
-    first?.focus();
-    const overflow = document.body.style.overflow;
-    document.body.style.overflow = 'hidden';
-
-    function onKeyDown(e: KeyboardEvent) {
-      if (stack[stack.length - 1] !== id || !panel) return;
-      if (e.key === 'Escape') {
-        e.preventDefault();
-        onCloseRef.current();
-        return;
-      }
-      if (e.key !== 'Tab') return;
-      const items = focusables(panel);
-      const head = items[0];
-      const tail = items[items.length - 1];
-      if (!head || !tail) {
-        e.preventDefault();
-        panel.focus();
-        return;
-      }
-      const active = document.activeElement;
-      if (e.shiftKey && (active === head || !panel.contains(active))) {
-        e.preventDefault();
-        tail.focus();
-      } else if (!e.shiftKey && (active === tail || !panel.contains(active))) {
-        e.preventDefault();
-        head.focus();
-      }
-    }
-
-    document.addEventListener('keydown', onKeyDown);
-    return () => {
-      document.removeEventListener('keydown', onKeyDown);
-      restoreInert?.();
-      stack.splice(stack.indexOf(id), 1);
-      document.body.style.overflow = overflow;
-      previous?.focus?.();
-    };
-  }, []);
+  const isPhone = useMediaQuery(PHONE_QUERY);
+  useDialogTrap({
+    panelRef,
+    containerRef: backdropRef,
+    initialFocusRef: bodyRef,
+    focusPanel: isPhone && !fullScreen,
+    onClose: () => onCloseRef.current(),
+  });
 
   // A loading button is disabled, which drops focus to <body>; keep it in the dialog.
   useEffect(() => {
@@ -118,7 +66,10 @@ function ModalPanel({ title, subtitle, onClose, footer, width = 560, zoom, busy 
       ref={backdropRef}
       data-testid="modal-backdrop"
       style={zoom && zoom !== 1 ? { zoom } : undefined}
-      className="fixed inset-0 z-50 flex items-center justify-center overflow-y-auto bg-navy/45 p-4 sm:p-8"
+      className={cx(
+        'fixed inset-0 z-50 flex',
+        fullScreen ? 'bg-white' : 'items-end justify-center overflow-y-auto bg-navy/45 md:items-center md:p-8',
+      )}
       onMouseDown={onBackdropDown}
       onClick={onBackdropClick}
     >
@@ -129,29 +80,35 @@ function ModalPanel({ title, subtitle, onClose, footer, width = 560, zoom, busy 
         aria-busy={busy || undefined}
         aria-labelledby={titleId}
         tabIndex={-1}
-        style={{ maxWidth: width }}
-        className="my-auto flex max-h-[calc(100vh-2rem)] w-full flex-col overflow-hidden rounded-[18px] bg-white shadow-[0_30px_80px_-30px_rgba(20,33,61,.6)] outline-none"
+        style={fullScreen ? undefined : { maxWidth: width }}
+        className={cx(
+          'flex w-full flex-col overflow-hidden bg-white outline-none',
+          fullScreen
+            ? 'h-full pb-[env(safe-area-inset-bottom)]'
+            : 'max-h-[90dvh] rounded-t-[18px] pb-[env(safe-area-inset-bottom)] shadow-[0_30px_80px_-30px_rgba(20,33,61,.6)] md:my-auto md:max-h-[calc(100vh-2rem)] md:rounded-[18px] md:pb-0',
+        )}
       >
-        <header className="flex items-center justify-between gap-4 border-b border-line-soft px-7 py-5">
+        <header className={cx('flex items-center justify-between gap-4 border-b border-line-soft', fullScreen ? 'px-4 py-3' : 'px-5 py-4 md:px-7 md:py-5')}>
           <div className="min-w-0">
-            <h2 id={titleId} className="m-0 text-xl font-bold text-ink">
+            <h2 id={titleId} className={cx('m-0 font-bold text-ink', fullScreen ? 'truncate text-base' : 'text-xl')}>
               {title}
             </h2>
             {subtitle && <p className="mt-0.5 text-[13px] text-ink-muted">{subtitle}</p>}
           </div>
           <IconButton
             icon="close"
-            label={t('modal.close')}
+            label={closeLabel ?? t('modal.close')}
             variant="subtle"
             disabled={busy}
             onClick={onClose}
+            className={fullScreen ? 'h-11 w-11 shrink-0' : undefined}
           />
         </header>
-        <div ref={bodyRef} className="min-h-0 flex-1 overflow-y-auto px-7 py-6">
+        <div ref={bodyRef} className={cx('min-h-0 flex-1 overflow-y-auto', !fullScreen && 'px-5 py-5 md:px-7 md:py-6')}>
           {children}
         </div>
         {footer && (
-          <footer className="flex items-center justify-end gap-3 border-t border-line-soft bg-surface px-7 py-4">
+          <footer className="flex flex-wrap items-center justify-end gap-3 border-t border-line-soft bg-surface px-5 py-3 md:px-7 md:py-4">
             {footer}
           </footer>
         )}

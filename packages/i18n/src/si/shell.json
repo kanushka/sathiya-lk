@@ -3,6 +3,8 @@
     "joinRequests_one": "එක්වීමේ ඉල්ලීම් {{count}}",
     "joinRequests_other": "එක්වීමේ ඉල්ලීම් {{count}}",
     "menu": "මෙනුව",
+    "openMenu": "මෙනුව විවෘත කරන්න",
+    "closeMenu": "මෙනුව වසන්න",
     "dashboard": "පාලක පුවරුව",
     "groups": {
       "timetable": "කාලසටහන",

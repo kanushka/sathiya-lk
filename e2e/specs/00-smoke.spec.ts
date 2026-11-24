@@ -27,7 +27,7 @@ test('seeded admin, teacher and super can sign in', async ({ page, browser }) =>
   await page.goto('/login');
   await shot(page, 'login');
   await loginAdmin(page, ADMIN.email, ADMIN.password);
-  await expect(page.getByText('Siripura Central College').first()).toBeVisible();
+  await expect(page.getByRole('navigation', { name: 'Menu' }).getByText('Siripura Central College')).toBeVisible();
   const t = await (await browser.newContext()).newPage();
   const perera = teacherLogin(T.perera);
   await loginTeacher(t, perera.email, perera.password);

@@ -42,7 +42,7 @@ export function UsagePage({ schools: injected }: { schools?: CollectionState<Sch
       ) : state.error ? (
         <EmptyState icon="search" title={t('schools.loadError')} />
       ) : (
-        <Table className="min-w-[720px]">
+        <Table className="md:min-w-[720px]">
           <THead>
             <tr>
               <Th>{t('usage.columns.school')}</Th>

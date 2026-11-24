@@ -2,11 +2,13 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
 // Copyright (C) 2026 Kanushka Gayan
 import { content, type Lang } from '../lib/links';
+import FeatureScene from './FeatureScene.astro';
 
 interface Props {
   lang: Lang;
 }
-const t = content(Astro.props.lang);
+const { lang } = Astro.props;
+const t = content(lang);
 ---
 <section id="features" class="band">
   <div class="wrap section">
@@ -15,7 +17,7 @@ const t = content(Astro.props.lang);
     <ul class="feature-grid">
       {t.features.items.map((f, i) => (
         <li class="feature">
-          <span class="feature-n" aria-hidden="true">{i + 1}</span>
+          <FeatureScene i={i} lang={lang} />
           <h3>{f.title}</h3>
           <p>{f.body}</p>
         </li>
@@ -23,3 +25,39 @@ const t = content(Astro.props.lang);
     </ul>
   </div>
 </section>
+
+<script>
+  const grid = document.querySelector<HTMLElement>('.feature-grid');
+  if (grid && !matchMedia('(prefers-reduced-motion: reduce)').matches) {
+    grid.classList.add('fs-motion');
+    const cards = [...grid.querySelectorAll<HTMLElement>('.feature')];
+    const played = new WeakMap<HTMLElement, number>();
+    const play = (card: HTMLElement) => {
+      const now = performance.now();
+      if (now - (played.get(card) ?? -Infinity) < 3200) return;
+      played.set(card, now);
+      card.classList.remove('fs-run');
+      void card.offsetWidth;
+      card.classList.add('fs-run');
+    };
+    const io = new IntersectionObserver(
+      (entries) => {
+        entries
+          .filter((e) => e.isIntersecting)
+          .forEach((e, k) => {
+            const card = e.target as HTMLElement;
+            io.unobserve(card);
+            setTimeout(() => {
+              card.classList.add('fs-in');
+              setTimeout(() => play(card), 250);
+            }, k * 110);
+          });
+      },
+      { threshold: 0.35 },
+    );
+    for (const card of cards) {
+      io.observe(card);
+      card.addEventListener('mouseenter', () => card.classList.contains('fs-in') && play(card));
+    }
+  }
+</script>

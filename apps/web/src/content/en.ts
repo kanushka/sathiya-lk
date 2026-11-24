@@ -59,6 +59,7 @@ export const en = {
     label: 'Example timetable for Grade 6B',
     title: 'Grade 6B · 2027',
     summary: 'Maths 6/6 · Science 4/5',
+    clash: 'Clash: Mr. Perera is with 6A. Offered a free Maths teacher.',
     period: 'P',
     days: ['Mon', 'Tue', 'Wed', 'Thu', 'Fri'],
     subjects: {
@@ -77,6 +78,16 @@ export const en = {
   features: {
     title: 'Made for how Sri Lankan schools actually work',
     intro: 'Primary class teachers, religion and aesthetic groups, combined classes: all built in, no spreadsheet workarounds.',
+    scene: {
+      cls: 'Class 6B',
+      teacher: 'Ms. Silva',
+      busy: 'Mr. Perera',
+      period: 'P3',
+      maths: 'Maths',
+      combo: '6A + 6B · P4',
+      aesthetic: 'Aesthetic',
+      options: ['Art', 'Music', 'Dance'],
+    },
     items: [
       { title: 'Class + teacher views', body: 'Fill the week from a class grid or a teacher grid. Every change shows in both at once.' },
       { title: 'Clash prevention', body: 'When you fill a period, only teachers who teach that subject and grade and are free at that time are offered. Double-bookings are stopped before they happen.' },

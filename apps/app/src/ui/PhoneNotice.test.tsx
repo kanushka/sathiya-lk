@@ -85,8 +85,14 @@ describe('PhoneNotice', () => {
     window.matchMedia = original;
   });
 
-  it('shows a modal on /s/s1/admin at 375px', () => {
+  it('is hidden for school admins on /s/s1/admin at 375px', () => {
     renderAt('/s/s1/admin');
+    expect(dialog()).toBeNull();
+    expect(banner()).toBeNull();
+  });
+
+  it('shows a modal on /super at 375px', () => {
+    renderAt('/super');
     expect(dialog()).toBeInTheDocument();
     expect(screen.getByRole('button', { name: 'Continue anyway' })).toBeInTheDocument();
   });
@@ -98,7 +104,7 @@ describe('PhoneNotice', () => {
 
   it.each([768, 1024, 1440])('is hidden at %ipx', (w) => {
     width = w;
-    renderAt('/s/s1/admin');
+    renderAt('/super');
     expect(dialog()).toBeNull();
     expect(banner()).toBeNull();
   });
@@ -110,7 +116,7 @@ describe('PhoneNotice', () => {
   });
 
   it('remembers dismissal and shows a banner instead', async () => {
-    renderAt('/s/s1/admin');
+    renderAt('/super');
     await userEvent.click(screen.getByRole('button', { name: 'Continue anyway' }));
     expect(dialog()).toBeNull();
     expect(banner()).toBeInTheDocument();
@@ -119,13 +125,13 @@ describe('PhoneNotice', () => {
 
   it('shows only the banner once dismissed', () => {
     localStorage.setItem(PHONE_NOTICE_KEY, '1');
-    renderAt('/s/s1/admin');
+    renderAt('/super');
     expect(dialog()).toBeNull();
     expect(banner()).toBeInTheDocument();
   });
 
   it('closes on Escape', async () => {
-    renderAt('/s/s1/admin');
+    renderAt('/super');
     await userEvent.keyboard('{Escape}');
     expect(dialog()).toBeNull();
     expect(localStorage.getItem(PHONE_NOTICE_KEY)).toBe('1');
@@ -133,7 +139,7 @@ describe('PhoneNotice', () => {
 
   it('reacts to resizes', () => {
     width = 1280;
-    renderAt('/s/s1/admin');
+    renderAt('/super');
     expect(dialog()).toBeNull();
     resize(375);
     expect(dialog()).toBeInTheDocument();
@@ -148,7 +154,7 @@ describe('PhoneNotice', () => {
     const set = vi.spyOn(localStorage, 'setItem').mockImplementation(() => {
       throw new Error('blocked');
     });
-    renderAt('/s/s1/admin');
+    renderAt('/super');
     await userEvent.click(screen.getByRole('button', { name: 'Continue anyway' }));
     expect(banner()).toBeInTheDocument();
     get.mockRestore();

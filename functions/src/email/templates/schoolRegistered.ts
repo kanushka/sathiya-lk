@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
 // Copyright (C) 2026 Kanushka Gayan
 import { pickName } from '@sathiya/core';
-import { render, schoolHeader, type Rendered, type SchoolBrand } from './layout';
+import { brandSubject, render, schoolHeader, type Rendered, type SchoolBrand } from './layout';
 import { siteFooter } from './footer';
 
 export interface SchoolRegisteredInput {
@@ -12,23 +12,24 @@ export interface SchoolRegisteredInput {
 }
 
 export function schoolRegistered({ adminName, school, loginUrl, webUrl }: SchoolRegisteredInput): Rendered {
+  const name = pickName(school, 'en');
   const si = pickName(school, 'si');
   return render({
-    subject: `Welcome to Sathiya: ${pickName(school, 'en')} is registered`,
+    subject: brandSubject(`${name} is registered`),
     header: schoolHeader(school),
     en: {
-      greeting: `Hello ${adminName},`,
-      paras: [[{ b: pickName(school, 'en') }, ' is now registered on Sathiya. Here is how to get started:']],
+      title: `Welcome, ${adminName}`,
+      paras: [[{ b: name }, ' is registered on Sathiya. Three steps to your first timetable:']],
       steps: [
         'Add your subjects, period times and classes.',
         'Add your teachers. Each one gets a login slip.',
         'Build the timetable, then publish it.',
       ],
       cta: { label: 'Open Sathiya', url: loginUrl },
-      note: 'Invite other admins from the school settings when you are ready.',
+      note: "Invite other admins from school settings when you're ready.",
     },
     si: {
-      greeting: `ආයුබෝවන් ${adminName},`,
+      title: `සාදරයෙන් පිළිගනිමු, ${adminName}`,
       paras: [`${si} Sathiya හි ලියාපදිංචි කර ඇත. ආරම්භ කිරීමට:`],
       steps: [
         'විෂයන්, කාලච්ඡේද වේලාවන් සහ පන්ති එක් කරන්න.',

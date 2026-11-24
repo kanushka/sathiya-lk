@@ -25,6 +25,22 @@ function setup(over: Partial<PinBarProps> = {}) {
 const bar = () => screen.getByRole('region', { name: 'Pin mode' });
 
 describe('PinBar', () => {
+  it('sits fixed at the bottom on phones and sticky at the top from md up', () => {
+    setup();
+    expect(bar()).toHaveClass('fixed', 'inset-x-0', 'bottom-0', 'md:sticky', 'md:top-0', 'md:bottom-auto', 'md:rounded-[14px]');
+  });
+
+  it('hides the detail line and the meter on phones', () => {
+    setup({ detail: 'Buddhism: Mr. A' });
+    expect(screen.getByText('Buddhism: Mr. A')).toHaveClass('hidden', 'md:block');
+    expect(screen.getByRole('meter', { hidden: true })).toHaveClass('hidden', 'md:block');
+  });
+
+  it('stretches its buttons across the bar on phones', () => {
+    setup();
+    expect(screen.getByRole('button', { name: /Done/ })).toHaveClass('flex-1', 'md:flex-none');
+  });
+
   it('names the mode, subject and teacher and shows progress to go', () => {
     setup();
     expect(bar()).toHaveTextContent('Pin mode');

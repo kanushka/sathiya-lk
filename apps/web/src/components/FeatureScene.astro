@@ -1,0 +1,71 @@
+---
+// SPDX-License-Identifier: AGPL-3.0-or-later
+// Copyright (C) 2026 Kanushka Gayan
+import { content, type Lang } from '../lib/links';
+
+interface Props {
+  i: number;
+  lang: Lang;
+}
+const { i, lang } = Astro.props;
+const s = content(lang).features.scene;
+const six = [0, 1, 2, 3, 4, 5];
+const words = [
+  { en: 'Maths', si: 'ගණිතය' },
+  { en: 'Monday', si: 'සඳුදා' },
+];
+const other: Lang = lang === 'si' ? 'en' : 'si';
+---
+<div class="fs" aria-hidden="true" data-fs={i}>
+  {i === 0 && (
+    <div class="fs-row">
+      <div><span class="fs-cap">{s.cls}</span><div class="fs-mg">{six.map((c) => <i class:list={{ 'fs-hit': c === 4 }} />)}</div></div>
+      <span class="fs-arrow">⇄</span>
+      <div><span class="fs-cap">{s.teacher}</span><div class="fs-mg">{six.map((c) => <i class:list={{ 'fs-hit': c === 2 }} />)}</div></div>
+    </div>
+  )}
+  {i === 1 && (
+    <div class="fs-row">
+      <span class="fs-cap">{s.period}</span>
+      <div class="fs-slot">
+        <span class="fs-chip fs-busy">{s.busy}</span>
+        <span class="fs-chip fs-free">{s.teacher}</span>
+      </div>
+      <span class="fs-ok">✓</span>
+    </div>
+  )}
+  {i === 2 && (
+    <div class="fs-col">
+      <div class="fs-count">
+        {s.maths} <span><span class="fs-num"><span>{[...six, 6].map((n) => <span>{n}</span>)}</span></span>/6</span>
+        <span class="fs-ok">✓</span>
+      </div>
+      <div class="fs-segs">{six.map((c) => <span style={`--d:${0.2 + c * 0.3}s`} />)}</div>
+    </div>
+  )}
+  {i === 3 && (
+    <div class="fs-col fs-start">
+      <span class="fs-cap">{s.combo}</span>
+      <div class="fs-split">
+        <span class="fs-chip fs-aes fs-base">{s.aesthetic}</span>
+        {s.options.map((o, k) => <span class="fs-chip fs-aes fs-opt" style={`--d:${0.6 + k * 0.15}s`}>{o}</span>)}
+      </div>
+    </div>
+  )}
+  {i === 4 && (
+    <div class="fs-row">
+      <div class="fs-phone"><span class="fs-bars" /><span class="fs-now" /></div>
+      <div class="fs-slip"><i /><i style="width:70%" /><b /></div>
+    </div>
+  )}
+  {i === 5 && (
+    <div class="fs-col fs-lang">
+      {words.map((w, k) => (
+        <div class:list={['fs-swap', { 'fs-teal': k === 1 }]} style={`--d:${k * 0.25}s`}>
+          <span class="fs-a" lang={lang}>{w[lang]}</span>
+          <span class="fs-b" lang={other}>{w[other]}</span>
+        </div>
+      ))}
+    </div>
+  )}
+</div>
