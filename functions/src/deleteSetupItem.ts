@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
 // Copyright (C) 2026 Kanushka Gayan
-import { paths, usageCount, type DeleteSetupItemReq, type DeleteSetupItemRes, type PlanItem, type SchoolContext } from '@sathiya/core';
+import { DAY_INDEXES, paths, rowsFor, usageCount, type DeleteSetupItemReq, type DeleteSetupItemRes, type PlanItem, type SchoolContext } from '@sathiya/core';
 import { FieldValue } from 'firebase-admin/firestore';
 import { onCall } from 'firebase-functions/v2/https';
 import { auth, db } from './lib/admin';
@@ -15,11 +15,14 @@ const KINDS: Record<Kind, (sid: string) => string> = { teacher: paths.teachers, 
 const planUses = (plan: PlanItem[] | undefined, subjectId: string): number =>
   (plan ?? []).filter((p) => (p.kind === 'subject' ? p.subjectId === subjectId : p.optionSubjectIds.includes(subjectId))).length;
 
+const activityUses = (ctx: SchoolContext, subjectId: string): number =>
+  ctx.templates.reduce<number>((n, t) => n + DAY_INDEXES.reduce<number>((m, d) => m + rowsFor(t, d).filter((r) => r.type === 'activity' && r.subjectId === subjectId).length, 0), 0);
+
 // References outside entries that core usageCount does not see.
 function setupRefs(kind: Kind, id: string, ctx: SchoolContext): number {
   switch (kind) {
     case 'subject':
-      return ctx.grades.reduce((n, g) => n + planUses(g.plan, id), 0) + ctx.classes.reduce((n, c) => n + planUses(c.planOverride, id), 0);
+      return ctx.grades.reduce((n, g) => n + planUses(g.plan, id), 0) + ctx.classes.reduce((n, c) => n + planUses(c.planOverride, id), 0) + activityUses(ctx, id);
     case 'teacher':
       return ctx.classes.filter((c) => c.classTeacherId === id).length;
     case 'template':
