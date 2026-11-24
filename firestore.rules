@@ -43,7 +43,7 @@ service cloud.firestore {
 
       match /teachers/{tid} {
         allow read: if adminRead(sid) || (active(sid) && ownTeacher(sid, tid));
-        allow update: if adminWrite(sid) && !changed().hasAny(['uid', 'staffId', 'lastLoginAt'])
+        allow update: if adminWrite(sid) && !changed().hasAny(['uid', 'staffId', 'lastLoginAt', 'inviteExpiresAt'])
           && (!('title' in request.resource.data) || !('title' in changed())
             || request.resource.data.title in ['Mr', 'Mrs', 'Miss', 'Ms', 'Dr', 'Rev', 'Ven.']);
       }
@@ -76,9 +76,12 @@ service cloud.firestore {
         allow read: if adminRead(sid);
       }
       match /joinRequests/{uid} {
+        allow read: if adminRead(sid) || (signedIn() && request.auth.uid == uid);
+      }
+      // Functions write the join link; admins read it to copy the current link.
+      match /private/joinLink {
         allow read: if adminRead(sid);
       }
-      // private/joinLink: functions only, no client access.
 
       match /years/{yid} {
         allow read: if adminRead(sid) || teacherRead(sid);

@@ -21,12 +21,12 @@ export function JoinRequests({ schoolId, requests, teachers, readOnly }: JoinReq
   const lang = i18n.language as Lang;
   const toast = useToast();
   const headingId = useId();
-  const [busy, setBusy] = useState<string | null>(null);
+  const [busy, setBusy] = useState<{ uid: string; approve: boolean } | null>(null);
 
   if (requests.length === 0) return null;
 
   async function decide(r: JoinRequestDoc, approve: boolean) {
-    setBusy(r.uid);
+    setBusy({ uid: r.uid, approve });
     try {
       await api.decideJoinRequest(schoolId, r.uid, approve);
       toast.show(approve ? t('requests.approved', { name: r.name || r.email }) : t('requests.rejected'), 'success');
@@ -59,10 +59,10 @@ export function JoinRequests({ schoolId, requests, teachers, readOnly }: JoinReq
               </div>
               {!readOnly && (
                 <div className="flex gap-2">
-                  <Button size="sm" variant="primary" loading={busy === r.uid} disabled={busy !== null && busy !== r.uid} onClick={() => void decide(r, true)}>
+                  <Button size="sm" variant="primary" loading={busy?.uid === r.uid && busy.approve} disabled={busy !== null} onClick={() => void decide(r, true)}>
                     {t('requests.approve')}
                   </Button>
-                  <Button size="sm" disabled={busy !== null} onClick={() => void decide(r, false)}>
+                  <Button size="sm" loading={busy?.uid === r.uid && !busy.approve} disabled={busy !== null} onClick={() => void decide(r, false)}>
                     {t('requests.reject')}
                   </Button>
                 </div>

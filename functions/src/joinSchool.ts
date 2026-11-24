@@ -75,6 +75,7 @@ export const joinSchool = onCall(callOpts, async (req): Promise<JoinSchoolRes> =
     staffId: teacher!.staffId,
     teacherId: teacher!.id,
     createdAt: Date.now(),
+    status: 'pending',
   });
   return { status: 'pending', schoolId, teacherId: teacher!.id };
 });

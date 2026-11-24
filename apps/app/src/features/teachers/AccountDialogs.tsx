@@ -21,7 +21,7 @@ export function PersonalLinkModal({ name, url, expiresAt, onClose }: { name: str
   );
 }
 
-export function UnlinkModal({ name, onConfirm, onClose }: { name: string; onConfirm: () => Promise<string | null>; onClose: () => void }) {
+export function UnlinkModal({ name, self, onConfirm, onClose }: { name: string; self: boolean; onConfirm: () => Promise<string | null>; onClose: () => void }) {
   const { t } = useTranslation('teachers');
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -54,6 +54,7 @@ export function UnlinkModal({ name, onConfirm, onClose }: { name: string; onConf
       }
     >
       <p className="m-0 text-sm text-ink-soft">{t('unlink.body')}</p>
+      {self && <p className="mb-0 mt-3 text-sm font-semibold text-danger">{t('unlink.selfBody')}</p>}
       {error && <FormError className="mt-3">{error}</FormError>}
     </Modal>
   );

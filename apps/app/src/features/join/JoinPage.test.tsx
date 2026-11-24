@@ -18,11 +18,14 @@ vi.mock('../auth/authEmail');
 
 const apiError = (code: ApiErrorCode) => new ApiError(code, code, { code });
 
-const SCHOOL = { route: '/join/s1/tok1', at: '/join/:sid/:token' };
-const PERSONAL = { route: '/join/t/tok2', at: '/join/t/:token' };
+const T1 = 'tok1AAAAAAAAAAAAAAAAAA';
+const T2 = 'tok2BBBBBBBBBBBBBBBBBB';
+const SCHOOL = { route: `/join/s1/${T1}`, at: '/join/:sid/:token' };
+const PERSONAL = { route: `/join/t/${T2}`, at: '/join/t/:token' };
 
 beforeEach(() => {
   vi.resetAllMocks();
+  vi.mocked(api.ownJoinRequest).mockResolvedValue(null);
   vi.mocked(authApi.getDirectorySchool).mockResolvedValue({ id: 's1', nameEn: 'Siripura Central College', district: 'Kandy', status: 'active' });
 });
 
@@ -42,7 +45,7 @@ describe('JoinPage', () => {
     expect(api.joinSchool).not.toHaveBeenCalled();
     await user.click(screen.getByRole('button', { name: "I've confirmed it" }));
     expect(await screen.findByText('Waiting for your school admin')).toBeInTheDocument();
-    expect(api.joinSchool).toHaveBeenCalledWith({ sid: 's1', token: 'tok1' });
+    expect(api.joinSchool).toHaveBeenCalledWith({ sid: 's1', token: T1 });
   });
 
   it('links at once, refreshes claims, then opens the timetable', async () => {
@@ -62,7 +65,7 @@ describe('JoinPage', () => {
     expect(await screen.findByTestId('where')).toHaveTextContent('/s/s9/me');
     expect(order).toEqual(['refresh', 'join', 'refresh']);
     expect(api.joinSchool).toHaveBeenCalledTimes(1);
-    expect(api.joinSchool).toHaveBeenCalledWith({ token: 'tok2' });
+    expect(api.joinSchool).toHaveBeenCalledWith({ token: T2 });
   });
 
   it('shows the school name and the waiting screen for a pending request', async () => {
@@ -82,7 +85,7 @@ describe('JoinPage', () => {
     await user.type(input, 'scc024');
     await user.click(screen.getByRole('button', { name: 'Send request' }));
     expect(await screen.findByText('Waiting for your school admin')).toBeInTheDocument();
-    expect(api.joinSchool).toHaveBeenLastCalledWith({ sid: 's1', token: 'tok1' }, 'SCC024');
+    expect(api.joinSchool).toHaveBeenLastCalledWith({ sid: 's1', token: T1 }, 'SCC024');
   });
 
   it('shows an unknown staff ID next to the field', async () => {
@@ -152,5 +155,54 @@ describe('JoinPage', () => {
     });
     expect(await screen.findByRole('link', { name: 'Open my timetable' })).toBeInTheDocument();
     expect(api.joinSchool).not.toHaveBeenCalled();
+  });
+
+  it('shows a pending request from the own-request read without spending a join attempt', async () => {
+    vi.mocked(api.ownJoinRequest).mockResolvedValue({ uid: 'u1', email: 'a@b.lk', staffId: 'SCC024', teacherId: 't1', createdAt: 1, status: 'pending' });
+    renderAuth(<JoinPage />, { ...SCHOOL, signedIn: true, emailVerified: true });
+    expect(await screen.findByText('Waiting for your school admin')).toBeInTheDocument();
+    expect(api.ownJoinRequest).toHaveBeenCalledWith('s1', 'u1');
+    expect(api.joinSchool).not.toHaveBeenCalled();
+  });
+
+  it('shows Not approved for a rejected request and lets the user try again with a staff ID', async () => {
+    vi.mocked(api.ownJoinRequest).mockResolvedValue({ uid: 'u1', email: 'a@b.lk', staffId: 'SCC024', teacherId: 't1', createdAt: 1, status: 'rejected', decidedAt: 2 });
+    vi.mocked(api.joinSchool).mockResolvedValue({ status: 'pending', schoolId: 's1', teacherId: 't2' });
+    const user = userEvent.setup();
+    renderAuth(<JoinPage />, { ...SCHOOL, signedIn: true, emailVerified: true });
+    expect(await screen.findByRole('heading', { name: 'Not approved' })).toBeInTheDocument();
+    expect(api.joinSchool).not.toHaveBeenCalled();
+    await user.click(screen.getByRole('button', { name: 'Try again with a staff ID' }));
+    await user.type(screen.getByLabelText('Staff ID'), 'SCC031');
+    await user.click(screen.getByRole('button', { name: 'Send request' }));
+    expect(await screen.findByText('Waiting for your school admin')).toBeInTheDocument();
+    expect(api.joinSchool).toHaveBeenCalledWith({ sid: 's1', token: T1 }, 'SCC031');
+  });
+
+  it('joins as usual when the own-request read fails', async () => {
+    vi.mocked(api.ownJoinRequest).mockRejectedValue(new Error('offline'));
+    vi.mocked(api.joinSchool).mockResolvedValue({ status: 'pending', schoolId: 's1' });
+    renderAuth(<JoinPage />, { ...SCHOOL, signedIn: true, emailVerified: true });
+    expect(await screen.findByText('Waiting for your school admin')).toBeInTheDocument();
+    expect(api.joinSchool).toHaveBeenCalledTimes(1);
+  });
+
+  it.each([
+    ['/join/s1/short', '/join/:sid/:token'],
+    ['/join/s1/has.dots.in.it.not.allowed', '/join/:sid/:token'],
+    ['/join/s%20x/tok1AAAAAAAAAAAAAAAAAA', '/join/:sid/:token'],
+    ['/join/t/short', '/join/t/:token'],
+  ])('treats malformed %s as an invalid link without calling the server', async (route, at) => {
+    renderAuth(<JoinPage />, { route, at, signedIn: true, emailVerified: true });
+    expect(await screen.findByRole('heading', { name: 'This link does not work' })).toBeInTheDocument();
+    expect(api.joinSchool).not.toHaveBeenCalled();
+    expect(api.ownJoinRequest).not.toHaveBeenCalled();
+  });
+
+  it('shows an invalid personal link as not working, with no retry loop', async () => {
+    vi.mocked(api.joinSchool).mockRejectedValue(apiError('invalid'));
+    renderAuth(<JoinPage />, { ...PERSONAL, signedIn: true, emailVerified: true });
+    expect(await screen.findByRole('heading', { name: 'This link does not work' })).toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: 'Try again' })).not.toBeInTheDocument();
   });
 });

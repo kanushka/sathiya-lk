@@ -21,7 +21,7 @@ export interface DefaultSubjectsDoc { subjects: DefaultSubject[]; updatedAt: num
 export interface TermsVersion { version: string; termsMd: string; privacyMd: string; publishedAt: number }
 export const TEACHER_TITLES = ['Mr', 'Mrs', 'Miss', 'Ms', 'Dr', 'Rev', 'Ven.'] as const;
 export type TeacherTitle = (typeof TEACHER_TITLES)[number];
-export interface Teacher { id: string; staffId: string; name: string; nameSi?: string; title?: TeacherTitle; isPrimary: boolean; subjectIds: string[]; grades: number[]; maxPerDay: number; phone?: string; email?: string; uid?: string; lastLoginAt?: number }
+export interface Teacher { id: string; staffId: string; name: string; nameSi?: string; title?: TeacherTitle; isPrimary: boolean; subjectIds: string[]; grades: number[]; maxPerDay: number; phone?: string; email?: string; uid?: string; lastLoginAt?: number; inviteExpiresAt?: number }
 export interface Subject extends Bilingual { id: string; short: string; color: string }
 export interface TemplateRow { type: 'period' | 'interval'; start: Hhmm; end: Hhmm }
 export interface PeriodTemplate { id: string; name: string; isDefault: boolean; mode: 'same' | 'perDay'; rows: TemplateRow[]; days?: Record<DayIndex, TemplateRow[]> }
@@ -36,5 +36,6 @@ export interface Member { uid: string; role: 'admin' | 'teacher'; teacherId?: st
 export type SchoolRole = 'a' | 't';
 export interface Membership { r: SchoolRole; t?: string }
 export interface Claims { schools?: Record<string, Membership>; super?: boolean }
-export interface JoinRequest { uid: string; email: string; name?: string; staffId: string; teacherId: string; createdAt: number }
+export interface JoinRequest { uid: string; email: string; name?: string; staffId: string; teacherId: string; createdAt: number; status: 'pending' | 'rejected'; decidedAt?: number }
+export interface JoinLink { hash: string; token: string; createdAt: number; createdBy: string }
 export interface SchoolContext { school: School; teachers: Teacher[]; subjects: Subject[]; templates: PeriodTemplate[]; grades: Grade[]; classes: SchoolClass[] }

@@ -20,6 +20,11 @@
     "title": "Waiting for your school admin",
     "body": "Your request was sent. When your school admin approves it, open this link again or sign in to see your timetable."
   },
+  "rejected": {
+    "title": "Not approved",
+    "body": "Your school admin did not approve your request. If you chose the wrong staff ID, send a new request, or ask your admin.",
+    "retry": "Try again with a staff ID"
+  },
   "errors": {
     "linkInvalidTitle": "This link does not work",
     "linkInvalid": "The link was turned off, replaced, already used or has expired. Ask your school admin for a new one.",

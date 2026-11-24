@@ -48,7 +48,9 @@ export function TeachersPage() {
   const slotUsage = (teacherId: string) => (yearId === latestYearId ? usageCount('teacher', teacherId, state, entries) : 0);
   const readOnly = useReadOnly();
   const toast = useToast();
-  const { claims, refreshClaims } = useAuth();
+  const { user, claims, refreshClaims } = useAuth();
+  const now = Date.now();
+  const liveLink = (x: Teacher) => !x.uid && !!x.inviteExpiresAt && x.inviteExpiresAt > now;
   const requests = useJoinRequests(school.id).data;
   const pendingFor = useMemo(() => new Set(requests.map((r) => r.teacherId)), [requests]);
   const canLinkSelf = !readOnly && !teacherIdOf(claims, school.id);
@@ -119,7 +121,14 @@ export function TeachersPage() {
         </>
       );
     }
-    return pendingFor.has(x.id) ? <Badge tone="warning">{t('status.pending')}</Badge> : <Badge>{t('status.notLinked')}</Badge>;
+    return (
+      <>
+        {pendingFor.has(x.id) ? <Badge tone="warning">{t('status.pending')}</Badge> : <Badge>{t('status.notLinked')}</Badge>}
+        {liveLink(x) && (
+          <span className="mt-1 block text-xs text-ink-muted">{t('status.linkUntil', { when: formatLogin(x.inviteExpiresAt!, lang) })}</span>
+        )}
+      </>
+    );
   }
 
   const add = (
@@ -151,8 +160,8 @@ export function TeachersPage() {
         }
       />
 
-      {!readOnly && <InviteLinkCard schoolId={school.id} />}
       <JoinRequests schoolId={school.id} requests={requests} teachers={teachers} readOnly={readOnly} />
+      {!readOnly && <InviteLinkCard schoolId={school.id} />}
 
       {state.loading ? (
         <LoadingState />
@@ -219,9 +228,11 @@ export function TeachersPage() {
                           <Button size="sm" variant="ghost" loading={busy === `link:${x.id}`} disabled={busy !== null} onClick={() => void personalLink(x)}>
                             {t('actions.personalLink')}
                           </Button>
-                          <Button size="sm" variant="ghost" loading={busy === `cancel:${x.id}`} disabled={busy !== null} onClick={() => void cancelLink(x)}>
-                            {t('actions.cancelLink')}
-                          </Button>
+                          {liveLink(x) && (
+                            <Button size="sm" variant="ghost" loading={busy === `cancel:${x.id}`} disabled={busy !== null} onClick={() => void cancelLink(x)}>
+                              {t('actions.cancelLink')}
+                            </Button>
+                          )}
                           {canLinkSelf && (
                             <Button size="sm" variant="ghost" loading={busy === `self:${x.id}`} disabled={busy !== null} onClick={() => void linkSelf(x)}>
                               {t('actions.thisIsMe')}
@@ -249,7 +260,7 @@ export function TeachersPage() {
         />
       )}
       {dialog?.kind === 'unlink' && (
-        <UnlinkModal name={teacherDisplayName(dialog.teacher, lang)} onConfirm={() => unlink(dialog.teacher)} onClose={() => setDialog(null)} />
+        <UnlinkModal name={teacherDisplayName(dialog.teacher, lang)} self={!!user && dialog.teacher.uid === user.uid} onConfirm={() => unlink(dialog.teacher)} onClose={() => setDialog(null)} />
       )}
       {dialog?.kind === 'delete' && (
         <DeleteSetupModal

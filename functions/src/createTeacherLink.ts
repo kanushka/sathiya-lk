@@ -26,6 +26,7 @@ export const createTeacherLink = onCall(callOpts, async (req): Promise<CreateTea
     const old = await tx.get(links.where('sid', '==', sid).where('teacherId', '==', teacherId));
     old.docs.forEach((d) => tx.delete(d.ref));
     tx.set(links.doc(hashToken(token)), { sid, teacherId, expiresAt, createdBy: uid });
+    tx.update(db.doc(`${paths.teachers(sid)}/${teacherId}`), { inviteExpiresAt: expiresAt });
   });
   return { token, expiresAt };
 });

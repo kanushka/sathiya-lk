@@ -18,9 +18,10 @@ import { BrandLockup, LanguageToggle } from '../auth/AuthChrome';
 import { isUnverifiedPasswordUser } from '../register/errors';
 import { VerifyEmailGate } from '../register/VerifyEmailGate';
 import * as api from './api';
+import { isWellFormed } from './params';
 
 type ErrorCode = Extract<ApiErrorCode, 'link-invalid' | 'already-linked' | 'too-many-schools' | 'rate-limited' | 'not-allowed'> | 'generic';
-type View = { kind: 'working' } | { kind: 'staffId' } | { kind: 'pending' } | { kind: 'error'; code: ErrorCode };
+type View = { kind: 'working' } | { kind: 'staffId' } | { kind: 'pending' } | { kind: 'rejected' } | { kind: 'error'; code: ErrorCode };
 
 const shownCodes: readonly ErrorCode[] = ['link-invalid', 'already-linked', 'too-many-schools', 'rate-limited', 'not-allowed'];
 
@@ -60,8 +61,10 @@ export function JoinPage() {
   const [verified, setVerified] = useState(false);
   const schoolName = useSchoolName(sid);
 
+  const wellFormed = isWellFormed({ sid, token });
+
   if (loading) return <LoadingState />;
-  if (!user) return <Navigate to="/login" replace state={{ from: location }} />;
+  if (!user && wellFormed) return <Navigate to="/login" replace state={{ from: location }} />;
 
   return (
     <div className="flex min-h-screen flex-col items-center bg-canvas px-4 py-10 sm:py-12">
@@ -71,17 +74,21 @@ export function JoinPage() {
       <div className="w-full max-w-[520px]">
         <h1 className="mb-1 mt-0 text-[26px] font-bold">{t('title')}</h1>
         <p className="mb-6 mt-0 min-h-5 text-sm font-semibold text-ink-soft">{schoolName}</p>
-        {isUnverifiedPasswordUser(user) && !verified ? (
+        {!wellFormed || !user ? (
+          <JoinError code="link-invalid" onRetry={() => undefined} />
+        ) : isUnverifiedPasswordUser(user) && !verified ? (
           <VerifyEmailGate email={user.email} purpose="signUp" onConfirmed={() => setVerified(true)} />
         ) : (
-          <JoinFlow sid={sid} token={token} />
+          <JoinFlow sid={sid} token={token} uid={user.uid} />
         )}
-        <p className="mb-0 mt-6 text-center text-sm text-ink-muted">
-          {t('signedInAs', { email: user.email ?? '' })}{' '}
-          <Button variant="link" onClick={() => void signOut()} className="underline">
-            {t('signOut')}
-          </Button>
-        </p>
+        {user && (
+          <p className="mb-0 mt-6 text-center text-sm text-ink-muted">
+            {t('signedInAs', { email: user.email ?? '' })}{' '}
+            <Button variant="link" onClick={() => void signOut()} className="underline">
+              {t('signOut')}
+            </Button>
+          </p>
+        )}
       </div>
       <div className="mt-8">
         <LanguageToggle />
@@ -99,7 +106,7 @@ function Card({ title, children }: { title: string; children?: ReactNode }) {
   );
 }
 
-function JoinFlow({ sid, token }: { sid?: string; token: string }) {
+function JoinFlow({ sid, token, uid }: { sid?: string; token: string; uid: string }) {
   const { t } = useTranslation('join');
   const { claims, refreshClaims } = useAuth();
   const navigate = useNavigate();
@@ -130,7 +137,7 @@ function JoinFlow({ sid, token }: { sid?: string; token: string }) {
       await finish(await api.joinSchool({ sid, token }));
     } catch (err) {
       const { code, fromServer } = readError(err);
-      if (sid && fromServer && code === 'invalid') setView({ kind: 'staffId' });
+      if (fromServer && code === 'invalid') setView(sid ? { kind: 'staffId' } : { kind: 'error', code: 'link-invalid' });
       else setView({ kind: 'error', code: errorCode(err) });
     }
   }, [finish, sid, token]);
@@ -138,8 +145,13 @@ function JoinFlow({ sid, token }: { sid?: string; token: string }) {
   useEffect(() => {
     if (!refreshed || already || started.current) return;
     started.current = true;
-    void attempt();
-  }, [refreshed, already, attempt]);
+    void (async () => {
+      const own = sid ? await api.ownJoinRequest(sid, uid).catch(() => null) : null;
+      if (own?.status === 'rejected') setView({ kind: 'rejected' });
+      else if (own) setView({ kind: 'pending' });
+      else await attempt();
+    })();
+  }, [refreshed, already, attempt, sid, uid]);
 
   if (already && sid) {
     return (
@@ -157,6 +169,15 @@ function JoinFlow({ sid, token }: { sid?: string; token: string }) {
       return (
         <Card title={t('pending.title')}>
           <p className="m-0 text-sm text-ink-muted">{t('pending.body')}</p>
+        </Card>
+      );
+    case 'rejected':
+      return (
+        <Card title={t('rejected.title')}>
+          <p className="mb-4 mt-0 text-sm text-ink-muted">{t('rejected.body')}</p>
+          <Button variant="primary" onClick={() => setView({ kind: 'staffId' })}>
+            {t('rejected.retry')}
+          </Button>
         </Card>
       );
     case 'staffId':

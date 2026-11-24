@@ -2,7 +2,7 @@
 // Copyright (C) 2026 Kanushka Gayan
 import { usageCount } from '@sathiya/core';
 import { ctx, entries } from '@sathiya/core/fixtures';
-import { fireEvent, screen, waitFor, within } from '@testing-library/react';
+import { cleanup, fireEvent, screen, waitFor, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { ApiError, call } from '../../lib/callable';
@@ -12,8 +12,9 @@ import * as api from './api';
 import { TeachersPage } from './TeachersPage';
 
 vi.mock('./api');
-const data = vi.hoisted(() => ({ requests: [] as unknown[] }));
+const data = vi.hoisted(() => ({ requests: [] as unknown[], joinLink: undefined as unknown }));
 vi.mock('./useJoinRequests', () => ({ useJoinRequests: () => ({ data: data.requests, loading: false }) }));
+vi.mock('./useJoinLink', () => ({ useJoinLink: () => ({ data: data.joinLink, loading: false }) }));
 vi.mock('../../lib/callable', async (orig) => ({ ...(await orig<typeof import('../../lib/callable')>()), call: vi.fn() }));
 
 const flags = vi.hoisted(() => ({ readOnly: false }));
@@ -23,6 +24,7 @@ beforeEach(() => {
   vi.resetAllMocks();
   flags.readOnly = false;
   data.requests = [];
+  data.joinLink = undefined;
 });
 
 const unused = { ...ctx, classes: ctx.classes.map(({ classTeacherId: _, ...c }) => c) };
@@ -346,25 +348,104 @@ describe('teacher accounts', () => {
     expect(screen.queryByRole('region', { name: /Join requests/ })).not.toBeInTheDocument();
   });
 
-  it('creates a school invite link, shows and copies it, then replaces and turns it off', async () => {
-    vi.mocked(api.setJoinLink).mockResolvedValueOnce({ token: 'tokA' }).mockResolvedValueOnce({ token: 'tokB' }).mockResolvedValueOnce({});
+  it('offers Create link when the invite link is off', async () => {
+    vi.mocked(api.setJoinLink).mockResolvedValue({ token: 'tokA' });
+    const user = userEvent.setup();
+    renderLinked();
+    const card = screen.getByRole('region', { name: 'Invite link' });
+    expect(within(card).getByText(/The invite link is off/)).toBeInTheDocument();
+    expect(within(card).queryByRole('button', { name: 'Turn off link' })).not.toBeInTheDocument();
+    await user.click(within(card).getByRole('button', { name: 'Create link' }));
+    expect(api.setJoinLink).toHaveBeenCalledWith('siripura', 'create');
+  });
+
+  it('shows the current invite link for copying, and confirms New link and Turn off', async () => {
+    data.joinLink = { id: 'joinLink', token: 'tokA', hash: 'h', createdAt: 1, createdBy: 'u' };
+    vi.mocked(api.setJoinLink).mockResolvedValue({});
     const user = userEvent.setup();
     const writeText = vi.fn().mockResolvedValue(undefined);
     Object.defineProperty(navigator, 'clipboard', { value: { writeText }, configurable: true });
     renderLinked();
     const card = screen.getByRole('region', { name: 'Invite link' });
-    await user.click(within(card).getByRole('button', { name: 'Create link' }));
-    expect(api.setJoinLink).toHaveBeenLastCalledWith('siripura', 'create');
     const url = `${window.location.origin}/join/siripura/tokA`;
-    expect(await within(card).findByText(url)).toBeInTheDocument();
+    expect(within(card).getByText(url)).toBeInTheDocument();
     await user.click(within(card).getByRole('button', { name: 'Copy invite link' }));
     expect(writeText).toHaveBeenLastCalledWith(url);
-    await user.click(within(card).getByRole('button', { name: 'New link (old one stops working)' }));
-    expect(await within(card).findByText(`${window.location.origin}/join/siripura/tokB`)).toBeInTheDocument();
+
+    await user.click(within(card).getByRole('button', { name: 'New link' }));
+    let confirm = screen.getByRole('dialog', { name: 'Make a new invite link?' });
+    expect(within(confirm).getByText(/the old link stops working/)).toBeInTheDocument();
+    expect(api.setJoinLink).not.toHaveBeenCalled();
+    await user.click(within(confirm).getByRole('button', { name: 'Make new link' }));
+    expect(api.setJoinLink).toHaveBeenLastCalledWith('siripura', 'create');
+
     await user.click(within(card).getByRole('button', { name: 'Turn off link' }));
+    confirm = screen.getByRole('dialog', { name: 'Turn off the invite link?' });
+    await user.click(within(confirm).getByRole('button', { name: 'Cancel' }));
+    expect(api.setJoinLink).toHaveBeenCalledTimes(1);
+    await user.click(within(card).getByRole('button', { name: 'Turn off link' }));
+    await user.click(within(screen.getByRole('dialog', { name: 'Turn off the invite link?' })).getByRole('button', { name: 'Turn off' }));
     expect(api.setJoinLink).toHaveBeenLastCalledWith('siripura', 'off');
-    expect(await within(card).findByText('The invite link is off. Nobody can join with an old link.')).toBeInTheDocument();
-    expect(within(card).queryByText(/\/join\//)).not.toBeInTheDocument();
+  });
+
+  it('puts join requests above the invite link card', () => {
+    data.requests = [request];
+    renderLinked();
+    const requests = screen.getByRole('region', { name: 'Join requests (1)' });
+    const card = screen.getByRole('region', { name: 'Invite link' });
+    expect(requests.compareDocumentPosition(card) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
+  });
+
+  it('spins only the clicked request button', async () => {
+    let finish: () => void = () => undefined;
+    vi.mocked(api.decideJoinRequest).mockImplementation(() => new Promise<void>((r) => (finish = r)));
+    data.requests = [request];
+    const user = userEvent.setup();
+    renderLinked();
+    await user.click(screen.getByRole('button', { name: 'Reject' }));
+    expect(screen.getByRole('button', { name: 'Reject' })).toHaveAttribute('aria-busy', 'true');
+    expect(screen.getByRole('button', { name: 'Approve' })).not.toHaveAttribute('aria-busy');
+    finish();
+  });
+
+  it('explains an approval refused because the account already has a teacher here', async () => {
+    vi.mocked(api.decideJoinRequest).mockRejectedValue(new ApiError('already-linked', 'x', { code: 'already-linked', reason: 'account' }));
+    data.requests = [request];
+    const user = userEvent.setup();
+    renderLinked();
+    await user.click(screen.getByRole('button', { name: 'Approve' }));
+    expect(await screen.findByText('That account is already linked to another teacher in this school.')).toBeInTheDocument();
+  });
+
+  it('shows Cancel link and the expiry only while a personal link is live', () => {
+    const live = Date.now() + 86_400_000;
+    const withLinks = {
+      ...linkedCtx,
+      teachers: linkedCtx.teachers.map((t) =>
+        t.id === silva.id ? { ...t, inviteExpiresAt: live } : t.id === rizan.id ? { ...t, inviteExpiresAt: Date.now() - 1 } : t,
+      ),
+    };
+    renderWithSchool(<TeachersPage />, { ctx: withLinks, entries });
+    expect(within(rowOf('SCC011')).getByRole('button', { name: 'Cancel link' })).toBeInTheDocument();
+    expect(within(rowOf('SCC011')).getByText(/Personal link until/)).toBeInTheDocument();
+    expect(within(rowOf('SCC031')).queryByRole('button', { name: 'Cancel link' })).not.toBeInTheDocument();
+    expect(within(rowOf('SCC031')).queryByText(/Personal link until/)).not.toBeInTheDocument();
+    expect(within(rowOf('SCC003')).queryByRole('button', { name: 'Cancel link' })).not.toBeInTheDocument();
+  });
+
+  it('warns an admin unlinking their own record that they will be signed out', async () => {
+    const self = { ...ctx, teachers: ctx.teachers.map((t) => (t.id === perera.id ? { ...t, uid: 'test-user' } : t)) };
+    const user = userEvent.setup();
+    renderWithSchool(<TeachersPage />, { ctx: self, entries, claims: { schools: { siripura: { r: 'a', t: perera.id } } } });
+    await user.click(within(rowOf('SCC024')).getByRole('button', { name: 'Unlink' }));
+    expect(within(screen.getByRole('dialog')).getByText(/This is your own record\. You will be signed out/)).toBeInTheDocument();
+  });
+
+  it('does not warn about signing out when unlinking someone else', async () => {
+    const user = userEvent.setup();
+    renderLinked();
+    await user.click(within(rowOf('SCC024')).getByRole('button', { name: 'Unlink' }));
+    expect(within(screen.getByRole('dialog')).queryByText(/signed out/)).not.toBeInTheDocument();
   });
 
   it('creates a personal link that shows its expiry, and can cancel it', async () => {
@@ -378,6 +459,11 @@ describe('teacher accounts', () => {
     expect(within(dialog).getByText(`${window.location.origin}/join/t/tokP`)).toBeInTheDocument();
     expect(within(dialog).getByText(/Works once, until .*Dec/)).toBeInTheDocument();
     await user.click(within(dialog).getByRole('button', { name: 'Done' }));
+    cleanup();
+    renderWithSchool(<TeachersPage />, {
+      ctx: { ...linkedCtx, teachers: linkedCtx.teachers.map((t) => (t.id === silva.id ? { ...t, inviteExpiresAt: Date.now() + 1000_000 } : t)) },
+      entries,
+    });
     await user.click(within(rowOf('SCC011')).getByRole('button', { name: 'Cancel link' }));
     expect(api.cancelTeacherLink).toHaveBeenCalledWith('siripura', silva.id);
     expect(await screen.findByText('Personal link cancelled')).toBeInTheDocument();

@@ -25,7 +25,8 @@
     "actionFailed": "Could not do that. Try again.",
     "alreadyLinked": "This teacher is already linked to an account. Unlink it first.",
     "tooManySchools": "That account already belongs to the most schools allowed (15).",
-    "rateLimited": "Too many links today. Try again tomorrow."
+    "rateLimited": "Too many tries today. Try again tomorrow.",
+    "accountLinked": "That account is already linked to another teacher in this school."
   },
   "modal": {
     "nameEn": "Name in English",
@@ -90,7 +91,8 @@
     "pending": "Pending",
     "linked": "Linked",
     "lastLogin": "Last login {{when}}",
-    "neverSignedIn": "Not signed in yet"
+    "neverSignedIn": "Not signed in yet",
+    "linkUntil": "Personal link until {{when}}"
   },
   "actions": {
     "personalLink": "Personal link",
@@ -101,14 +103,20 @@
   "inviteLink": {
     "title": "Invite link",
     "body": "Share one link with all your teachers. A teacher whose email matches their record joins at once; others enter their staff ID and wait for your approval.",
-    "hidden": "For safety the link is shown only when it is made. Make a new link to share it again; the old one stops working.",
     "create": "Create link",
-    "replace": "New link (old one stops working)",
+    "replace": "New link",
     "off": "Turn off link",
-    "isOff": "The invite link is off. Nobody can join with an old link.",
+    "isOff": "The invite link is off. Create one to let teachers join.",
     "copy": "Copy invite link",
     "shareHint": "Copy it now and share it on your staff group.",
-    "failed": "Could not change the link. Try again."
+    "failed": "Could not change the link. Try again.",
+    "confirmNewTitle": "Make a new invite link?",
+    "confirmNewBody": "The new link replaces the current one: the old link stops working, so share the new one with your teachers.",
+    "confirmNew": "Make new link",
+    "confirmOffTitle": "Turn off the invite link?",
+    "confirmOffBody": "Nobody can join with the current link until you create a new one.",
+    "confirmOff": "Turn off",
+    "cancel": "Cancel"
   },
   "requests": {
     "title": "Join requests ({{count}})",
@@ -131,6 +139,7 @@
     "title": "Unlink {{name}}?",
     "body": "Their account loses access to this school right away. They can join again with a new link.",
     "confirm": "Unlink",
-    "cancel": "Cancel"
+    "cancel": "Cancel",
+    "selfBody": "This is your own record. You will be signed out and must sign in again; you stay an admin."
   }
 }

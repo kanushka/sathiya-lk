@@ -177,12 +177,13 @@ async function school(staffIds: string[] = ['SCC001'], emails: Record<string, st
 }
 
 describe('setJoinLink', () => {
-  it('stores only the hash, replaces on create, deletes on off', async () => {
+  it('stores the hash and the token for admins, replaces on create, deletes on off', async () => {
     const { admin, sid, token } = await school();
     const doc = (await adminDb.doc(paths.joinLink(sid)).get()).data()!;
-    expect(doc).toMatchObject({ hash: sha(token), createdBy: admin.uid });
+    expect(doc).toMatchObject({ hash: sha(token), token, createdBy: admin.uid });
+    expect(typeof doc.createdAt).toBe('number');
     const { token: next } = await admin.call('setJoinLink', { schoolId: sid, action: 'create' });
-    expect((await adminDb.doc(paths.joinLink(sid)).get()).get('hash')).toBe(sha(next!));
+    expect((await adminDb.doc(paths.joinLink(sid)).get()).data()).toMatchObject({ hash: sha(next!), token: next });
     await expect(admin.call('setJoinLink', { schoolId: sid, action: 'off' })).resolves.toEqual({});
     expect((await adminDb.doc(paths.joinLink(sid)).get()).exists).toBe(false);
   });
@@ -204,7 +205,7 @@ describe('joinSchool with a school link', () => {
     const u = await signUp(email);
     await expectFnError(u.call('joinSchool', { schoolId: sid, token }), 'invalid-argument', 'invalid');
     await expect(u.call('joinSchool', { schoolId: sid, token, staffId: 'SCC002' })).resolves.toEqual({ status: 'pending', schoolId: sid, teacherId: ids[1] });
-    expect((await requestDoc(sid, u.uid)).data()).toMatchObject({ uid: u.uid, email, staffId: 'SCC002', teacherId: ids[1] });
+    expect((await requestDoc(sid, u.uid)).data()).toMatchObject({ uid: u.uid, email, staffId: 'SCC002', teacherId: ids[1], status: 'pending' });
     expect(await u.claims()).toEqual({});
   });
 
@@ -290,6 +291,19 @@ describe('createTeacherLink and cancelTeacherLink', () => {
     expect((await adminDb.doc(`${paths.teacherLinks()}/${sha(second.token)}`).get()).exists).toBe(false);
   });
 
+  it('keeps inviteExpiresAt on the teacher until cancel or redeem', async () => {
+    const { admin, sid, ids } = await school(['SCC001', 'SCC002']);
+    const first = await admin.call('createTeacherLink', { schoolId: sid, teacherId: ids[0]! });
+    expect((await teacherDoc(sid, ids[0]!)).inviteExpiresAt).toBe(first.expiresAt);
+    await admin.call('cancelTeacherLink', { schoolId: sid, teacherId: ids[0]! });
+    expect((await teacherDoc(sid, ids[0]!)).inviteExpiresAt).toBeUndefined();
+
+    const second = await admin.call('createTeacherLink', { schoolId: sid, teacherId: ids[1]! });
+    expect((await teacherDoc(sid, ids[1]!)).inviteExpiresAt).toBe(second.expiresAt);
+    await (await signUp()).call('joinSchool', { token: second.token });
+    expect((await teacherDoc(sid, ids[1]!)).inviteExpiresAt).toBeUndefined();
+  });
+
   it('refuses a linked teacher', async () => {
     const { admin, sid } = await adminWithSchool();
     const { teacherId } = await linkedTeacher(admin, sid, 'SCC005');
@@ -307,13 +321,27 @@ describe('decideJoinRequest', () => {
     expect((await requestDoc(sid, u.uid)).exists).toBe(false);
   });
 
-  it('reject deletes the request and links nothing', async () => {
+  it('reject keeps the request as rejected and links nothing', async () => {
     const { admin, sid, ids, token } = await school();
     const u = await signUp();
     await u.call('joinSchool', { schoolId: sid, token, staffId: 'SCC001' });
     await admin.call('decideJoinRequest', { schoolId: sid, uid: u.uid, approve: false });
-    expect((await requestDoc(sid, u.uid)).exists).toBe(false);
+    const doc = (await requestDoc(sid, u.uid)).data()!;
+    expect(doc).toMatchObject({ uid: u.uid, teacherId: ids[0], status: 'rejected' });
+    expect(typeof doc.decidedAt).toBe('number');
     expect((await teacherDoc(sid, ids[0]!)).uid).toBeUndefined();
+    expect(await u.claims()).toEqual({});
+  });
+
+  it('a rejected user can file again, which makes the request pending', async () => {
+    const { admin, sid, ids, token } = await school(['SCC001', 'SCC002']);
+    const u = await signUp();
+    await u.call('joinSchool', { schoolId: sid, token, staffId: 'SCC001' });
+    await admin.call('decideJoinRequest', { schoolId: sid, uid: u.uid, approve: false });
+    await expect(u.call('joinSchool', { schoolId: sid, token, staffId: 'SCC002' })).resolves.toEqual({ status: 'pending', schoolId: sid, teacherId: ids[1] });
+    const doc = (await requestDoc(sid, u.uid)).data()!;
+    expect(doc).toMatchObject({ staffId: 'SCC002', teacherId: ids[1], status: 'pending' });
+    expect(doc.decidedAt).toBeUndefined();
   });
 
   it('approve after the teacher was linked by a personal link finds no request', async () => {

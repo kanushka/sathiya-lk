@@ -18,7 +18,7 @@ export const decideJoinRequest = onCall(callOpts, async (req): Promise<DecideJoi
   const request = (await ref.get()).data() as JoinRequest | undefined;
   if (!request) fail('not-found', 'invalid', 'Request not found');
   if (!approve) {
-    await ref.delete();
+    await ref.update({ status: 'rejected', decidedAt: Date.now() });
     return { ok: true };
   }
   const { teacherId, email, name } = request!;

@@ -17,6 +17,6 @@ export const setJoinLink = onCall(callOpts, async (req): Promise<SetJoinLinkRes>
   }
   if (data.action !== 'create') invalid('action must be create or off');
   const token = newToken();
-  await ref.set({ hash: hashToken(token), createdAt: Date.now(), createdBy: uid });
+  await ref.set({ hash: hashToken(token), token, createdAt: Date.now(), createdBy: uid });
   return { token };
 });

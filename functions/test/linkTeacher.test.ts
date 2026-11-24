@@ -56,7 +56,7 @@ describe('linkTeacher', () => {
     const first = await signUp();
     await link(sid, teacherId, first.uid);
     await request(sid, user.uid, teacherId);
-    await expect(link(sid, teacherId, user.uid)).rejects.toMatchObject({ code: 'failed-precondition', details: { code: 'already-linked' } });
+    await expect(link(sid, teacherId, user.uid)).rejects.toMatchObject({ code: 'failed-precondition', details: { code: 'already-linked', reason: 'teacher' } });
     expect((await teacherDoc(sid, teacherId)).uid).toBe(first.uid);
     expect(await memberDoc(sid, user.uid)).toBeUndefined();
     expect((await adminDb.doc(`${paths.joinRequests(sid)}/${user.uid}`).get()).exists).toBe(true);
@@ -66,7 +66,7 @@ describe('linkTeacher', () => {
     const { admin, sid, teacherId, user } = await setup();
     await link(sid, teacherId, user.uid);
     const { teacherId: second } = await admin.call('createTeacher', { schoolId: sid, teacher: teacherInput('SCC002') });
-    await expect(link(sid, second, user.uid)).rejects.toMatchObject({ code: 'failed-precondition', details: { code: 'already-linked' } });
+    await expect(link(sid, second, user.uid)).rejects.toMatchObject({ code: 'failed-precondition', details: { code: 'already-linked', reason: 'account' } });
     expect((await teacherDoc(sid, second)).uid).toBeUndefined();
   });
 

@@ -4,9 +4,10 @@ import type { TFunction } from 'i18next';
 import { toApiError } from '../../lib/callable';
 
 export function accountActionError(err: unknown, t: TFunction): string {
-  switch (toApiError(err).code) {
+  const e = toApiError(err);
+  switch (e.code) {
     case 'already-linked':
-      return t('teachers:page.alreadyLinked');
+      return t((e.details as { reason?: unknown } | undefined)?.reason === 'account' ? 'teachers:page.accountLinked' : 'teachers:page.alreadyLinked');
     case 'too-many-schools':
       return t('teachers:page.tooManySchools');
     case 'rate-limited':

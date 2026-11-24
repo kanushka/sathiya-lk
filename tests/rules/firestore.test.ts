@@ -235,6 +235,9 @@ describe('teachers', () => {
       await assertFails(update('admin', t1, { title: 'Thero' }));
     });
 
+    it('leaves inviteExpiresAt to the link callables', async () => {
+      await assertFails(update('admin', t1, { inviteExpiresAt: 1 }));
+    });
     it('leaves lastLoginAt to the recordSignIn callable', async () => {
       await assertFails(update('admin', t1, { lastLoginAt: 1 }));
       await assertFails(update('teacher', t1, { lastLoginAt: 1 }));
@@ -379,15 +382,17 @@ describe('multi-school claims', () => {
   });
 });
 
-describe('joinLink (functions only)', () => {
+describe('joinLink (admins read, functions write)', () => {
   const p = paths.joinLink('s1');
   beforeEach(async () => {
-    await env.withSecurityRulesDisabled((ctx) => ctx.firestore().doc(p).set({ hash: 'h', createdAt: 1 }));
+    await env.withSecurityRulesDisabled((ctx) => ctx.firestore().doc(p).set({ hash: 'h', token: 'tok', createdAt: 1 }));
   });
+  allow([['admin', p], ['adminTid', p], ['super', p]], read);
   deny(
-    [['admin', p], ['adminTid', p], ['teacher', p], ['super', p], ['otherAdmin', p], ['noClaims', p], ['anon', p]],
+    [['teacher', p], ['otherAdmin', p], ['adminS1TeacherS2', paths.joinLink('s2')], ['disabledAdmin', paths.joinLink('sd')], ['noClaims', p], ['anon', p]],
     read,
   );
+  deny([['admin', `${paths.school('s1')}/private/other`]], read);
   deny([['admin', p], ['super', p]], (r, q) => set(r, q, { hash: 'x' }));
   deny([['admin', p]], del);
   deny([['admin', `${paths.school('s1')}/private`]], list);
@@ -413,6 +418,16 @@ describe('joinRequests', () => {
     allow([['admin', p], ['adminTid', p], ['super', p]], read);
     allow([['admin', paths.joinRequests('s1')]], list);
     deny([['teacher', p], ['otherAdmin', p], ['adminS1TeacherS2', `${paths.joinRequests('s2')}/u-req`], ['noClaims', p], ['anon', p]], read);
+  });
+  describe('own request', () => {
+    const own = `${paths.joinRequests('s1')}/u-new`;
+    beforeEach(async () => {
+      await env.withSecurityRulesDisabled((ctx) => ctx.firestore().doc(own).set({ uid: 'u-new', email: 'n@x.lk', status: 'rejected', createdAt: 1 }));
+    });
+    allow([['noClaims', own]], read);
+    deny([['noClaims', p], ['teacher', own], ['anon', own]], read);
+    deny([['noClaims', paths.joinRequests('s1')]], list);
+    deny([['noClaims', own]], (r, q) => update(r, q, { status: 'pending' }));
   });
   describe('write (functions only)', () => {
     const fresh = `${paths.joinRequests('s1')}/u-new`;

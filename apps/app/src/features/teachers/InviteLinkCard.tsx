@@ -5,24 +5,28 @@ import { useTranslation } from 'react-i18next';
 import { Button } from '../../ui/Button';
 import { CopyLink } from '../../ui/CopyLink';
 import { FormError } from '../../ui/FormError';
+import { Modal } from '../../ui/Modal';
 import * as api from './api';
 import { schoolJoinUrl } from './links';
+import { useJoinLink } from './useJoinLink';
 
-type LinkState = { kind: 'unknown' } | { kind: 'shown'; url: string } | { kind: 'off' };
+type Action = 'create' | 'off';
 
 export function InviteLinkCard({ schoolId }: { schoolId: string }) {
   const { t } = useTranslation('teachers');
   const headingId = useId();
-  const [link, setLink] = useState<LinkState>({ kind: 'unknown' });
-  const [busy, setBusy] = useState<'create' | 'off' | null>(null);
+  const link = useJoinLink(schoolId);
+  const [busy, setBusy] = useState<Action | null>(null);
+  const [confirming, setConfirming] = useState<Action | null>(null);
   const [failed, setFailed] = useState(false);
+  const token = link.data?.token;
 
-  async function run(action: 'create' | 'off') {
+  async function run(action: Action) {
     setBusy(action);
     setFailed(false);
     try {
-      const res = await api.setJoinLink(schoolId, action);
-      setLink(action === 'off' || !res.token ? { kind: 'off' } : { kind: 'shown', url: schoolJoinUrl(window.location.origin, schoolId, res.token) });
+      await api.setJoinLink(schoolId, action);
+      setConfirming(null);
     } catch {
       setFailed(true);
     } finally {
@@ -30,35 +34,59 @@ export function InviteLinkCard({ schoolId }: { schoolId: string }) {
     }
   }
 
-  const create = (
-    <Button variant={link.kind === 'shown' ? 'secondary' : 'primary'} size="sm" loading={busy === 'create'} disabled={busy === 'off'} onClick={() => void run('create')}>
-      {link.kind === 'shown' ? t('inviteLink.replace') : t('inviteLink.create')}
-    </Button>
-  );
-  const off = (
-    <Button variant="ghost" size="sm" loading={busy === 'off'} disabled={busy === 'create'} onClick={() => void run('off')}>
-      {t('inviteLink.off')}
-    </Button>
-  );
-
   return (
     <section aria-labelledby={headingId} className="mb-5 rounded-[14px] border border-line-soft bg-white p-5">
       <h2 id={headingId} className="m-0 text-[17px] font-bold">
         {t('inviteLink.title')}
       </h2>
       <p className="mb-0 mt-1 text-sm text-ink-soft">{t('inviteLink.body')}</p>
-      {link.kind === 'shown' ? (
-        <div className="mt-3">
-          <CopyLink url={link.url} copyLabel={t('inviteLink.copy')} hint={t('inviteLink.shareHint')} />
-        </div>
+      {link.loading ? null : token ? (
+        <>
+          <div className="mt-3">
+            <CopyLink url={schoolJoinUrl(window.location.origin, schoolId, token)} copyLabel={t('inviteLink.copy')} hint={t('inviteLink.shareHint')} />
+          </div>
+          <div className="mt-3 flex flex-wrap gap-2">
+            <Button size="sm" onClick={() => setConfirming('create')}>
+              {t('inviteLink.replace')}
+            </Button>
+            <Button size="sm" variant="ghost" onClick={() => setConfirming('off')}>
+              {t('inviteLink.off')}
+            </Button>
+          </div>
+        </>
       ) : (
-        <p className="mb-0 mt-2 text-sm text-ink-muted">{link.kind === 'off' ? t('inviteLink.isOff') : t('inviteLink.hidden')}</p>
+        <>
+          <p className="mb-0 mt-2 text-sm text-ink-muted">{t('inviteLink.isOff')}</p>
+          <div className="mt-3">
+            <Button size="sm" variant="primary" loading={busy === 'create'} onClick={() => void run('create')}>
+              {t('inviteLink.create')}
+            </Button>
+          </div>
+        </>
       )}
-      <div className="mt-3 flex flex-wrap gap-2">
-        {create}
-        {link.kind !== 'off' && off}
-      </div>
-      {failed && <FormError className="mt-2">{t('inviteLink.failed')}</FormError>}
+      {failed && !confirming && <FormError className="mt-2">{t('inviteLink.failed')}</FormError>}
+      {confirming && (
+        <Modal
+          open
+          width={460}
+          title={t(confirming === 'create' ? 'inviteLink.confirmNewTitle' : 'inviteLink.confirmOffTitle')}
+          onClose={() => setConfirming(null)}
+          busy={busy !== null}
+          footer={
+            <>
+              <Button onClick={() => setConfirming(null)} disabled={busy !== null}>
+                {t('inviteLink.cancel')}
+              </Button>
+              <Button variant={confirming === 'off' ? 'dangerSolid' : 'primary'} loading={busy === confirming} onClick={() => void run(confirming)}>
+                {t(confirming === 'create' ? 'inviteLink.confirmNew' : 'inviteLink.confirmOff')}
+              </Button>
+            </>
+          }
+        >
+          <p className="m-0 text-sm text-ink-soft">{t(confirming === 'create' ? 'inviteLink.confirmNewBody' : 'inviteLink.confirmOffBody')}</p>
+          {failed && <FormError className="mt-3">{t('inviteLink.failed')}</FormError>}
+        </Modal>
+      )}
     </section>
   );
 }
