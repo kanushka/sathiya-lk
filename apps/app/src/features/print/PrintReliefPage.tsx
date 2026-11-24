@@ -41,6 +41,12 @@ export function PrintReliefPage() {
     return lang === 'si' ? s.nameSi?.trim() || s.short || s.nameEn : s.short || pickName(s, lang);
   };
 
+  const label = (r: Relief) => data?.labels?.[`${r.entryId}|${r.absentTeacherId}`];
+  const savedSubject = (r: Relief) => {
+    const l = label(r);
+    return l && ((lang === 'si' && l.subSi) || l.sub);
+  };
+
   const rows = (data?.reliefs ?? [])
     .map((r: Relief) => ({ r, who: r.reliefTeacherId === null ? null : teacherName(r.reliefTeacherId) }))
     .sort((a, b) => {
@@ -75,8 +81,8 @@ export function PrintReliefPage() {
                 <td style={td}>
                   {r.start}–{r.end}
                 </td>
-                <td style={td}>{r.classIds.map((c) => classNames.get(c) ?? c).sort(cmp).join('+')}</td>
-                <td style={td}>{subjectName(r.subjectId)}</td>
+                <td style={td}>{label(r)?.cls ?? r.classIds.map((c) => classNames.get(c) ?? c).sort(cmp).join('+')}</td>
+                <td style={td}>{savedSubject(r) ?? subjectName(r.subjectId)}</td>
                 <td style={td}>{teacherName(r.absentTeacherId)}</td>
               </tr>
             ))}

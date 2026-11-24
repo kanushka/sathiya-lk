@@ -98,6 +98,19 @@ describe('PrintReliefPage', () => {
     expect(within(bodyRows()[0]!).getAllByRole('cell')[4]).toHaveTextContent('Maths');
   });
 
+  it('prints the class and subject saved with the day, falling back to current names', () => {
+    const d = day([relief('e1', 1, '07:45', '08:30', 'gone-class', S.maths, T.bandara), relief('e2', 3, '09:10', '09:50', C.c6b, S.maths, T.bandara)]);
+    setup({ ...d, labels: { [`e1|${T.perera}`]: { cls: '6Z', sub: 'Old maths', subSi: 'පැරණි ගණිතය' } } });
+    expect(within(bodyRows()[0]!).getAllByRole('cell').map((c) => c.textContent).slice(3, 5)).toEqual(['6Z', 'Old maths']);
+    expect(within(bodyRows()[1]!).getAllByRole('cell').map((c) => c.textContent).slice(3, 5)).toEqual(['6B', 'Maths']);
+  });
+
+  it('prints the saved Sinhala subject in si', () => {
+    const d = day([relief('e1', 1, '07:45', '08:30', C.c6a, S.maths, T.bandara)]);
+    setup({ ...d, labels: { [`e1|${T.perera}`]: { cls: '6A', sub: 'Old maths', subSi: 'පැරණි ගණිතය' } } }, 'si');
+    expect(within(bodyRows()[0]!).getAllByRole('cell')[4]).toHaveTextContent('පැරණි ගණිතය');
+  });
+
   it('shows the error state', () => {
     setup(undefined, 'en', '2026-11-24', { error: new Error('x') });
     expect(screen.getByText('Could not load the timetable')).toBeInTheDocument();
