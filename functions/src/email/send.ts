@@ -13,13 +13,19 @@ export interface MailJob {
   message: Rendered;
 }
 
-// Queues a mail doc for the sendMail trigger (same shape the Trigger Email extension used). Throws on failure.
-// With `id`, the doc is created once: a repeat with the same id is a no-op.
-export async function writeMail(job: MailJob, id?: string): Promise<void> {
+// The mail doc the sendMail trigger reads (same shape the Trigger Email extension used), or null with no recipient.
+export function mailDoc(job: MailJob): object | null {
   const { from, replyTo, subjectPrefix } = mailConfig();
   const to = [...new Set(job.to.map((t) => t.trim().toLowerCase()).filter(Boolean))];
-  if (!to.length) return;
-  const doc = { to, from: from || undefined, replyTo: job.replyTo || replyTo || undefined, message: { ...job.message, subject: withSubjectPrefix(job.message.subject, subjectPrefix) } };
+  if (!to.length) return null;
+  return { to, from: from || undefined, replyTo: job.replyTo || replyTo || undefined, message: { ...job.message, subject: withSubjectPrefix(job.message.subject, subjectPrefix) } };
+}
+
+// Queues a mail doc for the sendMail trigger. Throws on failure.
+// With `id`, the doc is created once: a repeat with the same id is a no-op.
+export async function writeMail(job: MailJob, id?: string): Promise<void> {
+  const doc = mailDoc(job);
+  if (!doc) return;
   if (id === undefined) {
     await db.collection(MAIL).add(doc);
     return;

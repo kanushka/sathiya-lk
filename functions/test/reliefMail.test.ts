@@ -109,6 +109,24 @@ describe.skipIf(day === null)('runReliefMail', () => {
     expect(n.sent?.[T.kumara]).toBeUndefined();
   });
 
+  it('two runs of one task send once', async () => {
+    const c = await setup();
+    const a1 = await save(c, [pick('e-a', T.kumara), pick('e-b', null)], null);
+    expect((await Promise.all([run(c, a1), run(c, a1)])).sort()).toEqual(['sent', 'superseded']);
+    expect(await mails(c.email)).toHaveLength(1);
+  });
+
+  it('skips a task whose Colombo date has passed, clearing only its own token', async () => {
+    const c = await setup();
+    const a1 = await save(c, [pick('e-a', T.kumara), pick('e-b', null)], null);
+    const past = colomboToday(new Date(Date.now() - 86_400_000)).date;
+    await adminDb.doc(paths.reliefDay(c.sid, YEAR, past)).set({ ...(await dayDoc(c.sid)), date: past });
+    await adminDb.doc(paths.reliefNotified(c.sid, YEAR, past)).set({ sent: {}, pending: { [T.kumara]: a1, [T.herath]: 9 } });
+    expect(await runReliefMail({ sid: c.sid, yid: YEAR, date: past, teacherId: T.kumara, savedAt: a1 })).toBe('skipped');
+    expect(await mails(c.email)).toHaveLength(0);
+    expect(((await adminDb.doc(paths.reliefNotified(c.sid, YEAR, past)).get()).data() as ReliefNotified).pending).toEqual({ [T.herath]: 9 });
+  });
+
   it('writeMail with an id creates the doc once', async () => {
     const to = `once-${uniq()}@example.test`;
     const job = { to: [to], message: { subject: 's', html: 'h', text: 't' } };
