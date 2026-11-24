@@ -188,7 +188,7 @@ describe('Modal', () => {
 
     it('renders the panel as a bottom sheet', () => {
       open(375);
-      expect(screen.getByTestId('modal-backdrop')).toHaveClass('items-end', 'md:items-center');
+      expect(screen.getByTestId('modal-backdrop')).toHaveClass('items-end', 'justify-center', 'md:items-center');
       expect(screen.getByRole('dialog')).toHaveClass('rounded-t-[18px]', 'max-h-[90dvh]', 'md:rounded-[18px]');
     });
 
@@ -200,6 +200,11 @@ describe('Modal', () => {
     it('still focuses the first input on desktop', () => {
       open(1280);
       expect(screen.getByLabelText('Name')).toHaveFocus();
+    });
+
+    it('wraps footer buttons instead of clipping them', () => {
+      open(375);
+      expect(screen.getByRole('button', { name: 'Save' }).parentElement).toHaveClass('flex-wrap');
     });
 
     it('scrolls tall content inside the body and keeps the footer outside it', () => {

@@ -68,7 +68,7 @@ function ModalPanel({ title, subtitle, onClose, footer, width = 560, zoom, busy 
       style={zoom && zoom !== 1 ? { zoom } : undefined}
       className={cx(
         'fixed inset-0 z-50 flex',
-        fullScreen ? 'bg-white' : 'items-end overflow-y-auto bg-navy/45 md:items-center md:justify-center md:p-8',
+        fullScreen ? 'bg-white' : 'items-end justify-center overflow-y-auto bg-navy/45 md:items-center md:p-8',
       )}
       onMouseDown={onBackdropDown}
       onClick={onBackdropClick}
@@ -108,7 +108,7 @@ function ModalPanel({ title, subtitle, onClose, footer, width = 560, zoom, busy 
           {children}
         </div>
         {footer && (
-          <footer className="flex items-center justify-end gap-3 border-t border-line-soft bg-surface px-5 py-3 md:px-7 md:py-4">
+          <footer className="flex flex-wrap items-center justify-end gap-3 border-t border-line-soft bg-surface px-5 py-3 md:px-7 md:py-4">
             {footer}
           </footer>
         )}
