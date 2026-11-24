@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
 // Copyright (C) 2026 Kanushka Gayan
-import { C, ctx, entries, G, S } from '@sathiya/core/fixtures';
+import { C, ctx, entries, G, mahasen, S } from '@sathiya/core/fixtures';
 import { screen, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
@@ -296,6 +296,13 @@ describe('grades page', () => {
       await openTimed();
       expect(screen.getByTestId('plan-total')).toHaveTextContent('34 / 39–40');
     });
+  });
+
+  it('hides the period fit for an all-timed plan', async () => {
+    renderWithSchool(<GradesPage />, { ctx: mahasen.ctx, entries: [] });
+    await userEvent.click(screen.getByRole('button', { name: /^Grade 1\b/ }));
+    expect(screen.queryByTestId('plan-total')).not.toBeInTheDocument();
+    expect(screen.getByTestId('plan-timed')).toHaveTextContent('17h 30m timed per week');
   });
 
   it('shows the default staffing for the grade and saves a change', async () => {

@@ -5,7 +5,8 @@ import { DAYS, gradeOf, templateOf } from './lookup';
 import { effectivePlan, entryPlanKey, planKey } from './plan';
 import { isMinutes } from './staffing';
 import { periodsFor, rowsFor, slotMinutes, toMinutes, windowOf } from './time';
-import type { Entry, PeriodTemplate, PlanItem, SchoolClass, SchoolContext } from './types';
+import { formatAmount, formatAmountPair, type AmountUnit } from './units';
+import type { Entry, Lang, PeriodTemplate, PlanItem, SchoolClass, SchoolContext } from './types';
 
 export interface ProgressRow { key: string; item: PlanItem; placed: number; needed: number; unit: 'periods' | 'minutes' }
 
@@ -54,4 +55,23 @@ export function classPlacement(cls: SchoolClass, entries: Entry[], ctx: SchoolCo
 
 export function weekCapacity(t: PeriodTemplate): number {
   return DAYS.reduce<number>((n, day) => n + periodsFor(t, day).length, 0);
+}
+
+export interface PlacementSummary { placed: number; needed: number; unit: AmountUnit | 'mixed' }
+
+export function placementSummary(rows: ProgressRow[]): PlacementSummary {
+  const minutes = rows.filter((r) => r.unit === 'minutes');
+  if (minutes.length > 0 && minutes.length < rows.length) {
+    return { placed: rows.filter((r) => r.placed >= r.needed).length, needed: rows.length, unit: 'mixed' };
+  }
+  const unit = minutes.length > 0 ? 'minutes' : 'periods';
+  return { placed: rows.reduce((n, r) => n + Math.min(r.placed, r.needed), 0), needed: rows.reduce((n, r) => n + r.needed, 0), unit };
+}
+
+export function formatSummary(s: PlacementSummary, lang: Lang): string {
+  return s.unit === 'mixed' ? `${s.placed}/${s.needed}` : formatAmountPair(s.placed, s.needed, s.unit, lang);
+}
+
+export function formatSummaryAmount(n: number, s: PlacementSummary, lang: Lang): string {
+  return s.unit === 'mixed' ? String(n) : formatAmount(n, s.unit, lang);
 }

@@ -49,6 +49,7 @@
     "removeOption": "{{group}} වෙතින් {{name}} ඉවත් කරන්න",
     "addOption": "{{group}} වෙත විකල්පයක් එක් කරන්න",
     "optionPlaceholder": "+ විකල්පය",
+    "timedOnly": "සතියකට කාලය අනුව {{amount}}",
     "timedTotal": "+ {{amount}} කාලය අනුව",
     "errors": {
       "perDayMismatch": "සතියකට මිනිත්තු, දිනකට මිනිත්තු × 5 ට සමාන විය යුතුය.",

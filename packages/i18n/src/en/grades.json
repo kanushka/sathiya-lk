@@ -49,6 +49,7 @@
     "removeOption": "Remove {{name}} from {{group}}",
     "addOption": "Add option to {{group}}",
     "optionPlaceholder": "+ option",
+    "timedOnly": "{{amount}} timed per week",
     "timedTotal": "+ {{amount}} timed",
     "errors": {
       "perDayMismatch": "Minutes per week must equal minutes per day × 5.",

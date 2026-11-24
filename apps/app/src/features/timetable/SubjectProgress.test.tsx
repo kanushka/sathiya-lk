@@ -96,4 +96,13 @@ describe('SubjectProgress', () => {
     expect(row('Mathematics')).toHaveTextContent('1h 30m/3h 10m');
     expect(row('English')).toHaveTextContent('0/50 min');
   });
+
+  it('totals an all-minutes class in minutes', () => {
+    const mh = mahasen.ctx;
+    const cls = mh.classes[0]!;
+    const es = [entry('m1', 0, 1, [cls.id], [[mahasen.S.maths, 'mh-t-1a']])];
+    renderWithSchool(<SubjectProgress cls={cls} entries={es} />, { ctx: mh, entries: es });
+    expect(screen.getByText('1h 50m')).toBeInTheDocument();
+    expect(screen.getByText('/ 17h 30m placed')).toBeInTheDocument();
+  });
 });

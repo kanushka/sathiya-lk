@@ -42,6 +42,7 @@ export function PlanEditor({ plan, capacity, subjects, readOnly, onChange }: Pla
   const total = planTotal(plan);
   const timed = planMinutes(plan);
   const fit = planFit(total, capacity);
+  const showPeriods = total > 0 || timed === 0;
   const usedSubjects = new Set(plan.flatMap((p) => (p.kind === 'subject' ? [p.subjectId] : [])));
   const unused = subjects.filter((s) => !usedSubjects.has(s.id)).sort((a, b) => pickName(a, lang).localeCompare(pickName(b, lang)));
 
@@ -55,11 +56,15 @@ export function PlanEditor({ plan, capacity, subjects, readOnly, onChange }: Pla
       <div className="mb-1.5 flex flex-wrap items-end justify-between gap-3">
         <h3 className="m-0 text-[17px] font-bold">{t('plan.title')}</h3>
         <p className="m-0 text-sm">
-          <b data-testid="plan-total" data-fit={fit} className={`text-lg ${fitColor[fit]}`}>
-            {total} / {capacity.min === capacity.max ? capacity.max : `${capacity.min}–${capacity.max}`}
-          </b>{' '}
-          {t('plan.periodsInWeek')}
-          {timed > 0 && <span className="ml-1.5 text-ink-soft">{t('plan.timedTotal', { amount: formatAmount(timed, 'minutes', lang) })}</span>}
+          {showPeriods && (
+            <>
+              <b data-testid="plan-total" data-fit={fit} className={`text-lg ${fitColor[fit]}`}>
+                {total} / {capacity.min === capacity.max ? capacity.max : `${capacity.min}–${capacity.max}`}
+              </b>{' '}
+              {t('plan.periodsInWeek')}
+            </>
+          )}
+          {timed > 0 && <span className={showPeriods ? 'ml-1.5 text-ink-soft' : 'text-ink-soft'} data-testid="plan-timed">{t(showPeriods ? 'plan.timedTotal' : 'plan.timedOnly', { amount: formatAmount(timed, 'minutes', lang) })}</span>}
         </p>
       </div>
       <p className="mb-4 text-sm text-ink-soft">{t('plan.intro')}</p>

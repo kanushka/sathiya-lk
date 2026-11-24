@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
 // Copyright (C) 2026 Kanushka Gayan
 
-import { classPlacement, formatAmountPair, type Entry, type PlanItem, type SchoolClass } from '@sathiya/core';
+import { classPlacement, formatAmountPair, formatSummaryAmount, placementSummary, type Entry, type PlanItem, type SchoolClass } from '@sathiya/core';
 import { useTranslation } from 'react-i18next';
 import { cx } from '../../ui/cx';
 import { IconButton } from '../../ui/IconButton';
@@ -22,16 +22,15 @@ export function SubjectProgress({ cls, entries, onPin, onStop, activeKey }: Subj
   const { lang } = useLang();
   const ctx = useSchool();
   const { rows } = classPlacement(cls, entries, ctx);
-  const periodRows = rows.filter((r) => r.unit === 'periods');
-  const placed = periodRows.reduce((n, r) => n + Math.min(r.placed, r.needed), 0);
-  const total = periodRows.reduce((n, r) => n + r.needed, 0);
+  const summary = placementSummary(rows);
 
   return (
     <section className="rounded-[14px] border border-line bg-white p-4">
       <div className="mb-2.5 flex items-baseline justify-between">
         <h2 className="m-0 text-[15px] font-bold">{t('progress.title', { class: cls.name })}</h2>
         <span className="text-[13px] text-ink-muted">
-          <b className="text-ink">{placed}</b> <span>{t('progress.placedOf', { total })}</span>
+          <b className="text-ink">{formatSummaryAmount(summary.placed, summary, lang)}</b>{' '}
+          <span>{t('progress.placedOf', { total: formatSummaryAmount(summary.needed, summary, lang) })}</span>
         </span>
       </div>
       <ul className="m-0 list-none p-0">
