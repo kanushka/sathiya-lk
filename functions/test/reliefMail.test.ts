@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
 // Copyright (C) 2026 Kanushka Gayan
-import { colomboToday, paths, type ReliefNotified, type SaveReliefDayReq } from '@sathiya/core';
+import { colomboToday, paths, reliefKey, type ReliefDay, type ReliefNotified, type SaveReliefDayReq } from '@sathiya/core';
 import { C, entry, S, T } from '@sathiya/core/fixtures';
 import { describe, expect, it } from 'vitest';
 import { writeMail } from '../src/email/send';
@@ -27,6 +27,7 @@ const save = (c: Ctx, reliefs: SaveReliefDayReq['reliefs'], expectedUpdatedAt: n
 const run = (c: Ctx, savedAt: number, teacherId: string = T.kumara) => runReliefMail({ sid: c.sid, yid: YEAR, date: today.date, teacherId, savedAt });
 const mails = async (to: string) => (await adminDb.collection('mail').where('to', 'array-contains', to).get()).docs.map((x) => x.data() as { message: { subject: string } });
 const notified = async (sid: string) => (await adminDb.doc(paths.reliefNotified(sid, YEAR, today.date)).get()).data() as ReliefNotified;
+const dayDoc = async (sid: string) => (await adminDb.doc(paths.reliefDay(sid, YEAR, today.date)).get()).data() as ReliefDay;
 
 describe.skipIf(day === null)('runReliefMail', () => {
   it('sends one assigned mail', async () => {
@@ -37,7 +38,7 @@ describe.skipIf(day === null)('runReliefMail', () => {
     expect(sent).toHaveLength(1);
     expect(sent[0]!.message.subject).toMatch(/^Relief today: P1 6A /);
     const n = await notified(c.sid);
-    expect(n.sent[T.kumara]).toMatchObject({ key: 'e-a' });
+    expect(n.sent[T.kumara]).toMatchObject({ key: reliefKey((await dayDoc(c.sid)).reliefs, T.kumara) });
     expect(n.pending[T.kumara]).toBeUndefined();
   });
 

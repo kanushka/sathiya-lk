@@ -2,10 +2,12 @@
 // Copyright (C) 2026 Kanushka Gayan
 import type { Relief } from '../types';
 
+const dutyKey = (r: Relief): string => JSON.stringify([r.entryId, r.absentTeacherId, r.start, r.end, r.period, r.classIds, r.subjectId]);
+
 export function reliefKey(reliefs: Relief[], teacherId: string): string {
   return reliefs
     .filter((r) => r.reliefTeacherId === teacherId)
-    .map((r) => r.entryId)
+    .map(dutyKey)
     .sort()
     .join(',');
 }

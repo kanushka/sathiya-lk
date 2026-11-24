@@ -7,8 +7,20 @@ import { planReliefMail, reliefKey } from './mail';
 const r = (entryId: string, reliefTeacherId: string | null): Relief => ({ entryId, absentTeacherId: 'x', day: 1, period: 1, start: '07:45', end: '08:30', classIds: ['c'], subjectId: 's', reliefTeacherId });
 
 describe('reliefKey', () => {
-  it('joins sorted entry ids for the teacher only', () => {
-    expect(reliefKey([r('e2', 't1'), r('e1', 't1'), r('e3', 't2'), r('e4', null)], 't1')).toBe('e1,e2');
+  it('covers only the teacher\'s duties, in a stable order', () => {
+    const key = reliefKey([r('e2', 't1'), r('e1', 't1'), r('e3', 't2'), r('e4', null)], 't1');
+    expect(key).toBe(reliefKey([r('e1', 't1'), r('e2', 't1')], 't1'));
+    expect(key).not.toBe(reliefKey([r('e1', 't1')], 't1'));
+  });
+  it.each([
+    ['absentTeacherId', 'y'],
+    ['start', '07:50'],
+    ['end', '08:20'],
+    ['period', 2],
+    ['classIds', ['c', 'd']],
+    ['subjectId', 't'],
+  ] as const)('changes when %s changes', (field, value) => {
+    expect(reliefKey([{ ...r('e1', 't1'), [field]: value }], 't1')).not.toBe(reliefKey([r('e1', 't1')], 't1'));
   });
   it('is empty when the teacher has none', () => {
     expect(reliefKey([r('e1', 't2')], 't1')).toBe('');
