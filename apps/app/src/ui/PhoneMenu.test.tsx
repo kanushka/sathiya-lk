@@ -42,7 +42,7 @@ function renderBar(opts: { basePath?: string; readOnly?: boolean; claims?: Claim
   );
 }
 
-const menu = () => screen.queryByRole('dialog', { name: 'Menu' });
+const menu = () => screen.queryByRole('dialog', { name: 'Siripura Central College' });
 
 describe('PhoneTopBar and PhoneMenu', () => {
   beforeEach(() => {
@@ -73,6 +73,7 @@ describe('PhoneTopBar and PhoneMenu', () => {
     await user.click(open);
     const dialog = menu()!;
     expect(dialog).toBeInTheDocument();
+    expect(within(dialog).getByRole('navigation', { name: 'Menu' })).toBeInTheDocument();
     expect(within(dialog).getAllByRole('link').map((a) => a.getAttribute('href'))).toEqual(navItems.map((i) => i.path));
     expect(within(dialog).getByRole('link', { name: 'Dashboard' })).toHaveAttribute('aria-current', 'page');
     expect(within(dialog).getByLabelText('Timetable year')).toHaveTextContent('2027 · draft');

@@ -4,6 +4,7 @@
 import { useEffect, useId, useRef, type MouseEvent, type ReactNode } from 'react';
 import { createPortal } from 'react-dom';
 import { useTranslation } from 'react-i18next';
+import { cx } from './cx';
 import { IconButton } from './IconButton';
 import { useDialogTrap } from './useDialogTrap';
 
@@ -16,6 +17,8 @@ export interface ModalProps {
   width?: number;
   zoom?: number;
   busy?: boolean;
+  fullScreen?: boolean;
+  closeLabel?: string;
   children: ReactNode;
 }
 
@@ -24,7 +27,7 @@ export function Modal(props: ModalProps) {
   return createPortal(<ModalPanel {...props} />, document.body);
 }
 
-function ModalPanel({ title, subtitle, onClose, footer, width = 560, zoom, busy = false, children }: ModalProps) {
+function ModalPanel({ title, subtitle, onClose, footer, width = 560, zoom, busy = false, fullScreen = false, closeLabel, children }: ModalProps) {
   const { t } = useTranslation('shell');
   const titleId = useId();
   const panelRef = useRef<HTMLElement>(null);
@@ -55,7 +58,10 @@ function ModalPanel({ title, subtitle, onClose, footer, width = 560, zoom, busy 
       ref={backdropRef}
       data-testid="modal-backdrop"
       style={zoom && zoom !== 1 ? { zoom } : undefined}
-      className="fixed inset-0 z-50 flex items-center justify-center overflow-y-auto bg-navy/45 p-4 sm:p-8"
+      className={cx(
+        'fixed inset-0 z-50 flex',
+        fullScreen ? 'bg-white' : 'items-center justify-center overflow-y-auto bg-navy/45 p-4 sm:p-8',
+      )}
       onMouseDown={onBackdropDown}
       onClick={onBackdropClick}
     >
@@ -66,25 +72,31 @@ function ModalPanel({ title, subtitle, onClose, footer, width = 560, zoom, busy 
         aria-busy={busy || undefined}
         aria-labelledby={titleId}
         tabIndex={-1}
-        style={{ maxWidth: width }}
-        className="my-auto flex max-h-[calc(100vh-2rem)] w-full flex-col overflow-hidden rounded-[18px] bg-white shadow-[0_30px_80px_-30px_rgba(20,33,61,.6)] outline-none"
+        style={fullScreen ? undefined : { maxWidth: width }}
+        className={cx(
+          'flex w-full flex-col overflow-hidden bg-white outline-none',
+          fullScreen
+            ? 'h-full pb-[env(safe-area-inset-bottom)]'
+            : 'my-auto max-h-[calc(100vh-2rem)] rounded-[18px] shadow-[0_30px_80px_-30px_rgba(20,33,61,.6)]',
+        )}
       >
-        <header className="flex items-center justify-between gap-4 border-b border-line-soft px-7 py-5">
+        <header className={cx('flex items-center justify-between gap-4 border-b border-line-soft', fullScreen ? 'px-4 py-3' : 'px-7 py-5')}>
           <div className="min-w-0">
-            <h2 id={titleId} className="m-0 text-xl font-bold text-ink">
+            <h2 id={titleId} className={cx('m-0 font-bold text-ink', fullScreen ? 'truncate text-base' : 'text-xl')}>
               {title}
             </h2>
             {subtitle && <p className="mt-0.5 text-[13px] text-ink-muted">{subtitle}</p>}
           </div>
           <IconButton
             icon="close"
-            label={t('modal.close')}
+            label={closeLabel ?? t('modal.close')}
             variant="subtle"
             disabled={busy}
             onClick={onClose}
+            className={fullScreen ? 'h-11 w-11 shrink-0' : undefined}
           />
         </header>
-        <div ref={bodyRef} className="min-h-0 flex-1 overflow-y-auto px-7 py-6">
+        <div ref={bodyRef} className={cx('min-h-0 flex-1 overflow-y-auto', !fullScreen && 'px-7 py-6')}>
           {children}
         </div>
         {footer && (

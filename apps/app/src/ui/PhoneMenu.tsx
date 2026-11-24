@@ -2,8 +2,6 @@
 // Copyright (C) 2026 Kanushka Gayan
 
 import { pickName, type Lang } from '@sathiya/core';
-import { useRef } from 'react';
-import { createPortal } from 'react-dom';
 import { useTranslation } from 'react-i18next';
 import { NavLink } from 'react-router-dom';
 import { useAuth } from '../app/AuthProvider';
@@ -12,10 +10,9 @@ import { useSchool, useYear } from '../app/SchoolProvider';
 import { SuperAdminLink } from '../features/superadmin/SuperAdminLink';
 import { cx } from './cx';
 import { Icon } from './Icon';
-import { IconButton } from './IconButton';
+import { Modal } from './Modal';
 import { Select } from './Select';
-import { SchoolLogo, groups, linkActive, linkBase, navHref, navItems } from './Sidebar';
-import { useDialogTrap } from './useDialogTrap';
+import { groups, linkActive, linkBase, navHref, navItems } from './Sidebar';
 
 export interface PhoneMenuProps {
   basePath: string;
@@ -33,30 +30,19 @@ export function PhoneMenu({ basePath, readOnly, onClose }: PhoneMenuProps) {
   const { school } = useSchool();
   const { years, yearId, setYearId } = useYear();
   const langCtl = useMaybeLang();
-  const panelRef = useRef<HTMLDivElement>(null);
   const name = pickName(school, lang);
   const yearSelectId = 'phone-menu-year';
 
-  useDialogTrap({ panelRef, containerRef: panelRef, onClose });
-
-  return createPortal(
-    <div
-      ref={panelRef}
-      role="dialog"
-      aria-modal="true"
-      aria-label={t('nav.menu')}
-      tabIndex={-1}
-      className="fixed inset-0 z-50 flex flex-col overflow-y-auto bg-white pb-[env(safe-area-inset-bottom)] font-sans text-ink outline-none"
+  return (
+    <Modal
+      open
+      fullScreen
+      title={name}
+      subtitle={readOnly ? t('sidebar.readOnly') : t('sidebar.admin')}
+      closeLabel={t('nav.closeMenu')}
+      onClose={onClose}
     >
-      <div className="flex items-center gap-3 border-b border-line-soft px-4 py-3">
-        <SchoolLogo school={school} name={name} decorative />
-        <div className="min-w-0 flex-1">
-          <strong className="block truncate text-sm leading-tight">{name}</strong>
-          <span className="text-xs text-ink-muted">{readOnly ? t('sidebar.readOnly') : t('sidebar.admin')}</span>
-        </div>
-        <IconButton icon="close" label={t('nav.closeMenu')} variant="subtle" onClick={onClose} className="h-11 w-11" />
-      </div>
-
+      <div className="flex min-h-full flex-col">
       <div className="px-4 pt-4">
         {years.length === 0 ? (
           <>
@@ -127,7 +113,7 @@ export function PhoneMenu({ basePath, readOnly, onClose }: PhoneMenuProps) {
           {t('sidebar.signOut')}
         </button>
       </div>
-    </div>,
-    document.body,
+      </div>
+    </Modal>
   );
 }

@@ -17,7 +17,7 @@ test('admin on a phone gets the phone shell, no notice', async ({ page }) => {
   expect(await page.evaluate(() => document.documentElement.scrollWidth)).toBeLessThanOrEqual(375);
 
   await page.getByRole('button', { name: 'Open menu' }).click();
-  const menu = page.getByRole('dialog', { name: 'Menu' });
+  const menu = page.getByRole('dialog', { name: 'Siripura Central College' });
   await expect(menu).toBeVisible();
   await shot(page, 'phone-shell-menu');
   await menu.getByRole('link', { name: 'Teachers' }).click();
