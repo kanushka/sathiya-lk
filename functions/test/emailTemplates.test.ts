@@ -180,8 +180,8 @@ describe('relief email templates', () => {
     for (const make of Object.values(cases)) {
       const { text } = make();
       expect(text).not.toContain('2026-11-24');
-      expect(text).toContain('Tuesday');
-      expect(text).toContain('අඟහරුවාදා');
+      expect(text).toContain('on Tuesday, 24 November 2026.');
+      expect(text).toContain('2026 නොවැම්බර් 24, අඟහරුවාදා දින');
     }
   });
 
