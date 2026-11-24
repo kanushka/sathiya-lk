@@ -6,6 +6,7 @@ import { db } from './lib/admin';
 import { callOpts } from './lib/callOptions';
 import { assertSchoolRoom, syncClaims } from './lib/claims';
 import { fail, invalid, isVerified, notAllowed, obj, optDocId, optStr, requireAuth, str } from './lib/guards';
+import { fileJoinRequest } from './lib/joinRequest';
 import { linkTeacher } from './lib/linkTeacher';
 import { consumeRateLimits, JOIN_PER_UID_PER_DAY, JOIN_REQUEST_PER_UID_PER_DAY } from './lib/rateLimit';
 import { hashToken } from './lib/tokens';
@@ -56,7 +57,7 @@ export const joinSchool = onCall(callOpts, async (req): Promise<JoinSchoolRes> =
   if (matches.length === 1) {
     const teacherId = matches[0]!.id;
     await assertSchoolRoom(uid, schoolId);
-    await runTx((tx) => linkTeacher(tx, schoolId, teacherId, uid, opts));
+    await runTx((tx) => linkTeacher(tx, schoolId, teacherId, uid, { ...opts, matchEmail: email }));
     await syncClaims(uid);
     return { status: 'linked', schoolId, teacherId };
   }
@@ -70,14 +71,6 @@ export const joinSchool = onCall(callOpts, async (req): Promise<JoinSchoolRes> =
   }
   await assertSchoolRoom(uid, schoolId);
   await consumeRateLimits([{ scope: 'join-request-uid', id: uid, max: JOIN_REQUEST_PER_UID_PER_DAY }]);
-  await db.doc(`${paths.joinRequests(schoolId)}/${uid}`).set({
-    uid,
-    email,
-    ...(name && { name }),
-    staffId: teacher!.staffId,
-    teacherId: teacher!.id,
-    createdAt: Date.now(),
-    status: 'pending',
-  });
+  await fileJoinRequest(schoolId, teacher!.id, { uid, email, ...(name && { name }), staffId: teacher!.staffId });
   return { status: 'pending', schoolId, teacherId: teacher!.id };
 });

@@ -2,6 +2,7 @@
 // Copyright (C) 2026 Kanushka Gayan
 import { paths } from '@sathiya/core';
 import { describe, expect, it } from 'vitest';
+import { fileJoinRequest } from '../src/lib/joinRequest';
 import { linkTeacher, type LinkOpts } from '../src/lib/linkTeacher';
 import { runTx } from '../src/lib/tx';
 import { adminDb, adminWithSchool, signUp, teacherInput } from './helpers';
@@ -93,8 +94,54 @@ describe('linkTeacher', () => {
     expect(members.docs.map((d) => d.id).filter((id) => id === a.uid || id === b.uid)).toEqual([winner]);
   });
 
+  it('refuses when the teacher email no longer matches the email the caller matched on', async () => {
+    const { admin, sid, user } = await setup();
+    const { teacherId } = await admin.call('createTeacher', { schoolId: sid, teacher: { ...teacherInput('SCC002'), email: 'Old@Example.com' } });
+    await adminDb.doc(`${paths.teachers(sid)}/${teacherId}`).update({ email: 'new@example.com' });
+    await expect(link(sid, teacherId, user.uid, { matchEmail: 'old@example.com' })).rejects.toMatchObject({ code: 'failed-precondition', details: { code: 'invalid' } });
+    expect((await teacherDoc(sid, teacherId)).uid).toBeUndefined();
+    await link(sid, teacherId, user.uid, { matchEmail: 'new@example.com' });
+    expect((await teacherDoc(sid, teacherId)).uid).toBe(user.uid);
+  });
+
   it('fails for an unknown teacher', async () => {
     const { sid, user } = await setup();
     await expect(link(sid, 'nope', user.uid)).rejects.toMatchObject({ code: 'not-found', details: { code: 'invalid' } });
+  });
+});
+
+describe('fileJoinRequest', () => {
+  const file = (sid: string, teacherId: string, uid: string) => fileJoinRequest(sid, teacherId, { uid, email: 'x@example.com', staffId: 'SCC001' });
+  const requestOf = async (sid: string, uid: string) => (await adminDb.doc(`${paths.joinRequests(sid)}/${uid}`).get()).data();
+
+  it('writes a fresh pending request, dropping an earlier decision', async () => {
+    const { sid, teacherId, user } = await setup();
+    await adminDb.doc(`${paths.joinRequests(sid)}/${user.uid}`).set({ uid: user.uid, status: 'rejected', decidedAt: 1, createdAt: 1 });
+    await file(sid, teacherId, user.uid);
+    const doc = await requestOf(sid, user.uid);
+    expect(doc).toMatchObject({ uid: user.uid, email: 'x@example.com', staffId: 'SCC001', teacherId, status: 'pending' });
+    expect(doc!.decidedAt).toBeUndefined();
+  });
+
+  it('refuses a teacher deleted since the caller read it', async () => {
+    const { sid, teacherId, user } = await setup();
+    await adminDb.doc(`${paths.teachers(sid)}/${teacherId}`).delete();
+    await expect(file(sid, teacherId, user.uid)).rejects.toMatchObject({ code: 'failed-precondition', details: { code: 'staff-id-unknown' } });
+    expect(await requestOf(sid, user.uid)).toBeUndefined();
+  });
+
+  it('refuses a teacher linked since the caller read it', async () => {
+    const { sid, teacherId, user } = await setup();
+    await link(sid, teacherId, (await signUp()).uid);
+    await expect(file(sid, teacherId, user.uid)).rejects.toMatchObject({ code: 'failed-precondition', details: { code: 'already-linked', reason: 'teacher' } });
+    expect(await requestOf(sid, user.uid)).toBeUndefined();
+  });
+
+  it('refuses an account that got a teacher in the school since the caller read it', async () => {
+    const { admin, sid, teacherId, user } = await setup();
+    const { teacherId: other } = await admin.call('createTeacher', { schoolId: sid, teacher: teacherInput('SCC002') });
+    await link(sid, other, user.uid);
+    await expect(file(sid, teacherId, user.uid)).rejects.toMatchObject({ code: 'failed-precondition', details: { code: 'already-linked', reason: 'account' } });
+    expect(await requestOf(sid, user.uid)).toBeUndefined();
   });
 });

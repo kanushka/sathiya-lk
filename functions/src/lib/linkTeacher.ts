@@ -11,6 +11,7 @@ export interface LinkOpts {
   role?: 'admin';
   email?: string;
   name?: string;
+  matchEmail?: string;
 }
 
 // The caller runs syncClaims(uid) after the transaction commits.
@@ -25,6 +26,9 @@ export async function linkTeacher(tx: Transaction, sid: string, teacherId: strin
     tx.get(db.collection(paths.teacherLinks()).where('sid', '==', sid).where('teacherId', '==', teacherId)),
   ]);
   if (!teacher.exists) fail('not-found', 'invalid', 'Teacher not found');
+  if (opts.matchEmail !== undefined && (teacher.data() as Teacher).email?.trim().toLowerCase() !== opts.matchEmail) {
+    fail('failed-precondition', 'invalid', 'The teacher email changed');
+  }
   if ((teacher.data() as Teacher).uid) alreadyLinked('teacher', 'This teacher is already linked to an account');
   if (!own.empty) alreadyLinked('account', 'This account is already linked to a teacher in this school');
 
