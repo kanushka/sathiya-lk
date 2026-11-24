@@ -81,6 +81,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const refreshClaims = useCallback(async () => {
     const current = auth.currentUser;
     const next = current ? await readClaims(current, true) : {};
+    // Another user may have signed in while the token was in flight; their claims must not be replaced with these.
+    if (auth.currentUser !== current) return {};
     setClaims(next);
     return next;
   }, []);

@@ -72,6 +72,56 @@ describe('token changes', () => {
   });
 });
 
+function RefreshProbe({ onResult }: { onResult(c: unknown): void }) {
+  const { claims, refreshClaims } = useAuth();
+  return (
+    <>
+      <output data-testid="claims">{JSON.stringify(claims)}</output>
+      <button onClick={() => void refreshClaims().then(onResult)}>refresh</button>
+    </>
+  );
+}
+
+describe('refreshClaims', () => {
+  it('drops a refresh result that arrives after another user signed in', async () => {
+    let finishA: (v: { claims: Record<string, unknown> }) => void = () => undefined;
+    const a = { uid: 'a', getIdTokenResult: vi.fn(async (force?: boolean) => (force ? new Promise((r) => (finishA = r)) : { claims: {} })) };
+    const b = { uid: 'b', getIdTokenResult: vi.fn(async () => ({ claims: { schools: { sB: { r: 't' } } } })) };
+    fbAuth.currentUser = a;
+    const onResult = vi.fn();
+    render(
+      <AuthProvider>
+        <RefreshProbe onResult={onResult} />
+      </AuthProvider>,
+    );
+    await act(async () => fb.listener?.(a));
+    await userEvent.setup().click(screen.getByText('refresh'));
+    fbAuth.currentUser = b;
+    await act(async () => fb.listener?.(b));
+    expect(screen.getByTestId('claims')).toHaveTextContent('{"schools":{"sB":{"r":"t"}}}');
+    await act(async () => finishA({ claims: { schools: { sA: { r: 'a' } } } }));
+    expect(screen.getByTestId('claims')).toHaveTextContent('{"schools":{"sB":{"r":"t"}}}');
+    expect(onResult).toHaveBeenCalledWith({});
+    fbAuth.currentUser = null;
+  });
+
+  it('keeps a refresh result when the same user is still signed in', async () => {
+    const a = { uid: 'a', getIdTokenResult: vi.fn(async (force?: boolean) => ({ claims: force ? { schools: { sA: { r: 'a' } } } : {} })) };
+    fbAuth.currentUser = a;
+    const onResult = vi.fn();
+    render(
+      <AuthProvider>
+        <RefreshProbe onResult={onResult} />
+      </AuthProvider>,
+    );
+    await act(async () => fb.listener?.(a));
+    await userEvent.setup().click(screen.getByText('refresh'));
+    expect(await screen.findByText('{"schools":{"sA":{"r":"a"}}}')).toBeInTheDocument();
+    expect(onResult).toHaveBeenCalledWith({ schools: { sA: { r: 'a' } } });
+    fbAuth.currentUser = null;
+  });
+});
+
 describe('parseClaims', () => {
   it('keeps the schools map and super flag', () => {
     expect(parseClaims({ schools: { s1: { r: 'a', t: 'T1' }, s2: { r: 't', t: 'T2' } }, super: true, iss: 'x' })).toEqual({
