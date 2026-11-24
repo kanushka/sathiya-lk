@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
 // Copyright (C) 2026 Kanushka Gayan
 import { pickName } from '@sathiya/core';
-import { render, schoolHeader, type Rendered, type SchoolBrand } from './layout';
+import { brandSubject, render, schoolFooter, schoolHeader, type Rendered, type SchoolBrand } from './layout';
 
 export interface SchoolStatusInput {
   school: SchoolBrand;
@@ -10,44 +10,48 @@ export interface SchoolStatusInput {
 }
 
 export function schoolSuspended({ school }: SchoolStatusInput): Rendered {
+  const name = pickName(school, 'en');
   const si = pickName(school, 'si');
   return render({
-    subject: `${pickName(school, 'en')} has been suspended on Sathiya`,
+    subject: brandSubject(`${name} is suspended`),
     header: schoolHeader(school),
     en: {
-      greeting: 'Hello,',
+      title: 'Your school is suspended',
+      status: { tone: 'bad', badge: 'Suspended', text: 'Sign-in is off for admins and teachers.' },
       paras: [
-        [{ b: pickName(school, 'en') }, ' has been suspended on Sathiya. Admins and teachers cannot sign in to it until it is reactivated.'],
-        'Your data is kept.',
+        [{ b: name }, " has been suspended on Sathiya. Admins and teachers can't sign in until it is reactivated."],
+        'Your timetables and setup are kept.',
       ],
-      note: 'If you think this is a mistake, reply to this email.',
+      note: 'Think this is a mistake? Reply to this email.',
     },
     si: {
-      greeting: 'ආයුබෝවන්,',
+      title: 'ඔබගේ පාසල අත්හිටුවා ඇත',
       paras: [
         `${si} Sathiya හි අත්හිටුවා ඇත. නැවත සක්‍රිය කරන තෙක් පරිපාලකයන්ට සහ ගුරුවරුන්ට පිවිසිය නොහැක.`,
         'ඔබගේ දත්ත ආරක්ෂිතව තබා ඇත.',
       ],
       note: 'මෙය වැරදීමක් යැයි ඔබ සිතන්නේ නම් මෙම ඊමේලයට පිළිතුරු දෙන්න.',
     },
-    footer: { en: `Sent by Sathiya for ${pickName(school, 'en')}.` },
+    footer: schoolFooter(school),
   });
 }
 
 export function schoolReactivated({ school, loginUrl }: SchoolStatusInput): Rendered {
+  const name = pickName(school, 'en');
   const si = pickName(school, 'si');
   return render({
-    subject: `${pickName(school, 'en')} is active again on Sathiya`,
+    subject: brandSubject(`${name} is active again`),
     header: schoolHeader(school),
     en: {
-      greeting: 'Hello,',
-      paras: [[{ b: pickName(school, 'en') }, ' has been reactivated on Sathiya. Admins and teachers can sign in again.']],
+      title: 'Your school is active again',
+      status: { tone: 'ok', badge: 'Active', text: 'Admins and teachers can sign in again.' },
+      paras: [[{ b: name }, ' has been reactivated on Sathiya. Everything is where you left it.']],
       cta: { label: 'Open Sathiya', url: loginUrl },
     },
     si: {
-      greeting: 'ආයුබෝවන්,',
+      title: 'ඔබගේ පාසල නැවත සක්‍රියයි',
       paras: [`${si} Sathiya හි නැවත සක්‍රිය කර ඇත. පරිපාලකයන්ට සහ ගුරුවරුන්ට නැවත පිවිසිය හැක.`],
     },
-    footer: { en: `Sent by Sathiya for ${pickName(school, 'en')}.` },
+    footer: schoolFooter(school),
   });
 }

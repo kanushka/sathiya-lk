@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
 // Copyright (C) 2026 Kanushka Gayan
 import { pickName } from '@sathiya/core';
-import { render, schoolHeader, type Rendered, type SchoolBrand } from './layout';
+import { BRAND_NAME, render, schoolFooter, schoolHeader, type Rendered, type SchoolBrand } from './layout';
 
 export interface AdminInviteInput {
   inviter: string;
@@ -11,20 +11,21 @@ export interface AdminInviteInput {
 }
 
 export function adminInvite({ inviter, school, loginUrl }: AdminInviteInput): Rendered {
+  const name = pickName(school, 'en');
   const si = pickName(school, 'si');
   return render({
-    subject: `You're invited to manage ${pickName(school, 'en')} on Sathiya`,
+    subject: `Join ${name} on ${BRAND_NAME}`,
     header: schoolHeader(school),
     en: {
-      greeting: 'Hello,',
-      paras: [[{ b: inviter }, ' invited you to be an admin of ', { b: pickName(school, 'en') }, ' on Sathiya, where the school builds its timetables.']],
+      title: "You're invited to be an admin",
+      paras: [[{ b: inviter }, ' invited you to help manage ', { b: name }, ' on Sathiya, where the school builds its timetables.']],
       cta: { label: 'Accept invite', url: loginUrl },
-      note: 'Sign in with this email address (Google or password). The invite is waiting for you.',
+      note: 'Sign in with this email address, with Google or a password. The invite waits for you.',
     },
     si: {
-      greeting: 'ආයුබෝවන්,',
+      title: 'පරිපාලකයෙකු ලෙස එක්වන්න',
       paras: [`${si} පාසලේ Sathiya පරිපාලකයෙකු ලෙස එක්වීමට ${inviter} ඔබට ආරාධනා කර ඇත. ඉහත බොත්තම ඔබන්න.`],
     },
-    footer: { en: `Sent by Sathiya for ${pickName(school, 'en')}. Not expecting this? Ignore it.` },
+    footer: schoolFooter(school, 'Not expecting this? Ignore it.'),
   });
 }
