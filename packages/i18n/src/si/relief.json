@@ -47,8 +47,8 @@
     "todayCount_other": "අද කාලච්ඡේද {{count}}",
     "noLessonsToday": "අද කාලච්ඡේද නැත"
   },
-  "uncovered_one": "කාලච්ඡේද {{count}}කට නිදහස් ගුරුවරයෙකු නැත",
-  "uncovered_other": "කාලච්ඡේද {{count}}කට නිදහස් ගුරුවරයෙකු නැත",
+  "uncovered_one": "ආදේශක නැති කාලච්ඡේද {{count}}",
+  "uncovered_other": "ආදේශක නැති කාලච්ඡේද {{count}}",
   "save": "සුරකා දැනුම් දෙන්න",
   "saving": "සුරකිමින්…",
   "savedAt": "{{time}} ට සුරැකිණි",

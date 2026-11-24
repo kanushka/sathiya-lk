@@ -47,8 +47,8 @@
     "todayCount_other": "{{count}} periods today",
     "noLessonsToday": "No lessons today"
   },
-  "uncovered_one": "{{count}} period has no free teacher",
-  "uncovered_other": "{{count}} periods have no free teacher",
+  "uncovered_one": "{{count}} period without relief",
+  "uncovered_other": "{{count}} periods without relief",
   "save": "Save & notify",
   "saving": "Saving…",
   "savedAt": "Saved {{time}}",

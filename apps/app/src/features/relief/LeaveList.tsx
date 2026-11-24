@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
 // Copyright (C) 2026 Kanushka Gayan
 
-import { LEAVE_TYPES, toMinutes, type DayIndex, type Leave, type LeaveType, type Teacher, type TeacherSnapshot } from '@sathiya/core';
+import { LEAVE_TYPES, toMinutes, type DayIndex, type Leave, type LeaveType, type Relief, type Teacher, type TeacherSnapshot } from '@sathiya/core';
 import { useTranslation } from 'react-i18next';
 import { Badge } from '../../ui/Badge';
 import { Checkbox } from '../../ui/Checkbox';
@@ -12,6 +12,7 @@ import type { Names } from './model';
 
 export interface LeaveListProps {
   leaves: Leave[];
+  reliefs: Relief[];
   snaps: Map<string, TeacherSnapshot>;
   day: DayIndex;
   names: Names;
@@ -23,7 +24,7 @@ export interface LeaveListProps {
   onRemove(teacherId: string): void;
 }
 
-export function LeaveList({ leaves, snaps, day, names, readOnly, addable, onAdd, onType, onTick, onRemove }: LeaveListProps) {
+export function LeaveList({ leaves, reliefs, snaps, day, names, readOnly, addable, onAdd, onType, onTick, onRemove }: LeaveListProps) {
   const { t } = useTranslation('relief');
 
   return (
@@ -55,7 +56,7 @@ export function LeaveList({ leaves, snaps, day, names, readOnly, addable, onAdd,
               .filter((c) => c.day === day && c.entryId !== undefined)
               .sort((a, b) => toMinutes(a.start) - toMinutes(b.start));
             const ticked = new Set(leave.entryIds);
-            const shown = readOnly ? cells.filter((c) => ticked.has(c.entryId!)) : cells;
+            const past = reliefs.filter((r) => r.absentTeacherId === leave.teacherId);
             return (
               <li key={leave.teacherId} role="group" aria-label={name} className="border-t border-line-soft py-3 first:border-t-0 first:pt-0">
                 <div className="flex items-start justify-between gap-2">
@@ -76,19 +77,19 @@ export function LeaveList({ leaves, snaps, day, names, readOnly, addable, onAdd,
                     ))}
                   </div>
                 )}
-                {shown.length === 0 ? (
+                {(readOnly ? past : cells).length === 0 ? (
                   <p className="mb-0 mt-2 text-[13px] text-ink-muted">{t('leave.noLessons')}</p>
                 ) : readOnly ? (
                   <ul className="mb-0 mt-2 flex list-none flex-col gap-1 p-0 text-[13px] text-ink-soft">
-                    {shown.map((c) => (
-                      <li key={c.entryId}>{names.lesson(c)}</li>
+                    {past.map((r) => (
+                      <li key={r.entryId}>{names.lesson(r)}</li>
                     ))}
                   </ul>
                 ) : (
                   <fieldset className="m-0 mt-3 border-0 p-0">
                     <legend className="mb-1.5 p-0 text-xs font-semibold text-ink-muted">{t('leave.lessons')}</legend>
                     <div className="grid gap-x-4 gap-y-2 sm:grid-cols-2">
-                      {shown.map((c) => (
+                      {cells.map((c) => (
                         <Checkbox
                           key={c.entryId}
                           checked={ticked.has(c.entryId!)}

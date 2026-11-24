@@ -18,7 +18,7 @@ export interface ReliefListProps {
   readOnly: boolean;
   candidatesOf(index: number): Candidate[];
   errorsOf(r: Relief): string[];
-  status(teacherId: string): ReactNode;
+  status(r: Relief): ReactNode;
   onPick(index: number, teacherId: string | null): void;
   onSuggest(): void;
 }
@@ -76,7 +76,7 @@ export function ReliefList({ reliefs, names, readOnly, candidatesOf, errorsOf, s
                   )}
                   <span className="flex flex-wrap gap-1.5">
                     {unavailable && <Badge tone="danger">{t('reliefs.notAvailable')}</Badge>}
-                    {tid !== null && status(tid)}
+                    {status(r)}
                   </span>
                   {errors.map((e) => (
                     <span key={e} className="text-[13px] font-semibold text-danger">

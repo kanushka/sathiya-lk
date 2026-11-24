@@ -91,13 +91,13 @@ describe('relief page', () => {
     await user.click(screen.getByRole('button', { name: 'Suggest relief' }));
     expect(screen.getByRole('button', { name: /^Relief for P1/ })).toHaveTextContent('Mr. P. Bandara');
     expect(screen.getByRole('button', { name: /^Relief for P3/ })).toHaveTextContent('Uncovered');
-    expect(screen.getByText('1 period has no free teacher')).toBeInTheDocument();
+    expect(screen.getByText('1 period without relief')).toBeInTheDocument();
 
     await user.click(screen.getByRole('button', { name: /^Relief for P1/ }));
     const dialog = screen.getByRole('dialog');
     expect(within(dialog).getByRole('button', { name: /Mr\. P\. Bandara/ })).toHaveTextContent('Teaches this subject');
     await user.click(within(dialog).getByRole('button', { name: /Leave uncovered/ }));
-    expect(screen.getByText('2 periods have no free teacher')).toBeInTheDocument();
+    expect(screen.getByText('2 periods without relief')).toBeInTheDocument();
   });
 
   it('save sends expectedUpdatedAt and shows queued summary', async () => {
@@ -120,6 +120,26 @@ describe('relief page', () => {
     expect(req.reliefs.map((r) => [r.entryId, r.reliefTeacherId])).toEqual([['e1', T.bandara], ['e2', null]]);
     expect(await screen.findByText(/1 teacher will be emailed/)).toBeInTheDocument();
     expect(screen.getByText(/1 uncovered/)).toBeInTheDocument();
+  });
+
+  it('sends its own save time when editing again before the doc catches up', async () => {
+    vi.mocked(call).mockResolvedValue({ updatedAt: 2000, queued: 0, skippedNoEmail: 0, uncovered: 0 });
+    const saved: ReliefDay = { date: '2026-11-24', day: TUE, leaves: [], reliefs: [], names: {}, updatedAt: 1000, updatedBy: 'u' };
+    vi.mocked(useReliefDay).mockReturnValue(state({ doc: saved }));
+    const user = setup();
+    const card = await markMorning(user);
+    await user.click(screen.getByRole('button', { name: 'Save & notify' }));
+    await screen.findByText('No emails needed');
+    expect(screen.getByRole('button', { name: 'Save & notify' })).toBeDisabled();
+    await user.click(within(card).getByRole('checkbox', { name: /P3/ }));
+    await user.click(screen.getByRole('button', { name: 'Save & notify' }));
+    expect(vi.mocked(call).mock.calls.map((c) => (c[1] as { expectedUpdatedAt: number | null }).expectedUpdatedAt)).toEqual([1000, 2000]);
+  });
+
+  it('counts empty slots as without relief before suggesting', async () => {
+    const user = setup();
+    await markMorning(user);
+    expect(screen.getByText('2 periods without relief')).toBeInTheDocument();
   });
 
   it('stale error asks to reload', async () => {
@@ -177,6 +197,7 @@ describe('relief page', () => {
     expect(useReliefDay).toHaveBeenCalledWith('siripura', 'y-2026', '2026-11-20');
     expect(screen.getByText(/Fri 20 Nov/)).toBeInTheDocument();
     expect(screen.getByText('Mr. P. Bandara')).toBeInTheDocument();
+    expect(screen.getByRole('group', { name: /N\. Perera/ })).toHaveTextContent('P2 · 08:30 · 6A Mathematics');
     expect(screen.getByText('Emailed 07:35')).toBeInTheDocument();
     expect(screen.queryByRole('button', { name: 'Save & notify' })).not.toBeInTheDocument();
     expect(screen.queryByRole('button', { name: 'Suggest relief' })).not.toBeInTheDocument();
@@ -195,6 +216,20 @@ describe('relief page', () => {
     vi.mocked(useReliefDay).mockReturnValue(state({ doc: saved, notified: { sent: {}, pending: { [T.bandara]: 5 } } }));
     setup();
     expect(screen.getByText('Email pending')).toBeInTheDocument();
+  });
+
+  it('hides email status for an unsaved pick', async () => {
+    const saved: ReliefDay = {
+      date: '2026-11-24', day: TUE,
+      leaves: [{ teacherId: T.perera, type: 'morning', entryIds: ['e1'] }],
+      reliefs: [{ entryId: 'e1', absentTeacherId: T.perera, day: TUE, period: 1, start: '07:45', end: '08:30', classIds: [C.c6a], subjectId: S.maths, reliefTeacherId: null }],
+      names: {}, updatedAt: 5, updatedBy: 'u',
+    };
+    vi.mocked(useReliefDay).mockReturnValue(state({ doc: saved, notified: { sent: {}, pending: { [T.bandara]: 5 } } }));
+    const user = setup();
+    await user.click(screen.getByRole('button', { name: 'Suggest relief' }));
+    expect(screen.getByRole('button', { name: /^Relief for P1/ })).toHaveTextContent('Mr. P. Bandara');
+    expect(screen.queryByText('Email pending')).not.toBeInTheDocument();
   });
 
   it('shows no email for a teacher without email or account', () => {

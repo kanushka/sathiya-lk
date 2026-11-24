@@ -9,11 +9,12 @@ import {
   type DayIndex,
   type Leave,
   type LeaveType,
+  type Relief,
   type ReliefCtx,
   type ReliefError,
   type SaveReliefDayRes,
 } from '@sathiya/core';
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Link, useSearchParams } from 'react-router-dom';
 import { useSchool, useYear } from '../../app/SchoolProvider';
@@ -37,6 +38,7 @@ import {
   formatDate,
   isIsoDate,
   namesFor,
+  reliefKey,
   sameDraft,
   weekdayOf,
   withLeaves,
@@ -138,7 +140,8 @@ function ReliefDayEditor({ sid, yid, date, day, readOnly, data, base }: EditorPr
   const school = useSchool();
   const { doc, snaps, stats, notified } = data;
 
-  const [draft, setDraft] = useState<(DayDraft & { savedAt?: number }) | null>(null);
+  const [draft, setDraft] = useState<DayDraft | null>(null);
+  const [lastSave, setLastSave] = useState<{ updatedAt: number; draft: DayDraft } | null>(null);
   const [saving, setSaving] = useState(false);
   const [problem, setProblem] = useState<Problem | null>(null);
   const [result, setResult] = useState<SaveReliefDayRes | null>(null);
@@ -146,9 +149,12 @@ function ReliefDayEditor({ sid, yid, date, day, readOnly, data, base }: EditorPr
   const saved = useMemo<DayDraft>(() => ({ leaves: doc?.leaves ?? [], reliefs: doc?.reliefs ?? [] }), [doc]);
   const current = draft ?? saved;
 
+  const awaiting = lastSave !== null && doc?.updatedAt !== lastSave.updatedAt;
   useEffect(() => {
-    if (draft?.savedAt !== undefined && doc?.updatedAt === draft.savedAt) setDraft(null);
-  }, [draft, doc]);
+    if (lastSave === null || doc?.updatedAt !== lastSave.updatedAt) return;
+    if (draft && sameDraft(draft, lastSave.draft)) setDraft(null);
+    setLastSave(null);
+  }, [lastSave, draft, doc]);
 
   const names = useMemo(() => namesFor(school, lang, doc, snaps, (n) => tc('periods.periodN', { n })), [school, lang, doc, snaps, tc]);
   const teacherById = useMemo(() => new Map(school.teachers.map((x) => [x.id, x])), [school.teachers]);
@@ -156,7 +162,11 @@ function ReliefDayEditor({ sid, yid, date, day, readOnly, data, base }: EditorPr
     const gradeNo = new Map(school.grades.map((g) => [g.id, g.number]));
     return new Map(school.classes.flatMap((c) => (gradeNo.has(c.gradeId) ? [[c.id, gradeNo.get(c.gradeId)!] as const] : [])));
   }, [school.grades, school.classes]);
-  const counts = useMemo(() => countsExcludingSaved(stats, doc), [stats, doc]);
+  const liveCounts = useMemo(() => countsExcludingSaved(stats, doc), [stats, doc]);
+  // Stats and the day doc arrive on separate listeners after a save; ranking on one without the other double-counts.
+  const settledCounts = useRef(liveCounts);
+  if (!awaiting) settledCounts.current = liveCounts;
+  const counts = awaiting ? settledCounts.current : liveCounts;
   const reliefCtx = useMemo<ReliefCtx>(
     () => ({ teachers: school.teachers, snaps, gradeOfClass, day, leaves: current.leaves, counts }),
     [school.teachers, snaps, gradeOfClass, day, current.leaves, counts],
@@ -174,10 +184,7 @@ function ReliefDayEditor({ sid, yid, date, day, readOnly, data, base }: EditorPr
 
   const edit = (fn: (d: DayDraft) => DayDraft) => {
     setResult(null);
-    setDraft((prev) => {
-      const { leaves, reliefs } = fn(prev ?? saved);
-      return { leaves, reliefs };
-    });
+    setDraft((prev) => fn(prev ?? saved));
   };
   const setLeaves = (fn: (leaves: Leave[]) => Leave[]) => edit((d) => withLeaves(fn(d.leaves), d.reliefs, snaps, day));
   const defaultTicks = (teacherId: string, type: LeaveType): string[] => {
@@ -194,7 +201,10 @@ function ReliefDayEditor({ sid, yid, date, day, readOnly, data, base }: EditorPr
       .filter((e) => e.entryId === r.entryId && (e.teacherId === r.reliefTeacherId || (e.code === 'not-on-leave-lesson' && e.teacherId === r.absentTeacherId)))
       .map((e) => t(`errors.codes.${e.code}`));
 
-  const status = (tid: string) => {
+  const savedPick = new Map((doc?.reliefs ?? []).map((r) => [reliefKey(r), r.reliefTeacherId]));
+  const status = (r: Relief) => {
+    const tid = r.reliefTeacherId;
+    if (tid === null || savedPick.get(reliefKey(r)) !== tid) return null;
     const s = emailStatus(tid, notified, teacherById.get(tid));
     if (!s) return null;
     if (s.kind === 'pending') return <Badge tone="warning">{t('status.pending')}</Badge>;
@@ -203,8 +213,7 @@ function ReliefDayEditor({ sid, yid, date, day, readOnly, data, base }: EditorPr
   };
 
   const uncovered = current.reliefs.filter((r) => r.reliefTeacherId === null).length;
-  const dirty = !sameDraft(current, saved);
-  const awaiting = draft?.savedAt !== undefined && doc?.updatedAt !== draft.savedAt;
+  const dirty = !sameDraft(current, awaiting ? lastSave.draft : saved);
 
   async function save() {
     setSaving(true);
@@ -217,10 +226,12 @@ function ReliefDayEditor({ sid, yid, date, day, readOnly, data, base }: EditorPr
         date,
         leaves: current.leaves,
         reliefs: current.reliefs,
-        expectedUpdatedAt: doc?.updatedAt ?? null,
+        expectedUpdatedAt: awaiting ? lastSave.updatedAt : (doc?.updatedAt ?? null),
       });
       setResult(res);
-      setDraft({ leaves: current.leaves, reliefs: current.reliefs, savedAt: res.updatedAt });
+      const sent = { leaves: current.leaves, reliefs: current.reliefs };
+      setDraft(sent);
+      setLastSave({ updatedAt: res.updatedAt, draft: sent });
     } catch (err) {
       const e = toApiError(err);
       if (e.code === 'stale') setProblem({ kind: 'stale' });
@@ -234,6 +245,7 @@ function ReliefDayEditor({ sid, yid, date, day, readOnly, data, base }: EditorPr
 
   const reload = () => {
     setDraft(null);
+    setLastSave(null);
     setProblem(null);
     setResult(null);
     data.reloadSnaps?.();
@@ -250,6 +262,7 @@ function ReliefDayEditor({ sid, yid, date, day, readOnly, data, base }: EditorPr
     <div className="flex flex-col gap-4">
       <LeaveList
         leaves={current.leaves}
+        reliefs={current.reliefs}
         snaps={snaps}
         day={day}
         names={names}
@@ -310,7 +323,7 @@ function ReliefDayEditor({ sid, yid, date, day, readOnly, data, base }: EditorPr
             onClick={() => void save()}
             loading={saving}
             loadingLabel={t('saving')}
-            disabled={!dirty || awaiting}
+            disabled={!dirty}
             className="w-full sm:w-auto"
           >
             {t('save')}
