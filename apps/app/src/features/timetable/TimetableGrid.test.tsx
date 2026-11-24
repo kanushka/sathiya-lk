@@ -4,7 +4,7 @@
 import type { DayIndex, TemplateRow } from '@sathiya/core';
 import { defaultTemplate, mahasen, shortFridayTemplate } from '@sathiya/core/fixtures';
 import { rowsFor } from '@sathiya/core';
-import { fireEvent, screen } from '@testing-library/react';
+import { cleanup, fireEvent, screen } from '@testing-library/react';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { installMatchMedia, resizeTo } from '../../test/matchMedia';
 import { renderWithI18n } from '../../test/render';
@@ -59,6 +59,30 @@ describe('TimetableGrid', () => {
     expect(screen.getByRole('button', { name: new RegExp(`Monday, period ${nPeriods},`) })).toBeInTheDocument();
     expect(screen.getByText('Assembly')).toBeInTheDocument();
     expect(screen.getAllByText(/^Interval ·/).length).toBe(rows[0].filter((r) => r.type === 'interval').length);
+  });
+
+  it('keeps every period when the day with most rows has fewer periods', () => {
+    const act = (nameEn: string) => ({ type: 'activity', start: '07:00', end: '07:10', nameEn }) as TemplateRow;
+    const p = (n: number): TemplateRow => ({ type: 'period', start: `0${7 + n}:00`, end: `0${7 + n}:40` });
+    const four = [p(1), p(2), p(3), p(4)];
+    const mon = [act('A'), p(1), act('B'), p(2), act('C')];
+    setup({ rows: { 0: mon, 1: four, 2: four, 3: four, 4: four } });
+    expect(screen.getByRole('button', { name: /Tuesday, period 4,/ })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: /Friday, period 3,/ })).toBeInTheDocument();
+  });
+
+  it('names an activity band only when every weekday has it', () => {
+    const act = (nameEn: string): TemplateRow => ({ type: 'activity', start: '07:00', end: '07:10', nameEn });
+    const p = (n: number): TemplateRow => ({ type: 'period', start: `0${7 + n}:00`, end: `0${7 + n}:40` });
+    const base = [p(1), p(2)];
+    setup({ rows: { 0: [act('Assembly'), ...base], 1: [act('Choir'), ...base], 2: [act('Assembly'), ...base], 3: [act('Assembly'), ...base], 4: [act('Assembly'), ...base] } });
+    expect(screen.queryByText('Assembly')).toBeNull();
+    cleanup();
+    setup({ rows: { 0: [act('Assembly'), ...base], 1: base, 2: base, 3: base, 4: base } });
+    expect(screen.queryByText('Assembly')).toBeNull();
+    cleanup();
+    setup({ rows: { 0: [act('Assembly'), ...base], 1: [act('Assembly'), ...base], 2: [act('Assembly'), ...base], 3: [act('Assembly'), ...base], 4: [act('Assembly'), ...base] } });
+    expect(screen.getByText('Assembly')).toBeInTheDocument();
   });
 
   it('renders 5 day headers and a button per slot', () => {

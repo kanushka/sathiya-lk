@@ -46,7 +46,7 @@ export function weekSkeleton(rows: Record<DayIndex, TemplateRow[]>): SkeletonRow
       const start = same(at.map((r) => r.start));
       const end = same(at.map((r) => r.end));
       const first = at[0]!;
-      const label = first.type === 'activity' && at.every((r) => r.type === 'activity' && r.nameEn === first.nameEn && r.nameSi === first.nameSi) ? { row: first } : {};
+      const label = first.type === 'activity' && at.length === perDay.length && at.every((r) => r.type === 'activity' && r.nameEn === first.nameEn && r.nameSi === first.nameSi) ? { row: first } : {};
       out.push({ kind: 'interval', ...(start && end ? { start, end } : {}), ...label });
     }
   };

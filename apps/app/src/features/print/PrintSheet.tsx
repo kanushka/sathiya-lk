@@ -74,7 +74,9 @@ export function PrintSheet(props: Props) {
     const present = DAYS.flatMap((d) => (rows[d]?.[i] ? [{ d, row: rows[d]![i]! }] : []));
     const first = present[0]?.row;
     if (!first) continue;
-    if (present.every((p) => p.row.type !== 'period')) {
+    const labelDay = present.find((p) => p.row.type === 'period');
+    const sharedBand = !labelDay && present.length === DAYS.length && present.every((p) => rowLabel(p.row) === rowLabel(first));
+    if (sharedBand) {
       grid.push(
         <div
           key={`r${i}`}
@@ -85,14 +87,17 @@ export function PrintSheet(props: Props) {
       );
       continue;
     }
-    const labelDay = present.find((p) => p.row.type === 'period')!;
-    const sameTimes = present.every((p) => p.row.start === labelDay.row.start && p.row.end === labelDay.row.end);
+    const sameTimes = !labelDay || present.every((p) => p.row.start === labelDay.row.start && p.row.end === labelDay.row.end);
     grid.push(
       <div key={`l${i}`} style={{ display: 'flex', flexDirection: 'column', justifyContent: 'center', padding: '0 10px', background: '#F9FAFB' }}>
-        <b style={{ fontSize: 14 }}>{periodNumber(rows[labelDay.d]!, i)}</b>
-        <span style={{ fontSize: 11, color: '#5A6378' }}>
-          {labelDay.row.start}–{labelDay.row.end}
-        </span>
+        {labelDay && (
+          <>
+            <b style={{ fontSize: 14 }}>{periodNumber(rows[labelDay.d]!, i)}</b>
+            <span style={{ fontSize: 11, color: '#5A6378' }}>
+              {labelDay.row.start}–{labelDay.row.end}
+            </span>
+          </>
+        )}
       </div>,
     );
     for (const d of DAYS) {

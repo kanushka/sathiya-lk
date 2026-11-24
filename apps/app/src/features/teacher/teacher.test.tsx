@@ -291,4 +291,11 @@ describe('activity rows', () => {
     renderWithSchool(<TodayPage now={wed0920} {...props} />, { ctx, claims: claims(T.perera) });
     expect(screen.getByText(/Assembly · 7:30/)).toBeInTheDocument();
   });
+
+  it('does not name an activity that only some weekdays have', () => {
+    const only = { 0: rows, 1: rows.slice(1), 2: rows.slice(1), 3: rows.slice(1), 4: rows.slice(1) };
+    const snap: TeacherSnapshot = { ...snapshotFor(T.perera), rows: only, cells: [] };
+    renderWithSchool(<WeekPage now={wed0920} snapshot={{ loading: false, data: snap }} />, { ctx, claims: claims(T.perera) });
+    expect(screen.queryByText(/Assembly/)).toBeNull();
+  });
 });

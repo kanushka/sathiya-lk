@@ -48,6 +48,19 @@ function periodTimes(rows: TemplateRow[]): Map<number, { start: string; end: str
   return map;
 }
 
+function gapRow(rows: TemplateRow[], periodsBefore: number, k: number): TemplateRow | undefined {
+  let n = 0;
+  let seen = 0;
+  for (const r of rows) {
+    if (r.type === 'period') {
+      n++;
+      continue;
+    }
+    if (n === periodsBefore && seen++ === k) return r;
+  }
+  return undefined;
+}
+
 const DESKTOP_COLUMNS = '92px repeat(5,minmax(110px,1fr))';
 const PHONE_COLUMNS = '52px repeat(5, calc((100% - 52px - 18px) / 3))';
 const sticky = 'sticky left-0 z-10 bg-white';
@@ -59,12 +72,24 @@ export function TimetableGrid({ rows, cellsFor, selected, onSelect, onActivate, 
   const lang: Lang = useMaybeLang()?.lang ?? 'en';
   const root = useRef<HTMLDivElement>(null);
 
-  const refDay = DAYS.reduce((best, d) => (rows[d].length > rows[best].length ? d : best), 0 as DayIndex);
+  const periodCount = (d: DayIndex) => rows[d].filter((r) => r.type === 'period').length;
+  const refDay = DAYS.reduce(
+    (best, d) => (periodCount(d) > periodCount(best) || (periodCount(d) === periodCount(best) && rows[d].length > rows[best].length) ? d : best),
+    0 as DayIndex,
+  );
   const times = Object.fromEntries(DAYS.map((d) => [d, periodTimes(rows[d])])) as Record<DayIndex, ReturnType<typeof periodTimes>>;
   let n = 0;
-  const refRows: RefRow[] = rows[refDay].map((r) =>
-    r.type !== 'period' ? { kind: 'interval', start: r.start, end: r.end, name: activityName(r, lang) } : { kind: 'period', n: ++n },
-  );
+  let gap = 0;
+  const refRows: RefRow[] = rows[refDay].map((r) => {
+    if (r.type === 'period') {
+      gap = 0;
+      return { kind: 'period', n: ++n };
+    }
+    const at = DAYS.map((d) => gapRow(rows[d], n, gap));
+    gap++;
+    const shared = at.every((x) => x?.type === 'activity' && x.nameEn === r.nameEn && x.nameSi === r.nameSi);
+    return { kind: 'interval', start: r.start, end: r.end, name: shared ? activityName(r, lang) : '' };
+  });
   const periodRows = refRows.filter((r): r is Extract<RefRow, { kind: 'period' }> => r.kind === 'period');
 
   const exists = (day: DayIndex, period: number) => times[day].has(period);
