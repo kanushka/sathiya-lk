@@ -17,11 +17,12 @@ export interface LinkOpts {
 export async function linkTeacher(tx: Transaction, sid: string, teacherId: string, uid: string, opts: LinkOpts = {}): Promise<void> {
   const teacherRef = db.doc(`${paths.teachers(sid)}/${teacherId}`);
   const memberRef = db.doc(`${paths.members(sid)}/${uid}`);
-  const [teacher, own, member, requests] = await Promise.all([
+  const [teacher, own, member, requests, links] = await Promise.all([
     tx.get(teacherRef),
     tx.get(db.collection(paths.teachers(sid)).where('uid', '==', uid).limit(1)),
     tx.get(memberRef),
     tx.get(db.collection(paths.joinRequests(sid)).where('teacherId', '==', teacherId)),
+    tx.get(db.collection(paths.teacherLinks()).where('sid', '==', sid).where('teacherId', '==', teacherId)),
   ]);
   if (!teacher.exists) fail('not-found', 'invalid', 'Teacher not found');
   if ((teacher.data() as Teacher).uid) alreadyLinked('teacher', 'This teacher is already linked to an account');
@@ -40,4 +41,5 @@ export async function linkTeacher(tx: Transaction, sid: string, teacherId: strin
     if (d.id !== uid && (d.data() as JoinRequest).status !== 'rejected') tx.update(d.ref, { status: 'rejected', decidedAt });
   });
   tx.delete(db.doc(`${paths.joinRequests(sid)}/${uid}`));
+  links.docs.forEach((d) => tx.delete(d.ref));
 }

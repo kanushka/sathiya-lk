@@ -5,7 +5,7 @@ import { onCall } from 'firebase-functions/v2/https';
 import type { DocumentReference } from 'firebase-admin/firestore';
 import { db } from './lib/admin';
 import { callOpts } from './lib/callOptions';
-import { assertSchoolRoom, syncClaims } from './lib/claims';
+import { hasSchoolRoom, syncClaims } from './lib/claims';
 import { linkTeacher } from './lib/linkTeacher';
 import { runTx } from './lib/tx';
 import { isVerified, notAllowed, requireAuth } from './lib/guards';
@@ -45,7 +45,7 @@ export const claimInvites = onCall(callOpts, async (req): Promise<ClaimInvitesRe
     const memberRef = db.doc(`${paths.members(sid)}/${uid}`);
     const [school, member] = await Promise.all([db.doc(paths.school(sid)).get(), memberRef.get()]);
     if ((school.data() as School | undefined)?.status !== 'active') continue;
-    await assertSchoolRoom(uid, sid);
+    if (!(await hasSchoolRoom(uid, sid))) continue;
     const existing = member.data() as Member | undefined;
     const teacherId = (doc.data() as Invite).teacherId;
     const linked = teacherId ? await tryLink(sid, teacherId, uid, email, name) : false;

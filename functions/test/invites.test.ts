@@ -139,14 +139,15 @@ describe('claimInvites', () => {
     expect(await other.claims()).toEqual({ schools: { [otherSid]: { r: 'a' }, [sid]: { r: 'a' } } });
   });
 
-  it('refuses an invite that would pass the school limit and keeps the invite', async () => {
+  it('skips an invite that would pass the school limit, keeps it, and still syncs claims', async () => {
     const { admin, sid } = await adminWithSchool();
     const email = `full-${uniq()}@example.com`;
     await admin.call('inviteAdmin', { schoolId: sid, email });
     const c = await signUp(email);
     for (let i = 0; i < MAX_SCHOOLS; i++) await adminDb.doc(`${paths.members(`full${i}`)}/${c.uid}`).set({ uid: c.uid, role: 'teacher' });
-    await expectFnError(c.call('claimInvites', {}), 'failed-precondition', 'too-many-schools');
+    await expect(c.call('claimInvites', {})).resolves.toEqual({ schoolIds: [] });
     expect((await adminDb.doc(`${paths.invites(sid)}/${email}`).get()).exists).toBe(true);
+    expect(Object.keys((await c.claims()).schools ?? {})).toHaveLength(MAX_SCHOOLS);
   });
 
   it('skips invites of a disabled school', async () => {
@@ -225,6 +226,15 @@ describe('joinSchool with a school link', () => {
     await expectFnError(u.call('joinSchool', { schoolId: sid, token, staffId: 'SCC009' }), 'failed-precondition', 'already-linked');
   });
 
+  it('refuses a staff ID request from an account already linked in the school', async () => {
+    const email = `l-${uniq()}@example.com`;
+    const { sid, token } = await school(['SCC001', 'SCC002'], { SCC001: email });
+    const u = await signUp(email);
+    await u.call('joinSchool', { schoolId: sid, token });
+    await expectFnError(u.call('joinSchool', { schoolId: sid, token, staffId: 'SCC002' }), 'failed-precondition', 'already-linked');
+    expect((await requestDoc(sid, u.uid)).exists).toBe(false);
+  });
+
   it('refuses a token of another school, and an off link', async () => {
     const a = await school();
     const b = await school();
@@ -265,6 +275,16 @@ describe('joinSchool with a personal link', () => {
     expect((await adminDb.doc(`${paths.teacherLinks()}/${sha(token)}`).get()).exists).toBe(false);
     const v = await signUp();
     await expectFnError(v.call('joinSchool', { token }), 'failed-precondition', 'link-invalid');
+  });
+
+  it('stops working once the teacher is linked another way, even after an unlink', async () => {
+    const { admin, sid, ids } = await school();
+    const { token } = await admin.call('createTeacherLink', { schoolId: sid, teacherId: ids[0]! });
+    await admin.call('linkSelf', { schoolId: sid, teacherId: ids[0]! });
+    expect((await adminDb.doc(`${paths.teacherLinks()}/${sha(token)}`).get()).exists).toBe(false);
+    await admin.call('unlinkTeacher', { schoolId: sid, teacherId: ids[0]! });
+    const u = await signUp();
+    await expectFnError(u.call('joinSchool', { token }), 'failed-precondition', 'link-invalid');
   });
 
   it('refuses an expired link', async () => {

@@ -42,7 +42,6 @@ export const joinSchool = onCall(callOpts, async (req): Promise<JoinSchoolRes> =
       const fresh = await tx.get(linkRef);
       if (!fresh.exists || (fresh.data() as { expiresAt: number }).expiresAt <= Date.now()) linkInvalid();
       await linkTeacher(tx, sid, teacherId, uid, opts);
-      tx.delete(linkRef);
     });
     await syncClaims(uid);
     return { status: 'linked', schoolId: sid, teacherId };
@@ -65,7 +64,10 @@ export const joinSchool = onCall(callOpts, async (req): Promise<JoinSchoolRes> =
   if (!staffId) invalid('A staff ID is required');
   const teacher = teachers.find((t) => t.staffId === staffId);
   if (!teacher) fail('failed-precondition', 'staff-id-unknown', 'No teacher has this staff ID');
-  if (teacher!.uid) fail('failed-precondition', 'already-linked', 'This teacher is already linked to an account');
+  if (teacher!.uid) fail('failed-precondition', 'already-linked', 'This teacher is already linked to an account', { reason: 'teacher' });
+  if (teachers.some((t) => t.uid === uid)) {
+    fail('failed-precondition', 'already-linked', 'This account is already linked to a teacher in this school', { reason: 'account' });
+  }
   await assertSchoolRoom(uid, schoolId);
   await consumeRateLimits([{ scope: 'join-request-uid', id: uid, max: JOIN_REQUEST_PER_UID_PER_DAY }]);
   await db.doc(`${paths.joinRequests(schoolId)}/${uid}`).set({

@@ -10,10 +10,13 @@ const tooManySchools = (): never => fail('failed-precondition', 'too-many-school
 
 const membersOf = (uid: string) => db.collectionGroup(MEMBERS).where('uid', '==', uid).get();
 
-export async function assertSchoolRoom(uid: string, sid: string): Promise<void> {
+export async function hasSchoolRoom(uid: string, sid: string): Promise<boolean> {
   const snap = await membersOf(uid);
-  if (snap.docs.some((d) => d.ref.parent.parent!.id === sid)) return;
-  if (snap.size >= MAX_SCHOOLS) tooManySchools();
+  return snap.docs.some((d) => d.ref.parent.parent!.id === sid) || snap.size < MAX_SCHOOLS;
+}
+
+export async function assertSchoolRoom(uid: string, sid: string): Promise<void> {
+  if (!(await hasSchoolRoom(uid, sid))) tooManySchools();
 }
 
 export async function syncClaims(uid: string): Promise<void> {
