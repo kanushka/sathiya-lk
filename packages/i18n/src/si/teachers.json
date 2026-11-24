@@ -127,7 +127,8 @@
     "reject": "ප්‍රතික්ෂේප කරන්න",
     "approved": "{{name}}ට දැන් කාලසටහන බැලිය හැක",
     "rejected": "ඉල්ලීම ප්‍රතික්ෂේප කළා",
-    "showAll": "සියල්ල පෙන්වන්න ({{count}})",
+    "showAll_one": "සියල්ල පෙන්වන්න ({{count}})",
+    "showAll_other": "සියල්ල පෙන්වන්න ({{count}})",
     "showFewer": "අඩුවෙන් පෙන්වන්න"
   },
   "personalLink": {
