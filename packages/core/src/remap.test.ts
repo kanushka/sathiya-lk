@@ -68,6 +68,20 @@ describe('remapEntries', () => {
     expect(remapEntries(before, after, [entry('a', 0, 1), e], ['c1'])).toEqual({ moves: [], blocked: [], orphaned: [e] });
   });
 
+  it('blocks entries when a used middle period is removed', () => {
+    const after = tpl([before.rows[0]!, before.rows[2]!]);
+    const e = entry('b', 0, 2);
+    expect(remapEntries(before, after, [entry('a', 0, 1), e], ['c1'])).toEqual({ moves: [], blocked: [e], orphaned: [] });
+  });
+
+  it('blocks both entries when two used periods are removed from the middle', () => {
+    const four = tpl([...before.rows, p('09:45', '10:25'), p('10:25', '11:05')]);
+    const after = tpl([four.rows[0]!, four.rows[3]!, four.rows[4]!]);
+    const b = entry('b', 0, 2);
+    const c = entry('c', 0, 3);
+    expect(remapEntries(four, after, [b, c], ['c1'])).toEqual({ moves: [], blocked: [b, c], orphaned: [] });
+  });
+
   it('blocks an entry whose period became an interval', () => {
     const after = tpl([{ type: 'interval', start: '07:45', end: '08:25' }, p('08:25', '09:05'), p('09:05', '09:45')]);
     const e = entry('a', 0, 1);

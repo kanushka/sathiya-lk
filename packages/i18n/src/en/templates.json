@@ -6,8 +6,8 @@
     "emptyBody": "Create a template to define the school's periods.",
     "orphans": "{{n}} timetable entries no longer fit a period. Review them under Needs attention.",
     "saved": "Template saved",
-    "inUse_one": "{{count}} timetable entry sits in a period that would stop being a period. Move it first.",
-    "inUse_other": "{{count}} timetable entries sit in periods that would stop being periods. Move them first.",
+    "inUse_one": "{{count}} lesson sits in a period you removed, merged or turned into a break. Move it first.",
+    "inUse_other": "{{count}} lessons sit in periods you removed, merged or turned into breaks. Move them first.",
     "tooManyMoves": "Too many timetable entries would move at once. Edit fewer periods per save.",
     "saveFailed": "Could not save. Try again."
   },

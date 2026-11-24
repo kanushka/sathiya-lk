@@ -41,6 +41,24 @@ describe('saveTemplate', () => {
     expect(stored?.rows).toEqual(defaultTemplate.rows);
   });
 
+  it('refuses removing a used middle period and writes nothing', async () => {
+    const { admin, sid } = await seededSchool();
+    await putEntries(sid, [entry('e2', 0, 2, [C.c6a], [[S.maths, T.bandara]])]);
+    const [p1, , ...rest] = defaultTemplate.rows;
+    const rows: TemplateRow[] = [p1!, ...rest];
+    await expect(call(admin, sid, patchOf(rows), TPL.default, true)).resolves.toMatchObject({ moved: 0, blocked: 1 });
+    const err = await call(admin, sid, patchOf(rows)).then(
+      () => {
+        throw new Error('expected refusal');
+      },
+      (e: { code?: string; details?: { code?: string; count?: number } }) => e,
+    );
+    expect(err).toMatchObject({ code: 'functions/failed-precondition', details: { code: 'template-in-use', count: 1 } });
+    expect((await entriesOf(sid))[0]!.period).toBe(2);
+    const stored = (await adminDb.doc(`${paths.templates(sid)}/${TPL.default}`).get()).data();
+    expect(stored?.rows).toEqual(defaultTemplate.rows);
+  });
+
   it('keeps entries on their rows when a period is retimed', async () => {
     const { admin, sid } = await seededSchool();
     await putEntries(sid, [entry('e1', 0, 1, [C.c6a], [[S.maths, T.bandara]])]);

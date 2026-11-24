@@ -6,8 +6,9 @@ import type { Entry, PeriodTemplate } from './types';
 
 export interface RemapResult { moves: Array<{ entryId: string; period: number }>; blocked: Entry[]; orphaned: Entry[] }
 
-// An entry follows the period it overlaps most. One that now sits only on an activity or interval is blocked;
-// one that overlaps nothing keeps its period number and is orphaned if that period no longer exists.
+// An entry follows the period it overlaps most. One that now sits only on an activity or interval, or whose
+// time overlaps no period while its old number still exists (a removed middle period), is blocked;
+// one past the new last period is orphaned.
 export function remapEntries(before: PeriodTemplate, after: PeriodTemplate, entries: Entry[], classIds: string[]): RemapResult {
   const wanted = new Set(classIds);
   const landed: Array<{ entry: Entry; period: number; move: boolean }> = [];
@@ -19,6 +20,7 @@ export function remapEntries(before: PeriodTemplate, after: PeriodTemplate, entr
     const best = bestOverlapPeriod(after, e.day, from);
     if (best !== null) landed.push({ entry: e, period: best, move: best !== e.period });
     else if (rowsFor(after, e.day).some((r) => r.type !== 'period' && /^\d\d:\d\d$/.test(r.start) && overlaps(from, { start: toMinutes(r.start), end: toMinutes(r.end) }))) blocked.add(e);
+    else if (windowOf(after, e.day, e.period)) blocked.add(e);
     else landed.push({ entry: e, period: e.period, move: false });
   }
 
