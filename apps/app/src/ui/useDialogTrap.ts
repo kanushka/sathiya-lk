@@ -63,7 +63,7 @@ export function useDialogTrap({ panelRef, containerRef, initialFocusRef, focusPa
         return;
       }
       const active = document.activeElement;
-      if (e.shiftKey && (active === head || !panel.contains(active))) {
+      if (e.shiftKey && (active === head || active === panel || !panel.contains(active))) {
         e.preventDefault();
         tail.focus();
       } else if (!e.shiftKey && (active === tail || !panel.contains(active))) {

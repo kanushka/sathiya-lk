@@ -8,7 +8,7 @@ import { PinSpacer } from './PinPanel';
 describe('PinSpacer', () => {
   it('reserves room under the page for the phone pin bar while pinning', () => {
     const { container } = render(<PinSpacer active />);
-    expect(container.firstElementChild).toHaveClass('h-36', 'md:hidden');
+    expect(container.firstElementChild).toHaveClass('h-[calc(9rem+env(safe-area-inset-bottom))]', 'md:hidden');
     expect(container.firstElementChild).toHaveAttribute('aria-hidden', 'true');
   });
 

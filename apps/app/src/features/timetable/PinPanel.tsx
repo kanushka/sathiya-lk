@@ -60,5 +60,5 @@ export function PinSection({ pin, teacher, teacherRows, className, children, foo
 }
 
 export function PinSpacer({ active }: { active: boolean }) {
-  return active ? <div aria-hidden="true" className="h-36 md:hidden" /> : null;
+  return active ? <div aria-hidden="true" className="h-[calc(9rem+env(safe-area-inset-bottom))] md:hidden" /> : null;
 }

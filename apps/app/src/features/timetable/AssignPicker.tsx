@@ -34,6 +34,7 @@ import { placeThenPin } from './placeThenPin';
 import { limitWarning, planItemColor, teacherReason, teachesAtAll } from './labels';
 import { initials, usePickItems, type GroupItem, type PickItem } from './pickerData';
 import { PHONE_QUERY, useMediaQuery } from '../../ui/PhoneNotice';
+import { focusStep } from './focusStep';
 
 export interface AssignPickerProps {
   classId: string;
@@ -90,10 +91,12 @@ function AssignPickerBody({ classId, slot, subjectId: initialSubject, groupKey, 
   });
 
   const isPhone = useMediaQuery(PHONE_QUERY);
+  const isPhoneRef = useRef(isPhone);
+  isPhoneRef.current = isPhone;
   useEffect(() => {
-    if (group || isPhone) return;
-    (subjectId ? teacherInput : subjectInput).current?.focus();
-  }, [subjectId, group, isPhone]);
+    if (group) return;
+    focusStep((subjectId ? teacherInput : subjectInput).current, isPhoneRef.current);
+  }, [subjectId, group]);
 
   useEffect(() => {
     const id = (subjectId ? teacherInput : subjectInput).current?.getAttribute('aria-activedescendant');

@@ -8,11 +8,11 @@ import { createPortal } from 'react-dom';
 import { describe, expect, it, vi } from 'vitest';
 import { useDialogTrap } from './useDialogTrap';
 
-function Trap({ name, onClose, children }: { name: string; onClose: () => void; children?: React.ReactNode }) {
+function Trap({ name, onClose, children, focusPanel }: { name: string; onClose: () => void; children?: React.ReactNode; focusPanel?: boolean }) {
   const containerRef = useRef<HTMLDivElement>(null);
   const panelRef = useRef<HTMLElement>(null);
   const bodyRef = useRef<HTMLDivElement>(null);
-  useDialogTrap({ panelRef, containerRef, initialFocusRef: bodyRef, onClose });
+  useDialogTrap({ panelRef, containerRef, initialFocusRef: bodyRef, focusPanel, onClose });
   return createPortal(
     <div ref={containerRef}>
       <section ref={panelRef} aria-label={name} tabIndex={-1}>
@@ -98,5 +98,23 @@ describe('useDialogTrap', () => {
     expect(screen.getByText('B first')).toHaveFocus();
     await user.keyboard('{Escape}');
     expect(onClose).not.toHaveBeenCalled();
+  });
+
+  it('Shift+Tab from a focused panel wraps to the last control', async () => {
+    const user = userEvent.setup();
+    function PanelHost() {
+      const [open, setOpen] = useState(false);
+      return (
+        <div>
+          <button onClick={() => setOpen(true)}>Open</button>
+          {open && <Trap name="P" focusPanel onClose={() => undefined} />}
+        </div>
+      );
+    }
+    render(<PanelHost />);
+    await user.click(screen.getByText('Open'));
+    expect(screen.getByLabelText('P')).toHaveFocus();
+    await user.tab({ shift: true });
+    expect(screen.getByText('P last')).toHaveFocus();
   });
 });

@@ -5,8 +5,14 @@ import { singleSpec, type DayIndex, type Entry } from '@sathiya/core';
 import { C, ctx, entries, entry, S, T } from '@sathiya/core/fixtures';
 import { fireEvent, screen, waitFor, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
-import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { installMatchMedia } from '../../test/matchMedia';
+
+let restoreMedia = () => {};
+afterEach(() => {
+  restoreMedia();
+  restoreMedia = () => {};
+});
 import { renderWithSchool } from '../../test/renderWithSchool';
 import { TeacherAssignPicker } from './TeacherAssignPicker';
 
@@ -34,12 +40,20 @@ async function pickSubject(name: string) {
 }
 
 describe('TeacherAssignPicker', () => {
+  it('keeps focus in the sheet when Enter moves to the class step on phones', async () => {
+    restoreMedia = installMatchMedia(375);
+    setup(T.rizan, { day: 2, row: 4 });
+    await userEvent.click(screen.getByRole('combobox', { name: 'Search subjects' }));
+    await userEvent.keyboard('{Enter}');
+    expect(dialog()).toHaveFocus();
+    expect(screen.getByRole('listbox', { name: 'Classes' })).toBeInTheDocument();
+  });
+
   it('does not focus the search on phones, so the keyboard stays down', () => {
-    const restore = installMatchMedia(375);
+    restoreMedia = installMatchMedia(375);
     setup(T.rizan, { day: 2, row: 4 });
     expect(screen.getByRole('combobox', { name: 'Search subjects' })).not.toHaveFocus();
     expect(dialog()).toHaveFocus();
-    restore();
   });
 
   it('lists the teacher’s subjects with what is still needed across his classes', () => {
