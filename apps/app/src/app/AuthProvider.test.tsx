@@ -11,9 +11,10 @@ const fb = vi.hoisted(() => ({
   clear: vi.fn(),
 }));
 
-vi.mock('../lib/firebase', () => ({ auth: { currentUser: null } }));
+const fbAuth = vi.hoisted(() => ({ currentUser: null as unknown }));
+vi.mock('../lib/firebase', () => ({ auth: fbAuth }));
 vi.mock('firebase/auth', () => ({
-  onAuthStateChanged: (_auth: unknown, cb: (u: unknown) => void) => {
+  onIdTokenChanged: (_auth: unknown, cb: (u: unknown) => void) => {
     fb.listener = cb;
     return () => undefined;
   },
@@ -53,6 +54,35 @@ describe('AuthProvider', () => {
     );
     act(() => fb.listener?.(null));
     expect(fb.clear).toHaveBeenCalled();
+  });
+});
+
+function Probe() {
+  const { claims, loading } = useAuth();
+  return <output data-testid="auth">{JSON.stringify({ claims, loading })}</output>;
+}
+
+describe('token changes', () => {
+  it('picks up new claims on a token refresh without a loading flash', async () => {
+    let raw: Record<string, unknown> = {};
+    const user = { uid: 'u1', getIdTokenResult: vi.fn(async () => ({ claims: raw })) };
+    fbAuth.currentUser = user;
+    render(
+      <AuthProvider>
+        <Probe />
+      </AuthProvider>,
+    );
+    await act(async () => fb.listener?.(user));
+    expect(screen.getByTestId('auth')).toHaveTextContent('{"claims":{},"loading":false}');
+    raw = { schools: { s1: { r: 't', t: 'T1' } } };
+    const seen: string[] = [];
+    const observer = new MutationObserver(() => seen.push(screen.getByTestId('auth').textContent ?? ''));
+    observer.observe(screen.getByTestId('auth'), { childList: true, characterData: true, subtree: true });
+    await act(async () => fb.listener?.(user));
+    observer.disconnect();
+    expect(screen.getByTestId('auth')).toHaveTextContent('{"claims":{"schools":{"s1":{"r":"t","t":"T1"}}},"loading":false}');
+    expect(seen.some((s) => s.includes('"loading":true'))).toBe(false);
+    fbAuth.currentUser = null;
   });
 });
 

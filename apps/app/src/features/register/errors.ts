@@ -20,3 +20,19 @@ export function registerFailure(err: unknown): RegisterFailure | null {
 export function isUnverifiedPasswordUser(user: { emailVerified?: boolean; providerData?: { providerId: string }[] } | null): boolean {
   return !!user && !user.emailVerified && !!user.providerData?.some((p) => p.providerId === 'password');
 }
+
+export type AccountErrorKey = 'emailInUse' | 'weakPassword' | 'invalidEmail';
+
+export function accountCreateError(err: unknown): { field: 'email' | 'password'; key: AccountErrorKey } | null {
+  switch ((err as { code?: unknown } | null)?.code) {
+    case 'auth/email-already-in-use':
+      return { field: 'email', key: 'emailInUse' };
+    case 'auth/weak-password':
+    case 'auth/password-does-not-meet-requirements':
+      return { field: 'password', key: 'weakPassword' };
+    case 'auth/invalid-email':
+      return { field: 'email', key: 'invalidEmail' };
+    default:
+      return null;
+  }
+}

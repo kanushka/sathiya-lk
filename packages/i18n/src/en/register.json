@@ -77,6 +77,12 @@
     "submit": "Create school",
     "submitting": "Creating…"
   },
+  "signUp": {
+    "title": "Create account",
+    "terms": "I agree to the <terms>Terms & Conditions</terms> and <privacy>Privacy Policy</privacy>.",
+    "submit": "Create account",
+    "submitting": "Creating…"
+  },
   "errors": {
     "emailInUse": "That email already has an account. Log in instead.",
     "weakPassword": "Password must be at least 8 characters",
@@ -95,6 +101,7 @@
     "sent": "Verification email sent.",
     "sendFailed": "Could not send the email. Please try again shortly.",
     "notYet": "Not verified yet. Open the link in the email, then try again.",
-    "note": "Signed in with Google? You skip this step. One school per account."
+    "note": "Signed in with Google? You skip this step.",
+    "bodySignUp": "We sent a link to <b>{{email}}</b>. Open it to confirm your email, then come back here to continue."
   }
 }

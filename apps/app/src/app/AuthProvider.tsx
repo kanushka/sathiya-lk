@@ -2,8 +2,8 @@
 // Copyright (C) 2026 Kanushka Gayan
 
 import type { Claims, Membership } from '@sathiya/core';
-import { onAuthStateChanged, signOut as fbSignOut, type User } from 'firebase/auth';
-import { createContext, useCallback, useContext, useEffect, useMemo, useState, type ReactNode } from 'react';
+import { onIdTokenChanged, signOut as fbSignOut, type User } from 'firebase/auth';
+import { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState, type ReactNode } from 'react';
 import { clearSessionPasswords } from '../features/teachers/sessionPasswords';
 import { auth } from '../lib/firebase';
 
@@ -48,10 +48,13 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [claims, setClaims] = useState<Claims>({});
   const [loading, setLoading] = useState(true);
 
+  const uidRef = useRef<string | null>(null);
+
   useEffect(
     () =>
-      onAuthStateChanged(auth, (next) => {
-        setLoading(true);
+      onIdTokenChanged(auth, (next) => {
+        const sameUser = !!next && next.uid === uidRef.current;
+        uidRef.current = next?.uid ?? null;
         setUser(next);
         if (!next) {
           clearSessionPasswords();
@@ -59,6 +62,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           setLoading(false);
           return;
         }
+        if (!sameUser) setLoading(true);
         const stale = () => auth.currentUser !== next;
         readClaims(next)
           .then(
@@ -66,7 +70,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
               if (!stale()) setClaims(c);
             },
             () => {
-              if (!stale()) setClaims({});
+              if (!stale() && !sameUser) setClaims({});
             },
           )
           .finally(() => {

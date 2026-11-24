@@ -2,6 +2,7 @@
 // Copyright (C) 2026 Kanushka Gayan
 import { Trans, useTranslation } from 'react-i18next';
 import { Button } from '../../ui/Button';
+import { cx } from '../../ui/cx';
 import { Checkbox } from '../../ui/Checkbox';
 import { webUrl } from '../../lib/urls';
 import { Field, inputClass } from '../../ui/Field';
@@ -25,17 +26,23 @@ export interface StepAccountProps {
   signedIn: boolean;
   busy: boolean;
   error?: { field: 'email' | 'password' | null; message: string } | null;
-  onBack(): void;
+  mode?: 'register' | 'signUp';
+  onBack?(): void;
   onSubmit(): void;
 }
 
-export function StepAccount({ value, onChange, signedIn, signedInEmail, busy, error, onBack, onSubmit }: StepAccountProps) {
+export function StepAccount({ value, onChange, signedIn, signedInEmail, busy, error, mode = 'register', onBack, onSubmit }: StepAccountProps) {
   const { t, i18n } = useTranslation('register');
+  const k = mode === 'signUp' ? 'signUp' : 'account';
   const set = <K extends keyof AccountDraft>(k: K, v: AccountDraft[K]) => onChange({ ...value, [k]: v });
 
   return (
-    <section className="rounded-2xl border-2 border-teal bg-white p-5 sm:p-7">
-      <h2 className="mb-4 mt-0 text-lg font-bold">{t('account.title')}</h2>
+    <section className={mode === 'signUp' ? '' : 'rounded-2xl border-2 border-teal bg-white p-5 sm:p-7'}>
+      {mode === 'signUp' ? (
+        <h1 className="mb-6 mt-0 text-[26px] font-bold">{t('signUp.title')}</h1>
+      ) : (
+        <h2 className="mb-4 mt-0 text-lg font-bold">{t('account.title')}</h2>
+      )}
       {signedIn && signedInEmail && <p className="mb-3 mt-0 text-sm text-ink-muted">{t('account.signedInAs', { email: signedInEmail })}</p>}
       <div className="mb-4 flex flex-wrap gap-3">
         <Field label={t('account.name')} className="flex-[1_1_220px]">
@@ -79,7 +86,7 @@ export function StepAccount({ value, onChange, signedIn, signedInEmail, busy, er
         label={
           <Trans
             t={t}
-            i18nKey="account.terms"
+            i18nKey={`${k}.terms`}
             components={{
               terms: <a href={legalUrl('terms', i18n.language)} target="_blank" rel="noreferrer" />,
               privacy: <a href={legalUrl('privacy', i18n.language)} target="_blank" rel="noreferrer" />,
@@ -90,19 +97,21 @@ export function StepAccount({ value, onChange, signedIn, signedInEmail, busy, er
       {error && error.field === null && (
         <FormError className="mb-0 mt-4">{error.message}</FormError>
       )}
-      <div className="mt-7 flex justify-between border-t border-line-soft pt-5">
-        <Button size="lg" onClick={onBack} disabled={busy}>
-          {t('back')}
-        </Button>
+      <div className={cx('mt-7 flex border-t border-line-soft pt-5', onBack ? 'justify-between' : 'justify-end')}>
+        {onBack && (
+          <Button size="lg" onClick={onBack} disabled={busy}>
+            {t('back')}
+          </Button>
+        )}
         <Button
           variant="primary"
           size="lg"
           loading={busy}
-          loadingLabel={t('account.submitting')}
+          loadingLabel={t(`${k}.submitting`)}
           disabled={!accountOk(value, signedIn)}
           onClick={onSubmit}
         >
-          {t('account.submit')}
+          {t(`${k}.submit`)}
         </Button>
       </div>
     </section>

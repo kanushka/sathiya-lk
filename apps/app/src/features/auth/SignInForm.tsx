@@ -2,18 +2,18 @@
 // Copyright (C) 2026 Kanushka Gayan
 import { useState, type FormEvent } from 'react';
 import { useTranslation } from 'react-i18next';
-import { Link, useLocation, useNavigate } from 'react-router-dom';
-import { useAuth } from '../../app/AuthProvider';
+import { Link } from 'react-router-dom';
 import { useLang } from '../../app/LangProvider';
 import { Badge } from '../../ui/Badge';
 import { Button } from '../../ui/Button';
 import { Field, inputClass } from '../../ui/Field';
 import { PasswordInput } from '../../ui/PasswordInput';
 import { useToast } from '../../ui/Toast';
-import { claimInvites, signInWithGoogle, signInWithPassword } from './api';
+import { signInWithGoogle, signInWithPassword } from './api';
 import { sendAuthEmail } from './authEmail';
 import { authErrorMessage, detailCode } from './errors';
 import { InAppBrowserNotice } from './InAppBrowserNotice';
+import { useFinishSignIn } from './returnPath';
 
 export function GoogleLogo() {
   return (
@@ -40,19 +40,12 @@ export function GoogleLogo() {
 
 export interface SignInFormProps {
   inAppBrowser?: boolean;
+  onCreateAccount?(): void;
 }
 
-function returnPath(state: unknown): string {
-  const from = (state as { from?: { pathname?: unknown; search?: unknown } } | null)?.from;
-  if (typeof from?.pathname !== 'string' || !from.pathname.startsWith('/') || from.pathname.startsWith('//')) return '/';
-  return from.pathname + (typeof from.search === 'string' ? from.search : '');
-}
-
-export function SignInForm({ inAppBrowser = false }: SignInFormProps) {
+export function SignInForm({ inAppBrowser = false, onCreateAccount }: SignInFormProps) {
   const { t } = useTranslation('auth');
-  const { refreshClaims } = useAuth();
-  const navigate = useNavigate();
-  const location = useLocation();
+  const finish = useFinishSignIn();
   const toast = useToast();
   const { lang } = useLang();
   const [email, setEmail] = useState('');
@@ -71,17 +64,7 @@ export function SignInForm({ inAppBrowser = false }: SignInFormProps) {
       setBusy(null);
       return;
     }
-    try {
-      await claimInvites();
-    } catch {
-      // Invites are optional; sign-in already succeeded.
-    }
-    try {
-      await refreshClaims();
-    } catch {
-      // Signed in; HomeRedirect decides from whatever claims are loaded.
-    }
-    navigate(returnPath(location.state), { replace: true });
+    await finish();
   }
 
   function submit(e: FormEvent) {
@@ -164,7 +147,15 @@ export function SignInForm({ inAppBrowser = false }: SignInFormProps) {
       >
         {t('signIn.submit')}
       </Button>
-      <p className="mb-0 mt-5 text-center text-sm text-ink-muted">
+      {onCreateAccount && (
+        <p className="mb-0 mt-5 text-center text-sm text-ink-muted">
+          {t('signIn.noAccount')}{' '}
+          <Button variant="link" onClick={onCreateAccount} className="font-semibold underline">
+            {t('signIn.createAccount')}
+          </Button>
+        </p>
+      )}
+      <p className="mb-0 mt-3 text-center text-sm text-ink-muted">
         {t('signIn.newSchool')}{' '}
         <Link to="/register" className="font-semibold">
           {t('signIn.register')}

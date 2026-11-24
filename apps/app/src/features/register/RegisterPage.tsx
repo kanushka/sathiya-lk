@@ -16,7 +16,7 @@ import { StepAccount } from './StepAccount';
 import { StepBrand } from './StepBrand';
 import { StepSchool } from './StepSchool';
 import { VerifyEmailGate } from './VerifyEmailGate';
-import { isUnverifiedPasswordUser, registerFailure } from './errors';
+import { accountCreateError, isUnverifiedPasswordUser, registerFailure } from './errors';
 import * as api from './api';
 import { defaultBrand, emptyAccount, emptySchool, gradeList, type AccountDraft, type BrandDraft, type SchoolDraft } from './model';
 
@@ -87,16 +87,8 @@ export function RegisterPage() {
         return;
       }
     } catch (err) {
-      const code = (err as { code?: string }).code;
-      setError(
-        code === 'auth/email-already-in-use'
-          ? { field: 'email', message: t('errors.emailInUse') }
-          : code === 'auth/weak-password' || code === 'auth/password-does-not-meet-requirements'
-            ? { field: 'password', message: t('errors.weakPassword') }
-            : code === 'auth/invalid-email'
-              ? { field: 'email', message: t('errors.invalidEmail') }
-              : { field: null, message: t('errors.generic') },
-      );
+      const failed = accountCreateError(err);
+      setError(failed ? { field: failed.field, message: t(`errors.${failed.key}`) } : { field: null, message: t('errors.generic') });
       setBusy(false);
       return;
     }
@@ -139,12 +131,7 @@ export function RegisterPage() {
       return;
     }
 
-    let refreshed = true;
-    try {
-      await refreshClaims();
-    } catch {
-      refreshed = false;
-    }
+    await refreshClaims().catch(() => undefined);
     if (brand.logo) {
       try {
         await api.uploadLogo(schoolId, brand.logo);
@@ -152,7 +139,7 @@ export function RegisterPage() {
         toast.show(t('errors.logoUpload'), 'error');
       }
     }
-    navigate(refreshed ? `/s/${schoolId}/admin` : '/', { replace: true });
+    navigate(`/s/${schoolId}/admin`, { replace: true });
   }
 
   return (

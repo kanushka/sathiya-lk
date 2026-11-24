@@ -324,7 +324,7 @@ describe('register', () => {
     expect(api.registerSchool).toHaveBeenCalledTimes(2);
   });
 
-  it('goes home when refreshClaims fails after registering', async () => {
+  it('goes to the new school admin even when refreshClaims fails after registering', async () => {
     const user = userEvent.setup();
     renderAuth(<RegisterPage />, {
       route: '/register',
@@ -339,7 +339,7 @@ describe('register', () => {
     await user.click(screen.getByRole('checkbox'));
     await user.click(screen.getByRole('button', { name: 'Create school' }));
     await waitFor(() => expect(api.registerSchool).toHaveBeenCalled());
-    expect(await screen.findByTestId('where')).toHaveTextContent('/start');
+    expect(await screen.findByTestId('where')).toHaveTextContent('/s/siripura/admin');
   });
 
   describe('census', () => {

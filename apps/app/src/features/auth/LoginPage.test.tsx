@@ -3,11 +3,15 @@
 import { screen, waitFor, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import * as registerApi from '../register/api';
 import * as api from './api';
+import { sendAuthEmail } from './authEmail';
 import { LoginPage } from './LoginPage';
 import { renderAuth } from './testHarness';
 
 vi.mock('./api');
+vi.mock('./authEmail');
+vi.mock('../register/api');
 
 function authError(code: string) {
   return Object.assign(new Error(code), { code });
@@ -22,6 +26,9 @@ beforeEach(() => {
   vi.mocked(api.signInWithPassword).mockResolvedValue(undefined);
   vi.mocked(api.signInWithGoogle).mockResolvedValue(undefined);
   vi.mocked(api.claimInvites).mockResolvedValue(undefined);
+  vi.mocked(registerApi.createAccount).mockResolvedValue(undefined);
+  vi.mocked(registerApi.confirmVerified).mockResolvedValue(true);
+  vi.mocked(sendAuthEmail).mockResolvedValue(undefined);
 });
 
 afterEach(() => {
@@ -78,6 +85,15 @@ describe('in-app browser', () => {
     expect(writeText).toHaveBeenCalledWith(window.location.href);
     expect(await screen.findByText('Link copied')).toBeInTheDocument();
     expect(card().getByLabelText('Email')).toBeInTheDocument();
+  });
+
+  it('copies the page that asked for sign-in, not the login page', async () => {
+    vi.spyOn(navigator, 'userAgent', 'get').mockReturnValue(FACEBOOK_UA);
+    const user = userEvent.setup();
+    const writeText = vi.spyOn(navigator.clipboard, 'writeText');
+    renderAuth(<LoginPage />, { from: '/join/x/y' });
+    await user.click(screen.getByRole('button', { name: 'Copy link' }));
+    expect(writeText).toHaveBeenCalledWith(`${window.location.origin}/join/x/y`);
   });
 
   it('shows Google in a normal browser', () => {
@@ -170,6 +186,53 @@ describe('sign in', () => {
     await user.click(card().getByRole('button', { name: /Continue with Google/ }));
     expect(screen.queryByRole('alert')).not.toBeInTheDocument();
     expect(api.claimInvites).not.toHaveBeenCalled();
+  });
+});
+
+describe('create account', () => {
+  it('creates an email account, shows the verify gate, then returns to the page that asked', async () => {
+    const user = userEvent.setup();
+    renderAuth(<LoginPage />, { from: '/join/s1/tok', signedIn: true });
+    await user.click(screen.getByRole('button', { name: 'Create account' }));
+    await user.type(screen.getByLabelText('Your name'), 'Nimal Perera');
+    await user.type(screen.getByLabelText('Email'), 'nimal@siripura.lk');
+    await user.type(screen.getByLabelText('Password'), 'secret12');
+    await user.click(screen.getByRole('checkbox'));
+    await user.click(screen.getByRole('button', { name: 'Create account' }));
+    expect(registerApi.createAccount).toHaveBeenCalledWith('nimal@siripura.lk', 'secret12', 'Nimal Perera');
+    expect(sendAuthEmail).toHaveBeenCalledWith({ kind: 'verify', lang: 'en' });
+    expect(await screen.findByRole('heading', { name: 'Check your email' })).toBeInTheDocument();
+    await user.click(screen.getByRole('button', { name: "I've confirmed it" }));
+    expect(await screen.findByTestId('where')).toHaveTextContent('/join/s1/tok');
+    expect(api.claimInvites).toHaveBeenCalled();
+  });
+
+  it('goes home after verification when nothing asked for sign-in', async () => {
+    const user = userEvent.setup();
+    renderAuth(<LoginPage />, { signedIn: true, claimsAfterRefresh: { schools: { s1: { r: 'a' } } } });
+    await user.click(screen.getByRole('button', { name: 'Create account' }));
+    await user.type(screen.getByLabelText('Your name'), 'Nimal');
+    await user.type(screen.getByLabelText('Email'), 'nimal@siripura.lk');
+    await user.type(screen.getByLabelText('Password'), 'secret12');
+    await user.click(screen.getByRole('checkbox'));
+    await user.click(screen.getByRole('button', { name: 'Create account' }));
+    await user.click(await screen.findByRole('button', { name: "I've confirmed it" }));
+    expect(await screen.findByTestId('where')).toHaveTextContent('/s/s1/admin');
+  });
+
+  it('shows an email-in-use error and can go back to sign in', async () => {
+    const user = userEvent.setup();
+    vi.mocked(registerApi.createAccount).mockRejectedValue(Object.assign(new Error('x'), { code: 'auth/email-already-in-use' }));
+    renderAuth(<LoginPage />);
+    await user.click(screen.getByRole('button', { name: 'Create account' }));
+    await user.type(screen.getByLabelText('Your name'), 'Nimal');
+    await user.type(screen.getByLabelText('Email'), 'nimal@siripura.lk');
+    await user.type(screen.getByLabelText('Password'), 'secret12');
+    await user.click(screen.getByRole('checkbox'));
+    await user.click(screen.getByRole('button', { name: 'Create account' }));
+    expect(await screen.findByText('That email already has an account. Log in instead.')).toBeInTheDocument();
+    await user.click(screen.getByRole('button', { name: 'Sign in' }));
+    expect(screen.getByRole('heading', { name: 'Sign in' })).toBeInTheDocument();
   });
 });
 

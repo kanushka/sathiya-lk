@@ -11,10 +11,11 @@ import * as api from './api';
 
 export interface VerifyEmailGateProps {
   email?: string | null;
-  onConfirmed(): void;
+  purpose?: 'register' | 'signUp';
+  onConfirmed(): void | Promise<void>;
 }
 
-export function VerifyEmailGate({ email, onConfirmed }: VerifyEmailGateProps) {
+export function VerifyEmailGate({ email, purpose = 'register', onConfirmed }: VerifyEmailGateProps) {
   const { t } = useTranslation('register');
   const { lang } = useLang();
   const [busy, setBusy] = useState<'confirm' | 'resend' | null>(null);
@@ -25,7 +26,7 @@ export function VerifyEmailGate({ email, onConfirmed }: VerifyEmailGateProps) {
     setMessage(null);
     try {
       if (await api.confirmVerified()) {
-        onConfirmed();
+        await onConfirmed();
         return;
       }
       setMessage({ kind: 'error', text: t('verify.notYet') });
@@ -56,7 +57,7 @@ export function VerifyEmailGate({ email, onConfirmed }: VerifyEmailGateProps) {
       </span>
       <h2 className="mb-2 mt-0 text-xl font-bold">{t('verify.title')}</h2>
       <p className="mb-5 mt-0 text-sm leading-relaxed text-ink-muted">
-        <Trans t={t} i18nKey="verify.body" values={{ email: email ?? '' }} components={{ b: <b className="text-ink" /> }} />
+        <Trans t={t} i18nKey={purpose === 'signUp' ? 'verify.bodySignUp' : 'verify.body'} values={{ email: email ?? '' }} components={{ b: <b className="text-ink" /> }} />
       </p>
       <div className="flex flex-wrap justify-center gap-3">
         <Button variant="primary" size="lg" loading={busy === 'confirm'} disabled={busy === 'resend'} onClick={() => void confirm()}>

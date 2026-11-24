@@ -1,6 +1,7 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
 // Copyright (C) 2026 Kanushka Gayan
 
+import { schoolIds } from '@sathiya/core';
 import { useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Link, Navigate, Outlet, createBrowserRouter, useParams, type RouteObject } from 'react-router-dom';
@@ -11,6 +12,7 @@ import { PhoneNotice } from '../ui/PhoneNotice';
 import { useAuth } from './AuthProvider';
 import { RequireRole } from './RequireRole';
 import { SchoolProvider } from './SchoolProvider';
+import { useRefreshClaimsOnce } from './useRefreshClaimsOnce';
 import { homePath, readLastSchool, rememberLastSchool, schoolHomePath } from './schoolHome';
 
 export interface FeatureModule {
@@ -37,8 +39,11 @@ function under(path: string | undefined, prefix: string): boolean {
 
 export function HomeRedirect() {
   const { user, claims, loading } = useAuth();
+  const noSchools = !loading && !!user && schoolIds(claims).length === 0;
+  const refreshed = useRefreshClaimsOnce(noSchools);
   if (loading) return <LoadingState />;
   if (!user) return <Navigate to="/login" replace />;
+  if (noSchools && !refreshed) return <LoadingState />;
   return <Navigate to={homePath(claims, readLastSchool())} replace />;
 }
 

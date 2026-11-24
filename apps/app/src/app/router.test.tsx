@@ -6,11 +6,11 @@ import { MemoryRouter, Outlet, useLocation, useParams, useRoutes, type RouteObje
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { renderWithI18n } from '../test/render';
 
-const state = vi.hoisted(() => ({ claims: {} as Record<string, unknown>, user: null as unknown }));
+const state = vi.hoisted(() => ({ claims: {} as Record<string, unknown>, user: null as unknown, refreshed: null as Record<string, unknown> | null, refreshClaims: null as unknown }));
 
 vi.mock('../lib/firebase', () => ({ app: {}, auth: {}, db: {}, functions: {}, storage: {} }));
 vi.mock('./AuthProvider', () => ({
-  useAuth: () => ({ user: state.user, claims: state.claims, loading: false }),
+  useAuth: () => ({ user: state.user, claims: state.claims, loading: false, refreshClaims: state.refreshClaims }),
 }));
 vi.mock('./SchoolProvider', async () => {
   const { useParams } = await import('react-router-dom');
@@ -78,7 +78,41 @@ function renderAt(path: string) {
 const pathname = () => screen.getByTestId('path').textContent;
 
 describe('router', () => {
-  beforeEach(() => localStorage.clear());
+  beforeEach(() => {
+    localStorage.clear();
+    state.refreshed = null;
+    state.refreshClaims = vi.fn(async () => {
+      if (state.refreshed) state.claims = state.refreshed;
+    });
+  });
+
+  it('forces a token refresh once when / finds no schools, then uses the new claims', async () => {
+    state.user = { uid: 'u' };
+    state.claims = {};
+    state.refreshed = { schools: { s1: { r: 't', t: 't1' } } };
+    renderAt('/');
+    expect(await screen.findByText('my timetable')).toBeInTheDocument();
+    expect(pathname()).toBe('/s/s1/me');
+    expect(state.refreshClaims).toHaveBeenCalledTimes(1);
+  });
+
+  it('does not refresh on / when the user already has schools', async () => {
+    state.user = { uid: 'u' };
+    state.claims = { schools: { s1: { r: 'a' } } };
+    renderAt('/');
+    expect(await screen.findByText('dashboard')).toBeInTheDocument();
+    expect(state.refreshClaims).not.toHaveBeenCalled();
+  });
+
+  it('still goes to /start when the refresh fails', async () => {
+    state.user = { uid: 'u' };
+    state.claims = {};
+    state.refreshClaims = vi.fn(async () => {
+      throw new Error('offline');
+    });
+    renderAt('/');
+    expect(await screen.findByText('start screen')).toBeInTheDocument();
+  });
 
   it('guards a feature route written without the leading slash', async () => {
     state.user = null;

@@ -2,15 +2,19 @@
 // Copyright (C) 2026 Kanushka Gayan
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
+import { useLocation } from 'react-router-dom';
 import { Button } from '../../ui/Button';
+import { returnPathFrom } from './returnPath';
 
 export function InAppBrowserNotice() {
   const { t } = useTranslation('auth');
   const [status, setStatus] = useState<'idle' | 'copied' | 'failed'>('idle');
+  const { state } = useLocation();
+  const target = returnPathFrom(state);
 
   async function copy() {
     try {
-      await navigator.clipboard.writeText(window.location.href);
+      await navigator.clipboard.writeText(target ? window.location.origin + target : window.location.href);
       setStatus('copied');
     } catch {
       setStatus('failed');
