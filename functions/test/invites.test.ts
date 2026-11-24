@@ -280,9 +280,11 @@ describe('joinSchool with a personal link', () => {
   });
 
   it('stops working once the teacher is linked another way, even after an unlink', async () => {
-    const { admin, sid, ids } = await school();
+    const { admin, sid, ids, token: joinToken } = await school();
     const { token } = await admin.call('createTeacherLink', { schoolId: sid, teacherId: ids[0]! });
-    await admin.call('linkSelf', { schoolId: sid, teacherId: ids[0]! });
+    const other = await signUp();
+    await other.call('joinSchool', { schoolId: sid, token: joinToken, staffId: 'SCC001' });
+    await decide(admin, sid, other.uid, ids[0]!, true);
     expect((await adminDb.doc(`${paths.teacherLinks()}/${sha(token)}`).get()).exists).toBe(false);
     await admin.call('unlinkTeacher', { schoolId: sid, teacherId: ids[0]! });
     const u = await signUp();
@@ -472,7 +474,8 @@ describe('unlinkTeacher', () => {
   it('keeps the admin role of an admin who is also a teacher', async () => {
     const { admin, sid } = await adminWithSchool();
     const { teacherId } = await admin.call('createTeacher', { schoolId: sid, teacher: teacherInput('SCC007') });
-    await admin.call('linkSelf', { schoolId: sid, teacherId });
+    const { token } = await admin.call('createTeacherLink', { schoolId: sid, teacherId });
+    await admin.call('joinSchool', { token });
     expect(await memberDoc(sid, admin.uid)).toMatchObject({ role: 'admin', teacherId });
     await admin.call('unlinkTeacher', { schoolId: sid, teacherId });
     const member = (await memberDoc(sid, admin.uid))!;
@@ -482,19 +485,21 @@ describe('unlinkTeacher', () => {
   });
 });
 
-describe('linkSelf', () => {
-  it('links the admin and refuses a taken teacher', async () => {
+describe('an admin opening a personal link for their own record', () => {
+  it('links the admin, keeps the admin role, and refuses a second teacher', async () => {
     const { admin, sid } = await adminWithSchool();
     const { teacherId } = await admin.call('createTeacher', { schoolId: sid, teacher: teacherInput('SCC008') });
-    await admin.call('linkSelf', { schoolId: sid, teacherId });
+    const { token } = await admin.call('createTeacherLink', { schoolId: sid, teacherId });
+    await expect(admin.call('joinSchool', { token })).resolves.toEqual({ status: 'linked', schoolId: sid, teacherId });
     expect(await admin.claims()).toEqual({ schools: { [sid]: { r: 'a', t: teacherId } } });
-    const { teacherId: other } = await linkedTeacher(admin, sid, 'SCC010');
-    await expectFnError(admin.call('linkSelf', { schoolId: sid, teacherId: other }), 'failed-precondition', 'already-linked');
+    const { teacherId: second } = await admin.call('createTeacher', { schoolId: sid, teacher: teacherInput('SCC010') });
+    const { token: again } = await admin.call('createTeacherLink', { schoolId: sid, teacherId: second });
+    await expectFnError(admin.call('joinSchool', { token: again }), 'failed-precondition', 'already-linked');
   });
 });
 
 describe('admin-only invite callables', () => {
-  it.each(['setJoinLink', 'decideJoinRequest', 'createTeacherLink', 'cancelTeacherLink', 'unlinkTeacher', 'linkSelf'] as const)('%s refuses a non-admin', async (name) => {
+  it.each(['setJoinLink', 'decideJoinRequest', 'createTeacherLink', 'cancelTeacherLink', 'unlinkTeacher'] as const)('%s refuses a non-admin', async (name) => {
     const { sid } = await adminWithSchool();
     const stranger = await signUp();
     await expectFnError(stranger.call(name, { schoolId: sid, teacherId: 't', uid: 'u', createdAt: 1, approve: true, action: 'create' } as never), 'permission-denied', 'not-allowed');

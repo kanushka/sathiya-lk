@@ -425,7 +425,7 @@ describe('teacher accounts', () => {
     expect(within(card).queryByRole('button')).not.toBeInTheDocument();
   });
 
-  it('shows the current invite link for copying, and confirms New link and Turn off', async () => {
+  it('shows the current invite link for copying, and confirms Turn off', async () => {
     data.joinLink = { id: 'joinLink', token: 'tokA', hash: 'h', createdAt: 1, createdBy: 'u' };
     vi.mocked(api.setJoinLink).mockResolvedValue({});
     const user = userEvent.setup();
@@ -437,33 +437,25 @@ describe('teacher accounts', () => {
     expect(within(card).getByText(url)).toBeInTheDocument();
     await user.click(within(card).getByRole('button', { name: 'Copy invite link' }));
     expect(writeText).toHaveBeenLastCalledWith(url);
-
-    await user.click(within(card).getByRole('button', { name: 'New link' }));
-    let confirm = screen.getByRole('dialog', { name: 'Make a new invite link?' });
-    expect(within(confirm).getByText(/the old link stops working/)).toBeInTheDocument();
-    expect(api.setJoinLink).not.toHaveBeenCalled();
-    await user.click(within(confirm).getByRole('button', { name: 'Make new link' }));
-    expect(api.setJoinLink).toHaveBeenLastCalledWith('siripura', 'create');
+    expect(within(card).queryByRole('button', { name: 'Create link' })).not.toBeInTheDocument();
 
     await user.click(within(card).getByRole('button', { name: 'Turn off link' }));
-    confirm = screen.getByRole('dialog', { name: 'Turn off the invite link?' });
+    const confirm = screen.getByRole('dialog', { name: 'Turn off the invite link?' });
     await user.click(within(confirm).getByRole('button', { name: 'Cancel' }));
-    expect(api.setJoinLink).toHaveBeenCalledTimes(1);
+    expect(api.setJoinLink).not.toHaveBeenCalled();
     await user.click(within(card).getByRole('button', { name: 'Turn off link' }));
     await user.click(within(screen.getByRole('dialog', { name: 'Turn off the invite link?' })).getByRole('button', { name: 'Turn off' }));
     expect(api.setJoinLink).toHaveBeenLastCalledWith('siripura', 'off');
   });
 
-  it('shows the new invite link right after New link, before the listener catches up', async () => {
-    data.joinLink = { id: 'joinLink', token: 'tokA', hash: 'h', createdAt: 1, createdBy: 'u' };
+  it('shows the new invite link right after Create link, before the listener catches up', async () => {
     vi.mocked(api.setJoinLink).mockResolvedValue({ token: 'tokB' });
     const user = userEvent.setup();
     renderLinked();
     const card = screen.getByRole('region', { name: 'Invite link' });
-    await user.click(within(card).getByRole('button', { name: 'New link' }));
-    await user.click(within(screen.getByRole('dialog', { name: 'Make a new invite link?' })).getByRole('button', { name: 'Make new link' }));
+    await user.click(within(card).getByRole('button', { name: 'Create link' }));
+    expect(api.setJoinLink).toHaveBeenLastCalledWith('siripura', 'create');
     expect(await within(card).findByText(`${window.location.origin}/join/siripura/tokB`)).toBeInTheDocument();
-    expect(within(card).queryByText(`${window.location.origin}/join/siripura/tokA`)).not.toBeInTheDocument();
   });
 
   it('puts join requests above the invite link card', () => {
@@ -472,6 +464,25 @@ describe('teacher accounts', () => {
     const requests = screen.getByRole('region', { name: 'Join requests (1)' });
     const card = screen.getByRole('region', { name: 'Invite link' });
     expect(requests.compareDocumentPosition(card) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
+  });
+
+  it('shows the three oldest join requests until Show all is pressed', async () => {
+    data.requests = [5, 1, 4, 2, 3].map((n) => ({ ...request, id: `u${n}`, uid: `u${n}`, email: `t${n}@gmail.com`, createdAt: n }));
+    const user = userEvent.setup();
+    renderLinked();
+    const section = screen.getByRole('region', { name: 'Join requests (5)' });
+    const emails = () => within(section).getAllByText(/^t\d@gmail\.com$/).map((e) => e.textContent);
+    expect(emails()).toEqual(['t1@gmail.com', 't2@gmail.com', 't3@gmail.com']);
+    await user.click(within(section).getByRole('button', { name: 'Show all 5' }));
+    expect(emails()).toHaveLength(5);
+    await user.click(within(section).getByRole('button', { name: 'Show fewer' }));
+    expect(emails()).toHaveLength(3);
+  });
+
+  it('has no Show all button with three or fewer join requests', () => {
+    data.requests = [1, 2, 3].map((n) => ({ ...request, id: `u${n}`, uid: `u${n}`, createdAt: n }));
+    renderLinked();
+    expect(screen.queryByRole('button', { name: /Show all/ })).not.toBeInTheDocument();
   });
 
   it('spins only the clicked request button', async () => {
@@ -505,9 +516,9 @@ describe('teacher accounts', () => {
     };
     renderWithSchool(<TeachersPage />, { ctx: withLinks, entries });
     expect(within(rowOf('SCC011')).getByRole('button', { name: 'Cancel link' })).toBeInTheDocument();
-    expect(within(rowOf('SCC011')).getByText(/Personal link until/)).toBeInTheDocument();
+    expect(within(rowOf('SCC011')).getByRole('img', { name: /Personal link until/ })).toBeInTheDocument();
     expect(within(rowOf('SCC031')).queryByRole('button', { name: 'Cancel link' })).not.toBeInTheDocument();
-    expect(within(rowOf('SCC031')).queryByText(/Personal link until/)).not.toBeInTheDocument();
+    expect(within(rowOf('SCC031')).queryByRole('img', { name: /Personal link until/ })).not.toBeInTheDocument();
     expect(within(rowOf('SCC003')).queryByRole('button', { name: 'Cancel link' })).not.toBeInTheDocument();
   });
 
@@ -623,17 +634,8 @@ describe('teacher accounts', () => {
     expect(api.unlinkTeacher).toHaveBeenCalledWith('siripura', perera.id);
   });
 
-  it('offers This is me to an admin with no teacher record and links it', async () => {
-    vi.mocked(api.linkSelf).mockResolvedValue(undefined);
-    const user = userEvent.setup();
+  it('has no This is me action', () => {
     renderLinked();
-    expect(within(rowOf('SCC024')).queryByRole('button', { name: 'This is me' })).not.toBeInTheDocument();
-    await user.click(within(rowOf('SCC011')).getByRole('button', { name: 'This is me' }));
-    expect(api.linkSelf).toHaveBeenCalledWith('siripura', silva.id);
-  });
-
-  it('hides This is me for an admin already linked to a teacher', () => {
-    renderLinked({ schools: { siripura: { r: 'a', t: perera.id } } });
     expect(screen.queryByRole('button', { name: 'This is me' })).not.toBeInTheDocument();
   });
 
@@ -653,7 +655,7 @@ describe('teacher accounts', () => {
     expect(screen.queryByRole('region', { name: 'Invite link' })).not.toBeInTheDocument();
     const section = screen.getByRole('region', { name: 'Join requests (1)' });
     expect(within(section).queryByRole('button')).not.toBeInTheDocument();
-    for (const name of ['Personal link', 'Cancel link', 'Unlink', 'This is me']) {
+    for (const name of ['Personal link', 'Cancel link', 'Unlink']) {
       expect(screen.queryByRole('button', { name })).not.toBeInTheDocument();
     }
   });

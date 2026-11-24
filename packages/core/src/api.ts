@@ -27,7 +27,6 @@ export const callables = {
   createTeacherLink: 'createTeacherLink',
   cancelTeacherLink: 'cancelTeacherLink',
   unlinkTeacher: 'unlinkTeacher',
-  linkSelf: 'linkSelf',
   saveTemplate: 'saveTemplate',
 } as const;
 
@@ -75,8 +74,6 @@ export interface CancelTeacherLinkReq { schoolId: string; teacherId: string }
 export interface CancelTeacherLinkRes { ok: true }
 export interface UnlinkTeacherReq { schoolId: string; teacherId: string }
 export interface UnlinkTeacherRes { ok: true }
-export interface LinkSelfReq { schoolId: string; teacherId: string }
-export interface LinkSelfRes { ok: true }
 interface CallableMap {
   registerSchool: { req: RegisterSchoolReq; res: RegisterSchoolRes };
   createTeacher: { req: CreateTeacherReq; res: CreateTeacherRes };
@@ -99,7 +96,6 @@ interface CallableMap {
   createTeacherLink: { req: CreateTeacherLinkReq; res: CreateTeacherLinkRes };
   cancelTeacherLink: { req: CancelTeacherLinkReq; res: CancelTeacherLinkRes };
   unlinkTeacher: { req: UnlinkTeacherReq; res: UnlinkTeacherRes };
-  linkSelf: { req: LinkSelfReq; res: LinkSelfRes };
   saveTemplate: { req: SaveTemplateReq; res: SaveTemplateRes };
 }
 export type CallableName = keyof typeof callables;

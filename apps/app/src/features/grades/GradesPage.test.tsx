@@ -251,7 +251,7 @@ describe('grades page', () => {
 
   it('toggling a row to time waits for a value above zero before saving', async () => {
     const user = await openGrade6();
-    await user.click(screen.getByRole('button', { name: 'Time for Mathematics' }));
+    await user.click(screen.getByRole('radio', { name: 'Time for Mathematics' }));
     expect(api.saveGradePlan).not.toHaveBeenCalled();
     expect(screen.getByLabelText('Minutes per week for Mathematics')).toHaveValue(null);
     await user.type(screen.getByLabelText('Minutes per week for Mathematics'), '0');

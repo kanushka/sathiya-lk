@@ -146,7 +146,7 @@ export function RegisterPage() {
     <div className="min-h-screen bg-canvas px-4 py-10">
       <div className="mx-auto max-w-[1040px]">
         <div className="mb-7 flex flex-wrap items-center justify-between gap-4">
-          <BrandLockup />
+          <BrandLockup layout="inline" />
           <ol aria-label={t('steps.label')} className="m-0 flex list-none flex-wrap gap-2 p-0 text-sm font-semibold">
             {steps.map((key, i) => {
               const n = i + 1;

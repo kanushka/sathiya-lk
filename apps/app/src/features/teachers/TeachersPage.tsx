@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
 // Copyright (C) 2026 Kanushka Gayan
-import { formatAmount, pickName, teacherDisplayName, teacherIdOf, teacherLoad, teacherNameMissing, usageCount, type Lang, type Teacher } from '@sathiya/core';
+import { formatAmount, pickName, teacherDisplayName, teacherLoad, teacherNameMissing, usageCount, type Lang, type Teacher } from '@sathiya/core';
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
@@ -8,6 +8,9 @@ import { useAuth } from '../../app/AuthProvider';
 import { useSchool, useYear } from '../../app/SchoolProvider';
 import { useReadOnly } from '../../ui/AdminLayout';
 import { Button } from '../../ui/Button';
+import { IconButton } from '../../ui/IconButton';
+import { Icon, type IconName } from '../../ui/Icon';
+import { cx } from '../../ui/cx';
 import { EmptyState } from '../../ui/EmptyState';
 import { inputClass } from '../../ui/Field';
 import { LoadingState } from '../../ui/LoadingState';
@@ -48,13 +51,12 @@ export function TeachersPage() {
   const slotUsage = (teacherId: string) => (yearId === latestYearId ? usageCount('teacher', teacherId, state, entries) : 0);
   const readOnly = useReadOnly();
   const toast = useToast();
-  const { user, claims, refreshClaims, signOut } = useAuth();
+  const { user, signOut } = useAuth();
   const isSelf = (x: Teacher) => !!user && x.uid === user.uid;
   const now = Date.now();
   const liveLink = (x: Teacher) => !x.uid && !!x.inviteExpiresAt && x.inviteExpiresAt > now;
   const requests = useJoinRequests(school.id).data;
   const pendingFor = useMemo(() => new Set(requests.map((r) => r.teacherId)), [requests]);
-  const canLinkSelf = !readOnly && !teacherIdOf(claims, school.id);
   const [busy, setBusy] = useState<string | null>(null);
   const [search, setSearch] = useState('');
   const [params, setParams] = useSearchParams();
@@ -105,13 +107,6 @@ export function TeachersPage() {
       toast.show(t('page.cancelled'), 'success');
     });
 
-  const linkSelf = (x: Teacher) =>
-    act(`self:${x.id}`, async () => {
-      await api.linkSelf(school.id, x.id);
-      toast.show(t('page.linkSelfDone'), 'success');
-      await refreshClaims().catch(() => undefined);
-    });
-
   async function unlink(x: Teacher): Promise<string | null> {
     try {
       await api.unlinkTeacher(school.id, x.id);
@@ -123,24 +118,36 @@ export function TeachersPage() {
     }
   }
 
+  function hint(icon: IconName, label: string, tone: string) {
+    return (
+      <span title={label} className={cx('inline-flex', tone)}>
+        <Icon name={icon} size={15} label={label} />
+      </span>
+    );
+  }
+
   function status(x: Teacher) {
     if (x.uid) {
+      const login = x.lastLoginAt ? t('status.lastLogin', { when: formatLogin(x.lastLoginAt, lang) }) : null;
       return (
-        <>
+        <span className="inline-flex items-center gap-2 whitespace-nowrap">
           <Badge tone="success">{t('status.linked')}</Badge>
-          <span className="mt-1 block text-xs text-ink-muted">
-            {x.lastLoginAt ? t('status.lastLogin', { when: formatLogin(x.lastLoginAt, lang) }) : t('status.neverSignedIn')}
-          </span>
-        </>
+          {login ? (
+            <span title={login} className="text-xs text-ink-muted">
+              <span className="sr-only">{login}</span>
+              <span aria-hidden="true">{new Date(x.lastLoginAt!).toLocaleDateString(lang, { day: 'numeric', month: 'short' })}</span>
+            </span>
+          ) : (
+            hint('clock', t('status.neverSignedIn'), 'text-warning')
+          )}
+        </span>
       );
     }
     return (
-      <>
+      <span className="inline-flex items-center gap-2 whitespace-nowrap">
         {pendingFor.has(x.id) ? <Badge tone="warning">{t('status.pending')}</Badge> : <Badge>{t('status.notLinked')}</Badge>}
-        {liveLink(x) && (
-          <span className="mt-1 block text-xs text-ink-muted">{t('status.linkUntil', { when: formatLogin(x.inviteExpiresAt!, lang) })}</span>
-        )}
-      </>
+        {liveLink(x) && hint('link', t('status.linkUntil', { when: formatLogin(x.inviteExpiresAt!, lang) }), 'text-brand')}
+      </span>
     );
   }
 
@@ -210,15 +217,13 @@ export function TeachersPage() {
                   )}
                 </Td>
                 <Td>
-                  {x.isPrimary ? (
-                    <Badge tone="warning">{t('page.primaryTeacher')}</Badge>
-                  ) : (
-                    x.subjectIds.map((id) => (
-                      <Badge key={id} className="mb-1 mr-1">
-                        {subjectName.get(id) ?? id}
-                      </Badge>
-                    ))
-                  )}
+                  <div className="flex flex-wrap gap-1">
+                    {x.isPrimary ? (
+                      <Badge tone="warning">{t('page.primaryTeacher')}</Badge>
+                    ) : (
+                      x.subjectIds.map((id) => <Badge key={id}>{subjectName.get(id) ?? id}</Badge>)
+                    )}
+                  </div>
                 </Td>
                 <Td>{[...x.grades].sort((a, b) => a - b).join(', ')}</Td>
                 <Td>
@@ -230,34 +235,19 @@ export function TeachersPage() {
                 <Td>{status(x)}</Td>
                 {!readOnly && (
                   <Td>
-                    <div className="flex flex-wrap gap-1">
-                      <Button size="sm" variant="ghost" onClick={() => setDialog({ kind: 'edit', teacher: x })}>
-                        {t('page.edit')}
-                      </Button>
-                      <Button size="sm" variant="ghost" onClick={() => setDialog({ kind: 'delete', teacher: x })}>
-                        {t('page.delete')}
-                      </Button>
+                    <div className="flex items-center gap-0.5">
+                      <IconButton icon="edit" size="sm" label={t('page.edit')} onClick={() => setDialog({ kind: 'edit', teacher: x })} />
                       {x.uid ? (
-                        <Button size="sm" variant="ghost" onClick={() => setDialog({ kind: 'unlink', teacher: x })}>
-                          {t('actions.unlink')}
-                        </Button>
+                        <IconButton icon="unlink" size="sm" label={t('actions.unlink')} onClick={() => setDialog({ kind: 'unlink', teacher: x })} />
                       ) : (
                         <>
-                          <Button size="sm" variant="ghost" loading={busy === `link:${x.id}`} disabled={busy !== null} onClick={() => void personalLink(x)}>
-                            {t('actions.personalLink')}
-                          </Button>
+                          <IconButton icon="link" size="sm" label={t('actions.personalLink')} loading={busy === `link:${x.id}`} disabled={busy !== null} onClick={() => void personalLink(x)} />
                           {liveLink(x) && (
-                            <Button size="sm" variant="ghost" loading={busy === `cancel:${x.id}`} disabled={busy !== null} onClick={() => void cancelLink(x)}>
-                              {t('actions.cancelLink')}
-                            </Button>
-                          )}
-                          {canLinkSelf && (
-                            <Button size="sm" variant="ghost" loading={busy === `self:${x.id}`} disabled={busy !== null} onClick={() => void linkSelf(x)}>
-                              {t('actions.thisIsMe')}
-                            </Button>
+                            <IconButton icon="linkOff" size="sm" label={t('actions.cancelLink')} loading={busy === `cancel:${x.id}`} disabled={busy !== null} onClick={() => void cancelLink(x)} />
                           )}
                         </>
                       )}
+                      <IconButton icon="trash" size="sm" label={t('page.delete')} className="hover:!bg-danger-soft hover:!text-danger" onClick={() => setDialog({ kind: 'delete', teacher: x })} />
                     </div>
                   </Td>
                 )}

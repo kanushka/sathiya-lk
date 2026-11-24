@@ -20,7 +20,6 @@
       "actions": "Actions",
       "account": "Account"
     },
-    "linkSelfDone": "Linked to your account",
     "linkHidden": "The personal link for {{name}} was made while another window was open. Make a new link to see and share it.",
     "cancelled": "Personal link cancelled",
     "unlinked": "{{name}} unlinked",
@@ -102,23 +101,18 @@
   "actions": {
     "personalLink": "Personal link",
     "cancelLink": "Cancel link",
-    "unlink": "Unlink",
-    "thisIsMe": "This is me"
+    "unlink": "Unlink"
   },
   "inviteLink": {
     "title": "Invite link",
-    "body": "Share one link with all your teachers. A teacher whose email matches their record joins at once; others enter their staff ID and wait for your approval.",
+    "body": "Share one link with all your teachers. A teacher whose email matches their record joins at once. Others enter their staff ID and wait for your approval.",
     "create": "Create link",
-    "replace": "New link",
     "off": "Turn off link",
     "isOff": "The invite link is off. Create one to let teachers join.",
     "copy": "Copy invite link",
     "shareHint": "Copy it now and share it on your staff group.",
     "loadFailed": "Could not load the invite link. Reload the page to try again.",
     "failed": "Could not change the link. Try again.",
-    "confirmNewTitle": "Make a new invite link?",
-    "confirmNewBody": "The new link replaces the current one: the old link stops working, so share the new one with your teachers.",
-    "confirmNew": "Make new link",
     "confirmOffTitle": "Turn off the invite link?",
     "confirmOffBody": "Nobody can join with the current link until you create a new one.",
     "confirmOff": "Turn off",
@@ -132,7 +126,9 @@
     "approve": "Approve",
     "reject": "Reject",
     "approved": "{{name}} can now see their timetable",
-    "rejected": "Request rejected"
+    "rejected": "Request rejected",
+    "showAll": "Show all {{count}}",
+    "showFewer": "Show fewer"
   },
   "personalLink": {
     "title": "Personal link for {{name}}",
@@ -146,6 +142,6 @@
     "body": "Their account loses access to this school the next time they open the app, and within an hour at the latest. They can join again with a new link.",
     "confirm": "Unlink",
     "cancel": "Cancel",
-    "selfBody": "This is your own record. You will be signed out and must sign in again; you stay an admin."
+    "selfBody": "This is your own record. You will be signed out and must sign in again. You stay an admin."
   }
 }
