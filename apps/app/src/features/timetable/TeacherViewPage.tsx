@@ -309,12 +309,12 @@ function TeacherView({ teacher, teachers, template }: { teacher: Teacher; teache
   return (
     <div>
       <div className="mb-[18px] flex flex-wrap items-center justify-between gap-3">
-        <div className="flex flex-wrap items-center gap-2.5">
+        <div className="flex w-full flex-wrap items-center gap-2.5 md:w-auto">
           <IconButton icon="chevronLeft" variant="secondary" label={t('teacherView.prev')} disabled={index <= 0} onClick={() => go(teachers[index - 1])} />
           <label htmlFor="teacher-view-select" className="sr-only">
             {t('teacherView.teacherLabel')}
           </label>
-          <div className="w-72">
+          <div className="min-w-0 flex-1 md:w-72 md:flex-none">
             <Combobox<Teacher>
               id="teacher-view-select"
               items={teachers}
@@ -333,7 +333,7 @@ function TeacherView({ teacher, teachers, template }: { teacher: Teacher; teache
             disabled={index >= teachers.length - 1}
             onClick={() => go(teachers[index + 1])}
           />
-          <span className="ml-1.5 text-sm text-ink-muted">{summary}</span>
+          <span className="basis-full text-sm text-ink-muted md:ml-1.5 md:basis-auto">{summary}</span>
         </div>
         <Button onClick={print}>
           <Icon name="print" size={16} />

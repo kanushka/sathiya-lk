@@ -49,6 +49,20 @@ beforeEach(() => {
 });
 
 describe('ClassViewPage', () => {
+  it('keeps prev, class picker and next on one row that fills the width on phones', () => {
+    setup();
+    const picker = screen.getByRole('combobox', { name: /^Class/ });
+    const wrap = picker.closest('.flex-1')!;
+    expect(wrap).toHaveClass('min-w-0', 'flex-1', 'md:w-52', 'md:flex-none');
+    expect(wrap.parentElement).toHaveClass('w-full', 'md:w-auto');
+    expect(screen.getByText(/^Class teacher:/)).toHaveClass('basis-full', 'md:basis-auto');
+  });
+
+  it('hint says choose, not click', () => {
+    setup();
+    expect(screen.getByText(/to add a lesson/)).toHaveTextContent(/^Choose \+ to add a lesson/);
+  });
+
   it('shows the class header, class teacher and grid cells', () => {
     setup();
     expect(screen.getByRole('combobox', { name: /^Class/ })).toHaveTextContent('Grade 6 · 6B');

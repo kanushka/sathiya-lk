@@ -190,7 +190,7 @@ describe('usePinMode', () => {
   it('announces entering and leaving pin mode', () => {
     setup();
     act(() => pin.start(science));
-    expect(pin.message).toBe('Pin mode on: Science with Mrs. S. Gunasekara. Click free periods to pin, Esc to finish.');
+    expect(pin.message).toBe('Pin mode on: Science with Mrs. S. Gunasekara. Choose free periods to pin, Esc to finish.');
     act(() => pin.stop());
     expect(pin.message).toBe('Pin mode off.');
   });
@@ -229,7 +229,7 @@ describe('usePinMode with a group spec', () => {
   it('announces the group and writes every lesson and class', async () => {
     const api = setup({}, []);
     act(() => pin.start(group));
-    expect(pin.message).toBe('Pin mode on: Religion for 6A+6B. Click free periods to pin, Esc to finish.');
+    expect(pin.message).toBe('Pin mode on: Religion for 6A+6B. Choose free periods to pin, Esc to finish.');
     expect(pin.names).toMatchObject({ title: 'Religion · 6A+6B', subject: 'Religion' });
     expect(pin.names?.detail).toContain('Buddhism');
     await act(async () => {
@@ -355,7 +355,7 @@ describe('usePinMode in the teacher view', () => {
   it('names the class when starting', () => {
     setup({}, [], view);
     act(() => pin.start(spec));
-    expect(pin.message).toBe('Pin mode on: Mathematics for 1A. Click free periods to pin, Esc to finish.');
+    expect(pin.message).toBe('Pin mode on: Mathematics for 1A. Choose free periods to pin, Esc to finish.');
   });
 
   it('suggests only periods shown on a free row and announces that count', () => {
