@@ -496,6 +496,11 @@ describe('default period template', () => {
     await assertSucceeds(update('admin', p1, { name: 'Main', isDefault: true }));
     await assertSucceeds(update('admin', p1, { rows: [] }));
   });
+  it('denies admin changing rows, days or mode directly, since the callable owns schedule edits', async () => {
+    await assertFails(update('admin', p1, { rows: [{ type: 'period', start: '07:30', end: '08:10' }] }));
+    await assertFails(update('admin', p1, { days: { 0: [] } }));
+    await assertFails(update('admin', p1, { mode: 'perDay' }));
+  });
 });
 
 describe('censusIndex (functions only)', () => {
