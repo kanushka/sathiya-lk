@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
 // Copyright (C) 2026 Kanushka Gayan
 import { expect, test, type Locator, type Page } from '@playwright/test';
-import { ADMIN } from '../../scripts/seed';
+import { ADMIN, SID } from '../../scripts/seed';
 import { loginAdmin, shot } from '../helpers';
 
 test.use({ viewport: { width: 375, height: 812 }, isMobile: true, hasTouch: true });
@@ -19,7 +19,7 @@ const dayHeader = (page: Page, d: string) => page.getByRole('group', { name: /gr
 
 test('admin edits a class timetable on a phone', async ({ page }) => {
   await loginAdmin(page, ADMIN.email, ADMIN.password);
-  await page.goto('/admin/timetable/class/c-12a');
+  await page.goto(`/s/${SID}/admin/timetable/class/c-12a`);
   const grid = page.getByRole('group', { name: /grid/i });
   await expect(grid).toBeVisible();
   expect(await page.evaluate(() => document.documentElement.scrollWidth)).toBeLessThanOrEqual(W);
@@ -76,7 +76,7 @@ test('admin edits a class timetable on a phone', async ({ page }) => {
 
 test('Sinhala day names fit their columns on a phone', async ({ page }) => {
   await loginAdmin(page, ADMIN.email, ADMIN.password);
-  await page.goto('/admin/timetable/class/c-12a');
+  await page.goto(`/s/${SID}/admin/timetable/class/c-12a`);
   await page.getByRole('button', { name: 'Open menu' }).tap();
   await page.getByRole('button', { name: /^Language/ }).tap();
   await page.getByRole('button', { name: /මෙනුව වසන්න/ }).tap();
@@ -92,7 +92,7 @@ test('Sinhala day names fit their columns on a phone', async ({ page }) => {
 
 test('teacher view header fits one row on a phone', async ({ page }) => {
   await loginAdmin(page, ADMIN.email, ADMIN.password);
-  await page.goto('/admin/timetable/teacher');
+  await page.goto(`/s/${SID}/admin/timetable/teacher`);
   const prev = await box(page.getByRole('button', { name: 'Previous teacher' }));
   const next = await box(page.getByRole('button', { name: 'Next teacher' }));
   expect(Math.abs(prev.y - next.y)).toBeLessThan(2);
