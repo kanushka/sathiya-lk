@@ -2,7 +2,7 @@
 // Copyright (C) 2026 Kanushka Gayan
 
 import { singleSpec, type DayIndex, type Entry } from '@sathiya/core';
-import { C, ctx, entries, entry, S, T } from '@sathiya/core/fixtures';
+import { C, ctx, entries, entry, G, S, T } from '@sathiya/core/fixtures';
 import { fireEvent, screen, waitFor, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
@@ -66,6 +66,19 @@ describe('TeacherAssignPicker', () => {
     expect(options[0]).toHaveTextContent('needs 3 across 3 classes');
     expect(options[1]).toHaveTextContent('needs 10 across 3 classes');
     expect(input).toHaveAttribute('aria-activedescendant', options[0]!.id);
+  });
+
+  it('sums what is needed per unit when classes mix periods and minutes', () => {
+    const g6 = ctx.grades.find((g) => g.id === G.g6)!;
+    const mixed = {
+      ...ctx,
+      classes: ctx.classes.map((c) =>
+        c.id === C.c6a ? { ...c, planOverride: g6.plan.map((p) => (p.kind === 'subject' && p.subjectId === S.english ? { ...p, perWeek: 50, unit: 'minutes' as const } : p)) } : c,
+      ),
+    };
+    renderWithSchool(<TeacherAssignPicker teacherId={T.rizan} slot={{ day: 2, row: 4 }} entries={entries} onClose={vi.fn()} onSave={vi.fn()} onPin={vi.fn()} />, { ctx: mixed, entries });
+    const english = within(screen.getByRole('listbox', { name: 'Subjects' })).getByRole('option', { name: /^English/ });
+    expect(english).toHaveTextContent(/needs \d+ \+ 50 min across 3 classes/);
   });
 
   it('filters subjects and picks with arrows and Enter, ignoring IME composing', async () => {

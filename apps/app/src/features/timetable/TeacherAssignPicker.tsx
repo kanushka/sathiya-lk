@@ -116,10 +116,12 @@ function TeacherAssignPickerBody({ teacherId, slot, entries, onClose, onSave, on
     const rows = teacherSubjects(teacher, ctx).map((s) => {
       const options = teacherClassOptions({ ctx, entries, teacherId, subjectId: s.id });
       const progresses = options.map((o) => pinProgress({ ctx, entries, spec: specFor(o, teacherId) }));
-      const left = progresses.reduce((sum, p) => sum + p.left, 0);
-      const unit = progresses.find((p) => p.unit === 'minutes')?.unit ?? 'periods';
+      const periodsLeft = progresses.reduce((sum, p) => sum + (p.unit === 'periods' ? p.left : 0), 0);
+      const minutesLeft = progresses.reduce((sum, p) => sum + (p.unit === 'minutes' ? p.left : 0), 0);
+      const left = periodsLeft + minutesLeft;
+      const amount = [...(periodsLeft > 0 ? [formatAmount(periodsLeft, 'periods', lang)] : []), ...(minutesLeft > 0 ? [formatAmount(minutesLeft, 'minutes', lang)] : [])].join(' + ');
       const classes = t('teacherAssign.classCount', { count: options.length });
-      const note = options.length === 0 ? t('teacherAssign.noClasses') : left > 0 ? t('teacherAssign.subjectNeed', { count: left, amount: formatAmount(left, unit, lang), classes }) : t('teacherAssign.subjectDone', { classes });
+      const note = options.length === 0 ? t('teacherAssign.noClasses') : left > 0 ? t(minutesLeft > 0 ? 'teacherAssign.subjectNeedTime' : 'teacherAssign.subjectNeed', { count: periodsLeft, amount, classes }) : t('teacherAssign.subjectDone', { classes });
       return { id: s.id, name: pickName(s, lang), color: s.color, left, note };
     });
     return [...rows.filter((r) => r.left > 0), ...rows.filter((r) => r.left === 0)];
@@ -149,7 +151,7 @@ function TeacherAssignPickerBody({ teacherId, slot, entries, onClose, onSave, on
         period: here?.period ?? null,
         ok: cell.kind === 'free',
         note: `${slotNote} · ${t('teacherAssign.weekFree', { count: freeCount })}`,
-        need: progress.left > 0 ? t('picker.needs', { amount: formatAmount(progress.left, progress.unit, lang) }) : t('picker.done', { progress: formatAmountPair(progress.placed, progress.needed, progress.unit, lang) }),
+        need: progress.left > 0 ? t(progress.unit === 'minutes' ? 'picker.needsTime' : 'picker.needs', { amount: formatAmount(progress.left, progress.unit, lang) }) : t('picker.done', { progress: formatAmountPair(progress.placed, progress.needed, progress.unit, lang) }),
         needed: progress.left > 0,
       };
     });

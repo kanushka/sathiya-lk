@@ -40,13 +40,10 @@ describe('GroupModal time target', () => {
   it('saves a group as minutes per week', async () => {
     const { onSave, user } = setup();
     const dialog = screen.getByRole('dialog');
+    expect(within(dialog).getByText('Target per week')).toBeInTheDocument();
     await user.click(within(dialog).getByRole('button', { name: 'Time' }));
-    const hours = within(dialog).getByLabelText('Hours per week');
-    await user.clear(hours);
-    await user.type(hours, '1');
-    const mins = within(dialog).getByLabelText('Minutes per week');
-    await user.clear(mins);
-    await user.type(mins, '20');
+    await user.type(within(dialog).getByLabelText('Hours per week'), '1');
+    await user.type(within(dialog).getByLabelText('Minutes per week'), '20');
     await user.click(within(dialog).getByRole('button', { name: 'Save group' }));
     expect(onSave).toHaveBeenCalledWith(expect.objectContaining({ unit: 'minutes', perWeek: 80 }));
   });

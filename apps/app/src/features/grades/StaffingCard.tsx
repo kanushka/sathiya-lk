@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
 // Copyright (C) 2026 Kanushka Gayan
-import { pickName, staffingFor, type Grade, type Lang, type SchoolContext, type StaffingMode } from '@sathiya/core';
+import { defaultSpecialistIds, pickName, staffingFor, type Grade, type Lang, type SchoolContext, type StaffingMode } from '@sathiya/core';
 import { useTranslation } from 'react-i18next';
 import { Chip } from '../../ui/Chip';
 import { MultiSelect } from '../../ui/MultiSelect';
@@ -27,7 +27,7 @@ export function StaffingCard({ grade, ctx, readOnly, onChange }: StaffingCardPro
   };
   const setMode = (mode: StaffingMode) => {
     if (mode !== 'classTeacherPlusSpecialists') return onChange({ mode });
-    const defaults = staffingFor({ ...grade, number: 3, staffing: undefined }, ctx).specialistSubjectIds;
+    const defaults = defaultSpecialistIds(ctx);
     onChange({ mode, specialistSubjectIds: effective.specialistSubjectIds.length > 0 ? effective.specialistSubjectIds : defaults });
   };
 

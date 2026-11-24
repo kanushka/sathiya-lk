@@ -3,10 +3,16 @@
 
 import { describe, expect, it } from 'vitest';
 import { ctx, S } from './fixtures';
-import { isMinutes, staffingFor } from './staffing';
+import { defaultSpecialistIds, isMinutes, staffingFor } from './staffing';
 import type { Grade } from './types';
 
 const grade = (number: number, staffing?: Grade['staffing']): Grade => ({ id: `g-${number}`, number, plan: [], staffing });
+
+describe('defaultSpecialistIds', () => {
+  it('is the English subjects of the school', () => {
+    expect(defaultSpecialistIds(ctx)).toEqual([S.english]);
+  });
+});
 
 describe('staffingFor', () => {
   it('defaults Grades 1–2 to classTeacherAll', () => {

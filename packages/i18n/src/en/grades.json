@@ -49,7 +49,11 @@
     "removeOption": "Remove {{name}} from {{group}}",
     "addOption": "Add option to {{group}}",
     "optionPlaceholder": "+ option",
-    "timedTotal": "+ {{amount}} timed"
+    "timedTotal": "+ {{amount}} timed",
+    "errors": {
+      "perDayMismatch": "Minutes per week must equal minutes per day × 5.",
+      "perDayNeedsMinutes": "Minutes per day only applies to time targets."
+    }
   },
   "group": {
     "name": "Group name",
@@ -69,7 +73,8 @@
     "errors": {
       "name": "Enter the group name in English",
       "options": "Add at least one option subject"
-    }
+    },
+    "target": "Target per week"
   },
   "classPlan": {
     "title": "Custom plan for {{name}}",

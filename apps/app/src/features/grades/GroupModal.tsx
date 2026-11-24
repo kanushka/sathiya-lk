@@ -71,7 +71,12 @@ export function GroupModal({ initial, subjects, newKey, onSave, onClose }: Group
     >
       <form id="group-form" onSubmit={submit} noValidate className="flex flex-col gap-4">
         <NameFields legend={t('group.name')} enLabel={t('group.nameEn')} siLabel={t('group.nameSi')} en={nameEn} si={nameSi} onEn={setNameEn} onSi={setNameSi} missing={submitted && !!nameError} />
-        <AmountEditor item={amount} disabled={false} onChange={setAmount} />
+        <div role="group" aria-labelledby="group-target" className="flex flex-col gap-1.5">
+          <span id="group-target" className="text-[13px] font-semibold text-ink">
+            {t('group.target')}
+          </span>
+          <AmountEditor item={amount} disabled={false} onChange={setAmount} />
+        </div>
         <Field label={t('group.options')} error={submitted ? optionsError : null}>
           <MultiSelect
             value={options}

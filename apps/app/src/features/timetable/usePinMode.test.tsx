@@ -406,4 +406,35 @@ describe('usePinMode with a minutes target', () => {
     expect(pin.progress?.full[0]?.unit).toBe('minutes');
     expect(pin.fullNote).toMatch(/1b already has .*h/i);
   });
+
+  const mins = [0, 60, 15, 30, 10, 55, 10, 20];
+  const sum = (list: Array<{ period: number }>) => list.reduce((n, x) => n + mins[x.period]!, 0);
+
+  it('drops suggestions that no longer fit once slots are pinned by hand', async () => {
+    setup({}, [], { kind: 'class' }, mahasen.ctx);
+    act(() => pin.start(maths));
+    act(() => pin.suggest());
+    await act(async () => {
+      await pin.toggle(4, 1);
+    });
+    expect(pin.progress?.left).toBe(130);
+    expect(sum(pin.suggested)).toBeLessThanOrEqual(130);
+  });
+
+  it('refuses a hand pin longer than the minutes still needed', async () => {
+    setup({}, [], { kind: 'class' }, mahasen.ctx);
+    act(() => pin.start(maths));
+    for (const d of [1, 2, 3] as DayIndex[]) {
+      await act(async () => {
+        await pin.toggle(d, 1);
+      });
+    }
+    expect(pin.progress?.left).toBe(10);
+    const before = pin.progress?.placed;
+    await act(async () => {
+      await pin.toggle(4, 1);
+    });
+    expect(pin.progress?.placed).toBe(before);
+    expect(pin.message).toContain('longer than the 10 min still needed');
+  });
 });

@@ -19,7 +19,7 @@ export interface PickItem {
 
 export function pickNeed(t: TFunction, p: Pick<PickItem, 'placed' | 'needed' | 'unit'>, lang: Lang): string {
   return p.placed < p.needed
-    ? t('picker.needs', { amount: formatAmount(p.needed - p.placed, p.unit, lang) })
+    ? t(p.unit === 'minutes' ? 'picker.needsTime' : 'picker.needs', { amount: formatAmount(p.needed - p.placed, p.unit, lang) })
     : t('picker.done', { progress: formatAmountPair(p.placed, p.needed, p.unit, lang) });
 }
 

@@ -5,7 +5,7 @@ import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { cx } from '../../ui/cx';
 import { inputBareCompactClass } from '../../ui/Field';
-import { applyAmount, type Amount } from './planModel';
+import type { Amount } from './planModel';
 
 interface NumInputProps {
   label: string;
@@ -59,19 +59,26 @@ export interface AmountEditorProps {
 
 export function AmountEditor({ item, name, disabled, onChange }: AmountEditorProps) {
   const { t } = useTranslation('grades');
-  const minutes = item.unit === 'minutes';
+  const [pending, setPending] = useState<'periods' | 'minutes' | null>(null);
+  const stored = item.unit === 'minutes' ? 'minutes' : 'periods';
+  const minutes = (pending ?? stored) === 'minutes';
+  const derived = !pending && minutes && item.perDay !== undefined;
   const label = (key: string) => (name ? t(`amount.${key}For`, { name }) : t(`amount.${key}`));
-  const hours = Math.floor(item.perWeek / 60);
-  const rest = item.perWeek % 60;
-  const toggle = (unit: 'periods' | 'minutes') =>
-    unit === 'minutes' ? onChange({ unit: 'minutes', perWeek: 0 }) : onChange({ perWeek: 1 });
+  const hours = pending ? undefined : Math.floor(item.perWeek / 60);
+  const rest = pending ? undefined : item.perWeek % 60;
+  const emit = (next: Amount) => {
+    if (pending && next.perWeek <= 0) return;
+    setPending(null);
+    onChange(next);
+  };
+  const choose = (unit: 'periods' | 'minutes') => setPending(unit === stored ? null : unit);
   const btn = (unit: 'periods' | 'minutes', text: string, aria: string) => (
     <button
       type="button"
       aria-pressed={(unit === 'minutes') === minutes}
       aria-label={aria}
       disabled={disabled}
-      onClick={() => ((unit === 'minutes') !== minutes ? toggle(unit) : undefined)}
+      onClick={() => choose(unit)}
       className={cx(
         'h-9 px-2.5 text-xs font-semibold first:rounded-l-lg last:rounded-r-lg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand',
         (unit === 'minutes') === minutes ? 'bg-brand text-on-brand' : 'bg-white text-ink-soft hover:bg-surface',
@@ -93,24 +100,24 @@ export function AmountEditor({ item, name, disabled, onChange }: AmountEditorPro
           <NumInput
             label={label('hours')}
             value={hours}
-            disabled={disabled}
-            onCommit={(h) => onChange({ unit: 'minutes', perWeek: (h ?? 0) * 60 + rest })}
+            disabled={disabled || derived}
+            onCommit={(h) => emit({ unit: 'minutes', perWeek: (h ?? 0) * 60 + (rest ?? 0) })}
           />
           <span className="text-[13px] text-ink-soft">{t('amount.hShort')}</span>
           <NumInput
             label={label('minutes')}
             value={rest}
-            disabled={disabled}
-            onCommit={(m) => onChange({ unit: 'minutes', perWeek: hours * 60 + (m ?? 0) })}
+            disabled={disabled || derived}
+            onCommit={(m) => emit({ unit: 'minutes', perWeek: (hours ?? 0) * 60 + (m ?? 0) })}
           />
           <span className="text-[13px] text-ink-soft">{t('amount.minShort')}</span>
           <NumInput
             label={label('perDay')}
-            value={item.perDay}
+            value={pending ? undefined : item.perDay}
             disabled={disabled}
             allowEmpty
             width="w-16"
-            onCommit={(d) => onChange(d === null || d === 0 ? { unit: 'minutes', perWeek: item.perWeek } : { unit: 'minutes', perWeek: d * 5, perDay: d })}
+            onCommit={(d) => emit(d === null || d === 0 ? { unit: 'minutes', perWeek: pending ? 0 : item.perWeek } : { unit: 'minutes', perWeek: d * 5, perDay: d })}
           />
           <span className="text-[13px] text-ink-soft">{t('amount.perDayShort')}</span>
         </>
@@ -118,9 +125,9 @@ export function AmountEditor({ item, name, disabled, onChange }: AmountEditorPro
         <>
           <NumInput
             label={name ? t('plan.perWeekFor', { name }) : t('group.perWeek')}
-            value={item.perWeek}
+            value={pending ? undefined : item.perWeek}
             disabled={disabled}
-            onCommit={(n) => onChange({ perWeek: n ?? 0 })}
+            onCommit={(n) => emit({ perWeek: n ?? 0 })}
           />
           <span className="text-[13px] text-ink-soft">{t('plan.perWeek')}</span>
         </>

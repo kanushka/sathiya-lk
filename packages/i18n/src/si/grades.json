@@ -49,7 +49,11 @@
     "removeOption": "{{group}} වෙතින් {{name}} ඉවත් කරන්න",
     "addOption": "{{group}} වෙත විකල්පයක් එක් කරන්න",
     "optionPlaceholder": "+ විකල්පය",
-    "timedTotal": "+ {{amount}} කාලය අනුව"
+    "timedTotal": "+ {{amount}} කාලය අනුව",
+    "errors": {
+      "perDayMismatch": "සතියකට මිනිත්තු, දිනකට මිනිත්තු × 5 ට සමාන විය යුතුය.",
+      "perDayNeedsMinutes": "දිනකට මිනිත්තු අදාළ වන්නේ කාල ඉලක්කවලට පමණි."
+    }
   },
   "group": {
     "name": "කණ්ඩායමේ නම",
@@ -69,7 +73,8 @@
     "errors": {
       "name": "කණ්ඩායමේ ඉංග්‍රීසි නම ඇතුළත් කරන්න",
       "options": "අවම වශයෙන් එක් විකල්ප විෂයක් එක් කරන්න"
-    }
+    },
+    "target": "සතියකට ඉලක්කය"
   },
   "classPlan": {
     "title": "{{name}} සඳහා අභිරුචි සැලැස්ම",

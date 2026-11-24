@@ -244,6 +244,7 @@ function TeacherView({ teacher, teachers, template }: { teacher: Teacher; teache
       tc,
       names: pin.names,
       progress: pin.progress,
+      slotMinutes: pin.minutesAt(day, row),
       suggested: pin.isSuggested(day, row),
       group: pinTarget.groupKey !== undefined,
       teacherView: true,

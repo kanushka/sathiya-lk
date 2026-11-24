@@ -217,11 +217,37 @@ describe('grades page', () => {
     expect(api.saveGradePlan).not.toHaveBeenCalled();
   });
 
-  it('toggling a row to time saves it as minutes', async () => {
+  it('toggling a row to time waits for a value above zero before saving', async () => {
     const user = await openGrade6();
     await user.click(screen.getByRole('button', { name: 'Time for Mathematics' }));
+    expect(api.saveGradePlan).not.toHaveBeenCalled();
+    expect(screen.getByLabelText('Minutes per week for Mathematics')).toHaveValue(null);
+    await user.type(screen.getByLabelText('Minutes per week for Mathematics'), '0');
+    await user.tab();
+    expect(api.saveGradePlan).not.toHaveBeenCalled();
+    await user.type(screen.getByLabelText('Minutes per week for Mathematics'), '50');
+    await user.tab();
     const plan = vi.mocked(api.saveGradePlan).mock.calls.at(-1)![2];
-    expect(plan.find((p) => p.kind === 'subject' && p.subjectId === S.maths)).toMatchObject({ unit: 'minutes', perWeek: 0 });
+    expect(plan.find((p) => p.kind === 'subject' && p.subjectId === S.maths)).toMatchObject({ unit: 'minutes', perWeek: 50 });
+  });
+
+  it('shows the specific message and skips the save for an invalid plan', async () => {
+    const user = userEvent.setup();
+    const bad = {
+      ...ctx,
+      grades: ctx.grades.map((g) => (g.id === G.g6 ? { ...g, plan: g.plan.map((p, i) => (i === 0 ? { ...p, unit: 'minutes' as const, perWeek: 55, perDay: 10 } : p)) } : g)),
+    };
+    renderWithSchool(<GradesPage />, { ctx: bad, entries });
+    await user.click(screen.getByRole('button', { name: /^Grade 6\b/ }));
+    const english = screen.getByLabelText('Periods per week for English');
+    await user.clear(english);
+    await user.type(english, '4');
+    await user.tab();
+    expect(api.saveGradePlan).not.toHaveBeenCalled();
+    expect(await screen.findByText('Minutes per week must equal minutes per day × 5.')).toBeInTheDocument();
+    await user.click(screen.getAllByRole('button', { name: 'Custom plan' })[0]!);
+    await user.click(within(screen.getByRole('dialog')).getByRole('button', { name: 'Save custom plan' }));
+    expect(api.setPlanOverride).not.toHaveBeenCalled();
   });
 
   describe('with a time-based row', () => {
@@ -255,6 +281,15 @@ describe('grades page', () => {
       await user.tab();
       const plan = vi.mocked(api.saveGradePlan).mock.calls.at(-1)![2];
       expect(plan.find((p) => p.kind === 'subject' && p.subjectId === S.maths)).toMatchObject({ unit: 'minutes', perWeek: 50, perDay: 10 });
+    });
+
+    it('derives the weekly inputs from per-day minutes', async () => {
+      const withDay = { ...timed, grades: timed.grades.map((g) => ({ ...g, plan: g.plan.map((p) => (p.kind === 'subject' && p.subjectId === S.maths ? { ...p, perDay: 10 } : p)) })) };
+      renderWithSchool(<GradesPage />, { ctx: withDay, entries });
+      await userEvent.click(screen.getByRole('button', { name: /^Grade 6\b/ }));
+      expect(screen.getByLabelText('Hours per week for Mathematics')).toBeDisabled();
+      expect(screen.getByLabelText('Minutes per week for Mathematics')).toBeDisabled();
+      expect(screen.getByLabelText('Minutes per day for Mathematics')).toHaveValue(10);
     });
 
     it('keeps time rows out of the period total', async () => {

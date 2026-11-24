@@ -53,7 +53,8 @@ export function GradesPage() {
 
   const savePlan = (plan: PlanItem[]) => {
     if (!grade) return;
-    if (planIssues(plan).length > 0) return guard(() => Promise.reject(new Error('invalid plan')));
+    const issue = planIssues(plan)[0];
+    if (issue) return void toast.show(t(`plan.errors.${issue.issue}`), 'error');
     return guard(() => api.saveGradePlan(sid, grade.id, plan));
   };
   const saveStaffing = (staffing: api.GradeStaffing) => grade && guard(() => api.saveGradeStaffing(sid, grade.id, staffing));
