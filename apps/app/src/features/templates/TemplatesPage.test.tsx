@@ -25,6 +25,14 @@ function setup() {
 }
 
 describe('templates page', () => {
+  it('lets the list and editor take the full width on phones', () => {
+    setup();
+    const editor = screen.getAllByTestId('template-row')[0]!.closest('section')!;
+    expect(editor).toHaveClass('md:min-w-[520px]');
+    expect(editor).not.toHaveClass('min-w-[520px]');
+    expect(screen.getAllByTestId('template-row')[0]).toHaveClass('flex-wrap', 'md:flex-nowrap');
+  });
+
   it('puts + New template at the top right of the page header', () => {
     setup();
     expect(within(screen.getByTestId('page-header')).getAllByRole('button').at(-1)).toHaveTextContent('+ New template');
