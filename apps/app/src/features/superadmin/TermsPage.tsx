@@ -97,7 +97,7 @@ export function TermsPage({ versions: injectedVersions, config: injectedConfig, 
       ) : versions.length === 0 ? (
         <EmptyState icon="search" title={t('terms.empty')} />
       ) : (
-        <Table className="min-w-[520px]">
+        <Table className="md:min-w-[520px]">
           <THead>
             <tr>
               <Th>{t('terms.columns.version')}</Th>

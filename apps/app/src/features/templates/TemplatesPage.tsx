@@ -60,7 +60,7 @@ export function TemplatesPage() {
       )}
 
       <div className="flex flex-wrap items-start gap-5">
-        <div className="flex w-[260px] flex-col gap-2.5">
+        <div className="flex w-full flex-col gap-2.5 md:w-[260px]">
           {templates.map((x) => (
             <button
               key={x.id}
@@ -77,7 +77,7 @@ export function TemplatesPage() {
           ))}
         </div>
 
-        <section className="min-w-[520px] flex-1 rounded-[14px] border border-line-soft bg-white p-6">
+        <section className="min-w-0 flex-1 rounded-[14px] border border-line-soft bg-white p-4 md:min-w-[520px] md:p-6">
           {selected ? (
             <TemplateDetail
               key={selected.id + JSON.stringify(selected)}
