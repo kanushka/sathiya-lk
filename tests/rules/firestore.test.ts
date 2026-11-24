@@ -62,6 +62,10 @@ const seed: Record<string, Record<string, unknown>> = {
   [paths.publishedTeacher('s1', 'y1', 't1')]: { cells: [] },
   [paths.publishedTeacher('s1', 'y1', 't2')]: { cells: [] },
   [paths.publishedClass('s2', 'y1', 'c9')]: { cells: [] },
+  [`${paths.years('s1')}/y1/reliefDays/2026-11-24`]: { date: '2026-11-24', slots: [] },
+  [`${paths.years('s2')}/y1/reliefDays/2026-11-24`]: { date: '2026-11-24', slots: [] },
+  [`${paths.years('s1')}/y1/reliefMeta/stats`]: { count: 1 },
+  [`${paths.years('s1')}/y1/reliefMeta/notified_2026-11-24`]: { sent: [] },
   [paths.user('u-admin')]: { lang: 'en', schoolId: 's1' },
   'censusIndex/12345': { schoolId: 's1' },
   'rateLimits/register-uid_2026-11-21_u-admin': { scope: 'register-uid', day: '2026-11-21', count: 1 },
@@ -556,6 +560,31 @@ describe('publishedTeachers', () => {
   describe('write (functions only)', () => {
     deny([['admin', own], ['teacher', own], ['super', own]], (r, p) => set(r, p, { cells: [1] }));
     deny([['admin', own]], del);
+  });
+});
+
+describe('reliefDays', () => {
+  const rd = `${paths.years('s1')}/y1/reliefDays/2026-11-24`;
+  describe('read', () => {
+    allow([['admin', rd], ['adminTid', rd], ['teacher', rd], ['super', rd]], read);
+    deny([['otherAdmin', rd], ['otherTeacher', rd], ['teacher', `${paths.years('s2')}/y1/reliefDays/2026-11-24`], ['noClaims', rd], ['anon', rd]], read);
+  });
+  describe('write (functions only)', () => {
+    deny([['admin', rd], ['teacher', rd], ['super', rd]], (r, p) => set(r, p, { slots: [1] }));
+    deny([['admin', rd]], del);
+  });
+});
+
+describe('reliefMeta (admins read, functions write)', () => {
+  const stats = `${paths.years('s1')}/y1/reliefMeta/stats`;
+  const notified = `${paths.years('s1')}/y1/reliefMeta/notified_2026-11-24`;
+  describe('read', () => {
+    allow([['admin', stats], ['admin', notified], ['super', notified]], read);
+    deny([['teacher', stats], ['teacher', notified], ['otherAdmin', notified], ['noClaims', notified], ['anon', notified]], read);
+  });
+  describe('write', () => {
+    deny([['admin', stats], ['super', stats], ['teacher', stats]], (r, p) => set(r, p, { count: 2 }));
+    deny([['admin', notified]], del);
   });
 });
 
