@@ -5,6 +5,7 @@ import { busyDetail, isExemptPlacement, teacherDayLoad, type BusyDetail } from '
 import { entryWindow, findConflicts } from './clash';
 import { DAYS, findClass, gradeOf, templateOf } from './lookup';
 import { effectivePlan } from './plan';
+import { isMinutes } from './staffing';
 import { classPlacement } from './progress';
 import { bestOverlapPeriod, periodsFor, slotMinutes, windowOf } from './time';
 import type { DayIndex, Entry, EntryDraft, SchoolContext } from './types';
@@ -250,5 +251,11 @@ export function groupSpecIsCurrent(args: { ctx: SchoolContext; classId: string; 
   if (item?.kind !== 'group') return false;
   const subjects = spec.lessons.map((l) => l.subjectId);
   if (subjects.length !== item.optionSubjectIds.length || !item.optionSubjectIds.every((s) => subjects.includes(s))) return false;
-  return spec.lessons.every((l) => ctx.teachers.some((t) => t.id === l.teacherId));
+  if (!spec.lessons.every((l) => ctx.teachers.some((t) => t.id === l.teacherId))) return false;
+  return spec.classIds.slice(1).every((id) => {
+    const c = findClass(ctx, id);
+    const g = c && gradeOf(ctx, c);
+    const mate = c && g ? effectivePlan(c, g).find((p) => p.kind === 'group' && p.key === spec.groupKey) : undefined;
+    return mate !== undefined && isMinutes(mate) === isMinutes(item);
+  });
 }

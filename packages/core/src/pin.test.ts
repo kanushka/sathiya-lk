@@ -397,6 +397,11 @@ describe('groupSpecIsCurrent', () => {
     expect(groupSpecIsCurrent({ ctx: gone, classId: C.c6b, spec })).toBe(false);
   });
 
+  it('fails when a joined class now uses a different unit for the group', () => {
+    const timed = { ...ctx, classes: ctx.classes.map((c) => (c.id === C.c6a ? { ...c, planOverride: [{ kind: 'group' as const, key: 'religion', nameEn: 'Religion', optionSubjectIds: [S.buddhism, S.catholicism, S.islam], perWeek: 120, unit: 'minutes' as const }] } : c)) };
+    expect(groupSpecIsCurrent({ ctx: timed, classId: C.c6b, spec })).toBe(false);
+  });
+
   it('fails when the lessons no longer match the plan options', () => {
     expect(groupSpecIsCurrent({ ctx, classId: C.c6b, spec: { ...spec, lessons: lessons.slice(0, 2) } })).toBe(false);
     const swapped = { ...spec, lessons: [...lessons.slice(0, 2), { subjectId: S.pali, teacherId: T.ananda }] };
