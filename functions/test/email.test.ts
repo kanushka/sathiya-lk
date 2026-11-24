@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
 // Copyright (C) 2026 Kanushka Gayan
-import { paths, syntheticEmail } from '@sathiya/core';
+import { paths } from '@sathiya/core';
 import { logger } from 'firebase-functions/v2';
 import { httpsCallable } from 'firebase/functions';
 import { afterEach, describe, expect, it, vi } from 'vitest';
@@ -113,11 +113,10 @@ describe('app emails', () => {
     expect(all.some((m) => (m.to as string[]).some((t) => t.startsWith('t-')))).toBe(false);
   });
 
-  it('teacher creation and password reset write no mail', async () => {
+  it('teacher creation writes no mail', async () => {
     const { admin, sid } = await adminWithSchool();
     const before = (await adminDb.collection('mail').get()).size;
-    const { teacherId } = await admin.call('createTeacher', { schoolId: sid, teacher: teacherInput('SCC031') });
-    await admin.call('resetTeacherPassword', { schoolId: sid, teacherId });
+    await admin.call('createTeacher', { schoolId: sid, teacher: teacherInput('SCC031') });
     expect((await adminDb.collection('mail').get()).size).toBe(before);
   });
 
@@ -168,6 +167,16 @@ describe('sendAuthEmail', () => {
     expect(mails[0]!.message.text).toMatch(new RegExp(`ඊමේල් තහවුරු කරන්න: ${esc(APP_URL)}/auth/action\\?mode=verifyEmail&oobCode=\\S+`));
   });
 
+  it('verify points the link back at an app path, and refuses any other continuePath', async () => {
+    const c = await unverifiedSignUp();
+    await sendAuth(c, { kind: 'verify', lang: 'en', continuePath: '/join/s1/tok' });
+    const [mail] = await mailsTo(emailOf(c));
+    expect(mail!.message.html).toContain(`continueUrl=${encodeURIComponent(`${APP_URL}/join/s1/tok`)}`);
+    for (const bad of ['//evil.example/x', 'https://evil.example/', 'join/x', '/a b']) {
+      await expectFnError(sendAuth(c, { kind: 'verify', lang: 'en', continuePath: bad }) as Promise<never>, 'invalid-argument', 'invalid');
+    }
+  });
+
   it('verify refuses signed-out callers, is a no-op for verified users and is rate limited', async () => {
     await expectFnError(sendAuth(client(), { kind: 'verify', lang: 'en' }) as Promise<never>, 'unauthenticated', 'not-allowed');
     const verified = await signUp();
@@ -189,13 +198,6 @@ describe('sendAuthEmail', () => {
     expect(mails[0]!.message.subject).toBe('Reset your password · Sathiya (සතිය)');
     expect(mails[0]!.message.html).toMatch(actionHref('resetPassword'));
     expect(await mailsTo(unknown)).toHaveLength(0);
-  });
-
-  it('reset for a teacher login address answers ok and sends nothing', async () => {
-    const to = syntheticEmail(`T${uniq()}`, 'sid1');
-    await adminAuth.createUser({ email: to, password: 'secret123' });
-    await expect(sendAuth(client(), { kind: 'reset', email: to, lang: 'en' })).resolves.toEqual({ ok: true });
-    expect(await mailsTo(to)).toHaveLength(0);
   });
 
   it('verify is limited per IP', async () => {

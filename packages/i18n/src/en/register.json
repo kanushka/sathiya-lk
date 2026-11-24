@@ -36,7 +36,7 @@
     "censusHint": "From the Ministry of Education school census. Each school can register once.",
     "censusError": "Census number must be 4 to 6 digits",
     "noCensus": "No census number (private / international schools only)",
-    "censusTaken": "This school is already registered on Sathiya. Ask its admin to add you as an admin from School settings → Members. If you think the registration is fake, <report>report it</report>."
+    "censusTaken": "This school is already registered. Ask the school admin for an invite link. If you think the registration is fake, <report>report it</report>."
   },
   "brand": {
     "title": "2 · Logo & school colours",
@@ -77,6 +77,12 @@
     "submit": "Create school",
     "submitting": "Creating…"
   },
+  "signUp": {
+    "title": "Create account",
+    "terms": "I agree to the <terms>Terms & Conditions</terms> and <privacy>Privacy Policy</privacy>.",
+    "submit": "Create account",
+    "submitting": "Creating…"
+  },
   "errors": {
     "emailInUse": "That email already has an account. Log in instead.",
     "weakPassword": "Password must be at least 8 characters",
@@ -84,7 +90,7 @@
     "required": "Required",
     "generic": "Could not register the school. Please try again.",
     "logoUpload": "School created, but the logo could not be uploaded. Add it later in school profile.",
-    "alreadyHasSchool": "This account has already registered a school.",
+    "tooManySchools": "This account already belongs to the most schools allowed (15).",
     "rateLimited": "Too many attempts. Please try again later."
   },
   "verify": {
@@ -94,7 +100,9 @@
     "resend": "Send again",
     "sent": "Verification email sent.",
     "sendFailed": "Could not send the email. Please try again shortly.",
+    "firstSendFailed": "Your account is ready, but we could not send the confirmation email. Use Send again to retry.",
     "notYet": "Not verified yet. Open the link in the email, then try again.",
-    "note": "Signed in with Google? You skip this step. One school per account."
+    "note": "Signed in with Google? You skip this step.",
+    "bodySignUp": "We sent a link to <b>{{email}}</b>. Open it to confirm your email, then come back here to continue."
   }
 }

@@ -1,6 +1,6 @@
 # Email setup (user steps)
 
-App emails (invites, welcome, reports, suspend/reactivate) and Firebase Auth emails (verify, password reset) are all sent the same way: functions write a doc to Firestore `mail`, and the `sendMail` function (a `mail/{id}` create trigger, `functions/src/email/sendMail.ts`) sends it with the [Resend HTTP API](https://resend.com/docs/api-reference/emails/send-email). Teachers never get email. Clients can't read or write `mail` (rules deny it).
+App emails (invites, welcome, reports, suspend/reactivate) and Firebase Auth emails (verify, password reset) are all sent the same way: functions write a doc to Firestore `mail`, and the `sendMail` function (a `mail/{id}` create trigger, `functions/src/email/sendMail.ts`) sends it with the [Resend HTTP API](https://resend.com/docs/api-reference/emails/send-email). Teachers get only the Auth emails (verify, password reset) when they sign up with email and password; invite links are copied and shared by the admin, not emailed. Clients can't read or write `mail` (rules deny it).
 
 ## 1. Resend
 1. Resend → Domains → add `sathiya.kanushka.com`.

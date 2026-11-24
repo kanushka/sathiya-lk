@@ -1,0 +1,44 @@
+{
+  "title": "Join a school",
+  "already": {
+    "title": "You're already a teacher here",
+    "body": "Your account is already linked to a teacher in this school.",
+    "open": "Open my timetable"
+  },
+  "staffId": {
+    "title": "Enter your staff ID",
+    "body": "Your email does not match a teacher record in this school. Enter your staff ID and your school admin will check the request.",
+    "label": "Staff ID",
+    "required": "Enter your staff ID",
+    "unknown": "No teacher has this staff ID. Check it and try again.",
+    "taken": "This staff ID is already linked to an account. Ask your school admin to unlink it if it should be yours.",
+    "submit": "Send request",
+    "sending": "Sending…",
+    "hint": "Already sent a request? Sending it again is fine; your admin sees only the latest."
+  },
+  "pending": {
+    "title": "Waiting for your school admin",
+    "body": "Your request was sent. When your school admin approves it, open this link again or sign in to see your timetable."
+  },
+  "rejected": {
+    "title": "Not approved",
+    "body": "Your school admin did not approve your request. If you chose the wrong staff ID, send a new request, or ask your admin.",
+    "retry": "Try again with a staff ID"
+  },
+  "errors": {
+    "linkInvalidTitle": "This link does not work",
+    "linkInvalid": "The link was turned off, replaced, already used or has expired. Ask your school admin for a new one.",
+    "alreadyLinkedTitle": "Already linked",
+    "alreadyLinked": "This teacher record is already linked to an account, or your account is already linked to a teacher in this school. Ask your school admin to unlink it if this is wrong.",
+    "tooManySchools": "This account already belongs to the most schools allowed (15).",
+    "rateLimited": "Too many tries today. Please try again tomorrow.",
+    "notAllowed": "This account can't join. Sign in with a verified email and try again.",
+    "genericTitle": "Something went wrong",
+    "generic": "Could not join the school. Please try again.",
+    "retry": "Try again",
+    "home": "Go to start",
+    "cantJoinTitle": "Can't join this school"
+  },
+  "signedInAs": "Signed in as {{email}}.",
+  "signOut": "Use another account"
+}

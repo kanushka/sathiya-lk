@@ -5,7 +5,22 @@ import type { ApiErrorCode, CallableName, CallableTypes } from '@sathiya/core';
 import { httpsCallable, type HttpsCallableOptions } from 'firebase/functions';
 import { functions } from './firebase';
 
-const apiCodes: readonly ApiErrorCode[] = ['clash', 'in-use', 'not-allowed', 'invalid', 'census-taken', 'email-unverified', 'already-has-school', 'rate-limited', 'school-disabled', 'template-in-use', 'template-too-many-moves'];
+const apiCodes: readonly ApiErrorCode[] = [
+  'clash',
+  'in-use',
+  'not-allowed',
+  'invalid',
+  'email-unverified',
+  'rate-limited',
+  'school-disabled',
+  'already-linked',
+  'staff-id-unknown',
+  'link-invalid',
+  'too-many-schools',
+  'school-registered',
+  'template-in-use',
+  'template-too-many-moves',
+];
 
 export class ApiError extends Error {
   code: ApiErrorCode;

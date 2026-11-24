@@ -2,19 +2,16 @@
 // Copyright (C) 2026 Kanushka Gayan
 import { subjectsFingerprint } from '@sathiya/core';
 import { ctx, entries } from '@sathiya/core/fixtures';
-import { screen, waitFor, within } from '@testing-library/react';
+import { screen, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { ApiError, call } from '../../lib/callable';
 import { renderWithSchool } from '../../test/renderWithSchool';
 import { SubjectsPage } from '../subjects/SubjectsPage';
-import { printSlips } from '../teachers/printSlips';
-import { clearSessionPasswords } from '../teachers/sessionPasswords';
 import { TeachersPage } from '../teachers/TeachersPage';
 import { ImportModal } from './ImportModal';
 import { downloadBlob, templateCsv } from './template';
 
-vi.mock('../teachers/printSlips', async (orig) => ({ ...(await orig<typeof import('../teachers/printSlips')>()), printSlips: vi.fn() }));
 vi.mock('../../lib/callable', async (orig) => ({ ...(await orig<typeof import('../../lib/callable')>()), call: vi.fn() }));
 vi.mock('./template', async (orig) => ({ ...(await orig<typeof import('./template')>()), downloadBlob: vi.fn() }));
 
@@ -24,8 +21,6 @@ vi.mock('../../ui/AdminLayout', async (orig) => ({ ...(await orig<typeof import(
 beforeEach(() => {
   vi.resetAllMocks();
   flags.readOnly = false;
-  clearSessionPasswords();
-  vi.mocked(printSlips).mockResolvedValue(true);
 });
 
 const SUBJECTS_CSV = 'Name (English),Name (Sinhala),Short name\nDrama,නාට්‍ය,Drama\n';
@@ -63,7 +58,7 @@ describe('ImportModal preview', () => {
     }, { timeout: 310_000 });
     const done = await screen.findByRole('dialog', { name: 'Import complete' });
     expect(within(done).getByText('Added 1 subject and 0 teachers.')).toBeInTheDocument();
-    expect(within(done).getByRole('button', { name: 'Print login slips' })).toBeDisabled();
+    expect(within(done).queryByRole('button', { name: /slip/i })).not.toBeInTheDocument();
   });
 
   it('lists the teachers to add', async () => {
@@ -142,31 +137,6 @@ describe('ImportModal preview', () => {
 });
 
 describe('ImportModal import', () => {
-  it('prints a slip per created teacher with their passwords', async () => {
-    const user = userEvent.setup();
-    vi.mocked(call).mockResolvedValue({
-      subjectIds: [],
-      teachers: [
-        { teacherId: 't1', staffId: 'SCC059', name: 'A. Perera', title: 'Mrs', password: 'pass2345' },
-        { teacherId: 't2', staffId: 'SCC060', name: 'B. Silva', password: 'word6789' },
-      ],
-      notCreated: [],
-    });
-    const dialog = open();
-    await choose(user, dialog, csv(`${TEACHERS_HEAD},Mrs,A. Perera,Mathematics,6\n,,B. Silva,Science,7\n`, 'teachers.csv'));
-    await user.click(await within(dialog).findByRole('button', { name: 'Import' }));
-
-    const done = await screen.findByRole('dialog', { name: 'Import complete' });
-    expect(within(done).getByText('Added 0 subjects and 2 teachers.')).toBeInTheDocument();
-    await user.click(within(done).getByRole('button', { name: 'Print login slips' }));
-    await waitFor(() => expect(printSlips).toHaveBeenCalled());
-    const url = `${window.location.origin}/login?as=teacher&school=${ctx.school.id}`;
-    expect(vi.mocked(printSlips).mock.calls[0]![0]).toEqual([
-      { schoolName: ctx.school.nameEn, staffId: 'SCC059', name: 'Mrs. A. Perera', password: 'pass2345', url },
-      { schoolName: ctx.school.nameEn, staffId: 'SCC060', name: 'B. Silva', password: 'word6789', url },
-    ]);
-  });
-
   it('warns about teachers the server could not create', async () => {
     const user = userEvent.setup();
     vi.mocked(call).mockResolvedValue({ subjectIds: [], teachers: [], notCreated: ['SCC059'] });
@@ -268,26 +238,5 @@ describe.each([
     flags.readOnly = true;
     renderWithSchool(page(), { ctx, entries });
     expect(screen.queryByRole('button', { name: 'Import' })).not.toBeInTheDocument();
-  });
-});
-
-describe('TeachersPage after an import', () => {
-  it('remembers the new passwords for Print all', async () => {
-    const user = userEvent.setup();
-    const [existing] = ctx.teachers;
-    vi.mocked(call).mockResolvedValue({
-      subjectIds: [],
-      teachers: [{ teacherId: existing!.id, staffId: existing!.staffId, name: existing!.name, password: 'pass2345' }],
-      notCreated: [],
-    });
-    renderWithSchool(<TeachersPage />, { ctx, entries });
-    await user.click(screen.getByRole('button', { name: 'Import' }));
-    const dialog = screen.getByRole('dialog');
-    await choose(user, dialog, csv(`${TEACHERS_HEAD},Mrs,A. Perera,Mathematics,6\n`, 'teachers.csv'));
-    await user.click(await within(dialog).findByRole('button', { name: 'Import' }));
-    await user.click(await screen.findByRole('button', { name: 'Done' }));
-
-    await user.click(screen.getByRole('button', { name: 'Print all login slips' }));
-    expect(screen.getByRole('button', { name: 'Print 1 slip with new password' })).toBeEnabled();
   });
 });

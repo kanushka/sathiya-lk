@@ -38,7 +38,7 @@ test('orphaned entry: follow Needs attention to the class, delete it, warning cl
   await expect(confirm).toBeHidden();
   await expect(list).toBeHidden();
 
-  await page.goto('/admin');
+  await page.goto(`/s/${SID}/admin`);
   await expect(page.getByRole('heading', { name: 'Needs attention' })).toBeVisible();
   await expect(page.getByRole('link', { name: /outside the period template/ })).toHaveCount(0);
 });

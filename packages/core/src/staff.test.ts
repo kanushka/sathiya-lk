@@ -2,7 +2,7 @@
 // Copyright (C) 2026 Kanushka Gayan
 
 import { describe, expect, it } from 'vitest';
-import { formatStaffId, isValidStaffId, nextStaffNumber, syntheticEmail } from './staff';
+import { formatStaffId, isValidStaffId, nextStaffNumber } from './staff';
 
 describe('staff ids', () => {
   it('formats zero-padded', () => {
@@ -15,9 +15,6 @@ describe('staff ids', () => {
     expect(isValidStaffId('SCC', 'SCC0245')).toBe(false);
     expect(isValidStaffId('SCC', 'ABC024')).toBe(false);
     expect(isValidStaffId('S', 'S024')).toBe(false);
-  });
-  it('builds synthetic email', () => {
-    expect(syntheticEmail('SCC024', 'abc')).toBe('scc024@abc.teachers.sathiya.lk');
   });
   it('computes next number', () => {
     expect(nextStaffNumber(['SCC001', 'SCC007'], 'SCC')).toBe(8);

@@ -80,7 +80,7 @@
     "excelDate": "Excel changed this to a date. Format the column as Plain text and type it again.",
     "excelNumber": "Excel changed this to a number and may have dropped a leading 0. Format the column as Plain text and type it again.",
     "subjectsChanged": "Subjects changed since you chose this file. Choose the file again to re-check.",
-    "alreadyImported": "This file was already imported in the last 24 hours. Check the Teachers list; reset passwords there if slips are missing."
+    "alreadyImported": "This file was already imported in the last 24 hours. Check the Teachers list before importing again."
   },
   "fileErrors": {
     "unsupported": "Choose an .xlsx or .csv file.",
@@ -92,8 +92,7 @@
   "doneTitle": "Import complete",
   "doneBody": "Added {{subjects}} and {{teachers}}.",
   "notCreated": "These teachers couldn't be added: {{list}}. Add them again later.",
-  "slipsHint": "Print the login slips now. Passwords are shown only during this session.",
-  "printSlips": "Print login slips",
+  "inviteHint": "Teachers can join with the invite link on the Teachers page.",
   "done": "Done",
   "failed": "Couldn't import. Try again.",
   "mayHaveImported": "The import may have finished. Check the Teachers and Subjects lists before importing again — re-importing teachers with blank Staff IDs would create duplicates.",

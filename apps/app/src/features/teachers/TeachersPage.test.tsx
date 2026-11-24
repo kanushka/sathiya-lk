@@ -2,19 +2,19 @@
 // Copyright (C) 2026 Kanushka Gayan
 import { teacherLoad, usageCount } from '@sathiya/core';
 import { T, ctx, entries, entry, mahasen } from '@sathiya/core/fixtures';
-import { fireEvent, screen, waitFor, within } from '@testing-library/react';
+import { act, cleanup, fireEvent, screen, waitFor, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { ApiError, call } from '../../lib/callable';
 import { pickOption } from '../../test/pickOption';
 import { renderWithSchool } from '../../test/renderWithSchool';
 import * as api from './api';
-import { printSlips } from './printSlips';
-import { clearSessionPasswords, setSessionPassword } from './sessionPasswords';
 import { TeachersPage } from './TeachersPage';
 
 vi.mock('./api');
-vi.mock('./printSlips', async (orig) => ({ ...(await orig<typeof import('./printSlips')>()), printSlips: vi.fn() }));
+const data = vi.hoisted(() => ({ requests: [] as unknown[], joinLink: undefined as unknown, joinLinkError: undefined as Error | undefined }));
+vi.mock('./useJoinRequests', () => ({ useJoinRequests: () => ({ data: data.requests, loading: false }) }));
+vi.mock('./useJoinLink', () => ({ useJoinLink: () => ({ data: data.joinLink, loading: false, error: data.joinLinkError }) }));
 vi.mock('../../lib/callable', async (orig) => ({ ...(await orig<typeof import('../../lib/callable')>()), call: vi.fn() }));
 
 const flags = vi.hoisted(() => ({ readOnly: false }));
@@ -23,8 +23,9 @@ vi.mock('../../ui/AdminLayout', async (orig) => ({ ...(await orig<typeof import(
 beforeEach(() => {
   vi.resetAllMocks();
   flags.readOnly = false;
-  clearSessionPasswords();
-  vi.mocked(printSlips).mockResolvedValue(true);
+  data.requests = [];
+  data.joinLink = undefined;
+  data.joinLinkError = undefined;
 });
 
 const unused = { ...ctx, classes: ctx.classes.map(({ classTeacherId: _, ...c }) => c) };
@@ -53,13 +54,6 @@ describe('teachers page', () => {
     expect(screen.queryByText('Mrs. N. Perera')).not.toBeInTheDocument();
   });
 
-  it('colours the never-logged-in cell red', () => {
-    render();
-    const reds = document.querySelectorAll('td span.text-danger');
-    expect(reds.length).toBeGreaterThan(0);
-    expect(reds[0]!.closest('td')).not.toHaveClass('text-danger');
-  });
-
   it('hides the subject picker for a primary teacher', async () => {
     const user = userEvent.setup();
     render();
@@ -76,9 +70,9 @@ describe('teachers page', () => {
     expect(within(dialog).getByLabelText('Staff ID')).toHaveValue('SCC059');
   });
 
-  it('creates a teacher and shows the returned password on the slip', async () => {
+  it('creates a teacher', async () => {
     const user = userEvent.setup();
-    vi.mocked(api.createTeacher).mockResolvedValue({ teacherId: 'tNew', password: 'k7m4x9pq' });
+    vi.mocked(api.createTeacher).mockResolvedValue({ teacherId: 'tNew' });
     render();
     const dialog = await openAdd(user);
     await user.type(within(dialog).getByLabelText('Name in English'), 'Mr. New Teacher');
@@ -86,16 +80,13 @@ describe('teachers page', () => {
     await user.click(within(dialog).getByRole('button', { name: '6', pressed: false }));
     await user.click(within(dialog).getByRole('button', { name: 'Save teacher' }));
 
-    expect(await within(dialog).findByText('k7m4x9pq')).toBeInTheDocument();
+    await waitFor(() => expect(api.createTeacher).toHaveBeenCalled());
     expect(api.createTeacher).toHaveBeenCalledWith(
       'siripura',
       expect.objectContaining({ staffId: 'SCC059', name: 'Mr. New Teacher', isPrimary: false, grades: [6], maxPerDay: 7 }),
     );
     const sent = vi.mocked(api.createTeacher).mock.calls[0]![1];
     expect(Object.values(sent)).not.toContain(undefined);
-    expect(within(dialog).getByRole('link', { name: 'Share on WhatsApp' }).getAttribute('href')).toContain(
-      encodeURIComponent('k7m4x9pq'),
-    );
   });
 
   it('says the school is suspended when creating a teacher is refused for that reason', async () => {
@@ -108,79 +99,6 @@ describe('teachers page', () => {
     await user.click(within(dialog).getByRole('button', { name: '6', pressed: false }));
     await user.click(within(dialog).getByRole('button', { name: 'Save teacher' }));
     expect(await within(dialog).findByText("This school is suspended, so changes can't be saved.")).toBeInTheDocument();
-  });
-
-  it('shows only the login slip after creating a teacher', async () => {
-    const user = userEvent.setup();
-    vi.mocked(api.createTeacher).mockResolvedValue({ teacherId: 'tNew', password: 'k7m4x9pq' });
-    render();
-    const dialog = await openAdd(user);
-    await user.type(within(dialog).getByLabelText('Name in English'), 'New Teacher');
-    await pickOption(user, within(dialog).getByRole('combobox', { name: 'Subjects' }), 'Mathematics');
-    await user.click(within(dialog).getByRole('button', { name: '6', pressed: false }));
-    await user.click(within(dialog).getByRole('button', { name: 'Save teacher' }));
-
-    expect(await within(dialog).findByText('k7m4x9pq')).toBeInTheDocument();
-    expect(within(dialog).queryByLabelText('Name')).not.toBeInTheDocument();
-    expect(within(dialog).queryByLabelText('Staff ID')).not.toBeInTheDocument();
-    expect(within(dialog).queryByText(/already used/i)).not.toBeInTheDocument();
-    expect(within(dialog).getByRole('button', { name: 'Print slip' })).toBeInTheDocument();
-    expect(within(dialog).getByRole('button', { name: 'Done' })).toBeInTheDocument();
-  });
-
-  it('moves focus to the slip Print button after creating a teacher', async () => {
-    const user = userEvent.setup();
-    vi.mocked(api.createTeacher).mockResolvedValue({ teacherId: 'tNew', password: 'k7m4x9pq' });
-    render();
-    const dialog = await openAdd(user);
-    await user.type(within(dialog).getByLabelText('Name in English'), 'New Teacher');
-    await pickOption(user, within(dialog).getByRole('combobox', { name: 'Subjects' }), 'Mathematics');
-    await user.click(within(dialog).getByRole('button', { name: '6', pressed: false }));
-    await user.click(within(dialog).getByRole('button', { name: 'Save teacher' }));
-
-    expect(await within(dialog).findByText('k7m4x9pq')).toBeInTheDocument();
-    await waitFor(() => expect(within(dialog).getByRole('button', { name: 'Print slip' })).toHaveFocus());
-  });
-
-  it('asks for confirmation before resetting a password', async () => {
-    const user = userEvent.setup();
-    vi.mocked(api.resetTeacherPassword).mockResolvedValue('n3w8pass');
-    render();
-    const row = screen.getByText('Mrs. N. Perera').closest('tr')!;
-    await user.click(within(row).getByRole('button', { name: 'Edit' }));
-    const dialog = screen.getByRole('dialog');
-    expect(within(dialog).getByText('Reset to get a new password')).toBeInTheDocument();
-    await user.click(within(dialog).getByRole('button', { name: 'Reset password' }));
-    expect(api.resetTeacherPassword).not.toHaveBeenCalled();
-    const confirm = screen.getByRole('dialog', { name: /Reset .*password\?/ });
-    expect(within(confirm).getByText(/current password stops working immediately/)).toBeInTheDocument();
-    await user.click(within(confirm).getByRole('button', { name: 'Cancel' }));
-    expect(api.resetTeacherPassword).not.toHaveBeenCalled();
-    await user.click(within(dialog).getByRole('button', { name: 'Reset password' }));
-    await user.click(within(screen.getByRole('dialog', { name: /Reset .*password\?/ })).getByRole('button', { name: 'Reset password' }));
-    expect(await within(dialog).findByText('n3w8pass')).toBeInTheDocument();
-    expect(api.resetTeacherPassword).toHaveBeenCalledWith('siripura', expect.any(String));
-  });
-
-  it('disables Print slip and WhatsApp until a fresh password is known', async () => {
-    const user = userEvent.setup();
-    const perera = ctx.teachers.find((t) => t.staffId === 'SCC024')!;
-    const { unmount } = render();
-    await user.click(within(screen.getByText('Mrs. N. Perera').closest('tr')!).getByRole('button', { name: 'Edit' }));
-    let dialog = screen.getByRole('dialog');
-    expect(within(dialog).getByRole('button', { name: 'Print slip' })).toBeDisabled();
-    expect(within(dialog).queryByRole('link', { name: 'Share on WhatsApp' })).not.toBeInTheDocument();
-    expect(within(dialog).getByText('Share on WhatsApp')).toHaveAttribute('aria-disabled', 'true');
-    expect(within(dialog).getByText('Reset the password first to print a slip')).toBeInTheDocument();
-    unmount();
-
-    setSessionPassword('test-user:siripura', perera.id, 'abcd2345');
-    render();
-    await user.click(within(screen.getByText('Mrs. N. Perera').closest('tr')!).getByRole('button', { name: 'Edit' }));
-    dialog = screen.getByRole('dialog');
-    expect(within(dialog).getByRole('button', { name: 'Print slip' })).toBeEnabled();
-    expect(within(dialog).getByRole('link', { name: 'Share on WhatsApp' })).toBeInTheDocument();
-    expect(within(dialog).queryByText('Reset the password first to print a slip')).not.toBeInTheDocument();
   });
 
   it('shows each teacher load and min per week when set', () => {
@@ -206,7 +124,7 @@ describe('teachers page', () => {
 
   it('saves min per week, and validates it against max per day', async () => {
     const user = userEvent.setup();
-    vi.mocked(api.createTeacher).mockResolvedValue({ teacherId: 'tNew', password: 'k7m4x9pq' });
+    vi.mocked(api.createTeacher).mockResolvedValue({ teacherId: 'tNew' });
     render();
     const dialog = await openAdd(user);
     await user.type(within(dialog).getByLabelText('Name in English'), 'Mr. New Teacher');
@@ -253,116 +171,6 @@ describe('teachers page', () => {
     await waitFor(() => expect(api.updateTeacher).toHaveBeenCalled());
     expect(api.updateTeacher).toHaveBeenCalledWith('siripura', expect.any(String), expect.objectContaining({ maxPerDay: 5 }));
     expect(api.createTeacher).not.toHaveBeenCalled();
-  });
-
-  it('print all opens a dialog and prints only the slips with a fresh password', async () => {
-    const user = userEvent.setup();
-    const perera = ctx.teachers.find((t) => t.staffId === 'SCC024')!;
-    setSessionPassword('test-user:siripura', perera.id, 'abcd2345');
-    render();
-    await user.click(screen.getByRole('button', { name: 'Print all login slips' }));
-    expect(printSlips).not.toHaveBeenCalled();
-    const dialog = screen.getByRole('dialog', { name: 'Print login slips' });
-    expect(within(dialog).getByText(/only known right after/)).toBeInTheDocument();
-    await user.click(within(dialog).getByRole('button', { name: 'Print 1 slip with new password' }));
-    await waitFor(() => expect(printSlips).toHaveBeenCalled());
-    const slips = vi.mocked(printSlips).mock.calls[0]![0];
-    expect(slips).toHaveLength(1);
-    expect(slips[0]).toMatchObject({ staffId: 'SCC024', password: 'abcd2345', url: `${window.location.origin}/login?as=teacher&school=siripura` });
-    expect(screen.queryByRole('dialog', { name: 'Print login slips' })).not.toBeInTheDocument();
-  });
-
-  it('print all disables the known-passwords option when there are none', async () => {
-    const user = userEvent.setup();
-    render();
-    await user.click(screen.getByRole('button', { name: 'Print all login slips' }));
-    const dialog = screen.getByRole('dialog', { name: 'Print login slips' });
-    expect(within(dialog).getByRole('button', { name: 'Print 0 slips with new passwords' })).toBeDisabled();
-  });
-
-  it('print all resets every password after a confirmation, then prints all slips on a fresh click', async () => {
-    const user = userEvent.setup();
-    vi.mocked(api.resetTeacherPassword).mockImplementation(async (_s, id) => `pw-${id}`);
-    render();
-    await user.click(screen.getByRole('button', { name: 'Print all login slips' }));
-    await user.click(within(screen.getByRole('dialog')).getByRole('button', { name: 'Reset all passwords and print' }));
-    const confirm = screen.getByRole('dialog', { name: "Reset every teacher's password?" });
-    expect(within(confirm).getByText(/Every teacher's current password stops working immediately/)).toBeInTheDocument();
-    expect(api.resetTeacherPassword).not.toHaveBeenCalled();
-    await user.click(within(confirm).getByRole('button', { name: 'Reset all and print' }));
-    const done = await screen.findByRole('dialog', { name: 'Passwords reset' });
-    expect(api.resetTeacherPassword).toHaveBeenCalledTimes(ctx.teachers.length);
-    expect(printSlips).not.toHaveBeenCalled();
-    await user.click(within(done).getByRole('button', { name: `Print ${ctx.teachers.length} slips` }));
-    await waitFor(() => expect(printSlips).toHaveBeenCalled());
-    const slips = vi.mocked(printSlips).mock.calls[0]![0];
-    expect(slips).toHaveLength(ctx.teachers.length);
-    expect(slips.every((x) => x.password?.startsWith('pw-'))).toBe(true);
-  });
-
-  it('print all leaves out teachers whose reset failed', async () => {
-    const user = userEvent.setup();
-    const bad = ctx.teachers[0]!.id;
-    vi.mocked(api.resetTeacherPassword).mockImplementation(async (_s, id) => {
-      if (id === bad) throw new Error('no login');
-      return `pw-${id}`;
-    });
-    render();
-    await user.click(screen.getByRole('button', { name: 'Print all login slips' }));
-    await user.click(within(screen.getByRole('dialog')).getByRole('button', { name: 'Reset all passwords and print' }));
-    await user.click(within(screen.getByRole('dialog', { name: "Reset every teacher's password?" })).getByRole('button', { name: 'Reset all and print' }));
-    const done = await screen.findByRole('dialog', { name: 'Passwords reset' });
-    expect(within(done).getByText('1 teacher could not be reset and was left out of the slips')).toBeInTheDocument();
-    await user.click(within(done).getByRole('button', { name: `Print ${ctx.teachers.length - 1} slips` }));
-    await waitFor(() => expect(printSlips).toHaveBeenCalled());
-    expect(vi.mocked(printSlips).mock.calls[0]![0]).toHaveLength(ctx.teachers.length - 1);
-  });
-
-  it('print all after a reset leaves out a failed teacher even with an earlier password', async () => {
-    const user = userEvent.setup();
-    const bad = ctx.teachers[0]!;
-    setSessionPassword('test-user:siripura', bad.id, 'oldpass1');
-    vi.mocked(api.resetTeacherPassword).mockImplementation(async (_s, id) => {
-      if (id === bad.id) throw new Error('no login');
-      return `pw-${id}`;
-    });
-    render();
-    await user.click(screen.getByRole('button', { name: 'Print all login slips' }));
-    await user.click(within(screen.getByRole('dialog')).getByRole('button', { name: 'Reset all passwords and print' }));
-    await user.click(within(screen.getByRole('dialog', { name: "Reset every teacher's password?" })).getByRole('button', { name: 'Reset all and print' }));
-    const done = await screen.findByRole('dialog', { name: 'Passwords reset' });
-    await user.click(within(done).getByRole('button', { name: `Print ${ctx.teachers.length - 1} slips` }));
-    await waitFor(() => expect(printSlips).toHaveBeenCalled());
-    const printed = vi.mocked(printSlips).mock.calls[0]![0];
-    expect(printed).toHaveLength(ctx.teachers.length - 1);
-    expect(printed.map((x) => x.staffId)).not.toContain(bad.staffId);
-  });
-
-  it('print all moves focus into the confirmation step', async () => {
-    const user = userEvent.setup();
-    render();
-    await user.click(screen.getByRole('button', { name: 'Print all login slips' }));
-    await user.click(within(screen.getByRole('dialog')).getByRole('button', { name: 'Reset all passwords and print' }));
-    expect(screen.getByRole('dialog', { name: "Reset every teacher's password?" })).toContainElement(document.activeElement as HTMLElement);
-  });
-
-  it('print all offers no reset in the read-only view', async () => {
-    const user = userEvent.setup();
-    flags.readOnly = true;
-    render();
-    await user.click(screen.getByRole('button', { name: 'Print all login slips' }));
-    const dialog = screen.getByRole('dialog', { name: 'Print login slips' });
-    expect(within(dialog).queryByRole('button', { name: 'Reset all passwords and print' })).not.toBeInTheDocument();
-  });
-
-  it('does not ask a read-only viewer to reset the password on the slip', async () => {
-    const user = userEvent.setup();
-    render();
-    await user.click(within(screen.getByText('Mrs. N. Perera').closest('tr')!).getByRole('button', { name: 'Edit' }));
-    const dialog = screen.getByRole('dialog');
-    flags.readOnly = true;
-    fireEvent.change(within(dialog).getByRole('textbox', { name: 'Name in English' }), { target: { value: 'Mrs. N. Perera ' } });
-    expect(within(dialog).queryByText('Reset the password first to print a slip')).not.toBeInTheDocument();
   });
 
   it('shows the usage on the first delete dialog and offers no delete button when in use', async () => {
@@ -442,7 +250,7 @@ describe('teachers page', () => {
 
   it('creates a teacher with a title kept apart from the name', async () => {
     const user = userEvent.setup();
-    vi.mocked(api.createTeacher).mockResolvedValue({ teacherId: 'tNew', password: 'k7m4x9pq' });
+    vi.mocked(api.createTeacher).mockResolvedValue({ teacherId: 'tNew' });
     render();
     const dialog = await openAdd(user);
     const title = within(dialog).getByRole('combobox', { name: /^Title/ });
@@ -460,7 +268,7 @@ describe('teachers page', () => {
 
   it('creates a teacher with only a Sinhala name and refuses one with no name', async () => {
     const user = userEvent.setup();
-    vi.mocked(api.createTeacher).mockResolvedValue({ teacherId: 'tNew', password: 'k7m4x9pq' });
+    vi.mocked(api.createTeacher).mockResolvedValue({ teacherId: 'tNew' });
     render();
     const dialog = await openAdd(user);
     await pickOption(user, within(dialog).getByRole('combobox', { name: 'Subjects' }), 'Mathematics');
@@ -535,5 +343,318 @@ describe('teachers page', () => {
     expect(subjects).toBeDisabled();
     await user.click(subjects);
     expect(screen.queryByRole('listbox')).not.toBeInTheDocument();
+  });
+});
+
+const perera = ctx.teachers.find((t) => t.staffId === 'SCC024')!;
+const rizan = ctx.teachers.find((t) => t.staffId === 'SCC031')!;
+const silva = ctx.teachers.find((t) => t.staffId === 'SCC011')!;
+const linkedCtx = {
+  ...ctx,
+  teachers: ctx.teachers.map((t) => (t.id === perera.id ? { ...t, uid: 'u-perera', lastLoginAt: Date.UTC(2026, 10, 20, 8, 30) } : t)),
+};
+const request = { id: 'u-rizan', uid: 'u-rizan', email: 'rizan@gmail.com', name: 'A Rizan', staffId: 'SCC031', teacherId: rizan.id, createdAt: 1 };
+const rowOf = (staffId: string) => screen.getByText(staffId).closest('tr')!;
+const renderLinked = (claims?: Parameters<typeof renderWithSchool>[1]['claims']) =>
+  renderWithSchool(<TeachersPage />, { ctx: linkedCtx, entries, ...(claims && { claims }) });
+
+describe('teacher accounts', () => {
+  it('shows Not linked, Pending and Linked with the last login', () => {
+    data.requests = [request];
+    renderLinked();
+    expect(screen.getByRole('columnheader', { name: 'Account' })).toBeInTheDocument();
+    expect(within(rowOf('SCC024')).getByText('Linked')).toBeInTheDocument();
+    expect(within(rowOf('SCC024')).getByText(/Last login/)).toBeInTheDocument();
+    expect(within(rowOf('SCC031')).getByText('Pending')).toBeInTheDocument();
+    expect(within(rowOf('SCC011')).getByText('Not linked')).toBeInTheDocument();
+  });
+
+  it('lists join requests and approves one through decideJoinRequest', async () => {
+    vi.mocked(api.decideJoinRequest).mockResolvedValue(undefined);
+    data.requests = [request];
+    const user = userEvent.setup();
+    renderLinked();
+    const section = screen.getByRole('region', { name: 'Join requests (1)' });
+    expect(within(section).getByText('A Rizan')).toBeInTheDocument();
+    expect(within(section).getByText('rizan@gmail.com')).toBeInTheDocument();
+    expect(within(section).getByText(/Mr\. A\. Rizan · SCC031/)).toBeInTheDocument();
+    await user.click(within(section).getByRole('button', { name: 'Approve' }));
+    expect(api.decideJoinRequest).toHaveBeenCalledWith('siripura', 'u-rizan', rizan.id, 1, true);
+  });
+
+  it('rejects a join request', async () => {
+    vi.mocked(api.decideJoinRequest).mockResolvedValue(undefined);
+    data.requests = [request];
+    const user = userEvent.setup();
+    renderLinked();
+    await user.click(within(screen.getByRole('region', { name: 'Join requests (1)' })).getByRole('button', { name: 'Reject' }));
+    expect(api.decideJoinRequest).toHaveBeenCalledWith('siripura', 'u-rizan', rizan.id, 1, false);
+  });
+
+  it('explains a failed approval', async () => {
+    vi.mocked(api.decideJoinRequest).mockRejectedValue(new ApiError('already-linked', 'x', { code: 'already-linked' }));
+    data.requests = [request];
+    const user = userEvent.setup();
+    renderLinked();
+    await user.click(screen.getByRole('button', { name: 'Approve' }));
+    expect(await screen.findByText('This teacher is already linked to an account. Unlink it first.')).toBeInTheDocument();
+  });
+
+  it('hides the requests section when there are none', () => {
+    renderLinked();
+    expect(screen.queryByRole('region', { name: /Join requests/ })).not.toBeInTheDocument();
+  });
+
+  it('offers Create link when the invite link is off', async () => {
+    vi.mocked(api.setJoinLink).mockResolvedValue({ token: 'tokA' });
+    const user = userEvent.setup();
+    renderLinked();
+    const card = screen.getByRole('region', { name: 'Invite link' });
+    expect(within(card).getByText(/The invite link is off/)).toBeInTheDocument();
+    expect(within(card).queryByRole('button', { name: 'Turn off link' })).not.toBeInTheDocument();
+    await user.click(within(card).getByRole('button', { name: 'Create link' }));
+    expect(api.setJoinLink).toHaveBeenCalledWith('siripura', 'create');
+  });
+
+  it('shows an error and offers no Create when the invite link cannot be read', () => {
+    data.joinLinkError = new Error('permission-denied');
+    renderLinked();
+    const card = screen.getByRole('region', { name: 'Invite link' });
+    expect(within(card).getByText(/Could not load the invite link/)).toBeInTheDocument();
+    expect(within(card).queryByText(/The invite link is off/)).not.toBeInTheDocument();
+    expect(within(card).queryByRole('button')).not.toBeInTheDocument();
+  });
+
+  it('shows the current invite link for copying, and confirms New link and Turn off', async () => {
+    data.joinLink = { id: 'joinLink', token: 'tokA', hash: 'h', createdAt: 1, createdBy: 'u' };
+    vi.mocked(api.setJoinLink).mockResolvedValue({});
+    const user = userEvent.setup();
+    const writeText = vi.fn().mockResolvedValue(undefined);
+    Object.defineProperty(navigator, 'clipboard', { value: { writeText }, configurable: true });
+    renderLinked();
+    const card = screen.getByRole('region', { name: 'Invite link' });
+    const url = `${window.location.origin}/join/siripura/tokA`;
+    expect(within(card).getByText(url)).toBeInTheDocument();
+    await user.click(within(card).getByRole('button', { name: 'Copy invite link' }));
+    expect(writeText).toHaveBeenLastCalledWith(url);
+
+    await user.click(within(card).getByRole('button', { name: 'New link' }));
+    let confirm = screen.getByRole('dialog', { name: 'Make a new invite link?' });
+    expect(within(confirm).getByText(/the old link stops working/)).toBeInTheDocument();
+    expect(api.setJoinLink).not.toHaveBeenCalled();
+    await user.click(within(confirm).getByRole('button', { name: 'Make new link' }));
+    expect(api.setJoinLink).toHaveBeenLastCalledWith('siripura', 'create');
+
+    await user.click(within(card).getByRole('button', { name: 'Turn off link' }));
+    confirm = screen.getByRole('dialog', { name: 'Turn off the invite link?' });
+    await user.click(within(confirm).getByRole('button', { name: 'Cancel' }));
+    expect(api.setJoinLink).toHaveBeenCalledTimes(1);
+    await user.click(within(card).getByRole('button', { name: 'Turn off link' }));
+    await user.click(within(screen.getByRole('dialog', { name: 'Turn off the invite link?' })).getByRole('button', { name: 'Turn off' }));
+    expect(api.setJoinLink).toHaveBeenLastCalledWith('siripura', 'off');
+  });
+
+  it('shows the new invite link right after New link, before the listener catches up', async () => {
+    data.joinLink = { id: 'joinLink', token: 'tokA', hash: 'h', createdAt: 1, createdBy: 'u' };
+    vi.mocked(api.setJoinLink).mockResolvedValue({ token: 'tokB' });
+    const user = userEvent.setup();
+    renderLinked();
+    const card = screen.getByRole('region', { name: 'Invite link' });
+    await user.click(within(card).getByRole('button', { name: 'New link' }));
+    await user.click(within(screen.getByRole('dialog', { name: 'Make a new invite link?' })).getByRole('button', { name: 'Make new link' }));
+    expect(await within(card).findByText(`${window.location.origin}/join/siripura/tokB`)).toBeInTheDocument();
+    expect(within(card).queryByText(`${window.location.origin}/join/siripura/tokA`)).not.toBeInTheDocument();
+  });
+
+  it('puts join requests above the invite link card', () => {
+    data.requests = [request];
+    renderLinked();
+    const requests = screen.getByRole('region', { name: 'Join requests (1)' });
+    const card = screen.getByRole('region', { name: 'Invite link' });
+    expect(requests.compareDocumentPosition(card) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
+  });
+
+  it('spins only the clicked request button', async () => {
+    let finish: () => void = () => undefined;
+    vi.mocked(api.decideJoinRequest).mockImplementation(() => new Promise<void>((r) => (finish = r)));
+    data.requests = [request];
+    const user = userEvent.setup();
+    renderLinked();
+    await user.click(screen.getByRole('button', { name: 'Reject' }));
+    expect(screen.getByRole('button', { name: 'Reject' })).toHaveAttribute('aria-busy', 'true');
+    expect(screen.getByRole('button', { name: 'Approve' })).not.toHaveAttribute('aria-busy');
+    finish();
+  });
+
+  it('explains an approval refused because the account already has a teacher here', async () => {
+    vi.mocked(api.decideJoinRequest).mockRejectedValue(new ApiError('already-linked', 'x', { code: 'already-linked', reason: 'account' }));
+    data.requests = [request];
+    const user = userEvent.setup();
+    renderLinked();
+    await user.click(screen.getByRole('button', { name: 'Approve' }));
+    expect(await screen.findByText('That account is already linked to another teacher in this school.')).toBeInTheDocument();
+  });
+
+  it('shows Cancel link and the expiry only while a personal link is live', () => {
+    const live = Date.now() + 86_400_000;
+    const withLinks = {
+      ...linkedCtx,
+      teachers: linkedCtx.teachers.map((t) =>
+        t.id === silva.id ? { ...t, inviteExpiresAt: live } : t.id === rizan.id ? { ...t, inviteExpiresAt: Date.now() - 1 } : t,
+      ),
+    };
+    renderWithSchool(<TeachersPage />, { ctx: withLinks, entries });
+    expect(within(rowOf('SCC011')).getByRole('button', { name: 'Cancel link' })).toBeInTheDocument();
+    expect(within(rowOf('SCC011')).getByText(/Personal link until/)).toBeInTheDocument();
+    expect(within(rowOf('SCC031')).queryByRole('button', { name: 'Cancel link' })).not.toBeInTheDocument();
+    expect(within(rowOf('SCC031')).queryByText(/Personal link until/)).not.toBeInTheDocument();
+    expect(within(rowOf('SCC003')).queryByRole('button', { name: 'Cancel link' })).not.toBeInTheDocument();
+  });
+
+  it('warns an admin unlinking their own record that they will be signed out', async () => {
+    const self = { ...ctx, teachers: ctx.teachers.map((t) => (t.id === perera.id ? { ...t, uid: 'test-user' } : t)) };
+    const user = userEvent.setup();
+    renderWithSchool(<TeachersPage />, { ctx: self, entries, claims: { schools: { siripura: { r: 'a', t: perera.id } } } });
+    await user.click(within(rowOf('SCC024')).getByRole('button', { name: 'Unlink' }));
+    expect(within(screen.getByRole('dialog')).getByText(/This is your own record\. You will be signed out/)).toBeInTheDocument();
+  });
+
+  it('signs an admin out right after unlinking their own record', async () => {
+    vi.mocked(api.unlinkTeacher).mockResolvedValue(undefined);
+    const signOut = vi.fn(async () => undefined);
+    const self = { ...ctx, teachers: ctx.teachers.map((t) => (t.id === perera.id ? { ...t, uid: 'test-user' } : t)) };
+    const user = userEvent.setup();
+    renderWithSchool(<TeachersPage />, { ctx: self, entries, signOut, claims: { schools: { siripura: { r: 'a', t: perera.id } } } });
+    await user.click(within(rowOf('SCC024')).getByRole('button', { name: 'Unlink' }));
+    await user.click(within(screen.getByRole('dialog')).getByRole('button', { name: 'Unlink' }));
+    expect(api.unlinkTeacher).toHaveBeenCalledWith('siripura', perera.id);
+    await waitFor(() => expect(signOut).toHaveBeenCalledTimes(1));
+  });
+
+  it('keeps the admin signed in after unlinking someone else', async () => {
+    vi.mocked(api.unlinkTeacher).mockResolvedValue(undefined);
+    const signOut = vi.fn(async () => undefined);
+    const user = userEvent.setup();
+    renderWithSchool(<TeachersPage />, { ctx: linkedCtx, entries, signOut });
+    await user.click(within(rowOf('SCC024')).getByRole('button', { name: 'Unlink' }));
+    await user.click(within(screen.getByRole('dialog')).getByRole('button', { name: 'Unlink' }));
+    await waitFor(() => expect(api.unlinkTeacher).toHaveBeenCalled());
+    expect(signOut).not.toHaveBeenCalled();
+  });
+
+  it('warns an admin deleting their own record and signs them out afterwards', async () => {
+    vi.mocked(call).mockResolvedValue({ deleted: true });
+    const signOut = vi.fn(async () => undefined);
+    const self = { ...unused, teachers: unused.teachers.map((t) => (t.id === perera.id ? { ...t, uid: 'test-user' } : t)) };
+    const user = userEvent.setup();
+    renderWithSchool(<TeachersPage />, { ctx: self, entries: [], signOut, claims: { schools: { siripura: { r: 'a', t: perera.id } } } });
+    await user.click(within(rowOf('SCC024')).getByRole('button', { name: 'Delete' }));
+    const dialog = screen.getByRole('dialog');
+    expect(within(dialog).getByText(/This is your own record\. You will be signed out/)).toBeInTheDocument();
+    await user.click(within(dialog).getByRole('button', { name: 'Delete' }));
+    await waitFor(() => expect(signOut).toHaveBeenCalledTimes(1));
+  });
+
+  it('does not warn or sign out when deleting someone else', async () => {
+    vi.mocked(call).mockResolvedValue({ deleted: true });
+    const signOut = vi.fn(async () => undefined);
+    const user = userEvent.setup();
+    renderWithSchool(<TeachersPage />, { ctx: unused, entries: [], signOut });
+    await user.click(within(rowOf('SCC024')).getByRole('button', { name: 'Delete' }));
+    const dialog = screen.getByRole('dialog');
+    expect(within(dialog).queryByText(/signed out/)).not.toBeInTheDocument();
+    await user.click(within(dialog).getByRole('button', { name: 'Delete' }));
+    await waitFor(() => expect(call).toHaveBeenCalled());
+    expect(signOut).not.toHaveBeenCalled();
+  });
+
+  it('does not warn about signing out when unlinking someone else', async () => {
+    const user = userEvent.setup();
+    renderLinked();
+    await user.click(within(rowOf('SCC024')).getByRole('button', { name: 'Unlink' }));
+    expect(within(screen.getByRole('dialog')).queryByText(/signed out/)).not.toBeInTheDocument();
+  });
+
+  it('keeps an edit dialog opened while a personal link was being made, and tells the admin instead', async () => {
+    let finish!: (v: { token: string; expiresAt: number }) => void;
+    vi.mocked(api.createTeacherLink).mockImplementation(() => new Promise((r) => (finish = r)));
+    const user = userEvent.setup();
+    renderLinked();
+    await user.click(within(rowOf('SCC011')).getByRole('button', { name: 'Personal link' }));
+    await user.click(within(rowOf('SCC024')).getByRole('button', { name: 'Edit' }));
+    const edit = screen.getByRole('dialog', { name: 'Edit teacher' });
+    await act(async () => finish({ token: 'tokP', expiresAt: Date.now() + 1000 }));
+    expect(await screen.findByText(/personal link for Mr\. R\. Silva was made while another window was open/)).toBeInTheDocument();
+    expect(edit).toBeInTheDocument();
+    expect(screen.queryByRole('dialog', { name: /Personal link for/ })).not.toBeInTheDocument();
+  });
+
+  it('creates a personal link that shows its expiry, and can cancel it', async () => {
+    vi.mocked(api.createTeacherLink).mockResolvedValue({ token: 'tokP', expiresAt: Date.UTC(2026, 11, 1, 12) });
+    vi.mocked(api.cancelTeacherLink).mockResolvedValue(undefined);
+    const user = userEvent.setup();
+    renderLinked();
+    await user.click(within(rowOf('SCC011')).getByRole('button', { name: 'Personal link' }));
+    expect(api.createTeacherLink).toHaveBeenCalledWith('siripura', silva.id);
+    const dialog = await screen.findByRole('dialog', { name: 'Personal link for Mr. R. Silva' });
+    expect(within(dialog).getByText(`${window.location.origin}/join/t/tokP`)).toBeInTheDocument();
+    expect(within(dialog).getByText(/Works once, until .*Dec/)).toBeInTheDocument();
+    await user.click(within(dialog).getByRole('button', { name: 'Done' }));
+    cleanup();
+    renderWithSchool(<TeachersPage />, {
+      ctx: { ...linkedCtx, teachers: linkedCtx.teachers.map((t) => (t.id === silva.id ? { ...t, inviteExpiresAt: Date.now() + 1000_000 } : t)) },
+      entries,
+    });
+    await user.click(within(rowOf('SCC011')).getByRole('button', { name: 'Cancel link' }));
+    expect(api.cancelTeacherLink).toHaveBeenCalledWith('siripura', silva.id);
+    expect(await screen.findByText('Personal link cancelled')).toBeInTheDocument();
+  });
+
+  it('unlinks a linked teacher after a confirmation', async () => {
+    vi.mocked(api.unlinkTeacher).mockResolvedValue(undefined);
+    const user = userEvent.setup();
+    renderLinked();
+    const row = rowOf('SCC024');
+    expect(within(row).queryByRole('button', { name: 'Personal link' })).not.toBeInTheDocument();
+    await user.click(within(row).getByRole('button', { name: 'Unlink' }));
+    expect(api.unlinkTeacher).not.toHaveBeenCalled();
+    const dialog = screen.getByRole('dialog', { name: 'Unlink Mrs. N. Perera?' });
+    await user.click(within(dialog).getByRole('button', { name: 'Unlink' }));
+    expect(api.unlinkTeacher).toHaveBeenCalledWith('siripura', perera.id);
+  });
+
+  it('offers This is me to an admin with no teacher record and links it', async () => {
+    vi.mocked(api.linkSelf).mockResolvedValue(undefined);
+    const user = userEvent.setup();
+    renderLinked();
+    expect(within(rowOf('SCC024')).queryByRole('button', { name: 'This is me' })).not.toBeInTheDocument();
+    await user.click(within(rowOf('SCC011')).getByRole('button', { name: 'This is me' }));
+    expect(api.linkSelf).toHaveBeenCalledWith('siripura', silva.id);
+  });
+
+  it('hides This is me for an admin already linked to a teacher', () => {
+    renderLinked({ schools: { siripura: { r: 'a', t: perera.id } } });
+    expect(screen.queryByRole('button', { name: 'This is me' })).not.toBeInTheDocument();
+  });
+
+  it('has no password or login slip controls', async () => {
+    const user = userEvent.setup();
+    renderLinked();
+    expect(screen.queryByRole('button', { name: /slip/i })).not.toBeInTheDocument();
+    await user.click(within(rowOf('SCC011')).getByRole('button', { name: 'Edit' }));
+    const dialog = screen.getByRole('dialog');
+    expect(within(dialog).queryByText(/password|slip/i)).not.toBeInTheDocument();
+  });
+
+  it('read-only shows requests and statuses without link actions', () => {
+    flags.readOnly = true;
+    data.requests = [request];
+    renderLinked();
+    expect(screen.queryByRole('region', { name: 'Invite link' })).not.toBeInTheDocument();
+    const section = screen.getByRole('region', { name: 'Join requests (1)' });
+    expect(within(section).queryByRole('button')).not.toBeInTheDocument();
+    for (const name of ['Personal link', 'Cancel link', 'Unlink', 'This is me']) {
+      expect(screen.queryByRole('button', { name })).not.toBeInTheDocument();
+    }
   });
 });

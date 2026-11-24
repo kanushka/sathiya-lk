@@ -1,11 +1,13 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
 // Copyright (C) 2026 Kanushka Gayan
 
-import { useParams } from 'react-router-dom';
+import { useLocation } from 'react-router-dom';
+import { useSchool } from '../../app/SchoolProvider';
 
 export function useAdminBase(): string {
-  const { sid } = useParams();
-  return sid ? `/s/${sid}` : '/admin';
+  const { pathname } = useLocation();
+  const { school } = useSchool();
+  return /^(?:\/super\/schools|\/s)\/[^/]+\/admin(?=\/|$)/.exec(pathname)?.[0] ?? `/s/${school.id}/admin`;
 }
 
 export const OUTSIDE_TEMPLATE_ID = 'outside-template';

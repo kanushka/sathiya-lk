@@ -23,16 +23,12 @@ export function authErrorKind(err: unknown): AuthErrorKind {
   }
 }
 
-export function authErrorMessage(
-  err: unknown,
-  t: (key: string) => string,
-  credentialsKey: 'errors.teacherCredentials' | 'errors.adminCredentials',
-): string | null {
+export function authErrorMessage(err: unknown, t: (key: string) => string): string | null {
   switch (authErrorKind(err)) {
     case 'cancelled':
       return null;
     case 'credentials':
-      return t(credentialsKey);
+      return t('errors.credentials');
     case 'tooMany':
       return t('errors.tooMany');
     case 'network':

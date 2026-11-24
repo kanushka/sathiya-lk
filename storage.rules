@@ -5,8 +5,7 @@ service firebase.storage {
   match /b/{bucket}/o {
     function isAdmin(sid) {
       return request.auth != null
-        && request.auth.token.get('sid', null) == sid
-        && request.auth.token.get('role', null) == 'admin';
+        && request.auth.token.get('schools', {}).get(sid, {}).get('r', null) == 'a';
     }
 
     match /schools/{sid}/{file} {

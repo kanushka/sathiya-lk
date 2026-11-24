@@ -30,7 +30,6 @@ describe.each(BAD)('client-supplied id %j', (bad) => {
     ['deleteSetupItem id', () => ['deleteSetupItem', { schoolId: sid, kind: 'subject', id: bad }]],
     ['publishYear yearId', () => ['publishYear', { schoolId: sid, yearId: bad }]],
     ['createTeacher subjectIds', () => ['createTeacher', { schoolId: sid, teacher: { ...teacherInput('SCC099'), subjectIds: [bad] } }]],
-    ['resetTeacherPassword teacherId', () => ['resetTeacherPassword', { schoolId: sid, teacherId: bad }]],
     ['inviteAdmin teacherId', () => ['inviteAdmin', { schoolId: sid, email: 'x@example.com', teacherId: bad }]],
   ];
   it.each(cases)('%s → invalid-argument', async (_, make) => {

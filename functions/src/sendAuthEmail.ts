@@ -6,7 +6,7 @@ import { onCall } from 'firebase-functions/v2/https';
 import { auth } from './lib/admin';
 import { callOpts } from './lib/callOptions';
 import { AUTH_EMAIL_KINDS, type AuthEmailKind, type SendAuthEmailRes } from '@sathiya/core';
-import { email, fail, invalid, obj, requireAuth } from './lib/guards';
+import { email, fail, invalid, obj, optStr, requireAuth } from './lib/guards';
 import {
   clearRateLimit,
   clientIp,
@@ -21,9 +21,6 @@ import { mailConfig } from './email/params';
 import { appActionLink } from './email/actionLink';
 import { writeMail } from './email/send';
 import { passwordReset, verifyEmail } from './email/templates';
-
-// Teacher login addresses (core syntheticEmail) are not real mailboxes.
-const isTeacherLogin = (e: string): boolean => e.endsWith('.teachers.sathiya.lk');
 
 const hash = (v: string): string => createHash('sha256').update(v).digest('hex');
 
@@ -42,6 +39,9 @@ const linkOrThrottle = (p: Promise<string>): Promise<string> =>
 
 // verify: the signed-in user's own address. reset: open to signed-out callers and always answers ok, so it can't be used
 // to find out which addresses have an account.
+// Where the confirmed-email page sends the user on: an app path, never another origin.
+const SAFE_PATH = /^\/(?!\/)[A-Za-z0-9\-._~/?=&%]*$/;
+
 export const sendAuthEmail = onCall(callOpts, async (req): Promise<SendAuthEmailRes> => {
   const data = obj(req.data, 'request');
   const kind = data.kind as AuthEmailKind;
@@ -53,6 +53,8 @@ export const sendAuthEmail = onCall(callOpts, async (req): Promise<SendAuthEmail
 
   if (kind === 'verify') {
     const { uid, token } = requireAuth(req);
+    const continuePath = optStr(data.continuePath, 'continuePath', 300);
+    if (continuePath !== undefined && !SAFE_PATH.test(continuePath)) invalid('continuePath must be an app path');
     await consumeRateLimits([
       { scope: 'verify-uid', id: uid, max: VERIFY_PER_UID_PER_DAY },
       { scope: 'verify-ip', id: hashIp(clientIp(req)), max: VERIFY_PER_IP_PER_DAY },
@@ -62,7 +64,7 @@ export const sendAuthEmail = onCall(callOpts, async (req): Promise<SendAuthEmail
     // Reset requests made before this account existed sent nothing, so they shouldn't block its first reset.
     await clearRateLimit('reset-email', hash(to!.toLowerCase()));
     if (token.email_verified === true) return { ok: true };
-    const link = appActionLink(await linkOrThrottle(auth.generateEmailVerificationLink(to!, actionCodeSettings)), appUrl);
+    const link = appActionLink(await linkOrThrottle(auth.generateEmailVerificationLink(to!, continuePath ? { url: `${appUrl}${continuePath}` } : actionCodeSettings)), appUrl);
     await writeMail({ to: [to!], message: verifyEmail({ link, lang, webUrl }) });
     return { ok: true };
   }
@@ -72,7 +74,6 @@ export const sendAuthEmail = onCall(callOpts, async (req): Promise<SendAuthEmail
     { scope: 'reset-ip', id: hashIp(clientIp(req)), max: RESET_PER_IP_PER_DAY },
     { scope: 'reset-email', id: hash(to), max: RESET_PER_EMAIL_PER_DAY },
   ]);
-  if (isTeacherLogin(to)) return { ok: true };
   try {
     const link = appActionLink(await auth.generatePasswordResetLink(to, actionCodeSettings), appUrl);
     await writeMail({ to: [to], message: passwordReset({ link, lang, webUrl }) });

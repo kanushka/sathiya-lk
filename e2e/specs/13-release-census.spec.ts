@@ -7,7 +7,7 @@ import { freshSchoolAdmin, loginAdmin, shot } from '../helpers';
 test('super admin suspends a squatting school and releases its census number for the real school', async ({ page }) => {
   const censusNo = String(100_000 + (Date.now() % 900_000));
   const squatter = await freshSchoolAdmin('Squatter', { type: 'government', censusNo });
-  await expect(freshSchoolAdmin('Realschool', { type: 'government', censusNo })).rejects.toThrow(/census-taken/);
+  await expect(freshSchoolAdmin('Realschool', { type: 'government', censusNo })).rejects.toThrow(/school-registered/);
 
   await loginAdmin(page, SUPER.email, SUPER.password, /\/super$/);
   await page.goto(`/super/schools/${squatter.sid}`);

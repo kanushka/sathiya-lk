@@ -2,7 +2,7 @@
 // Copyright (C) 2026 Kanushka Gayan
 import { expect, test } from '@playwright/test';
 import { classes } from '@sathiya/core/fixtures';
-import { ADMIN } from '../../scripts/seed';
+import { ADMIN, SID } from '../../scripts/seed';
 import { loginAdmin, shot } from '../helpers';
 
 test('admin publishes the 2027 timetable', async ({ page }) => {
@@ -18,7 +18,7 @@ test('admin publishes the 2027 timetable', async ({ page }) => {
   await page.addInitScript(() => {
     window.print = () => undefined;
   });
-  await page.goto('/admin/print/class/c-6b?published=1');
+  await page.goto(`/s/${SID}/admin/print/class/c-6b?published=1`);
   await expect(page.getByRole('heading', { name: 'Grade 6 · 6B' })).toBeVisible();
   await expect(page.getByRole('banner')).toContainText('Timetable 2027 · Class teacher Mrs. N. Perera');
   await expect(page.getByText('Religion & Aesthetic run as groups', { exact: false })).toBeVisible();

@@ -14,6 +14,7 @@ import { ToastProvider } from '../../ui/Toast';
 
 export interface AuthHarnessOptions {
   route?: string;
+  from?: string;
   at?: string;
   signedIn?: boolean;
   passwordUser?: boolean;
@@ -51,6 +52,7 @@ function Harness({ options, children }: { options: AuthHarnessOptions; children:
       refreshClaims: async () => {
         await options.refreshClaims?.();
         if (options.claimsAfterRefresh) setClaims(options.claimsAfterRefresh);
+        return options.claimsAfterRefresh ?? claims;
       },
       signOut: async () => undefined,
     }),
@@ -66,9 +68,6 @@ function Harness({ options, children }: { options: AuthHarnessOptions; children:
             <Routes>
               <Route path={options.at ?? '/login'} element={children} />
               <Route path="/" element={<HomeRedirect />} />
-              <Route path="/admin" element={<Where />} />
-              <Route path="/me" element={<Where />} />
-              <Route path="/super" element={<Where />} />
               <Route path="*" element={<Where />} />
             </Routes>
           </ToastProvider>
@@ -80,7 +79,7 @@ function Harness({ options, children }: { options: AuthHarnessOptions; children:
 
 export function renderAuth(ui: ReactElement, options: AuthHarnessOptions = {}) {
   return render(
-    <MemoryRouter initialEntries={[options.route ?? '/login']}>
+    <MemoryRouter initialEntries={[options.from ? { pathname: options.route ?? '/login', state: { from: { pathname: options.from } } } : (options.route ?? '/login')]}>
       <Harness options={options}>{ui}</Harness>
     </MemoryRouter>,
   );

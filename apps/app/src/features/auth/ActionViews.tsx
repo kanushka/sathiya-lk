@@ -5,6 +5,7 @@ import { useTranslation } from 'react-i18next';
 import { Link } from 'react-router-dom';
 import { ActionErrorView, ActionShell } from './ActionShell';
 import { applyEmailCode, getRecoveredEmail } from './api';
+import { isAppPath } from './appPath';
 import { useActionCode } from './useActionCode';
 
 const linkButton =
@@ -15,10 +16,24 @@ export function InvalidLinkView() {
   return <ActionErrorView message={t('action.errors.badRequest')} />;
 }
 
-export function VerifyEmailView({ code }: { code: string }) {
+// A sign-up or join verification goes back where the user started; registration (and older links to /login) go to /register.
+export function verifyContinuePath(continueUrl: string | null, origin = window.location.origin): string | null {
+  if (!continueUrl) return null;
+  let url: URL;
+  try {
+    url = new URL(continueUrl, origin);
+  } catch {
+    return null;
+  }
+  if (url.origin !== origin || !isAppPath(url.pathname) || url.pathname === '/login' || url.pathname === '/register') return null;
+  return url.pathname + url.search;
+}
+
+export function VerifyEmailView({ code, continueUrl = null }: { code: string; continueUrl?: string | null }) {
   const { t } = useTranslation('auth');
   const run = useCallback(() => applyEmailCode(code), [code]);
   const state = useActionCode(run);
+  const back = verifyContinuePath(continueUrl);
   if (state.status === 'error') {
     return <ActionErrorView message={t(`action.errors.${state.error}`)} />;
   }
@@ -31,9 +46,9 @@ export function VerifyEmailView({ code }: { code: string }) {
   }
   return (
     <ActionShell title={t('action.verify.title')}>
-      <p className="mb-6 mt-0 text-ink-muted">{t('action.verify.body')}</p>
-      <Link to="/register" className={linkButton}>
-        {t('action.verify.continue')}
+      <p className="mb-6 mt-0 text-ink-muted">{t(back ? 'action.verify.bodyBack' : 'action.verify.body')}</p>
+      <Link to={back ?? '/register'} className={linkButton}>
+        {t(back ? 'action.verify.continueBack' : 'action.verify.continue')}
       </Link>
     </ActionShell>
   );

@@ -27,18 +27,18 @@ A free web app for Sri Lankan schools to build their yearly timetables. A school
 | Role | Scope | Can |
 |---|---|---|
 | Super admin | Platform | List/disable schools, default subject list, terms versions, announcements, usage. |
-| School admin | One school | Setup, timetables, members, branding, publish. An admin can also be linked to a teacher record and get "My timetable". |
-| Teacher | One school | View published timetables, change own password. |
+| School admin | Per school | Setup, timetables, members, branding, publish, invite links, approve teachers. An admin can also be linked to a teacher record and get "My timetable". |
+| Teacher | Per school | View published timetables. One account can belong to up to 15 schools, with a role in each. |
 
 ## Architecture
 
 - Monorepo: `apps/web` (Astro static site), `apps/app` (React + Vite SPA), `functions` (Cloud Functions), shared domain logic in `packages`.
 - Firebase only: Auth, Firestore, Hosting (two sites), Storage, Functions. Chosen over Next.js on App Hosting (server runtime and cost for no SSR benefit) and a single SPA (weak SEO for the public site).
-- Privileged operations (creating teachers, saving entries, publishing) go through callable functions with App Check. Roles come from custom claims `{ sid, role, tid?, super? }` used by security rules.
+- Privileged operations (creating teachers, saving entries, publishing) go through callable functions with App Check. Roles come from custom claims `{ schools: { [sid]: { r, t? } }, super? }`, rebuilt from `members` docs by `syncClaims` and used by security rules ([ADR 0001](adr/0001-self-signup-and-school-claims.md)).
 
 ## Key decisions
 
-- **Teacher login** uses a synthetic email per teacher (never shown). Accounts are created and reset only by functions; the admin prints a login slip with a generated password. Teachers never get email.
+- **Accounts** are self-made: Google (recommended) or a verified email and password. Adding a teacher creates only the record. A teacher links their account through the school invite link (auto-link on a single email match, otherwise staff ID plus admin approval) or a 7-day one-use personal link. Admins can unlink.
 - **Slot entry model**: `{ day, period, classIds[], lessons[{ subjectId, teacherId }], groupKey? }`. One shape covers normal lessons, parallel groups (one lesson per option) and combined classes.
 - **Clash = clock-time overlap** on the same day, regardless of period number, for teachers and classes. Hard clashes are re-checked in a transaction inside `saveEntry`; soft issues (daily limit, over target, missing option teacher) are warnings on the dashboard.
 - **Subject plans** belong to a grade; a class may have its own `planOverride` (A/L streams).

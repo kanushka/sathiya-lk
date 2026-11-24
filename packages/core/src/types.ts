@@ -21,7 +21,7 @@ export interface DefaultSubjectsDoc { subjects: DefaultSubject[]; updatedAt: num
 export interface TermsVersion { version: string; termsMd: string; privacyMd: string; publishedAt: number }
 export const TEACHER_TITLES = ['Mr', 'Mrs', 'Miss', 'Ms', 'Dr', 'Rev', 'Ven.'] as const;
 export type TeacherTitle = (typeof TEACHER_TITLES)[number];
-export interface Teacher { id: string; staffId: string; name: string; nameSi?: string; title?: TeacherTitle; isPrimary: boolean; subjectIds: string[]; grades: number[]; maxPerDay: number; minPerWeek?: number; phone?: string; email?: string; uid?: string; lastLoginAt?: number }
+export interface Teacher { id: string; staffId: string; name: string; nameSi?: string; title?: TeacherTitle; isPrimary: boolean; subjectIds: string[]; grades: number[]; maxPerDay: number; minPerWeek?: number; phone?: string; email?: string; uid?: string; lastLoginAt?: number; inviteExpiresAt?: number }
 export interface Subject extends Bilingual { id: string; short: string; color: string }
 export interface TemplateRow { type: 'period' | 'interval' | 'activity'; start: Hhmm; end: Hhmm; nameEn?: string; nameSi?: string; subjectId?: string }
 export interface PeriodTemplate { id: string; name: string; isDefault: boolean; mode: 'same' | 'perDay'; rows: TemplateRow[]; days?: Record<DayIndex, TemplateRow[]> }
@@ -34,5 +34,10 @@ export interface Entry { id: string; day: DayIndex; period: number; classIds: st
 export type EntryDraft = Omit<Entry, 'id' | 'teacherIds'> & { id?: string };
 export interface Year { id: string; label: string; status: 'draft' | 'published'; publishedAt?: number }
 export interface Member { uid: string; role: 'admin' | 'teacher'; teacherId?: string; email?: string; name?: string }
-export interface Claims { sid?: string; role?: 'admin' | 'teacher'; tid?: string; super?: boolean }
+// One-letter keys keep a 15-school claims map under Firebase's 1000-byte custom-claims limit.
+export type SchoolRole = 'a' | 't';
+export interface Membership { r: SchoolRole; t?: string }
+export interface Claims { schools?: Record<string, Membership>; super?: boolean }
+export interface JoinRequest { uid: string; email: string; name?: string; staffId: string; teacherId: string; createdAt: number; status: 'pending' | 'rejected'; decidedAt?: number }
+export interface JoinLink { hash: string; token: string; createdAt: number; createdBy: string }
 export interface SchoolContext { school: School; teachers: Teacher[]; subjects: Subject[]; templates: PeriodTemplate[]; grades: Grade[]; classes: SchoolClass[] }

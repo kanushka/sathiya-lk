@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
 // Copyright (C) 2026 Kanushka Gayan
-import { paths } from '@sathiya/core';
+import { MAX_SCHOOLS, paths } from '@sathiya/core';
 import { describe, expect, it } from 'vitest';
 import type { RegisterSchoolReq as RegisterSchoolInput } from '@sathiya/core';
 import { REGISTER_PER_IP_PER_DAY, REGISTER_PER_UID_PER_DAY } from '../src/lib/rateLimit';
@@ -25,7 +25,7 @@ describe('registerSchool school type and census number', () => {
   it('requires a census number for a government school', async () => {
     const c = await signUp();
     await expectFnError(c.call('registerSchool', schoolReq({ type: 'government' })), 'invalid-argument', 'invalid');
-    expect(await c.claims()).toEqual({ sid: undefined, role: undefined, tid: undefined });
+    expect(await c.claims()).toEqual({});
   });
 
   it('requires a valid type', async () => {
@@ -67,8 +67,8 @@ describe('registerSchool school type and census number', () => {
     const a = await signUp();
     await a.call('registerSchool', schoolReq({ type: 'government', censusNo: n }));
     const b = await signUp();
-    await expectFnError(b.call('registerSchool', schoolReq({ type: 'private', censusNo: n })), 'already-exists', 'census-taken');
-    expect(await b.claims()).toEqual({ sid: undefined, role: undefined, tid: undefined });
+    await expectFnError(b.call('registerSchool', schoolReq({ type: 'private', censusNo: n })), 'already-exists', 'school-registered');
+    expect(await b.claims()).toEqual({});
     expect((await adminDb.doc(paths.user(b.uid)).get()).exists).toBe(false);
   });
 
@@ -85,12 +85,12 @@ describe('registerSchool school type and census number', () => {
       expect(failed).toHaveLength(1);
       expect({ code: failed[0]!.reason.code, apiCode: failed[0]!.reason.details?.code }).toEqual({
         code: 'functions/already-exists',
-        apiCode: 'census-taken',
+        apiCode: 'school-registered',
       });
       const winner = (ok[0] as PromiseFulfilledResult<{ schoolId: string }>).value.schoolId;
       expect((await census(n).get()).data()).toEqual({ schoolId: winner });
       const loser = results[0]!.status === 'rejected' ? a : b;
-      expect((await loser.claims()).sid).toBeUndefined();
+      expect((await loser.claims()).schools).toBeUndefined();
     }
   });
 });
@@ -107,40 +107,18 @@ describe('registerSchool verified email', () => {
   });
 });
 
-describe('registerSchool one school per user', () => {
-  it('writes users/{uid}.schoolId, merged with existing fields', async () => {
+describe('registerSchool several schools per user', () => {
+  it('lets a user register a second school and holds both in claims', async () => {
     const c = await signUp();
-    await adminDb.doc(paths.user(c.uid)).set({ lang: 'si' });
-    const { schoolId } = await c.call('registerSchool', schoolReq());
-    expect((await adminDb.doc(paths.user(c.uid)).get()).data()).toEqual({ lang: 'si', schoolId });
+    const { schoolId: a } = await c.call('registerSchool', schoolReq());
+    const { schoolId: b } = await c.call('registerSchool', schoolReq({ nameEn: 'Second College' }));
+    expect(await c.claims()).toEqual({ schools: { [a]: { r: 'a' }, [b]: { r: 'a' } } });
   });
 
-  it('refuses a user whose users doc already has a schoolId (no sid claim)', async () => {
+  it('refuses registering a school beyond the limit', async () => {
     const c = await signUp();
-    await adminDb.doc(paths.user(c.uid)).set({ schoolId: 'old-school' });
-    await expectFnError(c.call('registerSchool', schoolReq()), 'failed-precondition', 'already-has-school');
-    expect((await c.claims()).sid).toBeUndefined();
-  });
-
-  it('leaves the winner of a same-user double submit with its school claims', async () => {
-    for (let round = 0; round < 3; round++) {
-      const c = await signUp();
-      const results = await Promise.allSettled([c.call('registerSchool', schoolReq()), c.call('registerSchool', schoolReq())]);
-      const ok = results.filter((x): x is PromiseFulfilledResult<{ schoolId: string }> => x.status === 'fulfilled');
-      expect(ok).toHaveLength(1);
-      const failed = results.find((x): x is PromiseRejectedResult => x.status === 'rejected')!;
-      expect(failed.reason.details?.code).toBe('already-has-school');
-      const sid = ok[0]!.value.schoolId;
-      expect((await adminDb.doc(paths.user(c.uid)).get()).data()!.schoolId).toBe(sid);
-      expect(await c.claims()).toEqual({ sid, role: 'admin', tid: undefined });
-    }
-  });
-
-  it('refuses a user with a sid claim but no users doc', async () => {
-    const c = await signUp();
-    await adminAuth.setCustomUserClaims(c.uid, { sid: 'other', role: 'teacher', tid: 't1' });
-    await c.auth.currentUser!.getIdToken(true);
-    await expectFnError(c.call('registerSchool', schoolReq()), 'failed-precondition', 'already-has-school');
+    for (let i = 0; i < MAX_SCHOOLS; i++) await adminDb.doc(`${paths.members(`s${i}`)}/${c.uid}`).set({ uid: c.uid, role: 'teacher' });
+    await expectFnError(c.call('registerSchool', schoolReq()), 'failed-precondition', 'too-many-schools');
   });
 });
 
@@ -152,7 +130,7 @@ describe('registerSchool rate limits', () => {
       await expectFnError(c.call('registerSchool', schoolReq({ nameEn: ' ', nameSi: ' ' })), 'invalid-argument', 'invalid');
     }
     await expectFnError(c.call('registerSchool', schoolReq()), 'resource-exhausted', 'rate-limited');
-    expect((await c.claims()).sid).toBeUndefined();
+    expect((await c.claims()).schools).toBeUndefined();
   });
 
   it('counts per user across IPs', async () => {

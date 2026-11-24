@@ -16,7 +16,7 @@ export interface PhoneTopBarProps {
   readOnly?: boolean;
 }
 
-export function PhoneTopBar({ basePath = '/admin', readOnly = false }: PhoneTopBarProps) {
+export function PhoneTopBar({ basePath, readOnly = false }: PhoneTopBarProps) {
   const { t, i18n } = useTranslation('shell');
   const lang: Lang = i18n.language === 'si' ? 'si' : 'en';
   const { school } = useSchool();

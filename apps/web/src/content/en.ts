@@ -93,7 +93,7 @@ export const en = {
       { title: 'Clash prevention', body: 'When you fill a period, only teachers who teach that subject and grade and are free at that time are offered. Double-bookings are stopped before they happen.' },
       { title: 'Live period counts', body: 'Set periods per week for each subject and grade, and a daily limit for each teacher. Watch "Maths 4/6" fill up and see what is missing before you publish.' },
       { title: 'Religion, aesthetic & combined classes', body: 'Religion and aesthetic options run in the same period, each with its own teacher, even across 6A and 6B together.' },
-      { title: 'Teachers on their phone', body: "Publish the timetable and every teacher sees today's periods and their week on their phone. Login slips and printouts cover anyone without one." },
+      { title: 'Teachers on their phone', body: "Publish the timetable and every teacher sees today's periods and their week on their phone. Printed timetables cover anyone without one." },
       { title: 'Sinhala & English', body: 'Every screen and every printout in Sinhala or English. Each person picks their own.' },
     ],
   },
@@ -104,7 +104,7 @@ export const en = {
       { title: 'Register your school', body: "Add your school's name, logo and colours." },
       { title: 'Add teachers & subjects', body: 'Type them in or upload the Excel template: staff IDs, subjects and the grades each teacher takes.' },
       { title: 'Set up grades & periods', body: 'Classes, class teachers, period times and periods per subject for each grade.' },
-      { title: 'Build, publish & print', body: 'Fill the grid without clashes, publish to teachers, and print class and teacher timetables and login slips.' },
+      { title: 'Build, publish & print', body: 'Fill the grid without clashes, publish to teachers, and print class and teacher timetables.' },
     ],
   },
   faq: {
@@ -132,7 +132,7 @@ export const en = {
       },
       {
         q: "Who can see our school's data?",
-        a: "Only people your school's administrators add. Administrators manage the timetable; teachers see their own timetable and the school's timetables. The only public details are your school's name, district and whether it is active, so teachers can find the school when they log in. We do not sell your data.",
+        a: "Only people your school's administrators add. Administrators manage the timetable; teachers see their own timetable and the school's timetables. The only public details are your school's name, district and whether it is active, so the school can be named on invite links and found when someone reports a school. We do not sell your data.",
       },
       {
         q: 'Do teachers need a smartphone?',
@@ -144,7 +144,7 @@ export const en = {
       },
       {
         q: 'How do teachers log in?',
-        a: 'Your administrator adds each teacher and hands them a login slip. Teachers tap "Teacher login", pick the school, and enter their staff ID and password from the slip.',
+        a: "Teachers sign in with Google or with an email and password. Your administrator shares the school's invite link, or a personal link made for one teacher. A teacher whose email matches their record is linked at once; anyone else enters their staff ID and waits for an administrator to approve. Teachers who only need a printed timetable don't need an account.",
       },
     ],
     report: 'Seen a fake or duplicate school registration?',
@@ -238,8 +238,9 @@ export const en = {
         title: 'What we collect',
         body: [
           'School details: name in English and Sinhala, district, grades offered, staff ID prefix, logo and colours.',
-          'Administrator accounts: email address, and your name as shown on your Google account if you sign in with Google. We also record which version of the Terms & Conditions and Privacy Policy was accepted, and when.',
-          'Teachers: name, staff ID, subjects, grades and the time they last logged in; phone numbers and email addresses only if your school chooses to add them.',
+          'Accounts (administrators and teachers who sign in): email address, your name as shown on your Google account if you sign in with Google, and the schools you belong to and your role in each. For administrators we also record which version of the Terms & Conditions and Privacy Policy was accepted, and when.',
+          'Teachers: name, staff ID, subjects, grades, and for teachers who link an account, the time they last logged in; phone numbers and email addresses only if your school chooses to add them.',
+          "Join requests: when someone asks to join a school with its invite link, their email address, name and the staff ID they entered. The request and the administrator's decision are kept.",
           'Timetables: subjects, grades, classes, period times and timetable entries. Firebase Authentication also keeps the records it needs to let people sign in.',
           'We do not collect National Identity Card (NIC) numbers. Please do not enter them anywhere in Sathiya.',
         ],
@@ -254,7 +255,7 @@ export const en = {
         title: 'Who can see it',
         body: [
           "Your school's administrators can see and change your school's data. Teachers can see timetables in their school.",
-          "Your school's name (in English and Sinhala), district and whether it is active are listed publicly, so teachers can find the school on the login screen. Nothing else about your school is shown to other schools or the public.",
+          "Your school's name (in English and Sinhala), district and whether it is active are listed publicly, so the school can be named on invite links and found when someone reports a school. Nothing else about your school is shown to other schools or the public.",
         ],
       },
       {
@@ -266,7 +267,7 @@ export const en = {
       {
         title: 'Responsibilities of administrators',
         body: [
-          'Administrators decide what is entered about staff, and should tell their staff that their names and staff IDs are used in Sathiya.',
+          "Administrators decide what is entered about staff, and should tell their staff that their names, staff IDs and, if added, email addresses are used in Sathiya, including to link a teacher's account to their record.",
         ],
       },
       {
@@ -293,7 +294,7 @@ export const en = {
     ],
     email: CONTACT_EMAIL,
     teacherNote:
-      "Are you a teacher? Please ask your school's Sathiya administrator first — they can reset your password and update your timetable.",
+      "Are you a teacher? Please ask your school's Sathiya administrator first — they can send you an invite link and update your timetable.",
   },
 };
 

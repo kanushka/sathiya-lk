@@ -52,7 +52,7 @@ const routes = buildRoutes([
   { path: '/admin/print/class/:id', element: <p>print class</p> },
   { path: '/me', element: <p>my timetable</p> },
   { path: '/super', element: <p>schools list</p> },
-  { path: '/s/:sid/teachers', element: <p>school teachers</p> },
+  { path: '/admin/teachers', element: <p>school teachers</p> },
   { path: '/login', element: <p>login screen</p> },
   { path: '/register', element: <p>register screen</p> },
   { path: '/auth/action', element: <p>auth action</p> },
@@ -79,14 +79,14 @@ describe('PhoneNotice', () => {
     width = 375;
     listeners.clear();
     installMatchMedia();
-    state.claims = { sid: 's1', role: 'admin', tid: 't1', super: true };
+    state.claims = { schools: { s1: { r: 'a', t: 't1' } }, super: true };
   });
   afterEach(() => {
     window.matchMedia = original;
   });
 
-  it('is hidden for school admins on /admin at 375px', () => {
-    renderAt('/admin');
+  it('is hidden for school admins on /s/s1/admin at 375px', () => {
+    renderAt('/s/s1/admin');
     expect(dialog()).toBeNull();
     expect(banner()).toBeNull();
   });
@@ -97,7 +97,7 @@ describe('PhoneNotice', () => {
     expect(screen.getByRole('button', { name: 'Continue anyway' })).toBeInTheDocument();
   });
 
-  it.each(['/super', '/s/s1/teachers'])('shows on %s at 375px', (path) => {
+  it.each(['/super', '/super/schools/s1/admin/teachers'])('shows on %s at 375px', (path) => {
     renderAt(path);
     expect(dialog()).toBeInTheDocument();
   });
@@ -109,7 +109,7 @@ describe('PhoneNotice', () => {
     expect(banner()).toBeNull();
   });
 
-  it.each(['/me', '/login', '/register', '/auth/action', '/admin/print/class/c1'])('is hidden on %s', (path) => {
+  it.each(['/s/s1/me', '/login', '/register', '/auth/action', '/s/s1/admin/print/class/c1'])('is hidden on %s', (path) => {
     renderAt(path);
     expect(dialog()).toBeNull();
     expect(banner()).toBeNull();

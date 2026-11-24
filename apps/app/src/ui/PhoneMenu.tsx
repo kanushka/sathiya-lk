@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
 // Copyright (C) 2026 Kanushka Gayan
 
-import { pickName, type Lang } from '@sathiya/core';
+import { pickName, teacherIdOf, type Lang } from '@sathiya/core';
 import { useTranslation } from 'react-i18next';
 import { NavLink } from 'react-router-dom';
 import { useAuth } from '../app/AuthProvider';
@@ -11,11 +11,12 @@ import { SuperAdminLink } from '../features/superadmin/SuperAdminLink';
 import { cx } from './cx';
 import { Icon } from './Icon';
 import { Modal } from './Modal';
+import { SchoolSwitcher } from './SchoolSwitcher';
 import { Select } from './Select';
 import { groups, linkActive, linkBase, navHref, navItems } from './Sidebar';
 
 export interface PhoneMenuProps {
-  basePath: string;
+  basePath?: string;
   readOnly: boolean;
   onClose: () => void;
 }
@@ -23,7 +24,7 @@ export interface PhoneMenuProps {
 const item = 'min-h-11 gap-3 px-3 py-2.5 text-[15px]';
 const heading = 'mx-3 mb-1 mt-5 text-[11px] font-bold uppercase tracking-[.08em] text-ink-muted';
 
-export function PhoneMenu({ basePath, readOnly, onClose }: PhoneMenuProps) {
+export function PhoneMenu({ basePath: baseProp, readOnly, onClose }: PhoneMenuProps) {
   const { t, i18n } = useTranslation('shell');
   const lang: Lang = i18n.language === 'si' ? 'si' : 'en';
   const { claims, signOut } = useAuth();
@@ -31,6 +32,7 @@ export function PhoneMenu({ basePath, readOnly, onClose }: PhoneMenuProps) {
   const { years, yearId, setYearId } = useYear();
   const langCtl = useMaybeLang();
   const name = pickName(school, lang);
+  const basePath = baseProp ?? `/s/${school.id}/admin`;
   const yearSelectId = 'phone-menu-year';
 
   return (
@@ -44,6 +46,7 @@ export function PhoneMenu({ basePath, readOnly, onClose }: PhoneMenuProps) {
     >
       <div className="flex min-h-full flex-col">
       <div className="px-4 pt-4">
+        {!readOnly && <SchoolSwitcher current={school.id} className="mb-4 w-full" />}
         {years.length === 0 ? (
           <>
             <p className="mb-1.5 text-[11px] font-bold uppercase tracking-[.08em] text-ink-muted">{t('sidebar.year')}</p>
@@ -91,8 +94,8 @@ export function PhoneMenu({ basePath, readOnly, onClose }: PhoneMenuProps) {
       </nav>
 
       <div className="mt-auto flex flex-col gap-0.5 border-t border-line-soft px-2 py-3">
-        {claims.tid && !readOnly && (
-          <NavLink to="/me" onClick={onClose} className={cx(linkBase, item)}>
+        {teacherIdOf(claims, school.id) && !readOnly && (
+          <NavLink to={`/s/${school.id}/me`} onClick={onClose} className={cx(linkBase, item)}>
             <Icon name="calendar" size={20} />
             {t('nav.myTimetable')}
           </NavLink>

@@ -12,7 +12,7 @@ Production deploys only from `main`, after the same build was checked on staging
 ## 1. Create the staging project (once)
 1. Firebase console → add project `sathiya-lk-staging`.
 2. Upgrade to Blaze (functions need it) and add a budget alert (e.g. 5 USD) in Google Cloud billing.
-3. Authentication → enable Email/Password. Settings → Authorized domains → add `staging.sathiya.kanushka.com` and `app.staging.sathiya.kanushka.com`.
+3. Authentication → enable **Email/Password** and **Google** (see "Teacher access" below). Settings → Authorized domains → add `staging.sathiya.kanushka.com` and `app.staging.sathiya.kanushka.com`.
 4. Firestore database: create in the same location as production (native mode). Storage: create the default bucket.
 5. Hosting: add two sites, `sathiya-lk-staging-web` and `sathiya-lk-staging-app` (these ids are what `.firebaserc` maps; if the console gives different ids, update `.firebaserc`).
 6. Project settings → add two web apps (website and app). Copy their config into `stagingWebConfig` / `stagingAppConfig` in `packages/firebase-config/src/index.ts` (replace the `REPLACE_WITH_...` placeholders; these are public values, not secrets). The app picks them when built with `VITE_FIREBASE_ENV=staging` (already set in `apps/app/.env.staging`).
@@ -50,7 +50,22 @@ Set up once (repository → Settings → Environments):
 4. Environment secret `FIREBASE_SERVICE_ACCOUNT_PROD`: the JSON key of a service account in `sathiya-lk` with **Firebase Admin**, **Cloud Functions Admin**, **Secret Manager Admin** (to attach the `RESEND_API_KEY` secret to `sendMail`) and **Service Account User** (the last on the default compute service account `<project-number>-compute@developer.gserviceaccount.com`, which gen-2 functions run as). Google Cloud console → IAM & Admin → Service accounts → create `github-deploy-prod` → grant the roles → Keys → Add key → JSON. Paste the whole file, then delete the local copy. The workflow writes it to a temp file and removes it when the step exits.
 5. Environment secret `FUNCTIONS_ENV_PROD`: the full contents of `functions/.env.sathiya-lk` (multi-line, `KEY=value` per line), e.g. `SUPER_EMAILS=…` or `ENFORCE_APP_CHECK=false`. It is a secret rather than a variable because it can hold email addresses. Keep it in step with the file you use for hand deploys. A deploy replaces the functions env as a whole, so without it every production override is dropped; the workflow therefore fails when it is unset, unless the run ticks `use_committed_functions_env` to deploy only the committed `functions/.env`.
 
-Before the first run: the service account cannot do one-time project setup, so do one deploy by hand as an Owner first (enables APIs and service-agent bindings), and run `firebase functions:artifacts:setpolicy -P default` once so the non-interactive deploy is not stopped by the Artifact Registry cleanup prompt. The workflow never deletes functions (`--non-interactive` without `--force` aborts instead, after `hosting:app` has already gone out); when a function is removed from source, delete it by hand first with `firebase functions:delete <name> -P default`.
+Before the first run: the service account cannot do one-time project setup, so do one deploy by hand as an Owner first (enables APIs and service-agent bindings), and run `firebase functions:artifacts:setpolicy -P default` once so the non-interactive deploy is not stopped by the Artifact Registry cleanup prompt. The workflow never deletes functions (`--non-interactive` without `--force` aborts instead, after `hosting:app` has already gone out); when a function is removed from source, delete it by hand first with `firebase functions:delete <name> -P default`. For the invite-links release that is `resetTeacherPassword` (see "Release: teacher invite links").
+
+## Release: teacher invite links
+One-time steps for the first deploy of invite links and multi-school claims, per project (staging `-P staging` first, then production `-P default`), in this order:
+1. **Google provider:** enable it in Authentication → Sign-in method (see "Teacher access" below). Do it in both projects.
+2. **Wipe old data:** delete every Auth user and all Firestore school data (`schools` with its subcollections, `schoolDirectory`, `censusIndex`, `users`, `reports`), e.g. `firebase firestore:delete schools -r -P <alias>` per collection. Keep `platform`. There are no real users yet, and the old `{sid, role, tid}` claims no longer work with the new rules.
+3. **Delete the removed function** before any deploy, or the non-interactive deploy aborts after `hosting:app` has gone out:
+   ```bash
+   firebase functions:delete resetTeacherPassword -P staging    # production: -P default
+   ```
+4. **Indexes and rules before functions:**
+   ```bash
+   firebase deploy -P staging --only firestore:indexes,firestore:rules    # production: -P default
+   ```
+   Then wait until the `members.uid` collection-group index shows **Enabled** (Firestore → Indexes → Single field, exemption for `members.uid` with collection-group scope). Until it is built, sign-in (`claimInvites`), joining and registering fail.
+5. **Then the normal deploy:** section 2 (staging) or 3 (production), by hand or with the workflow.
 
 ## App Check
 Every callable function enforces App Check (`functions/src/lib/callOptions.ts`) unless `ENFORCE_APP_CHECK=false` is set in the project's functions env. An app built without `VITE_APPCHECK_SITE_KEY` sends no App Check token, so every callable (register, save, publish, …) fails with `unauthenticated`. The `app` hosting target's predeploy (`apps/app/deploy/check-app-check.mjs`, also a step in the staging and production workflows) therefore refuses to deploy a build without a site key while the target project enforces App Check. It reads `apps/app/dist/.build-env.json` (written by the build, never uploaded) and `functions/.env` + `functions/.env.<project id>`. `firebase deploy --only functions` does not run it, so keep the order below.
@@ -65,13 +80,23 @@ Per project (production `sathiya-lk` / app domain `app.sathiya.kanushka.com`; st
 7. Later, once App Check metrics show (nearly) all requests verified: App Check → APIs → enforce for Authentication, Cloud Firestore and Cloud Storage. Old app versions without App Check stop working at that point.
 
 ## Password policy
-The app requires at least 8 characters wherever a password is set (`apps/app/src/lib/password.ts`): admin sign-up, password reset, and a teacher changing their password. Generated teacher passwords are 8 characters from `functions/src/lib/password.ts`. To enforce the same minimum on the server, per project (once, by hand):
+The app requires at least 8 characters wherever a password is set (`apps/app/src/lib/password.ts`): account sign-up, school registration and password reset. To enforce the same minimum on the server, per project (once, by hand):
 
 1. Firebase console → Authentication → Settings → Password policy (if it is missing, the project needs the Identity Platform upgrade first).
 2. Enforcement mode: **Require enforcement**. Minimum length: **8**.
-3. Leave every character requirement (uppercase, lowercase, numeric, special) **off**: generated passwords are lowercase letters and digits with no guaranteed digit, and Admin SDK writes skip the policy, so a requirement would only bite when a teacher changes it.
+3. Leave every character requirement (uppercase, lowercase, numeric, special) **off**: the app only checks the length, so a stricter server rule would reject passwords the app lets through without saying why.
 4. Leave "Require users to update password on sign in" **off**, so admins with an older 6–7 character password can still sign in.
 5. Save. Sign-up, reset and change attempts below the minimum now fail with `auth/password-does-not-meet-requirements`, which the app shows as the length rule.
+
+## Teacher access
+Teachers have no accounts until they want one. Adding a teacher (form or import) creates only the record; there are no generated passwords or login slips.
+
+- Everyone signs in on `/login` with **Google** (shown first) or **email + password** (the email must be verified before joining or registering a school).
+- **Google provider:** Firebase console → Authentication → Sign-in method → enable **Google** in each project (`sathiya-lk` and `sathiya-lk-staging`), set the support email, and keep the app domain in Authorized domains. Without it the Google button fails with `auth/operation-not-allowed`.
+- **School invite link** (`APP_URL/join/<sid>/<token>`): the admin creates, copies, replaces or turns it off on the Teachers page. A signed-in user whose verified email matches one unlinked teacher record is linked at once; anyone else enters a staff ID and the request waits for the admin to approve or reject it at the top of the Teachers page.
+- **Personal link** (`APP_URL/join/t/<token>`): for one teacher, one use, valid 7 days; links whoever opens it, with no approval.
+- **Unlink** (or deleting a linked teacher) removes the account's access to that school the next time the app is opened, and within an hour at the latest: refresh tokens are revoked, but an ID token already issued keeps its claims until it expires (up to an hour). An open app watches the user's own member doc and refreshes the token (or signs out) as soon as it disappears. The teacher can link another account later.
+- An account can belong to at most 15 schools; the role per school is in the `schools` custom claim, rebuilt from `schools/*/members` on every change.
 
 ## After the first deploy (per project)
 - Firestore → TTL: confirm the policy on `rateLimits.expiresAt` is active.

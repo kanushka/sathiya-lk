@@ -2,14 +2,13 @@
 // Copyright (C) 2026 Kanushka Gayan
 import { buildSnapshots, type TeacherSnapshot, type Year } from '@sathiya/core';
 import { C, S, T, ctx as baseCtx, entries, entry } from '@sathiya/core/fixtures';
-import { act, screen, waitFor, within } from '@testing-library/react';
+import { act, screen, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { LangContextProvider } from '../../app/LangProvider';
 import { renderWithSchool } from '../../test/renderWithSchool';
 import tailwindConfig from '../../../tailwind.config';
 import { colomboNow } from './colomboNow';
-import { ChangePasswordModal } from './ChangePasswordModal';
 import { TodayPage } from './TodayPage';
 import { WeekPage } from './WeekPage';
 import { recordSignInOnce } from './signIn';
@@ -18,7 +17,7 @@ vi.mock('./signIn');
 
 const year: Year = { id: 'y-2026', label: '2026', status: 'published' };
 const ctx = { ...baseCtx, school: { ...baseCtx.school, activeYearId: year.id } };
-const claims = (tid: string) => ({ sid: ctx.school.id, role: 'teacher' as const, tid });
+const claims = (tid: string, r: 'a' | 't' = 't') => ({ schools: { [ctx.school.id]: { r, t: tid } } });
 
 function snapshotFor(tid: string, extra = entries): TeacherSnapshot {
   const found = buildSnapshots(ctx, extra, year).teachers.find((t) => t.teacherId === tid);
@@ -125,9 +124,20 @@ describe('TodayPage', () => {
 describe('TeacherFrame chrome', () => {
   const snap = () => ({ loading: false, data: snapshotFor(T.perera) });
 
-  it('links back to /admin for an admin who teaches', () => {
-    renderWithSchool(<TodayPage now={wed0920} snapshot={snap()} />, { ctx, claims: { ...claims(T.perera), role: 'admin' } });
-    expect(screen.getByRole('link', { name: 'School admin' })).toHaveAttribute('href', '/admin');
+  it('links back to the school admin for an admin who teaches', () => {
+    renderWithSchool(<TodayPage now={wed0920} snapshot={snap()} />, { ctx, claims: claims(T.perera, 'a') });
+    expect(screen.getByRole('link', { name: 'School admin' })).toHaveAttribute('href', `/s/${ctx.school.id}/admin`);
+  });
+
+  it('links the Today and Week tabs under the school', () => {
+    renderWithSchool(<TodayPage now={wed0920} snapshot={snap()} />, { ctx, claims: claims(T.perera) });
+    expect(screen.getByRole('link', { name: 'Today' })).toHaveAttribute('href', `/s/${ctx.school.id}/me`);
+    expect(screen.getByRole('link', { name: 'Week' })).toHaveAttribute('href', `/s/${ctx.school.id}/me/week`);
+  });
+
+  it('has no change-password button', () => {
+    renderWithSchool(<TodayPage now={wed0920} snapshot={snap()} />, { ctx, claims: claims(T.perera) });
+    expect(screen.queryByRole('button', { name: 'Change password' })).toBeNull();
   });
 
   it('shows no badge in place of a missing logo', () => {
@@ -224,55 +234,6 @@ describe('WeekPage per-day templates', () => {
     };
     renderWithSchool(<WeekPage now={wed0920} snapshot={{ loading: false, data: snap }} />, { ctx, claims: claims(T.perera) });
     expect(within(screen.getByTestId('week-cell-3-4')).getByText('7A')).toBeInTheDocument();
-  });
-});
-
-describe('ChangePasswordModal', () => {
-  const fill = async (cur: string, next: string, confirm: string) => {
-    const user = userEvent.setup();
-    await user.type(screen.getByLabelText('Current password'), cur);
-    await user.type(screen.getByLabelText('New password'), next);
-    await user.type(screen.getByLabelText('Confirm new password'), confirm);
-    await user.click(screen.getByRole('button', { name: 'Change password' }));
-  };
-
-  it('calls the injected function with current and new password', async () => {
-    const change = vi.fn().mockResolvedValue(undefined);
-    const onClose = vi.fn();
-    renderWithSchool(<ChangePasswordModal open onClose={onClose} changePassword={change} />, { ctx });
-    await fill('oldpass', 'newpass1', 'newpass1');
-    await waitFor(() => expect(change).toHaveBeenCalledWith('oldpass', 'newpass1'));
-    await waitFor(() => expect(onClose).toHaveBeenCalled());
-  });
-
-  it('shows a mismatch error and does not call', async () => {
-    const change = vi.fn();
-    renderWithSchool(<ChangePasswordModal open onClose={() => undefined} changePassword={change} />, { ctx });
-    await fill('oldpass', 'newpass1', 'different');
-    expect(await screen.findByText('Passwords do not match')).toBeInTheDocument();
-    expect(change).not.toHaveBeenCalled();
-  });
-
-  it('rejects passwords shorter than 8 characters', async () => {
-    const change = vi.fn();
-    renderWithSchool(<ChangePasswordModal open onClose={() => undefined} changePassword={change} />, { ctx });
-    await fill('oldpass', 'abcdefg', 'abcdefg');
-    expect(await screen.findByText('Use at least 8 characters')).toBeInTheDocument();
-    expect(change).not.toHaveBeenCalled();
-  });
-
-  it('shows the length rule when Firebase rejects the new password', async () => {
-    const change = vi.fn().mockRejectedValue({ code: 'auth/password-does-not-meet-requirements' });
-    renderWithSchool(<ChangePasswordModal open onClose={() => undefined} changePassword={change} />, { ctx });
-    await fill('oldpass', 'newpass1', 'newpass1');
-    expect(await screen.findByText('Use at least 8 characters')).toBeInTheDocument();
-  });
-
-  it('shows an error when the current password is wrong', async () => {
-    const change = vi.fn().mockRejectedValue({ code: 'auth/invalid-credential' });
-    renderWithSchool(<ChangePasswordModal open onClose={() => undefined} changePassword={change} />, { ctx });
-    await fill('oldpass', 'newpass1', 'newpass1');
-    expect(await screen.findByText('Current password is incorrect')).toBeInTheDocument();
   });
 });
 

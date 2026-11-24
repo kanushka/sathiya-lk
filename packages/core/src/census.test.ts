@@ -72,7 +72,9 @@ describe('reports and census paths', () => {
   });
 
   it('new error codes', () => {
-    expectTypeOf<'census-taken' | 'email-unverified' | 'already-has-school' | 'rate-limited'>().toMatchTypeOf<ApiErrorCode>();
+    expectTypeOf<'school-registered' | 'email-unverified' | 'rate-limited'>().toMatchTypeOf<ApiErrorCode>();
+    expectTypeOf<'census-taken'>().not.toMatchTypeOf<ApiErrorCode>();
+    expectTypeOf<'already-has-school'>().not.toMatchTypeOf<ApiErrorCode>();
   });
 });
 

@@ -11,7 +11,7 @@ export function ActionPage() {
   if (!code) return <InvalidLinkView />;
   switch (mode) {
     case 'verifyEmail':
-      return <VerifyEmailView code={code} />;
+      return <VerifyEmailView code={code} continueUrl={params.get('continueUrl')} />;
     case 'resetPassword':
       return <ResetPasswordView code={code} />;
     case 'recoverEmail':

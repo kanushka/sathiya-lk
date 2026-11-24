@@ -9,7 +9,7 @@ import { useLocation } from 'react-router-dom';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { renderWithSchool } from '../test/renderWithSchool';
 import { PhoneTopBar } from './PhoneTopBar';
-import { navItems } from './Sidebar';
+import { navHref, navItems } from './Sidebar';
 
 vi.mock('../features/superadmin/SuperAdminLink', () => ({ SuperAdminLink: () => null }));
 
@@ -38,7 +38,7 @@ function renderBar(opts: { basePath?: string; readOnly?: boolean; claims?: Claim
       <PhoneTopBar basePath={opts.basePath} readOnly={opts.readOnly} />
       <Where />
     </>,
-    { ctx: { ...ctx, school }, years, route: opts.route ?? '/admin', ...(opts.claims && { claims: opts.claims }) },
+    { ctx: { ...ctx, school }, years, route: opts.route ?? `/s/${ctx.school.id}/admin`, ...(opts.claims && { claims: opts.claims }) },
   );
 }
 
@@ -74,7 +74,7 @@ describe('PhoneTopBar and PhoneMenu', () => {
     const dialog = menu()!;
     expect(dialog).toBeInTheDocument();
     expect(within(dialog).getByRole('navigation', { name: 'Menu' })).toBeInTheDocument();
-    expect(within(dialog).getAllByRole('link').map((a) => a.getAttribute('href'))).toEqual(navItems.map((i) => i.path));
+    expect(within(dialog).getAllByRole('link').map((a) => a.getAttribute('href'))).toEqual(navItems.map((i) => navHref(`/s/${ctx.school.id}/admin`, i.path)));
     expect(within(dialog).getByRole('link', { name: 'Dashboard' })).toHaveAttribute('aria-current', 'page');
     expect(within(dialog).getByLabelText('Timetable year')).toHaveTextContent('2027 · draft');
     expect(within(dialog).getByRole('button', { name: 'Sign out' })).toBeInTheDocument();
@@ -102,7 +102,7 @@ describe('PhoneTopBar and PhoneMenu', () => {
     renderBar();
     await user.click(screen.getByRole('button', { name: 'Open menu' }));
     await user.click(within(menu()!).getByRole('link', { name: 'Teachers' }));
-    expect(screen.getByTestId('where')).toHaveTextContent('/admin/teachers');
+    expect(screen.getByTestId('where')).toHaveTextContent(`/s/${ctx.school.id}/admin/teachers`);
     expect(menu()).toBeNull();
     expect(document.body.style.overflow).toBe('');
   });
@@ -137,7 +137,7 @@ describe('PhoneTopBar and PhoneMenu', () => {
 
   it('read-only super view uses basePath and hides My timetable', async () => {
     const user = userEvent.setup();
-    renderBar({ basePath: '/s/s1', readOnly: true, route: '/s/s1', claims: { sid: ctx.school.id, role: 'admin', tid: 't1' } });
+    renderBar({ basePath: '/s/s1', readOnly: true, route: '/s/s1', claims: { schools: { [ctx.school.id]: { r: 'a', t: 't1' } } } });
     await user.click(screen.getByRole('button', { name: 'Open menu' }));
     const dialog = menu()!;
     expect(within(dialog).getByRole('link', { name: 'Teachers' })).toHaveAttribute('href', '/s/s1/teachers');
@@ -147,9 +147,9 @@ describe('PhoneTopBar and PhoneMenu', () => {
 
   it('shows My timetable for an admin linked to a teacher', async () => {
     const user = userEvent.setup();
-    renderBar({ claims: { sid: ctx.school.id, role: 'admin', tid: 't1' } });
+    renderBar({ claims: { schools: { [ctx.school.id]: { r: 'a', t: 't1' } } } });
     await user.click(screen.getByRole('button', { name: 'Open menu' }));
-    expect(within(menu()!).getByRole('link', { name: 'My timetable' })).toHaveAttribute('href', '/me');
+    expect(within(menu()!).getByRole('link', { name: 'My timetable' })).toHaveAttribute('href', `/s/${ctx.school.id}/me`);
   });
 
   it('truncates a long school name in the top bar', () => {

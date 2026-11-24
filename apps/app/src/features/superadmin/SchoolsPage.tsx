@@ -129,7 +129,7 @@ export function SchoolsPage({ schools: injected, setStatus = defaultSetStatus }:
                 </Td>
                 <Td>
                   <div className="flex flex-wrap gap-2">
-                    <Link to={`/s/${s.id}`} className={linkBtn}>
+                    <Link to={`/super/schools/${s.id}/admin`} className={linkBtn}>
                       {t('schools.open')}
                     </Link>
                     <Link to={`/super/schools/${s.id}`} className={linkBtn}>

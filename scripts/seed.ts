@@ -1,10 +1,11 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
 // Copyright (C) 2026 Kanushka Gayan
-import { directoryFields, paths, syntheticEmail, teacherDisplayName, type Entry } from '@sathiya/core';
-import { ctx, entries, school, subjects } from '@sathiya/core/fixtures';
+import { directoryFields, MAX_SCHOOLS, paths, teacherDisplayName, type Claims, type Entry, type Member } from '@sathiya/core';
+import { ctx, entries, school, subjects, T } from '@sathiya/core/fixtures';
 import { getApps, initializeApp } from 'firebase-admin/app';
 import { getAuth } from 'firebase-admin/auth';
 import { getFirestore, type Firestore } from 'firebase-admin/firestore';
+import { createHash } from 'node:crypto';
 import { pathToFileURL } from 'node:url';
 
 export const PROJECT_ID = process.env.GCLOUD_PROJECT ?? 'sathiya-lk';
@@ -18,13 +19,24 @@ export const TERMS_VERSION = '1';
 // Emulator-only test credentials.
 export const ADMIN = { uid: 'seed-admin', email: 'admin@siripura.example.com', password: 'admin-pass-1', name: 'Principal Siripura' } as const;
 export const SUPER = { uid: 'seed-super', email: 'super@sathiya.example.com', password: 'super-pass-1' } as const;
-export const TEACHER_PASSWORD = 'teach234';
+export const TEACHER_PASSWORD = 'teach-pass-1';
+export const LINKED_TEACHERS = [T.perera, T.rSilva] as const;
+export const JOIN_TOKEN = 'seed-join-token-siripura';
+// Signed up and asked to join as this teacher; the admin has not decided yet.
+export const REQUESTER = { uid: 'seed-requester', email: 'kumari@siripura.example.com', password: 'request-pass-1', name: 'D. Kumari', teacherId: T.kumari } as const;
+// No account yet; signing up with this email and opening the school link links them straight away.
+export const INVITEE = { email: 'bandara@siripura.example.com', teacherId: T.bandara } as const;
 
 export const teacherLogin = (tid: string) => {
   const t = ctx.teachers.find((x) => x.id === tid);
   if (!t) throw new Error(`unknown teacher ${tid}`);
-  return { uid: `seed-${t.id}`, staffId: t.staffId, email: syntheticEmail(t.staffId, SID), password: TEACHER_PASSWORD, name: teacherDisplayName(t) };
+  const local = t.name.toLowerCase().replace(/[^a-z]+/g, '.').replace(/^\.|\.$/g, '');
+  return { uid: `seed-${t.id}`, staffId: t.staffId, email: `${local}@siripura.example.com`, password: TEACHER_PASSWORD, name: teacherDisplayName(t) };
 };
+
+export const joinPath = (sid = SID, token = JOIN_TOKEN) => `/join/${sid}/${token}`;
+const requestedTeacher = () => ctx.teachers.find((t) => t.id === REQUESTER.teacherId)!;
+const sha256 = (s: string) => createHash('sha256').update(s).digest('hex');
 
 function useEmulators(): void {
   process.env.FIRESTORE_EMULATOR_HOST ??= `${HOST}:${PORTS.firestore}`;
@@ -65,7 +77,12 @@ async function writeSchool(db: Firestore): Promise<void> {
   put(paths.templates(SID), ctx.templates);
   put(paths.grades(SID), ctx.grades);
   put(paths.classes(SID), ctx.classes);
-  for (const t of ctx.teachers) batch.set(db.doc(`${paths.teachers(SID)}/${t.id}`), { ...strip(t), uid: teacherLogin(t.id).uid });
+  for (const t of ctx.teachers) {
+    const linked = (LINKED_TEACHERS as readonly string[]).includes(t.id);
+    const email = linked ? teacherLogin(t.id).email : t.id === INVITEE.teacherId ? INVITEE.email : undefined;
+    batch.set(db.doc(`${paths.teachers(SID)}/${t.id}`), { ...strip(t), ...(email && { email }), ...(linked && { uid: teacherLogin(t.id).uid }) });
+  }
+  batch.set(db.doc(paths.joinLink(SID)), { hash: sha256(JOIN_TOKEN), token: JOIN_TOKEN, createdAt: Date.now(), createdBy: ADMIN.uid });
   batch.set(db.doc(`${paths.years(SID)}/${YEAR_ID}`), { label: '2027', status: 'draft' });
   put(paths.entries(SID, YEAR_ID), entries as Entry[]);
   batch.set(db.doc(paths.platform.config), { currentTermsVersion: TERMS_VERSION });
@@ -76,21 +93,45 @@ async function writeSchool(db: Firestore): Promise<void> {
   await batch.commit();
 }
 
+// Mirrors syncClaims in functions/src/lib/claims.ts.
+async function syncClaims(db: Firestore, auth: ReturnType<typeof getAuth>, uid: string): Promise<void> {
+  const [user, snap] = await Promise.all([auth.getUser(uid), db.collectionGroup('members').where('uid', '==', uid).get()]);
+  if (snap.size > MAX_SCHOOLS) throw new Error(`${uid} is in more than ${MAX_SCHOOLS} schools`);
+  const schools: NonNullable<Claims['schools']> = {};
+  for (const doc of snap.docs) {
+    const m = doc.data() as Member;
+    schools[doc.ref.parent.parent!.id] = { r: m.role === 'admin' ? 'a' : 't', ...(m.teacherId && { t: m.teacherId }) };
+  }
+  const next: Claims = {};
+  if (snap.size > 0) next.schools = schools;
+  if (user.customClaims?.super === true) next.super = true;
+  await auth.setCustomUserClaims(uid, next);
+}
+
 async function writeAccounts(db: Firestore, auth: ReturnType<typeof getAuth>): Promise<void> {
   await auth.createUser({ uid: ADMIN.uid, email: ADMIN.email, password: ADMIN.password, emailVerified: true, displayName: ADMIN.name });
-  await auth.setCustomUserClaims(ADMIN.uid, { sid: SID, role: 'admin' });
   await auth.createUser({ uid: SUPER.uid, email: SUPER.email, password: SUPER.password, emailVerified: true });
   await auth.setCustomUserClaims(SUPER.uid, { super: true });
+  await auth.createUser({ uid: REQUESTER.uid, email: REQUESTER.email, password: REQUESTER.password, emailVerified: true, displayName: REQUESTER.name });
   const batch = db.batch();
   batch.set(db.doc(`${paths.members(SID)}/${ADMIN.uid}`), { uid: ADMIN.uid, role: 'admin', email: ADMIN.email, name: ADMIN.name });
-  batch.set(db.doc(paths.user(ADMIN.uid)), { schoolId: SID });
-  for (const t of ctx.teachers) {
-    const login = teacherLogin(t.id);
-    await auth.createUser({ uid: login.uid, email: login.email, password: login.password, displayName: login.name });
-    await auth.setCustomUserClaims(login.uid, { sid: SID, role: 'teacher', tid: t.id });
-    batch.set(db.doc(`${paths.members(SID)}/${login.uid}`), { uid: login.uid, role: 'teacher', teacherId: t.id });
+  for (const tid of LINKED_TEACHERS) {
+    const l = teacherLogin(tid);
+    await auth.createUser({ uid: l.uid, email: l.email, password: l.password, emailVerified: true, displayName: l.name });
+    batch.set(db.doc(`${paths.members(SID)}/${l.uid}`), { uid: l.uid, role: 'teacher', teacherId: tid, email: l.email, name: l.name });
   }
+  const requested = requestedTeacher();
+  batch.set(db.doc(`${paths.joinRequests(SID)}/${REQUESTER.uid}`), {
+    uid: REQUESTER.uid,
+    email: REQUESTER.email,
+    name: REQUESTER.name,
+    staffId: requested.staffId,
+    teacherId: requested.id,
+    createdAt: Date.now(),
+    status: 'pending',
+  });
   await batch.commit();
+  for (const uid of [ADMIN.uid, ...LINKED_TEACHERS.map((tid) => teacherLogin(tid).uid)]) await syncClaims(db, auth, uid);
 }
 
 export async function seed(): Promise<void> {
@@ -100,14 +141,17 @@ export async function seed(): Promise<void> {
   await writeAccounts(db, auth);
 }
 
-export function credentials(): string {
-  const rows = ctx.teachers.map((t) => teacherLogin(t.id)).map((l) => `  ${l.staffId}  ${l.password}  ${l.name}`);
+export function credentials(appUrl = 'http://localhost:5173'): string {
+  const rows = LINKED_TEACHERS.map(teacherLogin).map((l) => `  ${l.email} / ${l.password}  (${l.staffId} ${l.name})`);
   return [
     `Seeded ${school.nameEn} (${SID}) into project ${PROJECT_ID}, draft year ${YEAR_ID}.`,
-    `Admin:  ${ADMIN.email} / ${ADMIN.password}`,
-    `Super:  ${SUPER.email} / ${SUPER.password}`,
-    `Teachers (school "${school.nameEn}", staff ID / password):`,
+    `Admin:      ${ADMIN.email} / ${ADMIN.password}`,
+    `Super:      ${SUPER.email} / ${SUPER.password}`,
+    `Teachers:`,
     ...rows,
+    `Requester:  ${REQUESTER.email} / ${REQUESTER.password}  (pending request for ${requestedTeacher().staffId})`,
+    `Invitee:    sign up as ${INVITEE.email} and open the school link to link as ${INVITEE.teacherId}`,
+    `School link: ${appUrl}${joinPath()}`,
   ].join('\n');
 }
 

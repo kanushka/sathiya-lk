@@ -1,12 +1,12 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
 // Copyright (C) 2026 Kanushka Gayan
 import { expect, test } from '@playwright/test';
-import { ADMIN } from '../../scripts/seed';
+import { ADMIN, SID } from '../../scripts/seed';
 import { loginAdmin, shot } from '../helpers';
 
 test('teacher view: pin a primary class by its own period times', async ({ page }) => {
   await loginAdmin(page, ADMIN.email, ADMIN.password);
-  await page.goto('/admin/timetable/teacher/t-wickramasinghe');
+  await page.goto(`/s/${SID}/admin/timetable/teacher/t-wickramasinghe`);
 
   const slot = page.getByRole('button', { name: /^Monday, period 5, 10:50–11:30: empty/ });
   await slot.click();
@@ -42,7 +42,7 @@ test('teacher view: pin a primary class by its own period times', async ({ page 
   await expect(bar).toBeHidden();
   await expect(page.getByRole('button', { name: 'Monday, period 5, 10:50–11:30: 1A English · 10:40–11:05' })).toBeVisible();
 
-  await page.goto('/admin/timetable/class/c-1a');
+  await page.goto(`/s/${SID}/admin/timetable/class/c-1a`);
   await expect(page.getByRole('button', { name: 'Monday, period 5, 10:40–11:05: English Mrs. S. Wickramasinghe' })).toBeVisible();
   await expect(page.getByRole('button', { name: 'Tuesday, period 2, 08:20–09:00: English Mrs. S. Wickramasinghe' })).toBeVisible();
 });

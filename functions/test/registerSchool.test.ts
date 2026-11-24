@@ -24,7 +24,7 @@ describe('registerSchool', () => {
     const { schoolId } = await c.call('registerSchool', schoolReq());
     expect(schoolId).toMatch(/^[A-Za-z0-9]{20}$/);
 
-    expect(await c.claims()).toEqual({ sid: schoolId, role: 'admin', tid: undefined });
+    expect(await c.claims()).toEqual({ schools: { [schoolId]: { r: 'a' } } });
 
     const school = (await adminDb.doc(paths.school(schoolId)).get()).data()!;
     expect(school).toMatchObject({
@@ -64,18 +64,11 @@ describe('registerSchool', () => {
     expect(tpl.rows.filter((r) => r.type === 'interval')).toHaveLength(1);
   });
 
-  it('refuses a caller that already has a school (sid claim)', async () => {
-    const c = await signUp();
-    await c.call('registerSchool', schoolReq());
-    await c.auth.currentUser!.getIdToken(true);
-    await expectFnError(c.call('registerSchool', schoolReq()), 'failed-precondition', 'already-has-school');
-  });
-
   it('keeps an existing super flag', async () => {
     const c = await signUp();
     await makeSuper(c);
     const { schoolId } = await c.call('registerSchool', schoolReq());
-    expect(await c.claims()).toEqual({ sid: schoolId, role: 'admin', tid: undefined, super: true });
+    expect(await c.claims()).toEqual({ schools: { [schoolId]: { r: 'a' } }, super: true });
   });
 
   it('stores only whitelisted school fields', async () => {

@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
 // Copyright (C) 2026 Kanushka Gayan
-import { paths, pickName, type TeacherSnapshot } from '@sathiya/core';
-import { useEffect, useState, type ReactNode } from 'react';
+import { isSchoolAdmin, paths, pickName, teacherIdOf, type TeacherSnapshot } from '@sathiya/core';
+import { useEffect, type ReactNode } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Link } from 'react-router-dom';
 import { useAuth } from '../../app/AuthProvider';
@@ -12,16 +12,14 @@ import { Button, buttonClass } from '../../ui/Button';
 import { EmptyState } from '../../ui/EmptyState';
 import { LoadingState } from '../../ui/LoadingState';
 import { cx } from '../../ui/cx';
-import { ChangePasswordModal } from './ChangePasswordModal';
+import { SchoolSwitcher } from '../../ui/SchoolSwitcher';
 import { recordSignInOnce } from './signIn';
-import type { ChangePasswordFn } from './firebasePassword';
 import { colomboNow, greetingKey } from './colomboNow';
 import { useNow, type NowFn } from './useNow';
 
 export interface TeacherViewProps {
   now?: NowFn;
   snapshot?: DocState<TeacherSnapshot>;
-  changePassword?: ChangePasswordFn;
 }
 
 interface FrameProps extends TeacherViewProps {
@@ -29,16 +27,16 @@ interface FrameProps extends TeacherViewProps {
   children: (snap: TeacherSnapshot, now: Date) => ReactNode;
 }
 
-export function TeacherFrame({ view, now: nowFn, snapshot, changePassword, children }: FrameProps) {
+export function TeacherFrame({ view, now: nowFn, snapshot, children }: FrameProps) {
   const { t } = useTranslation(['teacher', 'common', 'shell']);
   const { lang, setLang } = useLang();
   const { claims, signOut } = useAuth();
   const { school } = useSchool();
   const now = colomboNow(useNow(nowFn));
-  const [pwOpen, setPwOpen] = useState(false);
 
   const yearId = school.activeYearId;
-  const tid = claims.tid;
+  const sid = school.id;
+  const tid = teacherIdOf(claims, sid);
   useEffect(() => {
     if (tid) recordSignInOnce();
   }, [tid]);
@@ -96,6 +94,7 @@ export function TeacherFrame({ view, now: nowFn, snapshot, changePassword, child
             {t(`shell:sidebar.langShort.${target}`)}
           </Button>
         </div>
+        <SchoolSwitcher current={sid} className="mt-3 w-full" />
         <p className="mt-4 text-[22px] font-extrabold leading-tight">
           {t(`teacher:greeting.${greetingKey(now.getHours())}`)}
           {fullName ? `, ${fullName}` : ''}
@@ -103,8 +102,8 @@ export function TeacherFrame({ view, now: nowFn, snapshot, changePassword, child
         <p className="mt-0.5 text-sm opacity-85">{dateLine}</p>
         {snap && (
           <nav aria-label={t('teacher:views.label')} className="mt-4 flex gap-1 rounded-[10px] bg-black/15 p-1">
-            {tab('/me', t('teacher:views.today'), view === 'today')}
-            {tab('/me/week', t('teacher:views.week'), view === 'week')}
+            {tab(`/s/${sid}/me`, t('teacher:views.today'), view === 'today')}
+            {tab(`/s/${sid}/me/week`, t('teacher:views.week'), view === 'week')}
           </nav>
         )}
       </header>
@@ -112,11 +111,8 @@ export function TeacherFrame({ view, now: nowFn, snapshot, changePassword, child
       <main className="-mt-8 flex-1 px-3.5 pb-6">{body}</main>
 
       <footer className="flex items-center justify-center gap-3 px-3.5 pb-8">
-        <Button variant="ghost" size="sm" onClick={() => setPwOpen(true)}>
-          {t('teacher:changePassword')}
-        </Button>
-        {claims.role === 'admin' && (
-          <Link to="/admin" className={buttonClass({ variant: 'ghost', size: 'sm' })}>
+        {isSchoolAdmin(claims, sid) && (
+          <Link to={`/s/${sid}/admin`} className={buttonClass({ variant: 'ghost', size: 'sm' })}>
             {t('teacher:adminLink')}
           </Link>
         )}
@@ -124,7 +120,6 @@ export function TeacherFrame({ view, now: nowFn, snapshot, changePassword, child
           {t('teacher:signOut')}
         </Button>
       </footer>
-      <ChangePasswordModal open={pwOpen} onClose={() => setPwOpen(false)} changePassword={changePassword} />
     </div>
   );
 }

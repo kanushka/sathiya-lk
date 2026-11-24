@@ -64,6 +64,11 @@ describe('logo write', () => {
   it.each<Role>(['teacher', 'super', 'otherAdmin', 'noClaims', 'anon'])('denies %s', async (r) => {
     await assertFails(upload(r, 'schools/s1/logo.png', 1000, PNG));
   });
+  it('admin of another school or teacher-only claim cannot upload', async () => {
+    await assertFails(upload('adminS1TeacherS2', 'schools/s2/logo.png', 1000, PNG));
+    await assertFails(upload('multiTeacher', 'schools/s1/logo.png', 1000, PNG));
+    await assertSucceeds(upload('adminS1TeacherS2', 'schools/s1/logo.png', 1000, PNG));
+  });
   it('allows admin of sid to delete the logo, nobody else', async () => {
     await assertFails(remove('teacher', 'schools/s1/logo.png'));
     await assertFails(remove('otherAdmin', 'schools/s1/logo.png'));

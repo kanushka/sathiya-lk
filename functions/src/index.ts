@@ -3,7 +3,6 @@
 export { registerSchool } from './registerSchool';
 export { createTeacher } from './createTeacher';
 export { importSetup } from './importSetup';
-export { resetTeacherPassword } from './resetTeacherPassword';
 export { inviteAdmin } from './inviteAdmin';
 export { claimInvites } from './claimInvites';
 export { setSchoolStatus } from './setSchoolStatus';
@@ -19,3 +18,10 @@ export { sendAuthEmail } from './sendAuthEmail';
 export { syncDirectory } from './syncDirectory';
 export { sendMail } from './email/sendMail';
 export { recordSignIn } from './recordSignIn';
+export { setJoinLink } from './setJoinLink';
+export { joinSchool } from './joinSchool';
+export { decideJoinRequest } from './decideJoinRequest';
+export { createTeacherLink } from './createTeacherLink';
+export { cancelTeacherLink } from './cancelTeacherLink';
+export { unlinkTeacher } from './unlinkTeacher';
+export { linkSelf } from './linkSelf';

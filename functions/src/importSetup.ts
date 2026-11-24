@@ -19,7 +19,7 @@ import { db } from './lib/admin';
 import { callOpts } from './lib/callOptions';
 import { fail, int, invalid, obj, requireSchoolAdmin } from './lib/guards';
 import { releaseImportMarker } from './lib/importMarker';
-import { createTeacherAccount } from './lib/teacherAccount';
+import { createTeacherRecord } from './lib/teacherRecord';
 
 const CONCURRENCY = 5;
 const MAX_VERSION_LENGTH = 64;
@@ -96,7 +96,7 @@ export const importSetup = onCall({ ...callOpts, timeoutSeconds: 300 }, async (r
     throw e;
   }
 
-  // All-or-nothing only up to the first account failure: created subjects and teachers stay.
+  // All-or-nothing only up to the first teacher failure: created subjects and teachers stay.
   const created: (ImportSetupRes['teachers'][number] | undefined)[] = [];
   let failed = false;
   let next = 0;
@@ -105,11 +105,11 @@ export const importSetup = onCall({ ...callOpts, timeoutSeconds: 300 }, async (r
       const i = next++;
       const { teacher, subjectRefs } = plan.teachers[i]!;
       try {
-        const { teacherId, password } = await createTeacherAccount(sid, {
+        const teacherId = await createTeacherRecord(sid, {
           ...teacher,
           subjectIds: subjectRefs.map((r) => ('existingId' in r ? r.existingId : subjectIds[r.newIndex]!)),
         });
-        created[i] = { teacherId, staffId: teacher.staffId, name: teacher.name, ...(teacher.nameSi !== undefined && { nameSi: teacher.nameSi }), ...(teacher.title && { title: teacher.title }), password };
+        created[i] = { teacherId, staffId: teacher.staffId, name: teacher.name, ...(teacher.nameSi !== undefined && { nameSi: teacher.nameSi }), ...(teacher.title && { title: teacher.title }) };
       } catch (e) {
         failed = true;
         // Messages can carry staff IDs, names or emails; the code is enough to diagnose.

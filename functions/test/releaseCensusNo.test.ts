@@ -1,8 +1,8 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
 // Copyright (C) 2026 Kanushka Gayan
-import { paths, syntheticEmail } from '@sathiya/core';
+import { paths } from '@sathiya/core';
 import { describe, expect, it } from 'vitest';
-import { adminDb, expectFnError, makeSuper, randomCensus, schoolReq, signIn, signUp, teacherInput } from './helpers';
+import { adminDb, expectFnError, linkedTeacher, makeSuper, randomCensus, schoolReq, signUp } from './helpers';
 
 async function schoolWithCensus() {
   const censusNo = randomCensus();
@@ -40,8 +40,7 @@ describe('releaseCensusNo', () => {
 
   it('refuses the school admin, a teacher and a plain user', async () => {
     const { admin, sid, censusNo } = await schoolWithCensus();
-    const { password } = await admin.call('createTeacher', { schoolId: sid, teacher: teacherInput('SCC031') });
-    const teacher = await signIn(syntheticEmail('SCC031', sid), password);
+    const { teacher } = await linkedTeacher(admin, sid, 'SCC031');
     for (const c of [admin, teacher, await signUp()]) {
       await expectFnError(c.call('releaseCensusNo', { schoolId: sid }), 'permission-denied', 'not-allowed');
     }

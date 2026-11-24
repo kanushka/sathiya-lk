@@ -7,8 +7,14 @@ service cloud.firestore {
     function signedIn() { return request.auth != null; }
     function claim(k) { return request.auth.token.get(k, null); }
     function isSuper() { return signedIn() && claim('super') == true; }
-    function isAdmin(sid) { return signedIn() && claim('sid') == sid && claim('role') == 'admin'; }
-    function isTeacher(sid) { return signedIn() && claim('sid') == sid && claim('role') == 'teacher'; }
+    function membership(sid) { return claim('schools').get(sid, {}); }
+    function isAdmin(sid) { return signedIn() && claim('schools') != null && membership(sid).get('r', null) == 'a'; }
+    function isTeacher(sid) {
+      return signedIn() && claim('schools') != null
+        && (membership(sid).get('r', null) == 't'
+          || (membership(sid).get('r', null) == 'a' && membership(sid).get('t', null) != null));
+    }
+    function ownTeacher(sid, tid) { return isTeacher(sid) && membership(sid).get('t', null) == tid; }
     function active(sid) { return get(/databases/$(database)/documents/schools/$(sid)).data.status != 'disabled'; }
     // Members of a disabled school can read only the school doc (to show the suspended screen); super keeps read access.
     function adminRead(sid) { return isSuper() || (isAdmin(sid) && active(sid)); }
@@ -36,8 +42,8 @@ service cloud.firestore {
         && optText('phone', 30);
 
       match /teachers/{tid} {
-        allow read: if adminRead(sid) || (teacherRead(sid) && claim('tid') == tid);
-        allow update: if adminWrite(sid) && !changed().hasAny(['uid', 'staffId', 'lastLoginAt'])
+        allow read: if adminRead(sid) || (active(sid) && ownTeacher(sid, tid));
+        allow update: if adminWrite(sid) && !changed().hasAny(['uid', 'staffId', 'lastLoginAt', 'inviteExpiresAt'])
           && (!('title' in request.resource.data) || !('title' in changed())
             || request.resource.data.title in ['Mr', 'Mrs', 'Miss', 'Ms', 'Dr', 'Rev', 'Ven.']);
       }
@@ -71,6 +77,13 @@ service cloud.firestore {
       match /invites/{id} {
         allow read: if adminRead(sid);
       }
+      match /joinRequests/{uid} {
+        allow read: if adminRead(sid) || (signedIn() && request.auth.uid == uid);
+      }
+      // Functions write the join link; admins read it to copy the current link.
+      match /private/joinLink {
+        allow read: if adminRead(sid);
+      }
 
       match /years/{yid} {
         allow read: if adminRead(sid) || teacherRead(sid);
@@ -90,7 +103,7 @@ service cloud.firestore {
           allow read: if adminRead(sid) || teacherRead(sid);
         }
         match /publishedTeachers/{tid} {
-          allow read: if adminRead(sid) || (teacherRead(sid) && claim('tid') == tid);
+          allow read: if adminRead(sid) || (active(sid) && ownTeacher(sid, tid));
         }
         // slotLocks: functions only, no client access.
       }
@@ -115,7 +128,7 @@ service cloud.firestore {
         && optText('note', 1000);
     }
 
-    // censusIndex, rateLimits, mail (sendMail queue): functions only, no client access.
+    // teacherLinks, censusIndex, rateLimits, mail (sendMail queue): functions only, no client access.
 
     match /platform/{path=**} {
       allow read: if signedIn();

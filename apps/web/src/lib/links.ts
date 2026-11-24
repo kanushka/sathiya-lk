@@ -14,7 +14,7 @@ export function appLinks(base: string = import.meta.env.PUBLIC_APP_URL || APP_UR
   return {
     register: `${root}/register`,
     login: `${root}/login`,
-    teacherLogin: `${root}/login?as=teacher`,
+    teacherLogin: `${root}/login`,
     report: `${root}/login?report=1`,
   };
 }

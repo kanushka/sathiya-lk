@@ -17,6 +17,9 @@ export const VERIFY_PER_IP_PER_DAY = 20;
 export const RESET_PER_EMAIL_PER_DAY = 5;
 export const INVITE_PER_UID_PER_DAY = 20;
 export const INVITE_PER_SCHOOL_PER_DAY = 20;
+export const JOIN_PER_UID_PER_DAY = 10;
+export const JOIN_REQUEST_PER_UID_PER_DAY = 5;
+export const TEACHER_LINK_PER_SCHOOL_PER_DAY = 50;
 
 export const RATE_LIMITS = 'rateLimits';
 const DAY_MS = 86_400_000;

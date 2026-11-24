@@ -1,9 +1,10 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
 // Copyright (C) 2026 Kanushka Gayan
-import { formatAmount, pickName, teacherDisplayName, teacherLoad, teacherNameMissing, usageCount, type Lang, type Teacher } from '@sathiya/core';
-import { useEffect, useMemo, useState } from 'react';
+import { formatAmount, pickName, teacherDisplayName, teacherIdOf, teacherLoad, teacherNameMissing, usageCount, type Lang, type Teacher } from '@sathiya/core';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
+import { useAuth } from '../../app/AuthProvider';
 import { useSchool, useYear } from '../../app/SchoolProvider';
 import { useReadOnly } from '../../ui/AdminLayout';
 import { Button } from '../../ui/Button';
@@ -15,19 +16,26 @@ import { Badge } from '../../ui/Badge';
 import { PageHeader } from '../../ui/PageHeader';
 import { useToast } from '../../ui/Toast';
 import { ImportModal } from '../import/ImportModal';
+import { PersonalLinkModal, UnlinkModal } from './AccountDialogs';
+import { accountActionError } from './accountErrors';
+import * as api from './api';
 import { DeleteSetupModal } from './DeleteSetupModal';
-import { usePrintLabels } from './LoginSlip';
-import { PrintAllModal } from './PrintAllModal';
-import { printSlips } from './printSlips';
-import { resetPasswords } from './resetAll';
-import { useSessionPasswords } from './sessionPasswords';
-import { teacherLoginUrl } from './slip';
+import { InviteLinkCard } from './InviteLinkCard';
+import { JoinRequests } from './JoinRequestsSection';
+import { useJoinRequests } from './useJoinRequests';
+import { personalJoinUrl } from './links';
 import { TeacherModal } from './TeacherModal';
 
-type Dialog = { kind: 'edit'; teacher?: Teacher } | { kind: 'import' } | { kind: 'printAll' } | { kind: 'delete'; teacher: Teacher } | null;
+type Dialog =
+  | { kind: 'edit'; teacher?: Teacher }
+  | { kind: 'import' }
+  | { kind: 'delete'; teacher: Teacher }
+  | { kind: 'personalLink'; teacher: Teacher; url: string; expiresAt: number }
+  | { kind: 'unlink'; teacher: Teacher }
+  | null;
 
-function formatLogin(ts: number | undefined, lang: string, never: string): string {
-  return ts ? new Date(ts).toLocaleDateString(lang, { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' }) : never;
+function formatLogin(ts: number, lang: string): string {
+  return new Date(ts).toLocaleDateString(lang, { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' });
 }
 
 export function TeachersPage() {
@@ -40,11 +48,19 @@ export function TeachersPage() {
   const slotUsage = (teacherId: string) => (yearId === latestYearId ? usageCount('teacher', teacherId, state, entries) : 0);
   const readOnly = useReadOnly();
   const toast = useToast();
-  const { passwords, set: setSessionPassword } = useSessionPasswords();
-  const printLabels = usePrintLabels();
+  const { user, claims, refreshClaims, signOut } = useAuth();
+  const isSelf = (x: Teacher) => !!user && x.uid === user.uid;
+  const now = Date.now();
+  const liveLink = (x: Teacher) => !x.uid && !!x.inviteExpiresAt && x.inviteExpiresAt > now;
+  const requests = useJoinRequests(school.id).data;
+  const pendingFor = useMemo(() => new Set(requests.map((r) => r.teacherId)), [requests]);
+  const canLinkSelf = !readOnly && !teacherIdOf(claims, school.id);
+  const [busy, setBusy] = useState<string | null>(null);
   const [search, setSearch] = useState('');
   const [params, setParams] = useSearchParams();
   const [dialog, setDialog] = useState<Dialog>(() => (params.get('new') === '1' && !readOnly ? { kind: 'edit' } : null));
+  const dialogRef = useRef(dialog);
+  dialogRef.current = dialog;
   useEffect(() => {
     if (params.has('new')) setParams((p) => (p.delete('new'), p), { replace: true });
   }, [params, setParams]);
@@ -64,28 +80,68 @@ export function TeachersPage() {
     ? sorted.filter((x) => [teacherDisplayName(x, 'en'), teacherDisplayName(x, 'si'), x.staffId].some((v) => v.toLowerCase().includes(q)))
     : sorted;
 
-  async function printTeachers(list: Teacher[], pw: Readonly<Record<string, string>>) {
-    const url = teacherLoginUrl(window.location.origin, school.id);
-    const slips = list.map((x) => ({
-      schoolName: pickName(school, lang),
-      staffId: x.staffId,
-      name: teacherDisplayName(x, lang),
-      password: pw[x.id],
-      url,
-    }));
-    if (!(await printSlips(slips, printLabels))) toast.show(t('page.printBlocked'), 'error');
+  async function act(key: string, run: () => Promise<void>) {
+    setBusy(key);
+    try {
+      await run();
+    } catch (err) {
+      toast.show(accountActionError(err, t), 'error');
+    } finally {
+      setBusy(null);
+    }
   }
 
-  const known = sorted.filter((x) => passwords[x.id]);
+  const personalLink = (x: Teacher) =>
+    act(`link:${x.id}`, async () => {
+      const res = await api.createTeacherLink(school.id, x.id);
+      // Never replace a dialog the admin opened while waiting: it may hold unsaved input.
+      if (dialogRef.current) toast.show(t('page.linkHidden', { name: teacherDisplayName(x, lang) }), 'info');
+      else setDialog({ kind: 'personalLink', teacher: x, url: personalJoinUrl(window.location.origin, res.token), expiresAt: res.expiresAt });
+    });
 
-  const [resetBatch, setResetBatch] = useState<Readonly<Record<string, string>>>({});
+  const cancelLink = (x: Teacher) =>
+    act(`cancel:${x.id}`, async () => {
+      await api.cancelTeacherLink(school.id, x.id);
+      toast.show(t('page.cancelled'), 'success');
+    });
 
-  async function resetAll(): Promise<{ reset: number; failed: number } | null> {
-    const { passwords: fresh, failed } = await resetPasswords(school.id, sorted.map((x) => x.id));
-    for (const [id, pw] of Object.entries(fresh)) setSessionPassword(id, pw);
-    setResetBatch(fresh);
-    const reset = Object.keys(fresh).length;
-    return reset === 0 ? null : { reset, failed };
+  const linkSelf = (x: Teacher) =>
+    act(`self:${x.id}`, async () => {
+      await api.linkSelf(school.id, x.id);
+      toast.show(t('page.linkSelfDone'), 'success');
+      await refreshClaims().catch(() => undefined);
+    });
+
+  async function unlink(x: Teacher): Promise<string | null> {
+    try {
+      await api.unlinkTeacher(school.id, x.id);
+      toast.show(t('page.unlinked', { name: teacherDisplayName(x, lang) }), 'success');
+      if (isSelf(x)) void signOut().catch(() => undefined);
+      return null;
+    } catch (err) {
+      return accountActionError(err, t);
+    }
+  }
+
+  function status(x: Teacher) {
+    if (x.uid) {
+      return (
+        <>
+          <Badge tone="success">{t('status.linked')}</Badge>
+          <span className="mt-1 block text-xs text-ink-muted">
+            {x.lastLoginAt ? t('status.lastLogin', { when: formatLogin(x.lastLoginAt, lang) }) : t('status.neverSignedIn')}
+          </span>
+        </>
+      );
+    }
+    return (
+      <>
+        {pendingFor.has(x.id) ? <Badge tone="warning">{t('status.pending')}</Badge> : <Badge>{t('status.notLinked')}</Badge>}
+        {liveLink(x) && (
+          <span className="mt-1 block text-xs text-ink-muted">{t('status.linkUntil', { when: formatLogin(x.inviteExpiresAt!, lang) })}</span>
+        )}
+      </>
+    );
   }
 
   const add = (
@@ -111,14 +167,14 @@ export function TeachersPage() {
               onChange={(e) => setSearch(e.target.value)}
             />
           </div>
-          <Button onClick={() => setDialog({ kind: 'printAll' })} disabled={teachers.length === 0}>
-            {t('page.printAll')}
-          </Button>
           {!readOnly && <Button onClick={() => setDialog({ kind: 'import' })}>{t('import:open')}</Button>}
           {!readOnly && add}
           </>
         }
       />
+
+      <JoinRequests schoolId={school.id} requests={requests} teachers={teachers} readOnly={readOnly} />
+      {!readOnly && <InviteLinkCard schoolId={school.id} />}
 
       {state.loading ? (
         <LoadingState />
@@ -137,7 +193,7 @@ export function TeachersPage() {
               <Th>{t('page.cols.maxPerDay')}</Th>
               <Th>{t('page.cols.load')}</Th>
               <Th>{t('page.cols.classTeacher')}</Th>
-              <Th>{t('page.cols.login')}</Th>
+              <Th>{t('page.cols.account')}</Th>
               {!readOnly && <Th>{t('page.cols.actions')}</Th>}
             </tr>
           </THead>
@@ -171,20 +227,37 @@ export function TeachersPage() {
                 </Td>
                 <Td>{loadText(x)}</Td>
                 <Td>{classes.filter((c) => c.classTeacherId === x.id).map((c) => c.name).join(', ')}</Td>
-                <Td>
-                  <span className={x.lastLoginAt ? 'text-ink-soft' : 'text-danger'}>
-                    {formatLogin(x.lastLoginAt, lang, t('page.neverLoggedIn'))}
-                  </span>
-                </Td>
+                <Td>{status(x)}</Td>
                 {!readOnly && (
                   <Td>
-                    <div className="flex gap-1">
+                    <div className="flex flex-wrap gap-1">
                       <Button size="sm" variant="ghost" onClick={() => setDialog({ kind: 'edit', teacher: x })}>
                         {t('page.edit')}
                       </Button>
                       <Button size="sm" variant="ghost" onClick={() => setDialog({ kind: 'delete', teacher: x })}>
                         {t('page.delete')}
                       </Button>
+                      {x.uid ? (
+                        <Button size="sm" variant="ghost" onClick={() => setDialog({ kind: 'unlink', teacher: x })}>
+                          {t('actions.unlink')}
+                        </Button>
+                      ) : (
+                        <>
+                          <Button size="sm" variant="ghost" loading={busy === `link:${x.id}`} disabled={busy !== null} onClick={() => void personalLink(x)}>
+                            {t('actions.personalLink')}
+                          </Button>
+                          {liveLink(x) && (
+                            <Button size="sm" variant="ghost" loading={busy === `cancel:${x.id}`} disabled={busy !== null} onClick={() => void cancelLink(x)}>
+                              {t('actions.cancelLink')}
+                            </Button>
+                          )}
+                          {canLinkSelf && (
+                            <Button size="sm" variant="ghost" loading={busy === `self:${x.id}`} disabled={busy !== null} onClick={() => void linkSelf(x)}>
+                              {t('actions.thisIsMe')}
+                            </Button>
+                          )}
+                        </>
+                      )}
                     </div>
                   </Td>
                 )}
@@ -196,22 +269,16 @@ export function TeachersPage() {
 
       {dialog?.kind === 'edit' && <TeacherModal key={dialog.teacher?.id ?? 'new'} teacher={dialog.teacher} onClose={() => setDialog(null)} />}
       {dialog?.kind === 'import' && <ImportModal onClose={() => setDialog(null)} />}
-      {dialog?.kind === 'printAll' && (
-        <PrintAllModal
-          total={sorted.length}
-          known={known.length}
-          onPrintKnown={() => {
-            setDialog(null);
-            void printTeachers(known, passwords);
-          }}
-          readOnly={readOnly}
-          onResetAll={resetAll}
-          onPrintReset={() => {
-            setDialog(null);
-            void printTeachers(sorted.filter((x) => resetBatch[x.id]), resetBatch);
-          }}
+      {dialog?.kind === 'personalLink' && (
+        <PersonalLinkModal
+          name={teacherDisplayName(dialog.teacher, lang)}
+          url={dialog.url}
+          expiresAt={dialog.expiresAt}
           onClose={() => setDialog(null)}
         />
+      )}
+      {dialog?.kind === 'unlink' && (
+        <UnlinkModal name={teacherDisplayName(dialog.teacher, lang)} self={isSelf(dialog.teacher)} onConfirm={() => unlink(dialog.teacher)} onClose={() => setDialog(null)} />
       )}
       {dialog?.kind === 'delete' && (
         <DeleteSetupModal
@@ -220,6 +287,15 @@ export function TeachersPage() {
           id={dialog.teacher.id}
           name={teacherDisplayName(dialog.teacher, lang)}
           knownUsedIn={slotUsage(dialog.teacher.id) + classes.filter((c) => c.classTeacherId === dialog.teacher.id).length}
+          {...(isSelf(dialog.teacher) && {
+            body: (
+              <>
+                {t('deleteGuard.body.teacher')}
+                <span className="mt-3 block font-semibold text-danger">{t('unlink.selfBody')}</span>
+              </>
+            ),
+            onDeleted: () => void signOut().catch(() => undefined),
+          })}
           onClose={() => setDialog(null)}
         />
       )}

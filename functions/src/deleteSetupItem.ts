@@ -1,12 +1,14 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
 // Copyright (C) 2026 Kanushka Gayan
 import { DAY_INDEXES, paths, rowsFor, usageCount, type DeleteSetupItemReq, type DeleteSetupItemRes, type PlanItem, type SchoolContext } from '@sathiya/core';
-import { FieldValue } from 'firebase-admin/firestore';
+import { FieldValue, type DocumentSnapshot, type QuerySnapshot } from 'firebase-admin/firestore';
 import { onCall } from 'firebase-functions/v2/https';
 import { auth, db } from './lib/admin';
 import { callOpts } from './lib/callOptions';
+import { syncClaimsAndRevoke } from './lib/claims';
 import { docId, fail, invalid, obj, requireSchoolAdmin } from './lib/guards';
 import { loadContext } from './lib/loadContext';
+import { runTx } from './lib/tx';
 import { latestYearEntries } from './lib/yearEntries';
 
 type Kind = DeleteSetupItemReq['kind'];
@@ -79,16 +81,31 @@ export const deleteSetupItem = onCall(callOpts, async (req): Promise<DeleteSetup
     return { deleted: true, usedIn: 0 };
   }
 
-  const uid = snap.get('uid') as string | undefined;
-  const linked = await db.collection(paths.members(sid)).where('teacherId', '==', id).get();
-  const batch = db.batch();
-  batch.delete(ref);
-  if (uid) batch.delete(db.doc(`${paths.members(sid)}/${uid}`));
-  // Admin members linked to this teacher keep their admin role but lose the link.
-  for (const m of linked.docs) if (m.id !== uid) batch.update(m.ref, { teacherId: FieldValue.delete() });
-  if (uid) {
-    await auth.deleteUser(uid).catch((e: { code?: string }) => (e.code === 'auth/user-not-found' ? undefined : Promise.reject(e)));
-  }
-  await batch.commit();
+  const membersRef = db.collection(paths.members(sid));
+  const requestsRef = db.collection(paths.joinRequests(sid));
+  const accountsOf = (teacher: DocumentSnapshot, linked: QuerySnapshot) => {
+    const uid = teacher.get('uid') as string | undefined;
+    return [...new Set([...linked.docs.map((m) => m.id), ...(uid ? [uid] : [])])];
+  };
+  // Revoke first: if the commit or claim sync then fails, the accounts must sign in again, where claimInvites repairs claims.
+  const revoked = accountsOf(snap, await membersRef.where('teacherId', '==', id).get());
+  await Promise.all(revoked.map((u) => auth.revokeRefreshTokens(u)));
+  const affected = await runTx(async (tx) => {
+    const [teacher, linked, requests] = await Promise.all([tx.get(ref), tx.get(membersRef.where('teacherId', '==', id)), tx.get(requestsRef.where('teacherId', '==', id))]);
+    if (!teacher.exists) fail('not-found', 'invalid', 'Unknown teacher');
+    const uids = accountsOf(teacher, linked);
+    const members = await Promise.all(uids.map((u) => tx.get(membersRef.doc(u))));
+    tx.delete(ref);
+    requests.docs.forEach((r) => tx.delete(r.ref));
+    // An admin member is never removed: it only loses the link to this teacher. A teacher-only member is removed.
+    for (const m of members) {
+      if (!m.exists) continue;
+      if (m.get('role') === 'admin') {
+        if (m.get('teacherId') === id) tx.update(m.ref, { teacherId: FieldValue.delete() });
+      } else tx.delete(m.ref);
+    }
+    return members.filter((m) => m.exists).map((m) => m.id);
+  });
+  await syncClaimsAndRevoke(affected);
   return { deleted: true, usedIn: 0 };
 });

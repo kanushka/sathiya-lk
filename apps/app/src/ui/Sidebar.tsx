@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
 // Copyright (C) 2026 Kanushka Gayan
 
-import { pickName, type Lang, type School } from '@sathiya/core';
+import { pickName, teacherIdOf, type Lang, type School } from '@sathiya/core';
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { NavLink } from 'react-router-dom';
@@ -9,9 +9,11 @@ import { useAuth } from '../app/AuthProvider';
 import { useMaybeLang } from '../app/LangProvider';
 import { useSchool, useYear } from '../app/SchoolProvider';
 import { SuperAdminLink } from '../features/superadmin/SuperAdminLink';
+import { useJoinRequests } from '../features/teachers/useJoinRequests';
 import { cx } from './cx';
 import { Icon, type IconName } from './Icon';
 import { PHONE_QUERY } from './PhoneNotice';
+import { SchoolSwitcher } from './SchoolSwitcher';
 import { Select } from './Select';
 
 export type NavGroup = 'main' | 'timetable' | 'setup' | 'school';
@@ -84,7 +86,7 @@ export interface SidebarProps {
   readOnly?: boolean;
 }
 
-export function Sidebar({ basePath = '/admin', readOnly = false }: SidebarProps) {
+export function Sidebar({ basePath: baseProp, readOnly = false }: SidebarProps) {
   const { t, i18n } = useTranslation('shell');
   const lang: Lang = i18n.language === 'si' ? 'si' : 'en';
   const { claims, signOut } = useAuth();
@@ -94,6 +96,8 @@ export function Sidebar({ basePath = '/admin', readOnly = false }: SidebarProps)
   const [collapsed, setCollapsed] = useState(readCollapsed);
   const name = pickName(school, lang);
   const currentYear = years.find((y) => y.id === yearId);
+  const basePath = baseProp ?? `/s/${school.id}/admin`;
+  const pending = useJoinRequests(readOnly ? null : school.id).data.length;
 
   function toggle() {
     const next = !collapsed;
@@ -152,6 +156,7 @@ export function Sidebar({ basePath = '/admin', readOnly = false }: SidebarProps)
               <Icon name="chevronLeft" size={16} strokeWidth={2} />
             </button>
           </div>
+          {!readOnly && <SchoolSwitcher current={school.id} className="mx-1 mt-3 w-[calc(100%-8px)]" />}
           {years.length === 0 ? (
             <>
               <p className={yearLabelClass}>{t('sidebar.year')}</p>
@@ -192,16 +197,20 @@ export function Sidebar({ basePath = '/admin', readOnly = false }: SidebarProps)
                 ))}
               {items.map((item) => {
                 const label = t(item.labelKey);
+                const count = item.path === '/admin/teachers' ? pending : 0;
+                const countLabel = count > 0 ? t('nav.joinRequests', { count }) : '';
+                const fullLabel = count > 0 ? `${label}, ${countLabel}` : label;
                 return (
                   <NavLink
                     key={item.path}
                     to={navHref(basePath, item.path)}
                     end={item.path === '/admin'}
-                    aria-label={collapsed ? label : undefined}
-                    title={collapsed ? label : undefined}
+                    aria-label={collapsed ? fullLabel : undefined}
+                    title={collapsed ? fullLabel : undefined}
                     className={({ isActive }) =>
                       cx(
                         linkBase,
+                        'relative',
                         collapsed ? 'h-11 w-11 justify-center' : 'gap-2.5 px-3 py-[9px]',
                         isActive && linkActive,
                       )
@@ -209,6 +218,17 @@ export function Sidebar({ basePath = '/admin', readOnly = false }: SidebarProps)
                   >
                     <Icon name={item.icon} size={collapsed ? 20 : 18} />
                     {!collapsed && label}
+                    {count > 0 && (
+                      <span
+                        className={cx(
+                          'flex h-5 min-w-5 items-center justify-center rounded-full bg-fill-warning px-1.5 text-[11px] font-bold text-ink',
+                          collapsed ? 'absolute right-0 top-0' : 'ml-auto',
+                        )}
+                      >
+                        <span aria-hidden="true">{count}</span>
+                        {!collapsed && <span className="sr-only">{countLabel}</span>}
+                      </span>
+                    )}
                   </NavLink>
                 );
               })}
@@ -218,9 +238,9 @@ export function Sidebar({ basePath = '/admin', readOnly = false }: SidebarProps)
       </div>
 
       <div className={cx('mt-auto flex flex-col gap-0.5 border-t border-line-soft pt-3', collapsed ? 'w-full items-center' : '')}>
-        {claims.tid && !readOnly && (
+        {teacherIdOf(claims, school.id) && !readOnly && (
           <NavLink
-            to="/me"
+            to={`/s/${school.id}/me`}
             aria-label={collapsed ? t('nav.myTimetable') : undefined}
             title={collapsed ? t('nav.myTimetable') : undefined}
             className={cx(linkBase, collapsed ? 'h-11 w-11 justify-center' : 'gap-2.5 px-3 py-[9px]')}

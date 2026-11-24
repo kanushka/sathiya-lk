@@ -37,7 +37,7 @@ async function chooseTeacher(page: Page, subject: string, name: RegExp) {
 
 test('class view: pin a two-option religion group past a busy teacher', async ({ page }) => {
   await loginAdmin(page, ADMIN.email, ADMIN.password);
-  await page.goto(`/admin/timetable/class/${C.c6c}`);
+  await page.goto(`/s/${SID}/admin/timetable/class/${C.c6c}`);
 
   const plus = page.getByRole('button', { name: 'Wednesday, period 5, 10:50–11:30: empty, Add lesson' });
   await plus.click();

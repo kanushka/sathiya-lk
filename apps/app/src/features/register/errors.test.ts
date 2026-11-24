@@ -6,11 +6,11 @@ import { registerFailure } from './errors';
 
 describe('registerFailure', () => {
   it('reads the code and school id from error details', () => {
-    const err = new ApiError('invalid', 'x', { code: 'census-taken', schoolId: 's1' });
-    expect(registerFailure(err)).toEqual({ code: 'census-taken', schoolId: 's1' });
+    const err = new ApiError('invalid', 'x', { code: 'school-registered', schoolId: 's1' });
+    expect(registerFailure(err)).toEqual({ code: 'school-registered', schoolId: 's1' });
   });
 
-  it.each(['email-unverified', 'already-has-school', 'rate-limited'] as const)('recognises %s', (code) => {
+  it.each(['email-unverified', 'too-many-schools', 'rate-limited'] as const)('recognises %s', (code) => {
     expect(registerFailure(new ApiError('invalid', 'x', { code }))).toEqual({ code });
   });
 

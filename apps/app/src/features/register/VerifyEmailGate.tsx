@@ -11,21 +11,24 @@ import * as api from './api';
 
 export interface VerifyEmailGateProps {
   email?: string | null;
-  onConfirmed(): void;
+  purpose?: 'register' | 'signUp';
+  continuePath?: string;
+  initialError?: string | null;
+  onConfirmed(): void | Promise<void>;
 }
 
-export function VerifyEmailGate({ email, onConfirmed }: VerifyEmailGateProps) {
+export function VerifyEmailGate({ email, purpose = 'register', continuePath, initialError = null, onConfirmed }: VerifyEmailGateProps) {
   const { t } = useTranslation('register');
   const { lang } = useLang();
   const [busy, setBusy] = useState<'confirm' | 'resend' | null>(null);
-  const [message, setMessage] = useState<{ kind: 'info' | 'error'; text: string } | null>(null);
+  const [message, setMessage] = useState<{ kind: 'info' | 'error'; text: string } | null>(initialError ? { kind: 'error', text: initialError } : null);
 
   async function confirm() {
     setBusy('confirm');
     setMessage(null);
     try {
       if (await api.confirmVerified()) {
-        onConfirmed();
+        await onConfirmed();
         return;
       }
       setMessage({ kind: 'error', text: t('verify.notYet') });
@@ -40,7 +43,7 @@ export function VerifyEmailGate({ email, onConfirmed }: VerifyEmailGateProps) {
     setBusy('resend');
     setMessage(null);
     try {
-      await sendAuthEmail({ kind: 'verify', lang });
+      await sendAuthEmail({ kind: 'verify', lang, ...(continuePath && { continuePath }) });
       setMessage({ kind: 'info', text: t('verify.sent') });
     } catch (err) {
       setMessage({ kind: 'error', text: t(detailCode(err) === 'rate-limited' ? 'errors.rateLimited' : 'verify.sendFailed') });
@@ -56,7 +59,7 @@ export function VerifyEmailGate({ email, onConfirmed }: VerifyEmailGateProps) {
       </span>
       <h2 className="mb-2 mt-0 text-xl font-bold">{t('verify.title')}</h2>
       <p className="mb-5 mt-0 text-sm leading-relaxed text-ink-muted">
-        <Trans t={t} i18nKey="verify.body" values={{ email: email ?? '' }} components={{ b: <b className="text-ink" /> }} />
+        <Trans t={t} i18nKey={purpose === 'signUp' ? 'verify.bodySignUp' : 'verify.body'} values={{ email: email ?? '' }} components={{ b: <b className="text-ink" /> }} />
       </p>
       <div className="flex flex-wrap justify-center gap-3">
         <Button variant="primary" size="lg" loading={busy === 'confirm'} disabled={busy === 'resend'} onClick={() => void confirm()}>

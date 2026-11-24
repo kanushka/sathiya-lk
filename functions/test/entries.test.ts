@@ -1,11 +1,11 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
 // Copyright (C) 2026 Kanushka Gayan
-import { paths, syntheticEmail } from '@sathiya/core';
+import { paths } from '@sathiya/core';
 import { C, entry, S, T } from '@sathiya/core/fixtures';
 import type { CallableRequest } from 'firebase-functions/v2/https';
 import { describe, expect, it } from 'vitest';
 import { saveEntry as saveEntryFn } from '../src/saveEntry';
-import { adminDb, adminWithSchool, expectFnError, makeSuper, signIn, signUp, teacherInput } from './helpers';
+import { adminDb, adminWithSchool, expectFnError, linkedTeacher, makeSuper, signUp } from './helpers';
 import { draft, entriesOf, putEntries, seededSchool, YEAR } from './seed';
 
 const save = (c: { call: (n: 'saveEntry', r: never) => Promise<unknown> }, sid: string, entry: ReturnType<typeof draft>, yearId = YEAR) =>
@@ -159,8 +159,7 @@ describe('saveEntry', () => {
     const e = draft(0, 1, [C.c6a], [[S.maths, T.bandara]]);
     const { admin: other } = await adminWithSchool();
     await expectFnError(save(other, sid, e), 'permission-denied', 'not-allowed');
-    const { password } = await admin.call('createTeacher', { schoolId: sid, teacher: teacherInput('SCC101') });
-    const teacher = await signIn(syntheticEmail('SCC101', sid), password);
+    const { teacher } = await linkedTeacher(admin, sid, 'SCC101');
     await expectFnError(save(teacher, sid, e), 'permission-denied', 'not-allowed');
     const sup = await signUp();
     await makeSuper(sup);

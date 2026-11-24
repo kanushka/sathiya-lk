@@ -1,34 +1,31 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
 // Copyright (C) 2026 Kanushka Gayan
 import { expect, type Locator, type Page } from '@playwright/test';
-import { school } from '@sathiya/core/fixtures';
 import { admin, HOST, PORTS, PROJECT_ID, TERMS_VERSION } from '../scripts/seed';
 
 export const SHOTS = new URL('./__screenshots__/', import.meta.url).pathname;
 
 export const shot = (page: Page, name: string) => page.screenshot({ path: `${SHOTS}${name}.png`, fullPage: true });
 
-export const adminForm = (page: Page) => page.getByRole('tabpanel', { name: 'School admin' });
-export const teacherForm = (page: Page) => page.getByRole('tabpanel', { name: 'Teacher' });
-
-export async function loginAdmin(page: Page, email: string, password: string, landing: RegExp = /\/admin$/): Promise<void> {
+export async function signIn(page: Page, email: string, password: string): Promise<void> {
   await page.goto('/login');
-  const form = adminForm(page);
-  await form.getByLabel('Email').fill(email);
-  await form.getByLabel('Password', { exact: true }).fill(password);
-  await form.getByRole('button', { name: 'Log in' }).click();
+  await submitSignIn(page, email, password);
+}
+
+export async function submitSignIn(page: Page, email: string, password: string): Promise<void> {
+  await page.getByLabel('Email').fill(email);
+  await page.getByLabel('Password', { exact: true }).fill(password);
+  await page.getByRole('button', { name: 'Log in' }).click();
+}
+
+export async function loginAdmin(page: Page, email: string, password: string, landing: RegExp = /\/s\/[^/]+\/admin$/): Promise<void> {
+  await signIn(page, email, password);
   await expect(page).toHaveURL(landing);
 }
 
-export async function loginTeacher(page: Page, staffId: string, password: string, schoolName = school.nameEn): Promise<void> {
-  await page.goto('/login?as=teacher');
-  const form = teacherForm(page);
-  await form.getByRole('combobox').fill(schoolName.slice(0, 8));
-  await page.getByRole('option', { name: new RegExp(schoolName) }).click();
-  await form.getByLabel('Staff ID').fill(staffId);
-  await form.getByLabel('Password', { exact: true }).fill(password);
-  await form.getByRole('button', { name: 'Log in' }).click();
-  await expect(page).toHaveURL(/\/me$/);
+export async function loginTeacher(page: Page, email: string, password: string): Promise<void> {
+  await signIn(page, email, password);
+  await expect(page).toHaveURL(/\/s\/[^/]+\/me$/);
 }
 
 export async function pick(scope: Page | Locator, name: string | RegExp, option: string | RegExp): Promise<void> {

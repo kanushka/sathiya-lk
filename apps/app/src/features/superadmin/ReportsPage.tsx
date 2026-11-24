@@ -73,7 +73,7 @@ export function ReportsPage({
               return (
                 <Tr key={r.id}>
                   <Td>
-                    <Link to={`/s/${r.schoolId}`} className="font-semibold text-teal underline-offset-2 hover:underline">
+                    <Link to={`/super/schools/${r.schoolId}/admin`} className="font-semibold text-teal underline-offset-2 hover:underline">
                       {school ? pickName(school, lang) : r.schoolId}
                     </Link>
                     {school?.status === 'disabled' && (
