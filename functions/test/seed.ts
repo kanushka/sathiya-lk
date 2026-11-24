@@ -47,3 +47,10 @@ export async function entriesOf(sid: string, yid = YEAR): Promise<Entry[]> {
   const snap = await adminDb.collection(paths.entries(sid, yid)).get();
   return snap.docs.map((d) => ({ id: d.id, ...d.data() }) as Entry);
 }
+
+export async function publishedSeed(entries: Entry[] = []): Promise<{ admin: Client; sid: string }> {
+  const r = await seededSchool();
+  await putEntries(r.sid, entries);
+  await r.admin.call('publishYear', { schoolId: r.sid, yearId: YEAR });
+  return r;
+}
