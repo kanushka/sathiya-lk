@@ -73,11 +73,11 @@ describe('built site', () => {
     expect(anchors).toEqual(expect.arrayContaining(['#features', '#how', '#faq']));
   });
 
-  it.each(['index.html', 'si/index.html'])('%s links to the app register, login and teacher login', (p) => {
+  it.each(['index.html', 'si/index.html'])('%s links to the app register and login', (p) => {
     const hrefs = attrs(read(p), 'a', 'href').map((h) => h.replace(/&amp;/g, '&'));
     expect(hrefs).toContain(`${APP}/register`);
     expect(hrefs).toContain(`${APP}/login`);
-    expect(hrefs).toContain(`${APP}/login?as=teacher`);
+    expect(hrefs.some((h) => h.includes('as=teacher'))).toBe(false);
   });
 
   it.each(allPaths)('%s footer links to report a school', (p) => {
