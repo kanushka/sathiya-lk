@@ -10,19 +10,34 @@ export interface RemapResult { moves: Array<{ entryId: string; period: number }>
 // one that overlaps nothing keeps its period number and is orphaned if that period no longer exists.
 export function remapEntries(before: PeriodTemplate, after: PeriodTemplate, entries: Entry[], classIds: string[]): RemapResult {
   const wanted = new Set(classIds);
-  const out: RemapResult = { moves: [], blocked: [], orphaned: [] };
+  const landed: Array<{ entry: Entry; period: number; move: boolean }> = [];
+  const blocked = new Set<Entry>();
   for (const e of entries) {
     if (!e.classIds.some((id) => wanted.has(id))) continue;
     const from = windowOf(before, e.day, e.period);
     if (!from) continue;
     const best = bestOverlapPeriod(after, e.day, from);
-    if (best !== null) {
-      if (best !== e.period) out.moves.push({ entryId: e.id, period: best });
-    } else if (rowsFor(after, e.day).some((r) => r.type !== 'period' && /^\d\d:\d\d$/.test(r.start) && overlaps(from, { start: toMinutes(r.start), end: toMinutes(r.end) }))) {
-      out.blocked.push(e);
-    } else if (!windowOf(after, e.day, e.period)) {
-      out.orphaned.push(e);
+    if (best !== null) landed.push({ entry: e, period: best, move: best !== e.period });
+    else if (rowsFor(after, e.day).some((r) => r.type !== 'period' && /^\d\d:\d\d$/.test(r.start) && overlaps(from, { start: toMinutes(r.start), end: toMinutes(r.end) }))) blocked.add(e);
+    else landed.push({ entry: e, period: e.period, move: false });
+  }
+
+  // Merged periods can put two entries in one slot; block every pair from different old periods sharing a class or teacher there.
+  const shares = (a: Entry, b: Entry) => a.classIds.some((c) => b.classIds.includes(c)) || a.teacherIds.some((t) => b.teacherIds.includes(t));
+  landed.forEach((x, i) => {
+    for (const y of landed.slice(i + 1)) {
+      if (x.entry.day === y.entry.day && x.period === y.period && x.entry.period !== y.entry.period && shares(x.entry, y.entry)) {
+        blocked.add(x.entry);
+        blocked.add(y.entry);
+      }
     }
+  });
+
+  const out: RemapResult = { moves: [], blocked: entries.filter((e) => blocked.has(e)), orphaned: [] };
+  for (const l of landed) {
+    if (blocked.has(l.entry)) continue;
+    if (l.move) out.moves.push({ entryId: l.entry.id, period: l.period });
+    else if (!windowOf(after, l.entry.day, l.period)) out.orphaned.push(l.entry);
   }
   return out;
 }

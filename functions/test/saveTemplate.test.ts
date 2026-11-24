@@ -77,6 +77,24 @@ describe('saveTemplate', () => {
     expect(err).toMatchObject({ code: 'functions/failed-precondition', details: { code: 'template-too-many-moves' } });
   });
 
+  it('refuses a save that merges two used periods and writes nothing', async () => {
+    const { admin, sid } = await seededSchool();
+    await putEntries(sid, [entry('e1', 0, 1, [C.c6a], [[S.maths, T.bandara]]), entry('e2', 0, 2, [C.c6a], [[S.science, T.gunasekara]])]);
+    const [p1, p2, ...rest] = defaultTemplate.rows;
+    const merged: TemplateRow[] = [{ type: 'period', start: p1!.start, end: p2!.end }, ...rest];
+    await expect(call(admin, sid, patchOf(merged), TPL.default, true)).resolves.toEqual({ moved: 0, blocked: 2, orphaned: 0 });
+    const err = await call(admin, sid, patchOf(merged)).then(
+      () => {
+        throw new Error('expected refusal');
+      },
+      (e: { code?: string; details?: { code?: string; count?: number } }) => e,
+    );
+    expect(err).toMatchObject({ code: 'functions/failed-precondition', details: { code: 'template-in-use', count: 2 } });
+    expect((await entriesOf(sid)).map((e) => e.period).sort()).toEqual([1, 2]);
+    const stored = (await adminDb.doc(`${paths.templates(sid)}/${TPL.default}`).get()).data();
+    expect(stored?.rows).toEqual(defaultTemplate.rows);
+  });
+
   it('writes the template when no entries use it', async () => {
     const { admin, sid } = await seededSchool();
     const rows = defaultTemplate.rows.slice(0, 3);

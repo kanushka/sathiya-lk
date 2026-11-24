@@ -60,18 +60,15 @@ export const saveTemplate = onCall(callOpts, async (req): Promise<SaveTemplateRe
   const ref = db.doc(`${paths.templates(sid)}/${templateId}`);
   const yid = await latestYearId(sid);
   return runTx(async (tx) => {
-    const [snap, classes, entrySnap] = await Promise.all([
-      tx.get(ref),
-      tx.get(db.collection(paths.classes(sid)).where('templateId', '==', templateId)),
-      yid ? tx.get(db.collection(paths.entries(sid, yid))) : Promise.resolve(undefined),
-    ]);
+    const [snap, classes] = await Promise.all([tx.get(ref), tx.get(db.collection(paths.classes(sid)).where('templateId', '==', templateId))]);
+    const entrySnap = classes.size > 0 && yid ? await tx.get(db.collection(paths.entries(sid, yid))) : undefined;
     if (!snap.exists) fail('not-found', 'invalid', 'Unknown template');
     const before = { ...(snap.data() as Omit<PeriodTemplate, 'id'>), id: templateId };
     const after: PeriodTemplate = { ...before, name: patch.name, mode: patch.mode, rows: patch.rows };
     delete after.days;
     if (patch.days) after.days = patch.days;
 
-    const entries = classes.size > 0 && entrySnap ? entrySnap.docs.map((d) => ({ ...(d.data() as Omit<Entry, 'id'>), id: d.id })) : [];
+    const entries = entrySnap ? entrySnap.docs.map((d) => ({ ...(d.data() as Omit<Entry, 'id'>), id: d.id })) : [];
     const { moves, blocked, orphaned } = remapEntries(before, after, entries, classes.docs.map((c) => c.id));
     const res: SaveTemplateRes = { moved: moves.length, blocked: blocked.length, orphaned: orphaned.length };
     if (dryRun) return res;

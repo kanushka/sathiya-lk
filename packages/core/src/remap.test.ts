@@ -73,4 +73,23 @@ describe('remapEntries', () => {
     const e = entry('a', 0, 1);
     expect(remapEntries(before, after, [e], ['c1'])).toEqual({ moves: [], blocked: [e], orphaned: [] });
   });
+
+  it('blocks when two periods merge into one', () => {
+    const after = tpl([p('07:45', '09:05'), p('09:05', '09:45')]);
+    const a = entry('a', 0, 1);
+    const b = entry('b', 0, 2);
+    const other = entry('c', 0, 2, ['c2']);
+    expect(remapEntries(before, after, [a, b, entry('d', 1, 2), other], ['c1', 'c2'])).toEqual({
+      moves: [{ entryId: 'd', period: 1 }, { entryId: 'c', period: 1 }],
+      blocked: [a, b],
+      orphaned: [],
+    });
+  });
+
+  it('blocks merged periods that share a teacher across classes', () => {
+    const after = tpl([p('07:45', '09:05'), p('09:05', '09:45')]);
+    const a = { ...entry('a', 0, 1, ['c1']), teacherIds: ['t1'] };
+    const b = { ...entry('b', 0, 2, ['c2']), teacherIds: ['t1'] };
+    expect(remapEntries(before, after, [a, b], ['c1', 'c2']).blocked).toEqual([a, b]);
+  });
 });
