@@ -54,8 +54,9 @@ export function PrintReliefPage() {
       return cmp(a.who ?? '', b.who ?? '') || cmp(a.r.start, b.r.start) || cmp(a.r.entryId, b.r.entryId);
     });
 
-  const th = { textAlign: 'left', padding: '8px 10px', fontSize: 13, background: '#F3F4F6', borderBottom: '1px solid #9aa1b2' } as const;
-  const td = { padding: '7px 10px', fontSize: 14, borderBottom: '1px solid #D5D9E2' } as const;
+  const th = { textAlign: 'left', padding: '8px 10px', fontSize: 13 } as const;
+  const td = { padding: '7px 10px', fontSize: 14 } as const;
+  const tdClass = 'border-b border-line-strong';
   const cols = ['reliefTeacher', 'period', 'time', 'class', 'subject', 'for'] as const;
 
   return (
@@ -67,7 +68,7 @@ export function PrintReliefPage() {
           <thead>
             <tr>
               {cols.map((c) => (
-                <th key={c} style={th}>
+                <th key={c} className="border-b border-line-hover bg-surface-2" style={th}>
                   {t(`relief.cols.${c}`)}
                 </th>
               ))}
@@ -75,21 +76,21 @@ export function PrintReliefPage() {
           </thead>
           <tbody>
             {rows.map(({ r, who }, i) => (
-              <tr key={`${r.entryId}|${r.absentTeacherId}|${i}`} data-uncovered={who === null ? 'true' : undefined} style={who === null ? { background: '#FDE8E8', color: '#9B1C1C', fontWeight: 700 } : undefined}>
-                <td style={td}>{who ?? t('relief.uncovered')}</td>
-                <td style={td}>{tc('periods.periodN', { n: r.period })}</td>
-                <td style={td}>
+              <tr key={`${r.entryId}|${r.absentTeacherId}|${i}`} data-uncovered={who === null ? 'true' : undefined} className={who === null ? 'bg-danger-soft font-bold text-danger' : undefined}>
+                <td className={tdClass} style={td}>{who ?? t('relief.uncovered')}</td>
+                <td className={tdClass} style={td}>{tc('periods.periodN', { n: r.period })}</td>
+                <td className={tdClass} style={td}>
                   {r.start}–{r.end}
                 </td>
-                <td style={td}>{label(r)?.cls ?? r.classIds.map((c) => classNames.get(c) ?? c).sort(cmp).join('+')}</td>
-                <td style={td}>{savedSubject(r) ?? subjectName(r.subjectId)}</td>
-                <td style={td}>{teacherName(r.absentTeacherId)}</td>
+                <td className={tdClass} style={td}>{label(r)?.cls ?? r.classIds.map((c) => classNames.get(c) ?? c).sort(cmp).join('+')}</td>
+                <td className={tdClass} style={td}>{savedSubject(r) ?? subjectName(r.subjectId)}</td>
+                <td className={tdClass} style={td}>{teacherName(r.absentTeacherId)}</td>
               </tr>
             ))}
           </tbody>
         </table>
 
-        <footer style={{ display: 'flex', justifyContent: 'flex-end', marginTop: 'auto', paddingTop: 12, fontSize: 11, color: '#5A6378' }}>
+        <footer className="text-ink-muted" style={{ display: 'flex', justifyContent: 'flex-end', marginTop: 'auto', paddingTop: 12, fontSize: 11 }}>
           {t('sheet.madeWith')}
         </footer>
       </div>

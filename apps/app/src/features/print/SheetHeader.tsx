@@ -16,11 +16,11 @@ export function SheetHeader({ schoolName, logoUrl, title, subtitle }: Props) {
       {logoUrl && <img data-testid="school-logo" src={logoUrl} alt="" width={56} height={56} style={{ objectFit: 'contain' }} />}
       <div style={{ flex: 1 }}>
         <p style={{ margin: 0, fontSize: 20, fontWeight: 800 }}>{pickName(schoolName, 'en')}</p>
-        {schoolName.nameEn.trim() && schoolName.nameSi && <p style={{ margin: '2px 0 0', fontSize: 14, color: '#3B4560' }}>{schoolName.nameSi}</p>}
+        {schoolName.nameEn.trim() && schoolName.nameSi && <p className="text-ink-soft" style={{ margin: '2px 0 0', fontSize: 14 }}>{schoolName.nameSi}</p>}
       </div>
       <div style={{ textAlign: 'right' }}>
         <h1 style={{ margin: 0, fontSize: 30, fontWeight: 800, color: 'var(--brand)', lineHeight: 1 }}>{title}</h1>
-        <p style={{ margin: '4px 0 0', fontSize: 13, color: '#3B4560' }}>{subtitle}</p>
+        <p className="text-ink-soft" style={{ margin: '4px 0 0', fontSize: 13 }}>{subtitle}</p>
       </div>
     </header>
   );
