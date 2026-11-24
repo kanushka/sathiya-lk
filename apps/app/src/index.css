@@ -25,3 +25,83 @@ body {
 a {
   color: var(--brand);
 }
+
+.loading-bell-icon {
+  transform-origin: 50% 15%;
+  animation: loading-bell-ring 2.4s ease-in-out infinite;
+}
+
+.loading-bell-a {
+  animation: loading-bell-a 5.2s ease-in-out infinite;
+}
+
+.loading-bell-b {
+  opacity: 0;
+  animation: loading-bell-b 5.2s ease-in-out infinite;
+}
+
+.loading-bell-period {
+  animation: loading-bell-period 2.45s infinite;
+}
+
+@keyframes loading-bell-ring {
+  0%,
+  55%,
+  100% {
+    transform: rotate(0);
+  }
+  10% {
+    transform: rotate(16deg);
+  }
+  20% {
+    transform: rotate(-14deg);
+  }
+  30% {
+    transform: rotate(9deg);
+  }
+  40% {
+    transform: rotate(-5deg);
+  }
+}
+
+@keyframes loading-bell-a {
+  0%,
+  42%,
+  100% {
+    opacity: 1;
+    transform: none;
+  }
+  50%,
+  92% {
+    opacity: 0;
+    transform: translateY(-6px);
+  }
+}
+
+@keyframes loading-bell-b {
+  0%,
+  42%,
+  100% {
+    opacity: 0;
+    transform: translateY(6px);
+  }
+  50%,
+  92% {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+@keyframes loading-bell-period {
+  12%,
+  30% {
+    background: var(--brand-2);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .loading-bell *,
+  .loading-bell-icon {
+    animation: none;
+  }
+}
