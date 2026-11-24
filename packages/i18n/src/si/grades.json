@@ -87,15 +87,15 @@
     "cleared": "{{name}} ශ්‍රේණි සැලැස්ම භාවිත කරයි"
   },
   "amount": {
-    "periods": "පැය",
+    "periods": "කාලච්ඡේද",
     "time": "කාලය",
     "hShort": "පැ.",
     "minShort": "මි.",
     "perDayShort": "මි. දිනකට",
     "unit": "ඉලක්කයේ ඒකකය",
     "unitFor": "{{name}} සඳහා ඉලක්කයේ ඒකකය",
-    "periodsUnit": "පැය",
-    "periodsUnitFor": "{{name}} සඳහා පැය",
+    "periodsUnit": "කාලච්ඡේද",
+    "periodsUnitFor": "{{name}} සඳහා කාලච්ඡේද",
     "timeUnit": "කාලය",
     "timeUnitFor": "{{name}} සඳහා කාලය",
     "hours": "සතියකට පැය",
