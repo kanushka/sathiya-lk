@@ -1,5 +1,6 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
 // Copyright (C) 2026 Kanushka Gayan
+import { createHash } from 'node:crypto';
 import { MAX_SCHOOLS, paths } from '@sathiya/core';
 import { describe, expect, it } from 'vitest';
 import { adminAuth, adminDb, adminWithSchool, expectFnError, linkedTeacher, signInGoogle, signUp, teacherInput, uniq, unverifiedSignUp } from './helpers';
@@ -156,5 +157,215 @@ describe('claimInvites', () => {
     const c = await signInGoogle(email, true);
     await expect(c.call('claimInvites', {})).resolves.toEqual({ schoolIds: [] });
     expect(await c.claims()).toEqual({});
+  });
+});
+
+const sha = (t: string) => createHash('sha256').update(t).digest('hex');
+const teacherDoc = async (sid: string, id: string) => (await adminDb.doc(`${paths.teachers(sid)}/${id}`).get()).data()!;
+const memberDoc = async (sid: string, uid: string) => (await adminDb.doc(`${paths.members(sid)}/${uid}`).get()).data();
+const requestDoc = async (sid: string, uid: string) => adminDb.doc(`${paths.joinRequests(sid)}/${uid}`).get();
+
+async function school(staffIds: string[] = ['SCC001'], emails: Record<string, string> = {}) {
+  const { admin, sid } = await adminWithSchool();
+  const ids: string[] = [];
+  for (const staffId of staffIds) {
+    const { teacherId } = await admin.call('createTeacher', { schoolId: sid, teacher: { ...teacherInput(staffId), ...(emails[staffId] && { email: emails[staffId] }) } });
+    ids.push(teacherId);
+  }
+  const { token } = await admin.call('setJoinLink', { schoolId: sid, action: 'create' });
+  return { admin, sid, ids, token: token! };
+}
+
+describe('setJoinLink', () => {
+  it('stores only the hash, replaces on create, deletes on off', async () => {
+    const { admin, sid, token } = await school();
+    const doc = (await adminDb.doc(paths.joinLink(sid)).get()).data()!;
+    expect(doc).toMatchObject({ hash: sha(token), createdBy: admin.uid });
+    const { token: next } = await admin.call('setJoinLink', { schoolId: sid, action: 'create' });
+    expect((await adminDb.doc(paths.joinLink(sid)).get()).get('hash')).toBe(sha(next!));
+    await expect(admin.call('setJoinLink', { schoolId: sid, action: 'off' })).resolves.toEqual({});
+    expect((await adminDb.doc(paths.joinLink(sid)).get()).exists).toBe(false);
+  });
+});
+
+describe('joinSchool with a school link', () => {
+  it('links the single teacher whose email matches', async () => {
+    const email = `t-${uniq()}@example.com`;
+    const { sid, ids, token } = await school(['SCC001', 'SCC002'], { SCC001: email.toUpperCase() });
+    const u = await signUp(email);
+    await expect(u.call('joinSchool', { schoolId: sid, token })).resolves.toEqual({ status: 'linked', schoolId: sid, teacherId: ids[0] });
+    expect(await u.claims()).toEqual({ schools: { [sid]: { r: 't', t: ids[0] } } });
+    expect((await teacherDoc(sid, ids[0]!)).uid).toBe(u.uid);
+  });
+
+  it('needs a staff ID when emails are duplicated, then queues a request', async () => {
+    const email = `d-${uniq()}@example.com`;
+    const { sid, ids, token } = await school(['SCC001', 'SCC002'], { SCC001: email, SCC002: email });
+    const u = await signUp(email);
+    await expectFnError(u.call('joinSchool', { schoolId: sid, token }), 'invalid-argument', 'invalid');
+    await expect(u.call('joinSchool', { schoolId: sid, token, staffId: 'SCC002' })).resolves.toEqual({ status: 'pending', schoolId: sid, teacherId: ids[1] });
+    expect((await requestDoc(sid, u.uid)).data()).toMatchObject({ uid: u.uid, email, staffId: 'SCC002', teacherId: ids[1] });
+    expect(await u.claims()).toEqual({});
+  });
+
+  it('refuses an unknown staff ID and a linked teacher', async () => {
+    const { admin, sid, token } = await school();
+    const u = await signUp();
+    await expectFnError(u.call('joinSchool', { schoolId: sid, token, staffId: 'NOPE' }), 'failed-precondition', 'staff-id-unknown');
+    await linkedTeacher(admin, sid, 'SCC009');
+    await expectFnError(u.call('joinSchool', { schoolId: sid, token, staffId: 'SCC009' }), 'failed-precondition', 'already-linked');
+  });
+
+  it('refuses a token of another school, and an off link', async () => {
+    const a = await school();
+    const b = await school();
+    const u = await signUp();
+    await expectFnError(u.call('joinSchool', { schoolId: a.sid, token: b.token, staffId: 'SCC001' }), 'failed-precondition', 'link-invalid');
+    await a.admin.call('setJoinLink', { schoolId: a.sid, action: 'off' });
+    await expectFnError(u.call('joinSchool', { schoolId: a.sid, token: a.token, staffId: 'SCC001' }), 'failed-precondition', 'link-invalid');
+  });
+
+  it('requires a verified email', async () => {
+    const { sid, token } = await school();
+    const u = await unverifiedSignUp();
+    await expectFnError(u.call('joinSchool', { schoolId: sid, token, staffId: 'SCC001' }), 'permission-denied', 'not-allowed');
+  });
+
+  it('limits join requests per account per day', async () => {
+    const { sid, token } = await school();
+    const u = await signUp();
+    for (let i = 0; i < 5; i++) await u.call('joinSchool', { schoolId: sid, token, staffId: 'SCC001' });
+    await expectFnError(u.call('joinSchool', { schoolId: sid, token, staffId: 'SCC001' }), 'resource-exhausted', 'rate-limited');
+  });
+
+  it('refuses when the account is at the school cap', async () => {
+    const { sid, token } = await school();
+    const u = await signUp();
+    await Promise.all(Array.from({ length: MAX_SCHOOLS }, (_, i) => adminDb.doc(`${paths.members(`cap-${i}`)}/${u.uid}`).set({ uid: u.uid, role: 'teacher' })));
+    await expectFnError(u.call('joinSchool', { schoolId: sid, token, staffId: 'SCC001' }), 'failed-precondition', 'too-many-schools');
+  });
+});
+
+describe('joinSchool with a personal link', () => {
+  it('links once; the second use is link-invalid', async () => {
+    const { admin, sid, ids } = await school();
+    const { token } = await admin.call('createTeacherLink', { schoolId: sid, teacherId: ids[0]! });
+    const u = await signUp();
+    await expect(u.call('joinSchool', { token })).resolves.toEqual({ status: 'linked', schoolId: sid, teacherId: ids[0] });
+    expect(await memberDoc(sid, u.uid)).toMatchObject({ role: 'teacher', teacherId: ids[0] });
+    expect((await adminDb.doc(`${paths.teacherLinks()}/${sha(token)}`).get()).exists).toBe(false);
+    const v = await signUp();
+    await expectFnError(v.call('joinSchool', { token }), 'failed-precondition', 'link-invalid');
+  });
+
+  it('refuses an expired link', async () => {
+    const { admin, sid, ids } = await school();
+    const { token } = await admin.call('createTeacherLink', { schoolId: sid, teacherId: ids[0]! });
+    await adminDb.doc(`${paths.teacherLinks()}/${sha(token)}`).update({ expiresAt: Date.now() - 1 });
+    const u = await signUp();
+    await expectFnError(u.call('joinSchool', { token }), 'failed-precondition', 'link-invalid');
+  });
+
+  it('drops the account own pending request when it links', async () => {
+    const { admin, sid, ids } = await school(['SCC001', 'SCC002']);
+    const u = await signUp();
+    const { token: joinToken } = await admin.call('setJoinLink', { schoolId: sid, action: 'create' });
+    await u.call('joinSchool', { schoolId: sid, token: joinToken!, staffId: 'SCC002' });
+    const { token } = await admin.call('createTeacherLink', { schoolId: sid, teacherId: ids[0]! });
+    await u.call('joinSchool', { token });
+    expect((await requestDoc(sid, u.uid)).exists).toBe(false);
+  });
+});
+
+describe('createTeacherLink and cancelTeacherLink', () => {
+  it('replaces the previous link, expires in 7 days, and can be cancelled', async () => {
+    const { admin, sid, ids } = await school();
+    const first = await admin.call('createTeacherLink', { schoolId: sid, teacherId: ids[0]! });
+    const second = await admin.call('createTeacherLink', { schoolId: sid, teacherId: ids[0]! });
+    expect((await adminDb.doc(`${paths.teacherLinks()}/${sha(first.token)}`).get()).exists).toBe(false);
+    const doc = (await adminDb.doc(`${paths.teacherLinks()}/${sha(second.token)}`).get()).data()!;
+    expect(doc).toMatchObject({ sid, teacherId: ids[0], createdBy: admin.uid, expiresAt: second.expiresAt });
+    expect(second.expiresAt - Date.now()).toBeGreaterThan(6.9 * 86_400_000);
+    await expect(admin.call('cancelTeacherLink', { schoolId: sid, teacherId: ids[0]! })).resolves.toEqual({ ok: true });
+    expect((await adminDb.doc(`${paths.teacherLinks()}/${sha(second.token)}`).get()).exists).toBe(false);
+  });
+
+  it('refuses a linked teacher', async () => {
+    const { admin, sid } = await adminWithSchool();
+    const { teacherId } = await linkedTeacher(admin, sid, 'SCC005');
+    await expectFnError(admin.call('createTeacherLink', { schoolId: sid, teacherId }), 'failed-precondition', 'already-linked');
+  });
+});
+
+describe('decideJoinRequest', () => {
+  it('approve links the teacher and removes the request', async () => {
+    const { admin, sid, ids, token } = await school();
+    const u = await signUp();
+    await u.call('joinSchool', { schoolId: sid, token, staffId: 'SCC001' });
+    await expect(admin.call('decideJoinRequest', { schoolId: sid, uid: u.uid, approve: true })).resolves.toEqual({ ok: true });
+    expect(await u.claims()).toEqual({ schools: { [sid]: { r: 't', t: ids[0] } } });
+    expect((await requestDoc(sid, u.uid)).exists).toBe(false);
+  });
+
+  it('reject deletes the request and links nothing', async () => {
+    const { admin, sid, ids, token } = await school();
+    const u = await signUp();
+    await u.call('joinSchool', { schoolId: sid, token, staffId: 'SCC001' });
+    await admin.call('decideJoinRequest', { schoolId: sid, uid: u.uid, approve: false });
+    expect((await requestDoc(sid, u.uid)).exists).toBe(false);
+    expect((await teacherDoc(sid, ids[0]!)).uid).toBeUndefined();
+  });
+
+  it('approve after the teacher was linked another way is already-linked', async () => {
+    const { admin, sid, ids, token } = await school();
+    const u = await signUp();
+    const { token: personal } = await admin.call('createTeacherLink', { schoolId: sid, teacherId: ids[0]! });
+    await (await signUp()).call('joinSchool', { token: personal });
+    await adminDb.doc(`${paths.joinRequests(sid)}/${u.uid}`).set({ uid: u.uid, email: 'x@example.com', staffId: 'SCC001', teacherId: ids[0], createdAt: Date.now() });
+    expect(token).toBeTruthy();
+    await expectFnError(admin.call('decideJoinRequest', { schoolId: sid, uid: u.uid, approve: true }), 'failed-precondition', 'already-linked');
+  });
+});
+
+describe('unlinkTeacher', () => {
+  it('removes a teacher member, clears claims and revokes sessions', async () => {
+    const { admin, sid } = await adminWithSchool();
+    const { teacher, teacherId } = await linkedTeacher(admin, sid, 'SCC006');
+    await expect(admin.call('unlinkTeacher', { schoolId: sid, teacherId })).resolves.toEqual({ ok: true });
+    expect((await teacherDoc(sid, teacherId)).uid).toBeUndefined();
+    expect(await memberDoc(sid, teacher.uid)).toBeUndefined();
+    expect((await adminAuth.getUser(teacher.uid)).customClaims).toEqual({});
+    expect(Date.parse((await adminAuth.getUser(teacher.uid)).tokensValidAfterTime!)).toBeGreaterThan(Date.now() - 60_000);
+  });
+
+  it('keeps the admin role of an admin who is also a teacher', async () => {
+    const { admin, sid } = await adminWithSchool();
+    const { teacherId } = await admin.call('createTeacher', { schoolId: sid, teacher: teacherInput('SCC007') });
+    await admin.call('linkSelf', { schoolId: sid, teacherId });
+    expect(await memberDoc(sid, admin.uid)).toMatchObject({ role: 'admin', teacherId });
+    await admin.call('unlinkTeacher', { schoolId: sid, teacherId });
+    const member = (await memberDoc(sid, admin.uid))!;
+    expect(member.role).toBe('admin');
+    expect(member.teacherId).toBeUndefined();
+    expect((await adminAuth.getUser(admin.uid)).customClaims).toEqual({ schools: { [sid]: { r: 'a' } } });
+  });
+});
+
+describe('linkSelf', () => {
+  it('links the admin and refuses a taken teacher', async () => {
+    const { admin, sid } = await adminWithSchool();
+    const { teacherId } = await admin.call('createTeacher', { schoolId: sid, teacher: teacherInput('SCC008') });
+    await admin.call('linkSelf', { schoolId: sid, teacherId });
+    expect(await admin.claims()).toEqual({ schools: { [sid]: { r: 'a', t: teacherId } } });
+    const { teacherId: other } = await linkedTeacher(admin, sid, 'SCC010');
+    await expectFnError(admin.call('linkSelf', { schoolId: sid, teacherId: other }), 'failed-precondition', 'already-linked');
+  });
+});
+
+describe('admin-only invite callables', () => {
+  it.each(['setJoinLink', 'decideJoinRequest', 'createTeacherLink', 'cancelTeacherLink', 'unlinkTeacher', 'linkSelf'] as const)('%s refuses a non-admin', async (name) => {
+    const { sid } = await adminWithSchool();
+    const stranger = await signUp();
+    await expectFnError(stranger.call(name, { schoolId: sid, teacherId: 't', uid: 'u', approve: true, action: 'create' } as never), 'permission-denied', 'not-allowed');
   });
 });

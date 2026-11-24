@@ -7,10 +7,8 @@ import { describe, expect, it } from 'vitest';
 import type { RegisterSchoolReq as RegisterSchoolInput } from '@sathiya/core';
 import { adminDb, client, expectFnError, makeSuper, schoolReq, signUp } from './helpers';
 
-const notYetBuilt = ['setJoinLink', 'joinSchool', 'decideJoinRequest', 'createTeacherLink', 'cancelTeacherLink', 'unlinkTeacher', 'linkSelf'];
-
 describe('unauthenticated', () => {
-  it.each(Object.keys(callables).filter((n) => !['saveEntry', 'deleteEntry', 'publishYear', 'deleteSetupItem', 'reportSchool', 'sendAuthEmail', 'checkCensusNo', ...notYetBuilt].includes(n)))(
+  it.each(Object.keys(callables).filter((n) => !['saveEntry', 'deleteEntry', 'publishYear', 'deleteSetupItem', 'reportSchool', 'sendAuthEmail', 'checkCensusNo'].includes(n)))(
     '%s refuses a signed-out caller',
     async (name) => {
       const c = client();

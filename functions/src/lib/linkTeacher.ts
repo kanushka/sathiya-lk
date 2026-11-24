@@ -36,4 +36,5 @@ export async function linkTeacher(tx: Transaction, sid: string, teacherId: strin
     { merge: true },
   );
   requests.docs.forEach((d) => tx.delete(d.ref));
+  tx.delete(db.doc(`${paths.joinRequests(sid)}/${uid}`));
 }
