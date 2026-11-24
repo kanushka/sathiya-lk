@@ -61,7 +61,7 @@ export function TimetableGrid({ rows, cellsFor, selected, onSelect, onActivate, 
   const times = Object.fromEntries(DAYS.map((d) => [d, periodTimes(rows[d])])) as Record<DayIndex, ReturnType<typeof periodTimes>>;
   let n = 0;
   const refRows: RefRow[] = rows[refDay].map((r) =>
-    r.type === 'interval' ? { kind: 'interval', start: r.start, end: r.end } : { kind: 'period', n: ++n },
+    r.type !== 'period' ? { kind: 'interval', start: r.start, end: r.end } : { kind: 'period', n: ++n },
   );
   const periodRows = refRows.filter((r): r is Extract<RefRow, { kind: 'period' }> => r.kind === 'period');
 

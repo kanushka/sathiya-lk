@@ -26,6 +26,11 @@ describe('staffingFor', () => {
     expect(staffingFor(grade(4), c).specialistSubjectIds).toEqual(['x']);
   });
 
+  it('does not detect Literature as English', () => {
+    const c = { ...ctx, subjects: [{ id: 'l', nameEn: 'Literature', short: 'L', color: '#fff' }, { id: 'm', nameEn: 'Mathematics', short: 'M', color: '#fff' }] };
+    expect(staffingFor(grade(4), c).specialistSubjectIds).toEqual([]);
+  });
+
   it('defaults Grade 6+ to subjectTeachers', () => {
     expect(staffingFor(grade(6), ctx)).toEqual({ mode: 'subjectTeachers', specialistSubjectIds: [] });
     expect(staffingFor(grade(11), ctx).mode).toBe('subjectTeachers');

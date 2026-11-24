@@ -35,6 +35,20 @@ describe('TimetableGrid', () => {
     expect(intervals.length).toBe(rows[0].filter((r) => r.type === 'interval').length);
   });
 
+  it('does not number activity rows as periods', () => {
+    const withActivity = Object.fromEntries(
+      days.map((d) => {
+        const [first, ...rest] = rows[d];
+        return [d, [first!, { type: 'activity', start: first!.end, end: first!.end, nameEn: 'Assembly' } as TemplateRow, ...rest]];
+      }),
+    ) as Record<DayIndex, TemplateRow[]>;
+    setup({ rows: withActivity });
+    const nPeriods = rows[0].filter((r) => r.type === 'period').length;
+    expect(screen.getAllByRole('button').length).toBe(nPeriods * 5);
+    expect(screen.getByRole('button', { name: new RegExp(`Monday, period ${nPeriods},`) })).toBeInTheDocument();
+    expect(screen.getAllByText(/^Interval ·/).length).toBe(rows[0].filter((r) => r.type === 'interval').length + 1);
+  });
+
   it('renders 5 day headers and a button per slot', () => {
     setup();
     const nPeriods = rows[0].filter((r) => r.type === 'period').length;
