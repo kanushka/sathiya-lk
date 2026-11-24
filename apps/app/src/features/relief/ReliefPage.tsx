@@ -169,6 +169,7 @@ function ReliefDayEditor({ sid, yid, date, day, readOnly, data, base, onDirty }:
   const { doc, snaps, stats, notified } = data;
 
   const [draft, setDraft] = useState<DayDraft | null>(null);
+  const [draftBase, setDraftBase] = useState<number | null>(null);
   const [lastSave, setLastSave] = useState<{ updatedAt: number; draft: DayDraft } | null>(null);
   const [saving, setSaving] = useState(false);
   const [problem, setProblem] = useState<Problem | null>(null);
@@ -220,6 +221,7 @@ function ReliefDayEditor({ sid, yid, date, day, readOnly, data, base, onDirty }:
 
   const edit = (fn: (d: DayDraft) => DayDraft) => {
     setResult(null);
+    if (draft === null) setDraftBase(doc?.updatedAt ?? null);
     setDraft((prev) => fn(prev ?? saved));
   };
   const setLeaves = (fn: (leaves: Leave[]) => Leave[]) => edit((d) => withLeaves(fn(d.leaves), d.reliefs, snaps, day));
@@ -261,11 +263,12 @@ function ReliefDayEditor({ sid, yid, date, day, readOnly, data, base, onDirty }:
         date,
         leaves: current.leaves,
         reliefs: current.reliefs,
-        expectedUpdatedAt: awaiting ? lastSave.updatedAt : (doc?.updatedAt ?? null),
+        expectedUpdatedAt: draft === null ? (doc?.updatedAt ?? null) : draftBase,
       });
       setResult(res);
       const sent = { leaves: current.leaves, reliefs: current.reliefs };
       setDraft(sent);
+      setDraftBase(res.updatedAt);
       setLastSave({ updatedAt: res.updatedAt, draft: sent });
     } catch (err) {
       const e = toApiError(err);
@@ -303,6 +306,7 @@ function ReliefDayEditor({ sid, yid, date, day, readOnly, data, base, onDirty }:
         day={day}
         names={names}
         readOnly={readOnly}
+        disabled={saving}
         addable={addable}
         onAdd={(id) => setLeaves((ls) => [...ls, { teacherId: id, type: 'full', entryIds: defaultTicks(id, 'full') }])}
         onType={(id, type) => setLeaves((ls) => ls.map((l) => (l.teacherId === id ? { ...l, type, entryIds: defaultTicks(id, type) } : l)))}
@@ -317,6 +321,7 @@ function ReliefDayEditor({ sid, yid, date, day, readOnly, data, base, onDirty }:
         gone={gone}
         names={names}
         readOnly={readOnly}
+        disabled={saving}
         candidatesOf={(i) => candidates[i] ?? []}
         errorsOf={errorsOf}
         status={status}

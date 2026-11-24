@@ -17,6 +17,7 @@ export interface LeaveListProps {
   day: DayIndex;
   names: Names;
   readOnly: boolean;
+  disabled?: boolean;
   addable: Teacher[];
   onAdd(teacherId: string): void;
   onType(teacherId: string, type: LeaveType): void;
@@ -24,7 +25,7 @@ export interface LeaveListProps {
   onRemove(teacherId: string): void;
 }
 
-export function LeaveList({ leaves, reliefs, snaps, day, names, readOnly, addable, onAdd, onType, onTick, onRemove }: LeaveListProps) {
+export function LeaveList({ leaves, reliefs, snaps, day, names, readOnly, disabled = false, addable, onAdd, onType, onTick, onRemove }: LeaveListProps) {
   const { t } = useTranslation('relief');
 
   return (
@@ -39,6 +40,7 @@ export function LeaveList({ leaves, reliefs, snaps, day, names, readOnly, addabl
             getKey={(x) => x.id}
             getLabel={(x) => names.teacher(x.id)}
             onChange={(x) => onAdd(x.id)}
+            disabled={disabled}
             placeholder={`+ ${t('leave.add')}`}
             searchPlaceholder={t('leave.search')}
             className="w-full sm:w-64"
@@ -65,13 +67,13 @@ export function LeaveList({ leaves, reliefs, snaps, day, names, readOnly, addabl
                     {readOnly && <Badge className="mt-1">{t(`types.${leave.type}`)}</Badge>}
                   </div>
                   {!readOnly && (
-                    <IconButton icon="close" size="sm" label={t('leave.remove', { name })} onClick={() => onRemove(leave.teacherId)} />
+                    <IconButton icon="close" size="sm" label={t('leave.remove', { name })} disabled={disabled} onClick={() => onRemove(leave.teacherId)} />
                   )}
                 </div>
                 {!readOnly && (
                   <div role="group" aria-label={t('leave.type')} className="mt-2 flex flex-wrap gap-1.5">
                     {LEAVE_TYPES.map((type) => (
-                      <ToggleChip key={type} pressed={leave.type === type} onToggle={() => onType(leave.teacherId, type)}>
+                      <ToggleChip key={type} pressed={leave.type === type} disabled={disabled} onToggle={() => onType(leave.teacherId, type)}>
                         {t(`types.${type}`)}
                       </ToggleChip>
                     ))}
@@ -94,6 +96,7 @@ export function LeaveList({ leaves, reliefs, snaps, day, names, readOnly, addabl
                           key={c.entryId}
                           checked={ticked.has(c.entryId!)}
                           onChange={(on) => onTick(leave.teacherId, c.entryId!, on)}
+                          disabled={disabled}
                           label={names.lesson(c)}
                           className="min-h-8 items-center"
                         />

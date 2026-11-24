@@ -136,6 +136,37 @@ describe('relief page', () => {
     expect(vi.mocked(call).mock.calls.map((c) => (c[1] as { expectedUpdatedAt: number | null }).expectedUpdatedAt)).toEqual([1000, 2000]);
   });
 
+  it('sends the version the draft was based on after another admin saves', async () => {
+    vi.mocked(call).mockResolvedValue({ updatedAt: 3000, queued: 0, skippedNoEmail: 0, uncovered: 0 });
+    const saved: ReliefDay = { date: '2026-11-24', day: TUE, leaves: [], reliefs: [], names: {}, updatedAt: 1000, updatedBy: 'u' };
+    vi.mocked(useReliefDay).mockReturnValue(state({ doc: saved }));
+    const user = setup();
+    const card = await markMorning(user);
+    vi.mocked(useReliefDay).mockReturnValue(state({ doc: { ...saved, updatedAt: 1500, updatedBy: 'other' } }));
+    await user.click(within(card).getByRole('button', { name: /Remove/ }));
+    expect(screen.getByRole('button', { name: 'Save & notify' })).toBeDisabled();
+    await markMorning(user);
+    await user.click(screen.getByRole('button', { name: 'Save & notify' }));
+    expect(call).toHaveBeenCalledWith('saveReliefDay', expect.objectContaining({ expectedUpdatedAt: 1000 }));
+  });
+
+  it('locks every edit control while the save is in flight', async () => {
+    let finish: (v: unknown) => void = () => undefined;
+    vi.mocked(call).mockReturnValue(new Promise((r) => { finish = r; }) as never);
+    const user = setup();
+    const card = await markMorning(user);
+    await user.click(screen.getByRole('button', { name: 'Suggest relief' }));
+    await user.click(screen.getByRole('button', { name: 'Save & notify' }));
+    expect(within(card).getByRole('checkbox', { name: /P1/ })).toBeDisabled();
+    expect(within(card).getByRole('button', { name: 'Afternoon' })).toBeDisabled();
+    expect(within(card).getByRole('button', { name: /Remove/ })).toBeDisabled();
+    expect(screen.getByRole('button', { name: /Add teacher/ })).toBeDisabled();
+    expect(screen.getByRole('button', { name: 'Suggest relief' })).toBeDisabled();
+    for (const b of screen.getAllByRole('button', { name: /^Relief for/ })) expect(b).toBeDisabled();
+    await act(async () => finish({ updatedAt: 2000, queued: 0, skippedNoEmail: 0, uncovered: 0 }));
+    expect(within(card).getByRole('checkbox', { name: /P1/ })).toBeEnabled();
+  });
+
   it('counts empty slots as without relief before suggesting', async () => {
     const user = setup();
     await markMorning(user);

@@ -17,6 +17,7 @@ export interface ReliefListProps {
   gone?: Relief[];
   names: Names;
   readOnly: boolean;
+  disabled?: boolean;
   candidatesOf(index: number): Candidate[];
   errorsOf(r: Relief): string[];
   status(r: Relief): ReactNode;
@@ -24,7 +25,7 @@ export interface ReliefListProps {
   onSuggest(): void;
 }
 
-export function ReliefList({ reliefs, gone = [], names, readOnly, candidatesOf, errorsOf, status, onPick, onSuggest }: ReliefListProps) {
+export function ReliefList({ reliefs, gone = [], names, readOnly, disabled = false, candidatesOf, errorsOf, status, onPick, onSuggest }: ReliefListProps) {
   const { t } = useTranslation('relief');
   const [open, setOpen] = useState<number | null>(null);
   const openRelief = open === null ? undefined : reliefs[open];
@@ -36,7 +37,7 @@ export function ReliefList({ reliefs, gone = [], names, readOnly, candidatesOf, 
           {t('reliefs.title')}
         </h2>
         {!readOnly && (
-          <Button variant="secondary" size="sm" onClick={onSuggest} disabled={reliefs.length === 0}>
+          <Button variant="secondary" size="sm" onClick={onSuggest} disabled={disabled || reliefs.length === 0}>
             {t('reliefs.suggest')}
           </Button>
         )}
@@ -66,9 +67,10 @@ export function ReliefList({ reliefs, gone = [], names, readOnly, candidatesOf, 
                       type="button"
                       aria-label={`${t('reliefs.pickFor', { lesson })}: ${picked}`}
                       aria-haspopup="dialog"
+                      disabled={disabled}
                       aria-invalid={errors.length > 0 || unavailable || undefined}
                       onClick={() => setOpen(i)}
-                      className={cx(fieldBaseClass, focusRingClass, 'flex h-11 items-center gap-2 text-left')}
+                      className={cx(fieldBaseClass, focusRingClass, 'flex h-11 items-center gap-2 text-left disabled:cursor-not-allowed disabled:opacity-[.45]')}
                     >
                       {tid === null && <Icon name="minus" size={16} className="shrink-0 text-warning" />}
                       <span className={cx('min-w-0 flex-1 truncate', tid === null && 'font-semibold text-warning')}>{picked}</span>
