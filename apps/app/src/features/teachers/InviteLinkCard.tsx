@@ -40,7 +40,9 @@ export function InviteLinkCard({ schoolId }: { schoolId: string }) {
         {t('inviteLink.title')}
       </h2>
       <p className="mb-0 mt-1 text-sm text-ink-soft">{t('inviteLink.body')}</p>
-      {link.loading ? null : token ? (
+      {link.loading ? null : link.error ? (
+        <FormError className="mt-2">{t('inviteLink.loadFailed')}</FormError>
+      ) : token ? (
         <>
           <div className="mt-3">
             <CopyLink url={schoolJoinUrl(window.location.origin, schoolId, token)} copyLabel={t('inviteLink.copy')} hint={t('inviteLink.shareHint')} />

@@ -10,7 +10,7 @@ export interface AuthState {
   user: User | null;
   claims: Claims;
   loading: boolean;
-  refreshClaims(): Promise<void>;
+  refreshClaims(): Promise<Claims>;
   signOut(): Promise<void>;
 }
 
@@ -80,7 +80,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const refreshClaims = useCallback(async () => {
     const current = auth.currentUser;
-    setClaims(current ? await readClaims(current, true) : {});
+    const next = current ? await readClaims(current, true) : {};
+    setClaims(next);
+    return next;
   }, []);
 
   const signOut = useCallback(async () => {

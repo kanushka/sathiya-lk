@@ -1,15 +1,15 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
 // Copyright (C) 2026 Kanushka Gayan
 import type { Claims } from '@sathiya/core';
-import { renderHook, waitFor } from '@testing-library/react';
-import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { act, renderHook, waitFor } from '@testing-library/react';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 type Snap = { exists(): boolean; metadata: { fromCache: boolean } };
 
 const state = vi.hoisted(() => ({
   claims: {} as Claims,
   user: { uid: 'u1' } as { uid: string } | null,
-  refreshClaims: vi.fn(async () => undefined),
+  refreshClaims: vi.fn(async (): Promise<Claims> => ({})),
   signOut: vi.fn(async () => undefined),
   listeners: [] as { path: string; next: (s: Snap) => void; unsub: ReturnType<typeof vi.fn> }[],
 }));
@@ -27,17 +27,19 @@ vi.mock('./AuthProvider', () => ({
   useAuth: () => ({ user: state.user, claims: state.claims, refreshClaims: state.refreshClaims, signOut: state.signOut }),
 }));
 
-const { useMembershipWatch } = await import('./useMembershipWatch');
+const { useMembershipWatch, MEMBERSHIP_RETRY_MS } = await import('./useMembershipWatch');
 
 const snap = (exists: boolean, fromCache = false): Snap => ({ exists: () => exists, metadata: { fromCache } });
 
 beforeEach(() => {
   state.claims = { schools: { s1: { r: 't', t: 'T1' } } };
   state.user = { uid: 'u1' };
-  state.refreshClaims.mockReset().mockResolvedValue(undefined);
+  state.refreshClaims.mockReset().mockResolvedValue({});
   state.signOut.mockReset().mockResolvedValue(undefined);
   state.listeners.length = 0;
 });
+
+afterEach(() => vi.useRealTimers());
 
 describe('useMembershipWatch', () => {
   it('watches the signed-in user’s own member doc of the school', () => {
@@ -53,6 +55,49 @@ describe('useMembershipWatch', () => {
     next(snap(false));
     next(snap(false));
     await waitFor(() => expect(state.refreshClaims).toHaveBeenCalledTimes(1));
+    expect(state.signOut).not.toHaveBeenCalled();
+  });
+
+  it('retries once when the refreshed claims still hold the school, and stops when the retry drops it', async () => {
+    vi.useFakeTimers();
+    const stale = state.claims;
+    state.refreshClaims.mockResolvedValueOnce(stale).mockResolvedValueOnce({});
+    renderHook(() => useMembershipWatch('s1'));
+    await act(async () => state.listeners[0]!.next(snap(false)));
+    expect(state.refreshClaims).toHaveBeenCalledTimes(1);
+    await act(async () => vi.advanceTimersByTimeAsync(MEMBERSHIP_RETRY_MS));
+    expect(state.refreshClaims).toHaveBeenCalledTimes(2);
+    expect(state.signOut).not.toHaveBeenCalled();
+  });
+
+  it('signs out when the retry still holds the school', async () => {
+    vi.useFakeTimers();
+    state.refreshClaims.mockResolvedValue(state.claims);
+    renderHook(() => useMembershipWatch('s1'));
+    await act(async () => state.listeners[0]!.next(snap(false)));
+    expect(state.signOut).not.toHaveBeenCalled();
+    await act(async () => vi.advanceTimersByTimeAsync(MEMBERSHIP_RETRY_MS));
+    expect(state.refreshClaims).toHaveBeenCalledTimes(2);
+    expect(state.signOut).toHaveBeenCalledTimes(1);
+  });
+
+  it('signs out when the retry refresh fails', async () => {
+    vi.useFakeTimers();
+    state.refreshClaims.mockResolvedValueOnce(state.claims).mockRejectedValueOnce(new Error('auth/user-token-expired'));
+    renderHook(() => useMembershipWatch('s1'));
+    await act(async () => state.listeners[0]!.next(snap(false)));
+    await act(async () => vi.advanceTimersByTimeAsync(MEMBERSHIP_RETRY_MS));
+    expect(state.signOut).toHaveBeenCalledTimes(1);
+  });
+
+  it('cancels the pending retry on unmount', async () => {
+    vi.useFakeTimers();
+    state.refreshClaims.mockResolvedValue(state.claims);
+    const { unmount } = renderHook(() => useMembershipWatch('s1'));
+    await act(async () => state.listeners[0]!.next(snap(false)));
+    unmount();
+    await vi.advanceTimersByTimeAsync(MEMBERSHIP_RETRY_MS);
+    expect(state.refreshClaims).toHaveBeenCalledTimes(1);
     expect(state.signOut).not.toHaveBeenCalled();
   });
 

@@ -45,7 +45,7 @@ function Providers({ options, children }: { options: RenderWithSchoolOptions; ch
   const [i18n] = useState(() => (lang === 'en' ? testI18n : createI18n(lang)));
 
   const auth = useMemo<AuthState>(
-    () => ({ user, claims, loading: false, refreshClaims: async () => undefined, signOut }),
+    () => ({ user, claims, loading: false, refreshClaims: async () => claims, signOut }),
     [user, claims, signOut],
   );
   const school = useMemo<SchoolState>(() => ({ ...ctx, loading: false }), [ctx]);

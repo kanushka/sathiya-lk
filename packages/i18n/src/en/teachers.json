@@ -21,6 +21,7 @@
       "account": "Account"
     },
     "linkSelfDone": "Linked to your account",
+    "linkHidden": "The personal link for {{name}} was made while another window was open. Make a new link to see and share it.",
     "cancelled": "Personal link cancelled",
     "unlinked": "{{name}} unlinked",
     "actionFailed": "Could not do that. Try again.",
@@ -113,6 +114,7 @@
     "isOff": "The invite link is off. Create one to let teachers join.",
     "copy": "Copy invite link",
     "shareHint": "Copy it now and share it on your staff group.",
+    "loadFailed": "Could not load the invite link. Reload the page to try again.",
     "failed": "Could not change the link. Try again.",
     "confirmNewTitle": "Make a new invite link?",
     "confirmNewBody": "The new link replaces the current one: the old link stops working, so share the new one with your teachers.",

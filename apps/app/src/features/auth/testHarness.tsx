@@ -52,6 +52,7 @@ function Harness({ options, children }: { options: AuthHarnessOptions; children:
       refreshClaims: async () => {
         await options.refreshClaims?.();
         if (options.claimsAfterRefresh) setClaims(options.claimsAfterRefresh);
+        return options.claimsAfterRefresh ?? claims;
       },
       signOut: async () => undefined,
     }),

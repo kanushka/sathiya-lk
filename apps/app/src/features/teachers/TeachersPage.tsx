@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
 // Copyright (C) 2026 Kanushka Gayan
 import { formatAmount, pickName, teacherDisplayName, teacherIdOf, teacherLoad, teacherNameMissing, usageCount, type Lang, type Teacher } from '@sathiya/core';
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { useAuth } from '../../app/AuthProvider';
@@ -59,6 +59,8 @@ export function TeachersPage() {
   const [search, setSearch] = useState('');
   const [params, setParams] = useSearchParams();
   const [dialog, setDialog] = useState<Dialog>(() => (params.get('new') === '1' && !readOnly ? { kind: 'edit' } : null));
+  const dialogRef = useRef(dialog);
+  dialogRef.current = dialog;
   useEffect(() => {
     if (params.has('new')) setParams((p) => (p.delete('new'), p), { replace: true });
   }, [params, setParams]);
@@ -92,7 +94,9 @@ export function TeachersPage() {
   const personalLink = (x: Teacher) =>
     act(`link:${x.id}`, async () => {
       const res = await api.createTeacherLink(school.id, x.id);
-      setDialog({ kind: 'personalLink', teacher: x, url: personalJoinUrl(window.location.origin, res.token), expiresAt: res.expiresAt });
+      // Never replace a dialog the admin opened while waiting: it may hold unsaved input.
+      if (dialogRef.current) toast.show(t('page.linkHidden', { name: teacherDisplayName(x, lang) }), 'info');
+      else setDialog({ kind: 'personalLink', teacher: x, url: personalJoinUrl(window.location.origin, res.token), expiresAt: res.expiresAt });
     });
 
   const cancelLink = (x: Teacher) =>

@@ -269,7 +269,7 @@ describe('SuperLayout controls', () => {
   it('toggles language and signs out', async () => {
     const setLang = vi.fn();
     const signOut = vi.fn().mockResolvedValue(undefined);
-    const auth: AuthState = { user: null, claims: { super: true }, loading: false, refreshClaims: async () => undefined, signOut };
+    const auth: AuthState = { user: null, claims: { super: true }, loading: false, refreshClaims: async () => ({ super: true }), signOut };
     renderWithSchool(
       <AuthContextProvider value={auth}>
         <LangContextProvider value={{ lang: 'en', setLang }}>
