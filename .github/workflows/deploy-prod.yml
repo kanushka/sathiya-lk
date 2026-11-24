@@ -25,8 +25,15 @@ jobs:
             exit 1
           fi
 
-  deploy:
+  ci:
     needs: guard
+    permissions:
+      contents: read
+      pull-requests: read
+    uses: ./.github/workflows/ci.yml
+
+  deploy:
+    needs: [guard, ci]
     if: github.ref == 'refs/heads/main'
     runs-on: ubuntu-latest
     environment: production
@@ -42,10 +49,6 @@ jobs:
           node-version-file: .nvmrc
           cache: pnpm
       - run: pnpm install --frozen-lockfile
-      - run: pnpm check:license
-      - run: pnpm typecheck
-      - run: pnpm test
-      - run: pnpm --filter web test
       - run: pnpm build
       - name: Deploy to production
         env:
