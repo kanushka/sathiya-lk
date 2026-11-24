@@ -14,11 +14,17 @@ export const unlinkTeacher = onCall(callOpts, async (req): Promise<UnlinkTeacher
   const { sid } = await requireSchoolAdmin(req, data.schoolId);
   const teacherId = docId(data.teacherId, 'teacherId');
   const teacherRef = db.doc(`${paths.teachers(sid)}/${teacherId}`);
+  const before = (await teacherRef.get()).data() as Teacher | undefined;
+  if (!before) fail('not-found', 'invalid', 'Teacher not found');
+  const linked = before!.uid;
+  if (!linked) fail('failed-precondition', 'invalid', 'This teacher is not linked');
+  // Revoke first: if the commit or claim sync then fails, the account must sign in again, where claimInvites repairs its claims.
+  await auth.revokeRefreshTokens(linked!);
   const uid = await runTx(async (tx) => {
     const teacher = (await tx.get(teacherRef)).data() as Teacher | undefined;
     if (!teacher) fail('not-found', 'invalid', 'Teacher not found');
     const target = teacher!.uid;
-    if (!target) fail('failed-precondition', 'invalid', 'This teacher is not linked');
+    if (!target || target !== linked) fail('failed-precondition', 'invalid', 'This teacher is not linked');
     const memberRef = db.doc(`${paths.members(sid)}/${target}`);
     const member = (await tx.get(memberRef)).data() as Member | undefined;
     tx.update(teacherRef, { uid: FieldValue.delete() });
@@ -27,6 +33,5 @@ export const unlinkTeacher = onCall(callOpts, async (req): Promise<UnlinkTeacher
     return target!;
   });
   await syncClaims(uid);
-  await auth.revokeRefreshTokens(uid);
   return { ok: true };
 });

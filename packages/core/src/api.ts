@@ -67,7 +67,7 @@ export interface SetJoinLinkReq { schoolId: string; action: 'create' | 'off' }
 export interface SetJoinLinkRes { token?: string }
 export interface JoinSchoolReq { schoolId?: string; token: string; staffId?: string }
 export interface JoinSchoolRes { status: 'linked' | 'pending'; schoolId: string; teacherId?: string }
-export interface DecideJoinRequestReq { schoolId: string; uid: string; approve: boolean }
+export interface DecideJoinRequestReq { schoolId: string; uid: string; teacherId: string; approve: boolean }
 export interface DecideJoinRequestRes { ok: true }
 export interface CreateTeacherLinkReq { schoolId: string; teacherId: string }
 export interface CreateTeacherLinkRes { token: string; expiresAt: number }

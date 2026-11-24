@@ -1,13 +1,16 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
 // Copyright (C) 2026 Kanushka Gayan
 import { MAX_SCHOOLS, paths } from '@sathiya/core';
-import { describe, expect, it } from 'vitest';
+import { afterEach, describe, expect, it, vi } from 'vitest';
+import { auth } from '../src/lib/admin';
 import { assertSchoolRoom, syncClaims } from '../src/lib/claims';
 import { isAdminOf } from '../src/lib/guards';
 import { adminAuth, adminDb, signUp, uniq } from './helpers';
 
 const addMember = (sid: string, uid: string, m: Record<string, unknown>) => adminDb.doc(`${paths.members(sid)}/${uid}`).set({ uid, ...m });
 const claimsOf = async (uid: string) => (await adminAuth.getUser(uid)).customClaims;
+
+afterEach(() => vi.restoreAllMocks());
 
 describe('syncClaims', () => {
   it('builds the schools map from two schools and keeps super', async () => {
@@ -55,6 +58,37 @@ describe('syncClaims', () => {
     expect(Object.keys(claims!.schools)).toHaveLength(MAX_SCHOOLS);
     expect(claims!.super).toBe(true);
     expect(JSON.stringify(claims).length).toBeLessThan(1000);
+  });
+
+  it('republishes when memberships change while it publishes', async () => {
+    const c = await signUp();
+    const [a, b] = [`a-${uniq()}`, `b-${uniq()}`];
+    await addMember(a, c.uid, { role: 'admin' });
+    const publish = auth.setCustomUserClaims.bind(auth);
+    const spy = vi.spyOn(auth, 'setCustomUserClaims').mockImplementation(async (uid, claims) => {
+      await publish(uid, claims);
+      if (spy.mock.calls.length === 1) await addMember(b, c.uid, { role: 'teacher', teacherId: 't1' });
+    });
+    await syncClaims(c.uid);
+    expect(spy).toHaveBeenCalledTimes(2);
+    expect(await claimsOf(c.uid)).toEqual({ schools: { [a]: { r: 'a' }, [b]: { r: 't', t: 't1' } } });
+  });
+
+  it('publishes once when memberships hold still, and stops after three publishes', async () => {
+    const c = await signUp();
+    const tag = uniq();
+    await addMember(`${tag}-0`, c.uid, { role: 'admin' });
+    const publish = auth.setCustomUserClaims.bind(auth);
+    let n = 0;
+    const spy = vi.spyOn(auth, 'setCustomUserClaims').mockImplementation(async (uid, claims) => publish(uid, claims));
+    await syncClaims(c.uid);
+    expect(spy).toHaveBeenCalledTimes(1);
+    spy.mockClear().mockImplementation(async (uid, claims) => {
+      await publish(uid, claims);
+      await addMember(`${tag}-${++n}`, c.uid, { role: 'teacher' });
+    });
+    await syncClaims(c.uid);
+    expect(spy).toHaveBeenCalledTimes(3);
   });
 
   it('fails with too-many-schools above the limit', async () => {

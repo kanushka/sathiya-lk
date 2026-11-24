@@ -6,14 +6,20 @@ import { onCall } from 'firebase-functions/v2/https';
 import { db } from './lib/admin';
 import { callOpts } from './lib/callOptions';
 import { docId, obj, requireSchoolAdmin } from './lib/guards';
+import { runTx } from './lib/tx';
 
 export const cancelTeacherLink = onCall(callOpts, async (req): Promise<CancelTeacherLinkRes> => {
   const data = obj(req.data, 'request');
   const { sid } = await requireSchoolAdmin(req, data.schoolId);
   const teacherId = docId(data.teacherId, 'teacherId');
-  const old = await db.collection(paths.teacherLinks()).where('sid', '==', sid).where('teacherId', '==', teacherId).get();
-  await Promise.all(old.docs.map((d) => d.ref.delete()));
   const teacherRef = db.doc(`${paths.teachers(sid)}/${teacherId}`);
-  if ((await teacherRef.get()).exists) await teacherRef.update({ inviteExpiresAt: FieldValue.delete() });
+  await runTx(async (tx) => {
+    const [old, teacher] = await Promise.all([
+      tx.get(db.collection(paths.teacherLinks()).where('sid', '==', sid).where('teacherId', '==', teacherId)),
+      tx.get(teacherRef),
+    ]);
+    old.docs.forEach((d) => tx.delete(d.ref));
+    if (teacher.exists) tx.update(teacherRef, { inviteExpiresAt: FieldValue.delete() });
+  });
   return { ok: true };
 });

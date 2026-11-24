@@ -15,8 +15,8 @@ export async function setJoinLink(schoolId: string, action: 'create' | 'off'): P
   return call('setJoinLink', { schoolId, action });
 }
 
-export async function decideJoinRequest(schoolId: string, uid: string, approve: boolean): Promise<void> {
-  await call('decideJoinRequest', { schoolId, uid, approve });
+export async function decideJoinRequest(schoolId: string, uid: string, teacherId: string, approve: boolean): Promise<void> {
+  await call('decideJoinRequest', { schoolId, uid, teacherId, approve });
 }
 
 export function createTeacherLink(schoolId: string, teacherId: string): Promise<CreateTeacherLinkRes> {
