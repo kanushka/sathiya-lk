@@ -3,7 +3,7 @@
 
 import type { DayIndex, ReliefDay, SchoolContext, SnapshotCell, TeacherSnapshot, Year } from '@sathiya/core';
 import { C, ctx as baseCtx, defaultTemplate, S, T } from '@sathiya/core/fixtures';
-import { screen, within } from '@testing-library/react';
+import { act, screen, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { ApiError, call } from '../../lib/callable';
@@ -254,6 +254,26 @@ describe('relief page', () => {
     const req = vi.mocked(call).mock.calls[0]![1] as { leaves: unknown; reliefs: { entryId: string; reliefTeacherId: string | null }[] };
     expect(req.leaves).toEqual([{ teacherId: T.perera, type: 'morning', entryIds: ['e1'] }]);
     expect(req.reliefs.map((r) => [r.entryId, r.reliefTeacherId])).toEqual([['e1', T.bandara]]);
+  });
+
+  it('follows the Colombo date when the day rolls over', () => {
+    setup();
+    expect(useReliefDay).toHaveBeenLastCalledWith('siripura', 'y-2026', '2026-11-24');
+    vi.setSystemTime(new Date('2026-11-25T02:00:00Z'));
+    act(() => {
+      window.dispatchEvent(new Event('focus'));
+    });
+    expect(useReliefDay).toHaveBeenLastCalledWith('siripura', 'y-2026', '2026-11-25');
+    expect(screen.getByLabelText('Day')).toHaveValue('2026-11-25');
+  });
+
+  it('explains a save refused because the day has passed', async () => {
+    vi.mocked(call).mockRejectedValue(new ApiError('invalid', "Only today's relief can be edited"));
+    const user = setup();
+    await markMorning(user);
+    await user.click(screen.getByRole('button', { name: 'Save & notify' }));
+    expect(await screen.findByText(/This day is over/)).toBeInTheDocument();
+    expect(screen.queryByText(/Only today's relief can be edited/)).not.toBeInTheDocument();
   });
 
   it('shows no email for a teacher without email or account', () => {

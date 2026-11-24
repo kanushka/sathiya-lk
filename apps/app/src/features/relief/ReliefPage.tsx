@@ -48,7 +48,7 @@ import {
 import { ReliefList } from './ReliefList';
 import { useReliefDay, type ReliefDayState } from './useReliefDay';
 
-type Problem = { kind: 'stale' } | { kind: 'republish' } | { kind: 'invalid'; errors: ReliefError[] } | { kind: 'failed'; message: string };
+type Problem = { kind: 'stale' } | { kind: 'republish' } | { kind: 'notToday' } | { kind: 'invalid'; errors: ReliefError[] } | { kind: 'failed'; message: string };
 
 export function ReliefPage() {
   const { t, i18n } = useTranslation('relief');
@@ -58,7 +58,22 @@ export function ReliefPage() {
   const viewOnly = useReadOnly();
   const base = useAdminBase();
   const [params, setParams] = useSearchParams();
-  const [today] = useState(() => colomboToday(new Date()));
+  const [today, setToday] = useState(() => colomboToday(new Date()));
+
+  useEffect(() => {
+    const check = () => setToday((prev) => {
+      const next = colomboToday(new Date());
+      return next.date === prev.date ? prev : next;
+    });
+    const timer = setInterval(check, 60_000);
+    document.addEventListener('visibilitychange', check);
+    window.addEventListener('focus', check);
+    return () => {
+      clearInterval(timer);
+      document.removeEventListener('visibilitychange', check);
+      window.removeEventListener('focus', check);
+    };
+  }, []);
 
   const requested = params.get('date');
   const date = isIsoDate(requested) && requested < today.date ? requested : today.date;
@@ -240,6 +255,7 @@ function ReliefDayEditor({ sid, yid, date, day, readOnly, data, base }: EditorPr
       const e = toApiError(err);
       if (e.code === 'stale') setProblem({ kind: 'stale' });
       else if (e.code === 'republish') setProblem({ kind: 'republish' });
+      else if (e.code === 'invalid' && e.message === "Only today's relief can be edited") setProblem({ kind: 'notToday' });
       else if (e.code === 'invalid-relief') setProblem({ kind: 'invalid', errors: (e.details as { errors?: ReliefError[] } | undefined)?.errors ?? [] });
       else setProblem({ kind: 'failed', message: e.message });
     } finally {
@@ -315,6 +331,7 @@ function ReliefDayEditor({ sid, yid, date, day, readOnly, data, base }: EditorPr
         </Alert>
       )}
       {problem?.kind === 'invalid' && <Alert tone="danger">{t('errors.invalid')}</Alert>}
+      {problem?.kind === 'notToday' && <Alert tone="danger">{t('errors.notToday')}</Alert>}
       {problem?.kind === 'failed' && <Alert tone="danger">{t('errors.failed', { message: problem.message })}</Alert>}
 
       {!readOnly && (

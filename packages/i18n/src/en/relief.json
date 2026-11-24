@@ -72,6 +72,7 @@
     "reload": "Reload",
     "invalid": "Some picks are not valid any more. Fix the marked rows and save again.",
     "failed": "Could not save: {{message}}",
+    "notToday": "This day is over. Only today's relief can be changed.",
     "codes": {
       "not-on-leave-lesson": "This lesson is not ticked for leave",
       "on-leave": "This teacher is on leave at this time",
