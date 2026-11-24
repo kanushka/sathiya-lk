@@ -316,13 +316,24 @@ describe('decideJoinRequest', () => {
     expect((await teacherDoc(sid, ids[0]!)).uid).toBeUndefined();
   });
 
-  it('approve after the teacher was linked another way is already-linked', async () => {
+  it('approve after the teacher was linked by a personal link finds no request', async () => {
     const { admin, sid, ids, token } = await school();
+    const u = await signUp();
+    await u.call('joinSchool', { schoolId: sid, token, staffId: 'SCC001' });
+    const { token: personal } = await admin.call('createTeacherLink', { schoolId: sid, teacherId: ids[0]! });
+    const other = await signUp();
+    await other.call('joinSchool', { token: personal });
+    expect((await requestDoc(sid, u.uid)).exists).toBe(false);
+    await expectFnError(admin.call('decideJoinRequest', { schoolId: sid, uid: u.uid, approve: true }), 'not-found', 'invalid');
+    expect((await teacherDoc(sid, ids[0]!)).uid).toBe(other.uid);
+  });
+
+  it('approving a stale request for a linked teacher is already-linked', async () => {
+    const { admin, sid, ids } = await school();
     const u = await signUp();
     const { token: personal } = await admin.call('createTeacherLink', { schoolId: sid, teacherId: ids[0]! });
     await (await signUp()).call('joinSchool', { token: personal });
     await adminDb.doc(`${paths.joinRequests(sid)}/${u.uid}`).set({ uid: u.uid, email: 'x@example.com', staffId: 'SCC001', teacherId: ids[0], createdAt: Date.now() });
-    expect(token).toBeTruthy();
     await expectFnError(admin.call('decideJoinRequest', { schoolId: sid, uid: u.uid, approve: true }), 'failed-precondition', 'already-linked');
   });
 });
@@ -331,11 +342,13 @@ describe('unlinkTeacher', () => {
   it('removes a teacher member, clears claims and revokes sessions', async () => {
     const { admin, sid } = await adminWithSchool();
     const { teacher, teacherId } = await linkedTeacher(admin, sid, 'SCC006');
+    const before = Date.parse((await adminAuth.getUser(teacher.uid)).tokensValidAfterTime!);
+    await new Promise((r) => setTimeout(r, 1100));
     await expect(admin.call('unlinkTeacher', { schoolId: sid, teacherId })).resolves.toEqual({ ok: true });
     expect((await teacherDoc(sid, teacherId)).uid).toBeUndefined();
     expect(await memberDoc(sid, teacher.uid)).toBeUndefined();
     expect((await adminAuth.getUser(teacher.uid)).customClaims).toEqual({});
-    expect(Date.parse((await adminAuth.getUser(teacher.uid)).tokensValidAfterTime!)).toBeGreaterThan(Date.now() - 60_000);
+    expect(Date.parse((await adminAuth.getUser(teacher.uid)).tokensValidAfterTime!)).toBeGreaterThan(before);
   });
 
   it('keeps the admin role of an admin who is also a teacher', async () => {
