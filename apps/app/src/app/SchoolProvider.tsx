@@ -51,7 +51,6 @@ export function useHasSchool(): boolean {
 export type SchoolScope = 'full' | 'school';
 
 export interface SchoolProviderProps {
-  sid?: string;
   scope?: SchoolScope;
   children: ReactNode;
 }
@@ -59,11 +58,10 @@ export interface SchoolProviderProps {
 const noYears: Year[] = [];
 const noEntries: Entry[] = [];
 
-export function SchoolProvider({ sid: sidProp, scope = 'full', children }: SchoolProviderProps) {
+export function SchoolProvider({ scope = 'full', children }: SchoolProviderProps) {
   const { t } = useTranslation('shell');
-  const params = useParams();
+  const sid = useParams().sid ?? null;
   const { claims } = useAuth();
-  const sid = sidProp ?? params.sid ?? claims.sid ?? null;
   const school = useDoc<School>(sid ? paths.school(sid) : null);
   const suspended = school.data?.status === 'disabled' && claims.super !== true;
   const full = scope === 'full' && school.data && !suspended ? sid : null;

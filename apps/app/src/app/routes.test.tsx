@@ -34,26 +34,27 @@ describe('registered routes', () => {
   });
 
   it.each([
-    ['/admin', 'admin'],
-    ['/me', 'teacher'],
+    ['/s/:sid/admin', 'admin'],
+    ['/s/:sid/me', 'teacher'],
     ['/super', 'super'],
-    ['/s/:sid', 'super'],
   ])('guards every %s path with the %s role', (prefix, role) => {
     const matching = all.filter(({ full }) => full === prefix || full.startsWith(`${prefix}/`));
     expect(matching.length).toBeGreaterThan(0);
     expect(matching.filter((l) => l.role !== role).map((l) => l.full)).toEqual([]);
   });
 
-  it('mirrors admin and print routes under /s/:sid', () => {
+  it('puts admin and print routes under /s/:sid/admin and mirrors them for super', () => {
     const paths = new Set(all.map((l) => l.full));
     for (const p of ['/admin', '/admin/teachers', '/admin/print/class/:id', '/admin/print/teacher/:id']) {
-      expect(paths.has(p)).toBe(true);
-      expect(paths.has(p.replace('/admin', '/s/:sid'))).toBe(true);
+      expect(paths.has(p.replace('/admin', '/s/:sid/admin'))).toBe(true);
+      expect(paths.has(p.replace('/admin', '/super/schools/:sid/admin'))).toBe(true);
     }
+    expect(paths.has('/s/:sid/me')).toBe(true);
+    expect(paths.has('/s/:sid/me/week')).toBe(true);
   });
 
   it('leaves the public routes unguarded', () => {
     const open = all.filter((l) => l.role === null).map((l) => l.full).sort();
-    expect(open).toEqual(['/', '/*', '/auth/action', '/login', '/register']);
+    expect(open).toEqual(['/', '/*', '/admin/*', '/auth/action', '/login', '/me/*', '/register', '/s/:sid', '/start']);
   });
 });

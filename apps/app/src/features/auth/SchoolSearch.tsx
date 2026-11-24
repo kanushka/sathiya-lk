@@ -92,7 +92,7 @@ export const SchoolSearch = forwardRef<HTMLInputElement, SchoolSearchProps>(func
         aria-invalid={invalid ? true : undefined}
         aria-describedby={describedBy}
         autoComplete="off"
-        placeholder={t('teacher.schoolPlaceholder')}
+        placeholder={t('schoolSearch.schoolPlaceholder')}
         value={shown}
         onChange={(e) => {
           setTyped(true);
@@ -113,7 +113,7 @@ export const SchoolSearch = forwardRef<HTMLInputElement, SchoolSearchProps>(func
           className="absolute left-0 right-0 z-30 mt-1.5 max-h-64 overflow-y-auto rounded-xl border border-line-strong bg-white p-1.5 shadow-[0_12px_30px_-12px_rgba(20,33,61,.3)]"
         >
           {results.length === 0 && (
-            <p className="px-2.5 py-2 text-sm text-ink-muted">{searching ? t('teacher.searching') : t('teacher.noSchools')}</p>
+            <p className="px-2.5 py-2 text-sm text-ink-muted">{searching ? t('schoolSearch.searching') : t('schoolSearch.noSchools')}</p>
           )}
           {results.map((s, i) => (
             <div

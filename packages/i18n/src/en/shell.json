@@ -76,5 +76,12 @@
     "body": "Sathiya's admin screens work best on a laptop, desktop or tablet. You can continue, but some screens may be hard to use on a phone.",
     "continue": "Continue anyway",
     "banner": "Admin screens work best on a laptop, desktop or tablet."
+  },
+  "switcher": {
+    "label": "School",
+    "roles": {
+      "admin": "Admin",
+      "teacher": "Teacher"
+    }
   }
 }

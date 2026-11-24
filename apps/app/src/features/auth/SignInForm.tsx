@@ -1,10 +1,11 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
 // Copyright (C) 2026 Kanushka Gayan
-import { useEffect, useRef, useState, type FormEvent } from 'react';
+import { useState, type FormEvent } from 'react';
 import { useTranslation } from 'react-i18next';
-import { Link, useNavigate } from 'react-router-dom';
+import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { useAuth } from '../../app/AuthProvider';
 import { useLang } from '../../app/LangProvider';
+import { Badge } from '../../ui/Badge';
 import { Button } from '../../ui/Button';
 import { Field, inputClass } from '../../ui/Field';
 import { PasswordInput } from '../../ui/PasswordInput';
@@ -12,6 +13,7 @@ import { useToast } from '../../ui/Toast';
 import { claimInvites, signInWithGoogle, signInWithPassword } from './api';
 import { sendAuthEmail } from './authEmail';
 import { authErrorMessage, detailCode } from './errors';
+import { InAppBrowserNotice } from './InAppBrowserNotice';
 
 export function GoogleLogo() {
   return (
@@ -36,10 +38,21 @@ export function GoogleLogo() {
   );
 }
 
-export function AdminLoginForm({ autoFocus }: { autoFocus?: boolean }) {
+export interface SignInFormProps {
+  inAppBrowser?: boolean;
+}
+
+function returnPath(state: unknown): string {
+  const from = (state as { from?: { pathname?: unknown; search?: unknown } } | null)?.from;
+  if (typeof from?.pathname !== 'string' || !from.pathname.startsWith('/') || from.pathname.startsWith('//')) return '/';
+  return from.pathname + (typeof from.search === 'string' ? from.search : '');
+}
+
+export function SignInForm({ inAppBrowser = false }: SignInFormProps) {
   const { t } = useTranslation('auth');
   const { refreshClaims } = useAuth();
   const navigate = useNavigate();
+  const location = useLocation();
   const toast = useToast();
   const { lang } = useLang();
   const [email, setEmail] = useState('');
@@ -47,11 +60,6 @@ export function AdminLoginForm({ autoFocus }: { autoFocus?: boolean }) {
   const [error, setError] = useState<string | null>(null);
   const [resetError, setResetError] = useState<string | null>(null);
   const [busy, setBusy] = useState<'google' | 'password' | null>(null);
-  const emailRef = useRef<HTMLInputElement>(null);
-
-  useEffect(() => {
-    if (autoFocus) emailRef.current?.focus();
-  }, [autoFocus]);
 
   async function run(kind: 'google' | 'password', signIn: () => Promise<void>) {
     setBusy(kind);
@@ -59,7 +67,7 @@ export function AdminLoginForm({ autoFocus }: { autoFocus?: boolean }) {
     try {
       await signIn();
     } catch (err) {
-      setError(authErrorMessage(err, t, 'errors.adminCredentials'));
+      setError(authErrorMessage(err, t));
       setBusy(null);
       return;
     }
@@ -73,13 +81,13 @@ export function AdminLoginForm({ autoFocus }: { autoFocus?: boolean }) {
     } catch {
       // Signed in; HomeRedirect decides from whatever claims are loaded.
     }
-    navigate('/', { replace: true });
+    navigate(returnPath(location.state), { replace: true });
   }
 
   function submit(e: FormEvent) {
     e.preventDefault();
     if (!email.trim() || !password) {
-      setError(t('admin.missing'));
+      setError(t('signIn.missing'));
       return;
     }
     void run('password', () => signInWithPassword(email.trim(), password));
@@ -87,41 +95,49 @@ export function AdminLoginForm({ autoFocus }: { autoFocus?: boolean }) {
 
   async function reset() {
     if (!email.trim()) {
-      setResetError(t('admin.resetNeedsEmail'));
+      setResetError(t('signIn.resetNeedsEmail'));
       return;
     }
     setResetError(null);
     try {
       await sendAuthEmail({ kind: 'reset', email: email.trim(), lang });
-      toast.show(t('admin.resetSent'), 'success');
+      toast.show(t('signIn.resetSent'), 'success');
     } catch (err) {
-      if (detailCode(err) === 'rate-limited') toast.show(t('admin.resetRateLimited'), 'error');
-      else toast.show(t('admin.resetSent'), 'success');
+      if (detailCode(err) === 'rate-limited') toast.show(t('signIn.resetRateLimited'), 'error');
+      else toast.show(t('signIn.resetSent'), 'success');
     }
   }
 
   return (
     <form onSubmit={submit} noValidate>
-      <h1 className="mb-6 mt-0 text-[26px] font-bold">{t('admin.title')}</h1>
-      <Button
-        size="lg"
-        className="w-full"
-        loading={busy === 'google'}
-        disabled={busy === 'password'}
-        onClick={() => void run('google', signInWithGoogle)}
-      >
-        <GoogleLogo />
-        {t('admin.google')}
-      </Button>
+      <h1 className="mb-6 mt-0 text-[26px] font-bold">{t('signIn.title')}</h1>
+      {inAppBrowser ? (
+        <InAppBrowserNotice />
+      ) : (
+        <div className="relative">
+          <Badge tone="success" className="absolute -top-2.5 right-3 z-10">
+            {t('signIn.recommended')}
+          </Badge>
+          <Button
+            size="lg"
+            className="w-full"
+            loading={busy === 'google'}
+            disabled={busy === 'password'}
+            onClick={() => void run('google', signInWithGoogle)}
+          >
+            <GoogleLogo />
+            {t('signIn.google')}
+          </Button>
+        </div>
+      )}
       <div className="my-5 flex items-center gap-3 text-[13px] text-ink-muted">
         <span className="h-px flex-1 bg-line" />
-        {t('admin.or')}
+        {t('signIn.or')}
         <span className="h-px flex-1 bg-line" />
       </div>
-      <Field label={t('admin.email')} error={resetError} className="mb-[18px]">
+      <Field label={t('signIn.email')} error={resetError} className="mb-[18px]">
         <input
           className={inputClass}
-          ref={emailRef}
           type="email"
           autoComplete="email"
           value={email}
@@ -131,12 +147,12 @@ export function AdminLoginForm({ autoFocus }: { autoFocus?: boolean }) {
           }}
         />
       </Field>
-      <Field label={t('admin.password')} error={error} className="mb-2">
+      <Field label={t('signIn.password')} error={error} className="mb-2">
         <PasswordInput autoComplete="current-password" value={password} onChange={(e) => setPassword(e.target.value)} />
       </Field>
       <p className="mb-6 mt-2 text-right text-sm">
         <Button variant="link" onClick={() => void reset()} className="underline">
-          {t('admin.forgot')}
+          {t('signIn.forgot')}
         </Button>
       </p>
       <Button
@@ -146,12 +162,12 @@ export function AdminLoginForm({ autoFocus }: { autoFocus?: boolean }) {
         loading={busy === 'password'}
         disabled={busy === 'google'}
       >
-        {t('admin.submit')}
+        {t('signIn.submit')}
       </Button>
       <p className="mb-0 mt-5 text-center text-sm text-ink-muted">
-        {t('admin.newSchool')}{' '}
+        {t('signIn.newSchool')}{' '}
         <Link to="/register" className="font-semibold">
-          {t('admin.register')}
+          {t('signIn.register')}
         </Link>
       </p>
     </form>

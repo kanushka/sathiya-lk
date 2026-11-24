@@ -121,7 +121,6 @@ export function TeacherModal({ teacher, onClose }: TeacherModalProps) {
         onClose();
       } else {
         const res = await api.createTeacher(school.id, input);
-        setSessionPassword(res.teacherId, res.password);
         setSavedId(res.teacherId);
       }
     } catch (err) {

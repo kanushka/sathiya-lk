@@ -56,7 +56,7 @@ describe('ReportsPage', () => {
     expect(rows().map((r) => within(r).getAllByRole('cell')[1]?.textContent)).toEqual(['Abuse', 'Other', 'Duplicate', 'Fake school']);
     expect(screen.queryByText('old closed one')).toBeNull();
     const first = rows()[0]!;
-    expect(within(first).getByRole('link', { name: 'Siripura Central College' })).toHaveAttribute('href', '/s/a');
+    expect(within(first).getByRole('link', { name: 'Siripura Central College' })).toHaveAttribute('href', '/super/schools/a/admin');
     expect(within(first).getByText('Offensive name')).toBeInTheDocument();
     expect(within(first).getByRole('link', { name: 'who@example.com' })).toHaveAttribute('href', 'mailto:who@example.com');
     expect(within(first).getByText('15 Nov 2026')).toBeInTheDocument();
@@ -64,7 +64,7 @@ describe('ReportsPage', () => {
 
   it('falls back to the school id when the school is unknown', () => {
     renderPage();
-    expect(screen.getByRole('link', { name: 'zzz' })).toHaveAttribute('href', '/s/zzz');
+    expect(screen.getByRole('link', { name: 'zzz' })).toHaveAttribute('href', '/super/schools/zzz/admin');
   });
 
   it('shows empty and error states', () => {

@@ -11,9 +11,8 @@ export function createTeacher(schoolId: string, teacher: TeacherInput): Promise<
   return call('createTeacher', { schoolId, teacher });
 }
 
-export async function resetTeacherPassword(schoolId: string, teacherId: string): Promise<string> {
-  const res = await call('resetTeacherPassword', { schoolId, teacherId });
-  return res.password;
+export async function resetTeacherPassword(_schoolId: string, _teacherId: string): Promise<string> {
+  throw new Error('resetTeacherPassword was removed');
 }
 
 export async function updateTeacher(schoolId: string, teacherId: string, teacher: TeacherInput): Promise<void> {

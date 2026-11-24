@@ -23,12 +23,13 @@ function LoginPage() {
   );
 }
 
-function renderAt(role: 'admin' | 'teacher' | 'super') {
+function renderAt(role: 'admin' | 'teacher' | 'super', at = '/s/s1/protected') {
   renderWithI18n(
-    <MemoryRouter initialEntries={['/protected']}>
+    <MemoryRouter initialEntries={[at]}>
       <Routes>
         <Route path="/login" element={<LoginPage />} />
         <Route path="/" element={<p>home</p>} />
+        <Route path="/s/:sid/protected" element={<RequireRole role={role}><p>secret</p></RequireRole>} />
         <Route path="/protected" element={<RequireRole role={role}><p>secret</p></RequireRole>} />
       </Routes>
     </MemoryRouter>,
@@ -39,20 +40,14 @@ describe('RequireRole', () => {
   it('redirects unauthenticated users to /login', () => {
     state.auth = { user: null, claims: {}, loading: false };
     renderAt('admin');
-    expect(screen.getByText('login page from /protected')).toBeInTheDocument();
+    expect(screen.getByText('login page from /s/s1/protected')).toBeInTheDocument();
     expect(screen.queryByText('secret')).not.toBeInTheDocument();
   });
 
-  it('sends signed-out visitors of teacher routes to the teacher tab', () => {
+  it('sends signed-out teachers to the same login page', () => {
     state.auth = { user: null, claims: {}, loading: false };
     renderAt('teacher');
-    expect(screen.getByText('login page from /protected')).toBeInTheDocument();
-    expect(screen.getByTestId('search')).toHaveTextContent('?as=teacher');
-  });
-
-  it('keeps the admin tab for admin routes', () => {
-    state.auth = { user: null, claims: {}, loading: false };
-    renderAt('admin');
+    expect(screen.getByText('login page from /s/s1/protected')).toBeInTheDocument();
     expect(screen.getByTestId('search')).toBeEmptyDOMElement();
   });
 
@@ -63,19 +58,30 @@ describe('RequireRole', () => {
   });
 
   it.each<[Claims, 'admin' | 'teacher' | 'super', boolean]>([
-    [{ sid: 's', role: 'admin' }, 'admin', true],
-    [{ sid: 's', role: 'teacher', tid: 't' }, 'admin', false],
-    [{ sid: 's', role: 'teacher', tid: 't' }, 'teacher', true],
-    [{ sid: 's', role: 'admin', tid: 't' }, 'teacher', true],
-    [{ sid: 's', role: 'admin' }, 'teacher', false],
+    [{ schools: { s1: { r: 'a' } } }, 'admin', true],
+    [{ schools: { s2: { r: 'a' } } }, 'admin', false],
+    [{ schools: { s1: { r: 't', t: 't' } } }, 'admin', false],
+    [{ schools: { s1: { r: 't', t: 't' } } }, 'teacher', true],
+    [{ schools: { s2: { r: 't', t: 't' } } }, 'teacher', false],
+    [{ schools: { s1: { r: 'a', t: 't' } } }, 'teacher', true],
+    [{ schools: { s1: { r: 'a' } } }, 'teacher', false],
+    [{ schools: { s1: { r: 't' } } }, 'teacher', false],
     [{ super: true }, 'super', true],
-    [{ sid: 's', role: 'admin' }, 'super', false],
+    [{ super: true }, 'admin', false],
+    [{ schools: { s1: { r: 'a' } } }, 'super', false],
     [{}, 'admin', false],
-  ])('claims %j for %s → allowed %s', (claims, role, allowed) => {
+  ])('claims %j for %s at school s1 → allowed %s', (claims, role, allowed) => {
     state.auth = { user: { uid: 'u' }, claims, loading: false };
     renderAt(role);
     expect(screen.queryByText('secret') !== null).toBe(allowed);
     expect(screen.queryByText('home') !== null).toBe(!allowed);
     expect(screen.queryByText(/login page/)).not.toBeInTheDocument();
+  });
+
+  it('denies school roles on a route without a school', () => {
+    state.auth = { user: { uid: 'u' }, claims: { schools: { s1: { r: 'a' } } }, loading: false };
+    renderAt('admin', '/protected');
+    expect(screen.queryByText('secret')).not.toBeInTheDocument();
+    expect(screen.getByText('home')).toBeInTheDocument();
   });
 });

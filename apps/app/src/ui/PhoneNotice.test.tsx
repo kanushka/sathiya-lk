@@ -52,7 +52,7 @@ const routes = buildRoutes([
   { path: '/admin/print/class/:id', element: <p>print class</p> },
   { path: '/me', element: <p>my timetable</p> },
   { path: '/super', element: <p>schools list</p> },
-  { path: '/s/:sid/teachers', element: <p>school teachers</p> },
+  { path: '/admin/teachers', element: <p>school teachers</p> },
   { path: '/login', element: <p>login screen</p> },
   { path: '/register', element: <p>register screen</p> },
   { path: '/auth/action', element: <p>auth action</p> },
@@ -79,38 +79,38 @@ describe('PhoneNotice', () => {
     width = 375;
     listeners.clear();
     installMatchMedia();
-    state.claims = { sid: 's1', role: 'admin', tid: 't1', super: true };
+    state.claims = { schools: { s1: { r: 'a', t: 't1' } }, super: true };
   });
   afterEach(() => {
     window.matchMedia = original;
   });
 
-  it('shows a modal on /admin at 375px', () => {
-    renderAt('/admin');
+  it('shows a modal on /s/s1/admin at 375px', () => {
+    renderAt('/s/s1/admin');
     expect(dialog()).toBeInTheDocument();
     expect(screen.getByRole('button', { name: 'Continue anyway' })).toBeInTheDocument();
   });
 
-  it.each(['/super', '/s/s1/teachers'])('shows on %s at 375px', (path) => {
+  it.each(['/super', '/super/schools/s1/admin/teachers'])('shows on %s at 375px', (path) => {
     renderAt(path);
     expect(dialog()).toBeInTheDocument();
   });
 
   it.each([768, 1024, 1440])('is hidden at %ipx', (w) => {
     width = w;
-    renderAt('/admin');
+    renderAt('/s/s1/admin');
     expect(dialog()).toBeNull();
     expect(banner()).toBeNull();
   });
 
-  it.each(['/me', '/login', '/register', '/auth/action', '/admin/print/class/c1'])('is hidden on %s', (path) => {
+  it.each(['/s/s1/me', '/login', '/register', '/auth/action', '/s/s1/admin/print/class/c1'])('is hidden on %s', (path) => {
     renderAt(path);
     expect(dialog()).toBeNull();
     expect(banner()).toBeNull();
   });
 
   it('remembers dismissal and shows a banner instead', async () => {
-    renderAt('/admin');
+    renderAt('/s/s1/admin');
     await userEvent.click(screen.getByRole('button', { name: 'Continue anyway' }));
     expect(dialog()).toBeNull();
     expect(banner()).toBeInTheDocument();
@@ -119,13 +119,13 @@ describe('PhoneNotice', () => {
 
   it('shows only the banner once dismissed', () => {
     localStorage.setItem(PHONE_NOTICE_KEY, '1');
-    renderAt('/admin');
+    renderAt('/s/s1/admin');
     expect(dialog()).toBeNull();
     expect(banner()).toBeInTheDocument();
   });
 
   it('closes on Escape', async () => {
-    renderAt('/admin');
+    renderAt('/s/s1/admin');
     await userEvent.keyboard('{Escape}');
     expect(dialog()).toBeNull();
     expect(localStorage.getItem(PHONE_NOTICE_KEY)).toBe('1');
@@ -133,7 +133,7 @@ describe('PhoneNotice', () => {
 
   it('reacts to resizes', () => {
     width = 1280;
-    renderAt('/admin');
+    renderAt('/s/s1/admin');
     expect(dialog()).toBeNull();
     resize(375);
     expect(dialog()).toBeInTheDocument();
@@ -148,7 +148,7 @@ describe('PhoneNotice', () => {
     const set = vi.spyOn(localStorage, 'setItem').mockImplementation(() => {
       throw new Error('blocked');
     });
-    renderAt('/admin');
+    renderAt('/s/s1/admin');
     await userEvent.click(screen.getByRole('button', { name: 'Continue anyway' }));
     expect(banner()).toBeInTheDocument();
     get.mockRestore();

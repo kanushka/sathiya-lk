@@ -10,18 +10,22 @@ import { pickOption } from '../test/pickOption';
 import { renderWithSchool } from '../test/renderWithSchool';
 import { Sidebar, navItems } from './Sidebar';
 
+vi.mock('../app/memberSchools', () => ({
+  fetchSchoolNames: async (ids: string[]) => Object.fromEntries(ids.map((id) => [id, id === 'siripura' ? 'Siripura Central College' : 'Royal College'])),
+}));
+
 const twoYears: Year[] = [
   { id: 'y27', label: '2027', status: 'draft' },
   { id: 'y26', label: '2026', status: 'published' },
 ];
 
-function renderSidebar(path = '/admin/teachers', opts: { years?: Year[]; claims?: Claims } = {}) {
+function renderSidebar(path = '/s/siripura/admin/teachers', opts: { years?: Year[]; claims?: Claims } = {}) {
   return renderWithSchool(<Sidebar />, { ctx, years: opts.years ?? twoYears, route: path, ...(opts.claims && { claims: opts.claims }) });
 }
 
 describe('Sidebar', () => {
   it('shows the year heading as plain text when there are no years', () => {
-    renderSidebar('/admin/teachers', { years: [] });
+    renderSidebar('/s/siripura/admin/teachers', { years: [] });
     expect(screen.getByText('No years yet')).toBeInTheDocument();
     expect(screen.getByText('Timetable year').tagName).toBe('P');
     expect(document.querySelector('label[for]')).toBeNull();
@@ -35,7 +39,7 @@ describe('Sidebar', () => {
   });
 
   it('shows the uploaded logo', () => {
-    renderWithSchool(<Sidebar />, { ctx: { ...ctx, school: { ...ctx.school, logoUrl: 'https://example.test/logo.png' } }, years: twoYears, route: '/admin' });
+    renderWithSchool(<Sidebar />, { ctx: { ...ctx, school: { ...ctx.school, logoUrl: 'https://example.test/logo.png' } }, years: twoYears, route: '/s/siripura/admin' });
     expect(screen.getByTestId('school-logo')).toHaveAttribute('src', 'https://example.test/logo.png');
   });
 
@@ -126,26 +130,42 @@ describe('Sidebar', () => {
   it('shows My timetable only when the admin teaches', () => {
     renderSidebar();
     expect(screen.queryByRole('link', { name: 'My timetable' })).not.toBeInTheDocument();
-    renderSidebar('/admin/teachers', { claims: { sid: 's1', role: 'admin', tid: 't1' } });
-    expect(screen.getByRole('link', { name: 'My timetable' })).toHaveAttribute('href', '/me');
+    renderSidebar('/s/siripura/admin/teachers', { claims: { schools: { siripura: { r: 'a', t: 't1' } } } });
+    expect(screen.getByRole('link', { name: 'My timetable' })).toHaveAttribute('href', '/s/siripura/me');
   });
 
   it('rewrites links under a super admin school view', () => {
-    renderWithSchool(<Sidebar basePath="/s/s1" />, { ctx, route: '/s/s1/teachers', claims: { super: true } });
-    expect(screen.getByRole('link', { name: 'Teachers' })).toHaveAttribute('href', '/s/s1/teachers');
-    expect(screen.getByRole('link', { name: 'Dashboard' })).toHaveAttribute('href', '/s/s1');
+    renderWithSchool(<Sidebar basePath="/super/schools/s1/admin" readOnly />, { ctx, route: '/super/schools/s1/admin/teachers', claims: { super: true } });
+    expect(screen.getByRole('link', { name: 'Teachers' })).toHaveAttribute('href', '/super/schools/s1/admin/teachers');
+    expect(screen.getByRole('link', { name: 'Dashboard' })).toHaveAttribute('href', '/super/schools/s1/admin');
   });
 
   it('links to the super area only for super users', () => {
     renderSidebar();
     expect(screen.queryByRole('link', { name: 'Super admin' })).not.toBeInTheDocument();
-    renderSidebar('/admin/teachers', { claims: { sid: 's1', role: 'admin', super: true } });
+    renderSidebar('/s/siripura/admin/teachers', { claims: { schools: { siripura: { r: 'a' } }, super: true } });
     expect(screen.getByRole('link', { name: 'Super admin' })).toHaveAttribute('href', '/super');
   });
 
   it('keeps the super link in the collapsed rail', () => {
     localStorage.setItem('sathiya.sidebar', 'collapsed');
-    renderSidebar('/admin/teachers', { claims: { sid: 's1', role: 'admin', super: true } });
+    renderSidebar('/s/siripura/admin/teachers', { claims: { schools: { siripura: { r: 'a' } }, super: true } });
     expect(screen.getByRole('link', { name: 'Super admin' })).toHaveAttribute('title', 'Super admin');
+  });
+
+  it('shows the school switcher only with two or more schools', async () => {
+    renderSidebar();
+    expect(screen.queryByRole('combobox', { name: /^School/ })).not.toBeInTheDocument();
+    renderSidebar('/s/siripura/admin/teachers', { claims: { schools: { siripura: { r: 'a' }, royal: { r: 't', t: 'T9' } } } });
+    expect(await screen.findByRole('combobox', { name: /^School/ })).toHaveTextContent('Siripura Central College · Admin');
+  });
+
+  it('hides the switcher in the read-only super view', () => {
+    renderWithSchool(<Sidebar basePath="/super/schools/siripura/admin" readOnly />, {
+      ctx,
+      route: '/super/schools/siripura/admin',
+      claims: { schools: { a: { r: 'a' }, b: { r: 'a' } }, super: true },
+    });
+    expect(screen.queryByRole('combobox', { name: /^School/ })).not.toBeInTheDocument();
   });
 });

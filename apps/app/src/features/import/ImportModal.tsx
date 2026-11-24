@@ -181,7 +181,6 @@ export function ImportModal({ onClose }: { onClose: () => void }) {
         subjects: strip(view.parsed.subjects),
         teachers: strip(view.parsed.teachers),
       });
-      for (const x of res.teachers) setSessionPassword(x.teacherId, x.password);
       setView({ kind: 'done', res });
     } catch (err) {
       if (err instanceof ApiError && err.code === 'invalid' && isImportErrors(err.details)) {
@@ -204,7 +203,7 @@ export function ImportModal({ onClose }: { onClose: () => void }) {
       schoolName: pickName(school, lang),
       staffId: x.staffId,
       name: teacherDisplayName(x, lang),
-      password: x.password,
+      password: '',
       url,
     }));
     if (!(await printSlips(slips, printLabels))) toast.show(t('teachers:page.printBlocked'), 'error');

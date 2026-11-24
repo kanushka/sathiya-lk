@@ -124,14 +124,14 @@ export function RegisterPage() {
       });
     } catch (err) {
       const failure = registerFailure(err);
-      if (failure?.code === 'census-taken') {
+      if (failure?.code === 'school-registered') {
         setCensusTaken(failure.schoolId ? { schoolId: failure.schoolId } : {});
         setStep(1);
       } else if (failure?.code === 'email-unverified') {
         setConfirmed(false);
         setGate(true);
       } else if (failure) {
-        setError({ field: null, message: t(`errors.${failure.code === 'rate-limited' ? 'rateLimited' : 'alreadyHasSchool'}`) });
+        setError({ field: null, message: t(`errors.${failure.code === 'rate-limited' ? 'rateLimited' : 'tooManySchools'}`) });
       } else {
         setError({ field: null, message: t('errors.generic') });
       }
@@ -152,7 +152,7 @@ export function RegisterPage() {
         toast.show(t('errors.logoUpload'), 'error');
       }
     }
-    navigate(refreshed ? '/admin' : '/', { replace: true });
+    navigate(refreshed ? `/s/${schoolId}/admin` : '/', { replace: true });
   }
 
   return (

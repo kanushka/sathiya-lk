@@ -76,9 +76,9 @@ describe('teachers page', () => {
     expect(within(dialog).getByLabelText('Staff ID')).toHaveValue('SCC059');
   });
 
-  it('creates a teacher and shows the returned password on the slip', async () => {
+  it('creates a teacher', async () => {
     const user = userEvent.setup();
-    vi.mocked(api.createTeacher).mockResolvedValue({ teacherId: 'tNew', password: 'k7m4x9pq' });
+    vi.mocked(api.createTeacher).mockResolvedValue({ teacherId: 'tNew' });
     render();
     const dialog = await openAdd(user);
     await user.type(within(dialog).getByLabelText('Name in English'), 'Mr. New Teacher');
@@ -86,16 +86,13 @@ describe('teachers page', () => {
     await user.click(within(dialog).getByRole('button', { name: '6', pressed: false }));
     await user.click(within(dialog).getByRole('button', { name: 'Save teacher' }));
 
-    expect(await within(dialog).findByText('k7m4x9pq')).toBeInTheDocument();
+    await waitFor(() => expect(api.createTeacher).toHaveBeenCalled());
     expect(api.createTeacher).toHaveBeenCalledWith(
       'siripura',
       expect.objectContaining({ staffId: 'SCC059', name: 'Mr. New Teacher', isPrimary: false, grades: [6], maxPerDay: 7 }),
     );
     const sent = vi.mocked(api.createTeacher).mock.calls[0]![1];
     expect(Object.values(sent)).not.toContain(undefined);
-    expect(within(dialog).getByRole('link', { name: 'Share on WhatsApp' }).getAttribute('href')).toContain(
-      encodeURIComponent('k7m4x9pq'),
-    );
   });
 
   it('says the school is suspended when creating a teacher is refused for that reason', async () => {
@@ -108,38 +105,6 @@ describe('teachers page', () => {
     await user.click(within(dialog).getByRole('button', { name: '6', pressed: false }));
     await user.click(within(dialog).getByRole('button', { name: 'Save teacher' }));
     expect(await within(dialog).findByText("This school is suspended, so changes can't be saved.")).toBeInTheDocument();
-  });
-
-  it('shows only the login slip after creating a teacher', async () => {
-    const user = userEvent.setup();
-    vi.mocked(api.createTeacher).mockResolvedValue({ teacherId: 'tNew', password: 'k7m4x9pq' });
-    render();
-    const dialog = await openAdd(user);
-    await user.type(within(dialog).getByLabelText('Name in English'), 'New Teacher');
-    await pickOption(user, within(dialog).getByRole('combobox', { name: 'Subjects' }), 'Mathematics');
-    await user.click(within(dialog).getByRole('button', { name: '6', pressed: false }));
-    await user.click(within(dialog).getByRole('button', { name: 'Save teacher' }));
-
-    expect(await within(dialog).findByText('k7m4x9pq')).toBeInTheDocument();
-    expect(within(dialog).queryByLabelText('Name')).not.toBeInTheDocument();
-    expect(within(dialog).queryByLabelText('Staff ID')).not.toBeInTheDocument();
-    expect(within(dialog).queryByText(/already used/i)).not.toBeInTheDocument();
-    expect(within(dialog).getByRole('button', { name: 'Print slip' })).toBeInTheDocument();
-    expect(within(dialog).getByRole('button', { name: 'Done' })).toBeInTheDocument();
-  });
-
-  it('moves focus to the slip Print button after creating a teacher', async () => {
-    const user = userEvent.setup();
-    vi.mocked(api.createTeacher).mockResolvedValue({ teacherId: 'tNew', password: 'k7m4x9pq' });
-    render();
-    const dialog = await openAdd(user);
-    await user.type(within(dialog).getByLabelText('Name in English'), 'New Teacher');
-    await pickOption(user, within(dialog).getByRole('combobox', { name: 'Subjects' }), 'Mathematics');
-    await user.click(within(dialog).getByRole('button', { name: '6', pressed: false }));
-    await user.click(within(dialog).getByRole('button', { name: 'Save teacher' }));
-
-    expect(await within(dialog).findByText('k7m4x9pq')).toBeInTheDocument();
-    await waitFor(() => expect(within(dialog).getByRole('button', { name: 'Print slip' })).toHaveFocus());
   });
 
   it('asks for confirmation before resetting a password', async () => {
@@ -386,7 +351,7 @@ describe('teachers page', () => {
 
   it('creates a teacher with a title kept apart from the name', async () => {
     const user = userEvent.setup();
-    vi.mocked(api.createTeacher).mockResolvedValue({ teacherId: 'tNew', password: 'k7m4x9pq' });
+    vi.mocked(api.createTeacher).mockResolvedValue({ teacherId: 'tNew' });
     render();
     const dialog = await openAdd(user);
     const title = within(dialog).getByRole('combobox', { name: /^Title/ });
@@ -404,7 +369,7 @@ describe('teachers page', () => {
 
   it('creates a teacher with only a Sinhala name and refuses one with no name', async () => {
     const user = userEvent.setup();
-    vi.mocked(api.createTeacher).mockResolvedValue({ teacherId: 'tNew', password: 'k7m4x9pq' });
+    vi.mocked(api.createTeacher).mockResolvedValue({ teacherId: 'tNew' });
     render();
     const dialog = await openAdd(user);
     await pickOption(user, within(dialog).getByRole('combobox', { name: 'Subjects' }), 'Mathematics');

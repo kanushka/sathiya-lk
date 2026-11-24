@@ -1,6 +1,7 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
 // Copyright (C) 2026 Kanushka Gayan
 
+import { useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Link, Navigate, Outlet, createBrowserRouter, useParams, type RouteObject } from 'react-router-dom';
 import { AdminLayout } from '../ui/AdminLayout';
@@ -8,8 +9,9 @@ import { EmptyState } from '../ui/EmptyState';
 import { LoadingState } from '../ui/LoadingState';
 import { PhoneNotice } from '../ui/PhoneNotice';
 import { useAuth } from './AuthProvider';
-import { RequireRole, hasRole } from './RequireRole';
+import { RequireRole } from './RequireRole';
 import { SchoolProvider } from './SchoolProvider';
+import { homePath, readLastSchool, rememberLastSchool, schoolHomePath } from './schoolHome';
 
 export interface FeatureModule {
   routes?: RouteObject[];
@@ -37,10 +39,23 @@ export function HomeRedirect() {
   const { user, claims, loading } = useAuth();
   if (loading) return <LoadingState />;
   if (!user) return <Navigate to="/login" replace />;
-  if (hasRole(claims, 'admin')) return <Navigate to="/admin" replace />;
-  if (hasRole(claims, 'teacher')) return <Navigate to="/me" replace />;
-  if (hasRole(claims, 'super')) return <Navigate to="/super" replace />;
-  return <Navigate to="/register" replace />;
+  return <Navigate to={homePath(claims, readLastSchool())} replace />;
+}
+
+export function SchoolHomeRedirect() {
+  const { user, claims, loading } = useAuth();
+  const { sid } = useParams();
+  if (loading) return <LoadingState />;
+  if (!user) return <Navigate to="/login" replace />;
+  return <Navigate to={(sid && schoolHomePath(claims, sid)) || '/'} replace />;
+}
+
+function RememberSchool() {
+  const { sid } = useParams();
+  useEffect(() => {
+    if (sid) rememberLastSchool(sid);
+  }, [sid]);
+  return null;
 }
 
 export function NotFound() {
@@ -64,17 +79,18 @@ export function NotFound() {
 function SuperSchoolLayout() {
   const { sid } = useParams();
   return (
-    <SchoolProvider sid={sid}>
-      <AdminLayout basePath={`/s/${sid ?? ''}`} readOnly />
+    <SchoolProvider>
+      <AdminLayout basePath={`/super/schools/${sid ?? ''}/admin`} readOnly />
     </SchoolProvider>
   );
 }
 
-function SuperPrintLayout() {
+function MemberAdminLayout() {
   const { sid } = useParams();
   return (
-    <SchoolProvider sid={sid}>
-      <Outlet />
+    <SchoolProvider>
+      <RememberSchool />
+      <AdminLayout basePath={`/s/${sid ?? ''}/admin`} />
     </SchoolProvider>
   );
 }
@@ -86,12 +102,14 @@ function rebase(route: RouteObject, from: string, to: string): RouteObject {
   return { ...rest, ...(path !== undefined && { path }), ...(children && { children }) } as RouteObject;
 }
 
+const SCHOOL_ADMIN = '/s/:sid/admin';
+const SUPER_ADMIN = '/super/schools/:sid/admin';
+
 export function buildRoutes(featureRoutes: RouteObject[]): RouteObject[] {
   const admin: RouteObject[] = [];
   const print: RouteObject[] = [];
   const me: RouteObject[] = [];
   const superRoutes: RouteObject[] = [];
-  const schoolView: RouteObject[] = [];
   const pub: RouteObject[] = [];
 
   for (const raw of featureRoutes) {
@@ -100,40 +118,44 @@ export function buildRoutes(featureRoutes: RouteObject[]): RouteObject[] {
     else if (under(route.path, '/admin')) admin.push(route);
     else if (under(route.path, '/me')) me.push(route);
     else if (under(route.path, '/super')) superRoutes.push(route);
-    else if (under(route.path, '/s/:sid')) schoolView.push(route);
     else pub.push(route);
   }
 
   return [
     { path: '/', element: <HomeRedirect /> },
+    { path: '/admin/*', element: <Navigate to="/" replace /> },
+    { path: '/me/*', element: <Navigate to="/" replace /> },
+    { path: '/s/:sid', element: <SchoolHomeRedirect /> },
     {
       element: (
         <RequireRole role="admin">
           <PhoneNotice />
-          <AdminLayout />
+          <MemberAdminLayout />
         </RequireRole>
       ),
-      children: admin,
+      children: admin.map((r) => rebase(r, '/admin', SCHOOL_ADMIN)),
     },
     {
       element: (
         <RequireRole role="admin">
           <SchoolProvider>
+            <RememberSchool />
             <Outlet />
           </SchoolProvider>
         </RequireRole>
       ),
-      children: print,
+      children: print.map((r) => rebase(r, '/admin', SCHOOL_ADMIN)),
     },
     {
       element: (
         <RequireRole role="teacher">
           <SchoolProvider scope="school">
+            <RememberSchool />
             <Outlet />
           </SchoolProvider>
         </RequireRole>
       ),
-      children: me,
+      children: me.map((r) => rebase(r, '/me', '/s/:sid/me')),
     },
     {
       element: (
@@ -145,23 +167,23 @@ export function buildRoutes(featureRoutes: RouteObject[]): RouteObject[] {
       children: superRoutes,
     },
     {
-      path: '/s/:sid',
       element: (
         <RequireRole role="super">
           <PhoneNotice />
           <SuperSchoolLayout />
         </RequireRole>
       ),
-      children: [...schoolView, ...admin.map((r) => rebase(r, '/admin', '/s/:sid'))],
+      children: admin.map((r) => rebase(r, '/admin', SUPER_ADMIN)),
     },
     {
-      path: '/s/:sid',
       element: (
         <RequireRole role="super">
-          <SuperPrintLayout />
+          <SchoolProvider>
+            <Outlet />
+          </SchoolProvider>
         </RequireRole>
       ),
-      children: print.map((r) => rebase(r, '/admin', '/s/:sid')),
+      children: print.map((r) => rebase(r, '/admin', SUPER_ADMIN)),
     },
     ...pub,
     { path: '*', element: <NotFound /> },

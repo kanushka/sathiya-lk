@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
 // Copyright (C) 2026 Kanushka Gayan
 
-import type { Claims } from '@sathiya/core';
+import type { Claims, Membership } from '@sathiya/core';
 import { onAuthStateChanged, signOut as fbSignOut, type User } from 'firebase/auth';
 import { createContext, useCallback, useContext, useEffect, useMemo, useState, type ReactNode } from 'react';
 import { clearSessionPasswords } from '../features/teachers/sessionPasswords';
@@ -17,18 +17,30 @@ export interface AuthState {
 
 const AuthContext = createContext<AuthState | null>(null);
 
-function pickClaims(raw: Record<string, unknown>): Claims {
+function pickMembership(raw: unknown): Membership | null {
+  if (!raw || typeof raw !== 'object') return null;
+  const { r, t } = raw as { r?: unknown; t?: unknown };
+  if (r !== 'a' && r !== 't') return null;
+  return typeof t === 'string' && t ? { r, t } : { r };
+}
+
+export function parseClaims(raw: Record<string, unknown>): Claims {
   const claims: Claims = {};
-  if (typeof raw.sid === 'string') claims.sid = raw.sid;
-  if (raw.role === 'admin' || raw.role === 'teacher') claims.role = raw.role;
-  if (typeof raw.tid === 'string') claims.tid = raw.tid;
+  if (raw.schools && typeof raw.schools === 'object' && !Array.isArray(raw.schools)) {
+    const schools: Record<string, Membership> = {};
+    for (const [sid, value] of Object.entries(raw.schools)) {
+      const m = pickMembership(value);
+      if (m) schools[sid] = m;
+    }
+    if (Object.keys(schools).length) claims.schools = schools;
+  }
   if (raw.super === true) claims.super = true;
   return claims;
 }
 
 async function readClaims(user: User, force = false): Promise<Claims> {
   const token = await user.getIdTokenResult(force);
-  return pickClaims(token.claims);
+  return parseClaims(token.claims);
 }
 
 export function AuthProvider({ children }: { children: ReactNode }) {

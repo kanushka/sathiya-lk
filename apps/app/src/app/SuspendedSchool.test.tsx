@@ -5,7 +5,7 @@ import type { Claims } from '@sathiya/core';
 import { render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { I18nextProvider } from 'react-i18next';
-import { MemoryRouter } from 'react-router-dom';
+import { MemoryRouter, Route, Routes } from 'react-router-dom';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { testI18n } from '../test/render';
 import { ToastProvider } from '../ui/Toast';
@@ -37,16 +37,23 @@ vi.mock('../lib/firestore', () => ({
 
 const { SchoolProvider } = await import('./SchoolProvider');
 
-function renderProvider(scope?: 'full' | 'school', sid?: string) {
+function renderProvider(scope?: 'full' | 'school') {
   const lang = { lang: 'en' as const, setLang: () => undefined };
   return render(
-    <MemoryRouter>
+    <MemoryRouter initialEntries={['/s/s1']}>
       <LangContextProvider value={lang}>
         <I18nextProvider i18n={testI18n}>
           <ToastProvider>
-            <SchoolProvider scope={scope} sid={sid}>
-              <p>dashboard</p>
-            </SchoolProvider>
+            <Routes>
+              <Route
+                path="/s/:sid"
+                element={
+                  <SchoolProvider scope={scope}>
+                    <p>dashboard</p>
+                  </SchoolProvider>
+                }
+              />
+            </Routes>
           </ToastProvider>
         </I18nextProvider>
       </LangContextProvider>
@@ -63,7 +70,7 @@ describe('suspended school gate', () => {
   });
 
   it('shows the suspended screen to an admin instead of the dashboard, without subscribing school data', () => {
-    state.claims = { sid: 's1', role: 'admin' };
+    state.claims = { schools: { s1: { r: 'a' } } };
     renderProvider();
     expect(screen.getByRole('heading', { name: 'This school is suspended' })).toBeInTheDocument();
     expect(screen.queryByText('dashboard')).not.toBeInTheDocument();
@@ -71,14 +78,14 @@ describe('suspended school gate', () => {
   });
 
   it('shows the suspended screen to a teacher', () => {
-    state.claims = { sid: 's1', role: 'teacher', tid: 't1' };
+    state.claims = { schools: { s1: { r: 't', t: 't1' } } };
     renderProvider('school');
     expect(screen.getByRole('heading', { name: 'This school is suspended' })).toBeInTheDocument();
     expect(screen.queryByText('dashboard')).not.toBeInTheDocument();
   });
 
   it('offers contact, report and sign out', async () => {
-    state.claims = { sid: 's1', role: 'admin' };
+    state.claims = { schools: { s1: { r: 'a' } } };
     renderProvider();
     expect(screen.getByRole('link', { name: 'Contact the Sathiya team' })).toHaveAttribute('href', 'https://sathiya.kanushka.com/contact/');
     await userEvent.click(screen.getByRole('button', { name: 'Report a problem' }));
@@ -90,20 +97,20 @@ describe('suspended school gate', () => {
 
   it('never blocks a super admin', () => {
     state.claims = { super: true };
-    renderProvider('full', 's1');
+    renderProvider('full');
     expect(screen.getByText('dashboard')).toBeInTheDocument();
     expect(screen.queryByRole('heading', { name: 'This school is suspended' })).not.toBeInTheDocument();
   });
 
   it('lets an admin of an active school through', () => {
-    state.claims = { sid: 's1', role: 'admin' };
+    state.claims = { schools: { s1: { r: 'a' } } };
     state.status = 'active';
     renderProvider();
     expect(screen.getByText('dashboard')).toBeInTheDocument();
   });
 
   it('opens no school data listeners until the school doc has loaded', () => {
-    state.claims = { sid: 's1', role: 'admin' };
+    state.claims = { schools: { s1: { r: 'a' } } };
     state.status = 'active';
     state.schoolLoading = true;
     renderProvider();
@@ -113,7 +120,7 @@ describe('suspended school gate', () => {
 
   it('subscribes school data for a super admin viewing a suspended school', () => {
     state.claims = { super: true };
-    renderProvider('full', 's1');
+    renderProvider('full');
     expect(state.collections).toContain('schools/s1/teachers');
   });
 });

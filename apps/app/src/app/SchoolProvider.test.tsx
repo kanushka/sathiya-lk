@@ -2,7 +2,7 @@
 // Copyright (C) 2026 Kanushka Gayan
 
 import { render, screen } from '@testing-library/react';
-import { MemoryRouter } from 'react-router-dom';
+import { MemoryRouter, Route, Routes } from 'react-router-dom';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 const calls = vi.hoisted(() => ({
@@ -12,7 +12,7 @@ const calls = vi.hoisted(() => ({
 }));
 
 vi.mock('../lib/firebase', () => ({ app: {}, auth: {}, db: {}, functions: {}, storage: {} }));
-vi.mock('./AuthProvider', () => ({ useAuth: () => ({ claims: { sid: 's1', role: 'teacher', tid: 't1' } }) }));
+vi.mock('./AuthProvider', () => ({ useAuth: () => ({ claims: { schools: { s1: { r: 't', t: 't1' } } } }) }));
 vi.mock('../lib/firestore', () => ({
   useDoc: (path: string | null) => {
     calls.docs.push(path);
@@ -56,10 +56,17 @@ function Probe() {
 
 function renderWith(scope?: 'full' | 'school') {
   render(
-    <MemoryRouter>
-      <SchoolProvider scope={scope}>
-        <Probe />
-      </SchoolProvider>
+    <MemoryRouter initialEntries={['/s/s1']}>
+      <Routes>
+        <Route
+          path="/s/:sid"
+          element={
+            <SchoolProvider scope={scope}>
+              <Probe />
+            </SchoolProvider>
+          }
+        />
+      </Routes>
     </MemoryRouter>,
   );
   return JSON.parse(screen.getByTestId('probe').textContent ?? '{}');

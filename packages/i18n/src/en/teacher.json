@@ -25,18 +25,5 @@
   },
   "loadError": "Could not load your timetable. Please try again.",
   "signOut": "Sign out",
-  "changePassword": "Change password",
-  "cp": {
-    "title": "Change password",
-    "current": "Current password",
-    "new": "New password",
-    "confirm": "Confirm new password",
-    "submit": "Change password",
-    "tooShort": "Use at least 8 characters",
-    "mismatch": "Passwords do not match",
-    "wrongCurrent": "Current password is incorrect",
-    "failed": "Could not change password. Please try again.",
-    "done": "Password changed"
-  },
   "adminLink": "School admin"
 }

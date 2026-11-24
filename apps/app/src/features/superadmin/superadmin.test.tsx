@@ -133,7 +133,7 @@ describe('SchoolsPage', () => {
     renderPage();
     const row = screen.getByText('Siripura Central College').closest('tr') as HTMLElement;
     expect(await within(row).findByText('58')).toBeInTheDocument();
-    expect(within(row).getByRole('link', { name: 'Open' })).toHaveAttribute('href', '/s/a');
+    expect(within(row).getByRole('link', { name: 'Open' })).toHaveAttribute('href', '/super/schools/a/admin');
     expect(within(row).getByRole('link', { name: 'Details' })).toHaveAttribute('href', '/super/schools/a');
   });
 });
@@ -230,7 +230,7 @@ describe('useUsageCounts', () => {
 });
 
 describe('SchoolDetail', () => {
-  it('renders school facts and links to /s/:sid', async () => {
+  it('renders school facts and links to the read-only view', async () => {
     renderWithSchool(
       <UsageSourceProvider value={source}>
         <SchoolDetail school={{ loading: false, data: schools[0] }} setStatus={vi.fn()} />
@@ -240,7 +240,7 @@ describe('SchoolDetail', () => {
     expect(screen.getByRole('heading', { name: 'Siripura Central College' })).toBeInTheDocument();
     expect(screen.getByText('සිරිපුර මධ්‍ය විද්‍යාලය')).toBeInTheDocument();
     expect(screen.getByText('Kandy')).toBeInTheDocument();
-    expect(screen.getByRole('link', { name: 'Open read-only view' })).toHaveAttribute('href', '/s/a');
+    expect(screen.getByRole('link', { name: 'Open read-only view' })).toHaveAttribute('href', '/super/schools/a/admin');
     expect(await screen.findByText('58')).toBeInTheDocument();
     expect(screen.getByRole('button', { name: 'Disable' })).toBeInTheDocument();
   });
@@ -295,8 +295,8 @@ describe('SuperLayout and SuperAdminLink', () => {
     );
 
   it('shows School admin link for admin+super', () => {
-    layout({ sid: 's', role: 'admin', super: true });
-    expect(screen.getByRole('link', { name: 'School admin' })).toHaveAttribute('href', '/admin');
+    layout({ schools: { s: { r: 'a' } }, super: true });
+    expect(screen.getByRole('link', { name: 'School admin' })).toHaveAttribute('href', '/s/s/admin');
     expect(screen.getByRole('link', { name: 'Schools' })).toHaveAttribute('href', '/super');
     expect(screen.getByRole('link', { name: 'Usage' })).toHaveAttribute('href', '/super/usage');
   });
@@ -310,7 +310,7 @@ describe('SuperLayout and SuperAdminLink', () => {
     const { unmount } = renderWithSchool(<SuperAdminLink />, { ctx, claims: { super: true } });
     expect(screen.getByRole('link', { name: 'Super admin' })).toHaveAttribute('href', '/super');
     unmount();
-    renderWithSchool(<SuperAdminLink />, { ctx, claims: { sid: 's', role: 'admin' } });
+    renderWithSchool(<SuperAdminLink />, { ctx, claims: { schools: { s: { r: 'a' } } } });
     expect(screen.queryByRole('link')).toBeNull();
   });
 });

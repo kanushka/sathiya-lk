@@ -26,12 +26,12 @@ function setup(teacherId: string = T.ananda, opts: { entries?: Entry[]; ctx?: Sc
   renderWithSchool(
     <TimetableApiContext.Provider value={api}>
       <Routes>
-        <Route path="/admin/timetable/teacher" element={<TeacherIndexRedirect />} />
-        <Route path="/admin/timetable/teacher/:teacherId" element={<TeacherViewPage />} />
-        <Route path="/s/:sid/timetable/teacher/:teacherId" element={<TeacherViewPage />} />
+        <Route path="/s/siripura/admin/timetable/teacher" element={<TeacherIndexRedirect />} />
+        <Route path="/s/siripura/admin/timetable/teacher/:teacherId" element={<TeacherViewPage />} />
+        <Route path="/super/schools/:sid/admin/timetable/teacher/:teacherId" element={<TeacherViewPage />} />
       </Routes>
     </TimetableApiContext.Provider>,
-    { ctx: opts.ctx ?? ctx, entries: opts.entries ?? entries, route: opts.route ?? `/admin/timetable/teacher/${teacherId}` },
+    { ctx: opts.ctx ?? ctx, entries: opts.entries ?? entries, route: opts.route ?? `/s/siripura/admin/timetable/teacher/${teacherId}` },
   );
   return api;
 }
@@ -68,27 +68,27 @@ describe('TeacherViewPage', () => {
     setup(T.perera);
     expect(teacherButton()).toHaveTextContent('Mrs. N. Perera');
     cleanup();
-    setup(T.ananda, { route: '/admin/timetable/teacher' });
+    setup(T.ananda, { route: '/s/siripura/admin/timetable/teacher' });
     expect(teacherButton()).toHaveTextContent('Mrs. N. Perera');
     cleanup();
-    setup(T.ananda, { route: `/admin/timetable/teacher?teacher=${T.ananda}` });
+    setup(T.ananda, { route: `/s/siripura/admin/timetable/teacher?teacher=${T.ananda}` });
     expect(teacherButton()).toHaveTextContent('Ven. Ananda Thero');
     cleanup();
     sessionStorage.clear();
-    setup(T.ananda, { route: '/admin/timetable/teacher?teacher=nope' });
+    setup(T.ananda, { route: '/s/siripura/admin/timetable/teacher?teacher=nope' });
     expect(teacherButton()).toHaveTextContent(teacherDisplayName(sortedTeachers(ctx)[0]!));
     sessionStorage.clear();
   });
 
   it('links an empty teacher list to Add teacher', () => {
-    setup(T.ananda, { ctx: { ...ctx, teachers: [] }, route: '/admin/timetable/teacher' });
+    setup(T.ananda, { ctx: { ...ctx, teachers: [] }, route: '/s/siripura/admin/timetable/teacher' });
     expect(screen.getByText('No teachers yet')).toBeInTheDocument();
-    expect(screen.getByRole('link', { name: '+ Add teacher' })).toHaveAttribute('href', '/admin/teachers?new=1');
+    expect(screen.getByRole('link', { name: '+ Add teacher' })).toHaveAttribute('href', '/s/siripura/admin/teachers?new=1');
   });
 
   it('links a missing default template to Period templates', () => {
     setup(T.ananda, { ctx: { ...ctx, templates: [] } });
-    expect(screen.getByRole('link', { name: 'Go to period templates' })).toHaveAttribute('href', '/admin/templates');
+    expect(screen.getByRole('link', { name: 'Go to period templates' })).toHaveAttribute('href', '/s/siripura/admin/templates');
   });
 
   it('shows the teacher header and their lessons on default-template rows', () => {
@@ -296,12 +296,12 @@ describe('TeacherViewPage', () => {
   });
 
   it('redirects the index route to the first teacher by name', () => {
-    setup(T.ananda, { route: '/admin/timetable/teacher' });
+    setup(T.ananda, { route: '/s/siripura/admin/timetable/teacher' });
     expect(teacherButton()).toHaveTextContent('Mr. A. Rizan');
   });
 
   it('shows an empty state when there are no teachers', () => {
-    setup(T.ananda, { ctx: { ...ctx, teachers: [] }, route: '/admin/timetable/teacher' });
+    setup(T.ananda, { ctx: { ...ctx, teachers: [] }, route: '/s/siripura/admin/timetable/teacher' });
     expect(screen.getByText('No teachers yet')).toBeInTheDocument();
   });
 
@@ -309,15 +309,15 @@ describe('TeacherViewPage', () => {
     const open = vi.spyOn(window, 'open').mockReturnValue(null);
     setup();
     await userEvent.click(screen.getByRole('button', { name: 'Print' }));
-    expect(open).toHaveBeenCalledWith(`/admin/print/teacher/${T.ananda}?year=y-2026&auto=1`, '_blank', 'noopener');
+    expect(open).toHaveBeenCalledWith(`/s/siripura/admin/print/teacher/${T.ananda}?year=y-2026&auto=1`, '_blank', 'noopener');
     open.mockRestore();
   });
 
   it('prefixes the print URL with the super-admin mirror base', async () => {
     const open = vi.spyOn(window, 'open').mockReturnValue(null);
-    setup(T.ananda, { route: `/s/siripura/timetable/teacher/${T.ananda}` });
+    setup(T.ananda, { route: `/super/schools/siripura/admin/timetable/teacher/${T.ananda}` });
     await userEvent.click(screen.getByRole('button', { name: 'Print' }));
-    expect(open).toHaveBeenCalledWith(`/s/siripura/print/teacher/${T.ananda}?year=y-2026&auto=1`, '_blank', 'noopener');
+    expect(open).toHaveBeenCalledWith(`/super/schools/siripura/admin/print/teacher/${T.ananda}?year=y-2026&auto=1`, '_blank', 'noopener');
     open.mockRestore();
   });
   describe('pin mode', () => {

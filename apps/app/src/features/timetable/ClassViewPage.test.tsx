@@ -22,13 +22,13 @@ function makeApi(): TimetableApi {
   };
 }
 
-function setup(classId: string = C.c6b, api: TimetableApi = makeApi(), route = `/admin/timetable/class/${classId}`) {
+function setup(classId: string = C.c6b, api: TimetableApi = makeApi(), route = `/s/siripura/admin/timetable/class/${classId}`) {
   renderWithSchool(
     <TimetableApiContext.Provider value={api}>
       <Routes>
-        <Route path="/admin/timetable/class" element={<ClassIndexRedirect />} />
-        <Route path="/admin/timetable/class/:classId" element={<ClassViewPage />} />
-        <Route path="/s/:sid/timetable/class/:classId" element={<ClassViewPage />} />
+        <Route path="/s/siripura/admin/timetable/class" element={<ClassIndexRedirect />} />
+        <Route path="/s/siripura/admin/timetable/class/:classId" element={<ClassViewPage />} />
+        <Route path="/super/schools/:sid/admin/timetable/class/:classId" element={<ClassViewPage />} />
       </Routes>
     </TimetableApiContext.Provider>,
     { ctx, entries: entries6B, route },
@@ -65,10 +65,10 @@ describe('ClassViewPage', () => {
     renderWithSchool(
       <TimetableApiContext.Provider value={makeApi()}>
         <Routes>
-          <Route path="/admin/timetable/class/:classId" element={<ClassViewPage />} />
+          <Route path="/s/siripura/admin/timetable/class/:classId" element={<ClassViewPage />} />
         </Routes>
       </TimetableApiContext.Provider>,
-      { ctx, entries: combined, route: `/admin/timetable/class/${C.c6b}` },
+      { ctx, entries: combined, route: `/s/siripura/admin/timetable/class/${C.c6b}` },
     );
     expect(slot('Monday', 5)).toHaveTextContent('⧉ 6A+6B');
   });
@@ -171,15 +171,15 @@ describe('ClassViewPage', () => {
     const open = vi.spyOn(window, 'open').mockReturnValue(null);
     setup();
     await userEvent.click(screen.getByRole('button', { name: 'Print' }));
-    expect(open).toHaveBeenCalledWith(`/admin/print/class/${C.c6b}?year=y-2026&auto=1`, '_blank', 'noopener');
+    expect(open).toHaveBeenCalledWith(`/s/siripura/admin/print/class/${C.c6b}?year=y-2026&auto=1`, '_blank', 'noopener');
     open.mockRestore();
   });
 
   it('prefixes links with the super-admin mirror base', async () => {
     const open = vi.spyOn(window, 'open').mockReturnValue(null);
-    setup(C.c6b, makeApi(), `/s/siripura/timetable/class/${C.c6b}`);
+    setup(C.c6b, makeApi(), `/super/schools/siripura/admin/timetable/class/${C.c6b}`);
     await userEvent.click(screen.getByRole('button', { name: 'Print' }));
-    expect(open).toHaveBeenCalledWith(`/s/siripura/print/class/${C.c6b}?year=y-2026&auto=1`, '_blank', 'noopener');
+    expect(open).toHaveBeenCalledWith(`/super/schools/siripura/admin/print/class/${C.c6b}?year=y-2026&auto=1`, '_blank', 'noopener');
     await userEvent.click(screen.getByRole('button', { name: 'Next class' }));
     expect(screen.getByRole('combobox', { name: /^Class/ })).toHaveTextContent('Grade 6 · 6C');
     open.mockRestore();
@@ -211,48 +211,48 @@ describe('ClassViewPage', () => {
       const first = setup(C.c6c);
       expect(combobox()).toHaveTextContent('6C');
       cleanup();
-      setup(C.c6b, first, '/admin/timetable/class');
+      setup(C.c6b, first, '/s/siripura/admin/timetable/class');
       expect(combobox()).toHaveTextContent('Grade 6 · 6C');
     });
 
     it('selects the class from ?class= and ?c=', () => {
-      setup(C.c6c, makeApi(), `/admin/timetable/class?class=${C.c6c}`);
+      setup(C.c6c, makeApi(), `/s/siripura/admin/timetable/class?class=${C.c6c}`);
       expect(combobox()).toHaveTextContent('Grade 6 · 6C');
       cleanup();
-      setup(C.c6b, makeApi(), `/admin/timetable/class?c=${C.c6b}`);
+      setup(C.c6b, makeApi(), `/s/siripura/admin/timetable/class?c=${C.c6b}`);
       expect(combobox()).toHaveTextContent('Grade 6 · 6B');
     });
 
     it('falls back to the first class for an unknown id', () => {
       sessionStorage.setItem('sathiya.timetable.class', 'gone');
-      setup(C.c6b, makeApi(), '/admin/timetable/class?class=nope');
+      setup(C.c6b, makeApi(), '/s/siripura/admin/timetable/class?class=nope');
       expect(combobox()).toHaveTextContent('Grade 1 · 1A');
     });
   });
 
   it('redirects the index route to the first class', () => {
-    setup(C.c6b, makeApi(), '/admin/timetable/class');
+    setup(C.c6b, makeApi(), '/s/siripura/admin/timetable/class');
     expect(screen.getByRole('combobox', { name: /^Class/ })).toHaveTextContent('Grade 1 · 1A');
   });
 
   it('shows an empty state when there are no classes', () => {
     renderWithSchool(
       <Routes>
-        <Route path="/admin/timetable/class" element={<ClassIndexRedirect />} />
+        <Route path="/s/siripura/admin/timetable/class" element={<ClassIndexRedirect />} />
       </Routes>,
-      { ctx: { ...ctx, classes: [] }, route: '/admin/timetable/class' },
+      { ctx: { ...ctx, classes: [] }, route: '/s/siripura/admin/timetable/class' },
     );
     expect(screen.getByText('No classes yet')).toBeInTheDocument();
-    expect(screen.getByRole('link', { name: 'Set up grades & classes' })).toHaveAttribute('href', '/admin/grades');
+    expect(screen.getByRole('link', { name: 'Set up grades & classes' })).toHaveAttribute('href', '/s/siripura/admin/grades');
   });
 
   it('shows no setup link in read-only view', () => {
     ro.value = true;
     renderWithSchool(
       <Routes>
-        <Route path="/admin/timetable/class" element={<ClassIndexRedirect />} />
+        <Route path="/s/siripura/admin/timetable/class" element={<ClassIndexRedirect />} />
       </Routes>,
-      { ctx: { ...ctx, classes: [] }, route: '/admin/timetable/class' },
+      { ctx: { ...ctx, classes: [] }, route: '/s/siripura/admin/timetable/class' },
     );
     expect(screen.getByText('No classes yet')).toBeInTheDocument();
     expect(screen.queryByRole('link', { name: 'Set up grades & classes' })).toBeNull();
@@ -293,10 +293,10 @@ describe('ClassViewPage', () => {
       renderWithSchool(
         <TimetableApiContext.Provider value={makeApi()}>
           <Routes>
-            <Route path="/admin/timetable/class/:classId" element={<ClassViewPage />} />
+            <Route path="/s/siripura/admin/timetable/class/:classId" element={<ClassViewPage />} />
           </Routes>
         </TimetableApiContext.Provider>,
-        { ctx, entries: [...entries6B, busy], route: `/admin/timetable/class/${C.c6b}` },
+        { ctx, entries: [...entries6B, busy], route: `/s/siripura/admin/timetable/class/${C.c6b}` },
       );
       await userEvent.click(screen.getByRole('button', { name: 'Pin Science' }));
       await userEvent.click(within(screen.getByRole('dialog')).getByRole('button', { name: 'Start pinning' }));
@@ -450,10 +450,10 @@ describe('ClassViewPage', () => {
         renderWithSchool(
           <TimetableApiContext.Provider value={api}>
             <Routes>
-              <Route path="/admin/timetable/class/:classId" element={<ClassViewPage />} />
+              <Route path="/s/siripura/admin/timetable/class/:classId" element={<ClassViewPage />} />
             </Routes>
           </TimetableApiContext.Provider>,
-          { ctx: school, entries: list, route: `/admin/timetable/class/${C.c6b}` },
+          { ctx: school, entries: list, route: `/s/siripura/admin/timetable/class/${C.c6b}` },
         );
         return api;
       }
@@ -529,12 +529,12 @@ describe('ClassViewPage', () => {
 describe('ClassViewPage outside the period template', () => {
   const orphan = entry('o-6c', 4, 8, [C.c6c], [[S.science, T.gunasekara]]);
 
-  function setupOrphan(route = `/admin/timetable/class/${C.c6c}`) {
+  function setupOrphan(route = `/s/siripura/admin/timetable/class/${C.c6c}`) {
     const api = makeApi();
     renderWithSchool(
       <TimetableApiContext.Provider value={api}>
         <Routes>
-          <Route path="/admin/timetable/class/:classId" element={<ClassViewPage />} />
+          <Route path="/s/siripura/admin/timetable/class/:classId" element={<ClassViewPage />} />
         </Routes>
       </TimetableApiContext.Provider>,
       { ctx, entries: [orphan], route },
@@ -555,7 +555,7 @@ describe('ClassViewPage outside the period template', () => {
   it('scrolls the list into view when linked to it', () => {
     const scroll = vi.spyOn(Element.prototype, 'scrollIntoView');
     try {
-      setupOrphan(`/admin/timetable/class/${C.c6c}#outside-template`);
+      setupOrphan(`/s/siripura/admin/timetable/class/${C.c6c}#outside-template`);
       expect(scroll).toHaveBeenCalled();
       expect(scroll.mock.contexts[0]).toHaveAttribute('id', 'outside-template');
     } finally {

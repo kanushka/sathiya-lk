@@ -6,6 +6,7 @@ import { useTranslation } from 'react-i18next';
 import { NavLink } from 'react-router-dom';
 import { useAuth } from '../../app/AuthProvider';
 import { useMaybeLang } from '../../app/LangProvider';
+import { homePath, readLastSchool } from '../../app/schoolHome';
 import type { CollectionState } from '../../lib/firestore';
 import { cx } from '../../ui/cx';
 import { BrandMark } from '../auth/AuthChrome';
@@ -39,7 +40,8 @@ export function SuperLayout({ children, openReports }: { children: ReactNode; op
   const target = langCtl?.lang === 'en' ? 'si' : 'en';
   const reports = useOpenReports(openReports);
   const openCount = reports.loading || reports.error ? 0 : reports.data.filter((r) => r.status === 'open').length;
-  const isAdmin = claims?.role === 'admin' && !!claims.sid;
+  const schoolHome = homePath(claims, readLastSchool());
+  const isMember = schoolHome.startsWith('/s/');
   return (
     <div className="flex min-h-screen bg-canvas font-sans text-ink">
       <aside className="w-[230px] shrink-0 bg-navy px-3.5 py-5">
@@ -62,9 +64,9 @@ export function SuperLayout({ children, openReports }: { children: ReactNode; op
                 </NavLink>
               </li>
             ))}
-            {isAdmin && (
+            {isMember && (
               <li className="mt-4 border-t border-white/10 pt-3">
-                <NavLink to="/admin" className={linkClass}>
+                <NavLink to={schoolHome} className={linkClass}>
                   {t('nav.schoolAdmin')}
                 </NavLink>
               </li>

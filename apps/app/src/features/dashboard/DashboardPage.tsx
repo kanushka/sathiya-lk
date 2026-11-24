@@ -2,7 +2,7 @@
 // Copyright (C) 2026 Kanushka Gayan
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { Link, useLocation } from 'react-router-dom';
+import { Link } from 'react-router-dom';
 import { useAuth } from '../../app/AuthProvider';
 import { useSchool, useYear } from '../../app/SchoolProvider';
 import { useReadOnly } from '../../ui/AdminLayout';
@@ -11,6 +11,7 @@ import { cx } from '../../ui/cx';
 import { EmptyState } from '../../ui/EmptyState';
 import { Select } from '../../ui/Select';
 import { colomboNow, greetingKey } from '../teacher/colomboNow';
+import { useAdminBase } from '../timetable/paths';
 import * as api from './api';
 import { attentionItems, classChips, dashboardStats, publishProblems, type ChipStatus } from './model';
 import { NewYearModal } from './NewYearModal';
@@ -22,11 +23,6 @@ const chipClass: Record<ChipStatus, string> = {
   empty: 'bg-surface-3 text-ink-soft',
 };
 
-function useBase(): string {
-  const { pathname } = useLocation();
-  return /^\/s\/[^/]+/.exec(pathname)?.[0] ?? '/admin';
-}
-
 export function DashboardPage() {
   const { t, i18n } = useTranslation('dashboard');
   const { t: tc } = useTranslation('common');
@@ -35,7 +31,7 @@ export function DashboardPage() {
   const { years, yearId, setYearId, entries } = useYear();
   const readOnly = useReadOnly();
   const { user } = useAuth();
-  const base = useBase();
+  const base = useAdminBase();
   const [dialog, setDialog] = useState<'new' | 'publish' | null>(null);
 
   const sid = school.school.id;

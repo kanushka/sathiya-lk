@@ -55,7 +55,7 @@ export function SchoolDetail({ school: injected, setStatus = defaultSetStatus, r
         <h1 className="m-0 text-[26px] font-bold">{pickName(school, lang)}</h1>
         <div className="flex gap-2">
           <Link
-            to={`/s/${school.id}`}
+            to={`/super/schools/${school.id}/admin`}
             className="inline-flex h-8 items-center rounded-lg border border-line-strong bg-white px-3 text-[13px] font-semibold hover:bg-surface"
           >
             {t('detail.openReadOnly')}

@@ -196,8 +196,8 @@ describe('grades page', () => {
     const user = userEvent.setup();
     renderWithSchool(<GradesPage />, { ctx: { ...ctx, subjects: [], templates: [] }, entries: [] });
     await user.click(screen.getByRole('button', { name: /^Grade 6\b/ }));
-    expect(screen.getByRole('link', { name: 'Go to subjects' })).toHaveAttribute('href', '/admin/subjects');
-    expect(screen.getByRole('link', { name: 'Go to period templates' })).toHaveAttribute('href', '/admin/templates');
+    expect(screen.getByRole('link', { name: 'Go to subjects' })).toHaveAttribute('href', '/s/siripura/admin/subjects');
+    expect(screen.getByRole('link', { name: 'Go to period templates' })).toHaveAttribute('href', '/s/siripura/admin/templates');
   });
 
   it('read-only hides every write control', async () => {

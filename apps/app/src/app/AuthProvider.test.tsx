@@ -21,7 +21,7 @@ vi.mock('firebase/auth', () => ({
 }));
 vi.mock('../features/teachers/sessionPasswords', () => ({ clearSessionPasswords: fb.clear }));
 
-const { AuthProvider, useAuth } = await import('./AuthProvider');
+const { AuthProvider, parseClaims, useAuth } = await import('./AuthProvider');
 
 function SignOutButton() {
   const { signOut } = useAuth();
@@ -53,5 +53,22 @@ describe('AuthProvider', () => {
     );
     act(() => fb.listener?.(null));
     expect(fb.clear).toHaveBeenCalled();
+  });
+});
+
+describe('parseClaims', () => {
+  it('keeps the schools map and super flag', () => {
+    expect(parseClaims({ schools: { s1: { r: 'a', t: 'T1' }, s2: { r: 't', t: 'T2' } }, super: true, iss: 'x' })).toEqual({
+      schools: { s1: { r: 'a', t: 'T1' }, s2: { r: 't', t: 'T2' } },
+      super: true,
+    });
+  });
+
+  it('drops malformed memberships and old single-school claims', () => {
+    expect(parseClaims({ sid: 's1', role: 'admin', tid: 'T1' })).toEqual({});
+    expect(parseClaims({ schools: { s1: { r: 'x' }, s2: 'a', s3: { r: 't', t: 5 }, s4: { r: 'a' } } })).toEqual({
+      schools: { s3: { r: 't' }, s4: { r: 'a' } },
+    });
+    expect(parseClaims({ schools: ['s1'], super: 'yes' })).toEqual({});
   });
 });

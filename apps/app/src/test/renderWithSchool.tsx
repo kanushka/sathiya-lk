@@ -34,7 +34,7 @@ function Providers({ options, children }: { options: RenderWithSchoolOptions; ch
     ctx: options.ctx,
     entries: options.entries ?? [],
     years: options.years ?? [testYear],
-    claims: options.claims ?? { sid: options.ctx.school.id, role: 'admin' as const },
+    claims: options.claims ?? { schools: { [options.ctx.school.id]: { r: 'a' as const } } },
     lang: options.lang ?? 'en',
     user: { uid: 'test-user', ...options.user } as User,
   }));
