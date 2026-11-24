@@ -4,7 +4,6 @@
 import type { Claims, Membership } from '@sathiya/core';
 import { onIdTokenChanged, signOut as fbSignOut, type User } from 'firebase/auth';
 import { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState, type ReactNode } from 'react';
-import { clearSessionPasswords } from '../features/teachers/sessionPasswords';
 import { auth } from '../lib/firebase';
 
 export interface AuthState {
@@ -57,7 +56,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         uidRef.current = next?.uid ?? null;
         setUser(next);
         if (!next) {
-          clearSessionPasswords();
           setClaims({});
           setLoading(false);
           return;
@@ -86,7 +84,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }, []);
 
   const signOut = useCallback(async () => {
-    clearSessionPasswords();
     await fbSignOut(auth);
   }, []);
 

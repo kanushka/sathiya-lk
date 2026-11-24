@@ -1,5 +1,7 @@
 {
   "nav": {
+    "joinRequests_one": "එක්වීමේ ඉල්ලීම් {{count}}",
+    "joinRequests_other": "එක්වීමේ ඉල්ලීම් {{count}}",
     "menu": "මෙනුව",
     "dashboard": "පාලක පුවරුව",
     "groups": {

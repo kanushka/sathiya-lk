@@ -1,19 +1,19 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
 // Copyright (C) 2026 Kanushka Gayan
 import { paths, teacherDisplayName, type Member } from '@sathiya/core';
-import { useEffect, useState } from 'react';
+import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
+import { Link } from 'react-router-dom';
 import { useLang } from '../../app/LangProvider';
 import { useSchool } from '../../app/SchoolProvider';
 import { useCollection } from '../../lib/firestore';
 import { useReadOnly } from '../../ui/AdminLayout';
 import { Button } from '../../ui/Button';
+import { CopyLink } from '../../ui/CopyLink';
 import { EmptyState } from '../../ui/EmptyState';
 import { PageHeader } from '../../ui/PageHeader';
 import { Table, TBody, Td, Th, THead, Tr } from '../../ui/Table';
-import { useToast } from '../../ui/Toast';
-import { qrSvgDataUri } from '../teachers/qr';
-import { teacherLoginUrl } from '../teachers/slip';
+import { useAdminBase } from '../timetable/paths';
 import * as api from './api';
 import { InviteModal } from './InviteModal';
 
@@ -22,7 +22,6 @@ export function MembersPage() {
   const { lang } = useLang();
   const { school, teachers } = useSchool();
   const readOnly = useReadOnly();
-  const toast = useToast();
   const [inviting, setInviting] = useState(false);
   const sid = school.id;
   const members = useCollection<Member & { id: string }>(paths.members(sid));
@@ -32,16 +31,8 @@ export function MembersPage() {
     .map((m) => ({ m, teacher: m.teacherId ? teachers.find((x) => x.id === m.teacherId) : undefined }))
     .sort((a, b) => Number(b.m.role === 'admin') - Number(a.m.role === 'admin'));
 
-  const teacherLink = teacherLoginUrl(window.location.origin, sid);
   const adminLink = `${window.location.origin}/login`;
-  const [qr, setQr] = useState<string | null>(null);
-  useEffect(() => {
-    let live = true;
-    qrSvgDataUri(teacherLink).then((uri) => live && setQr(uri), () => undefined);
-    return () => {
-      live = false;
-    };
-  }, [teacherLink]);
+  const base = useAdminBase();
 
   return (
     <div>
@@ -104,13 +95,15 @@ export function MembersPage() {
       <section className="mt-6 rounded-[14px] border border-line-soft bg-white p-5">
         <h2 className="m-0 text-[17px] font-bold">{t('page.linkTitle')}</h2>
         <p className="mb-0 mt-1 text-sm text-ink-soft">{t('page.linkBody')}</p>
-        <div className="mt-4 flex flex-wrap items-start gap-5">
-          <div className="flex min-w-0 flex-1 flex-col gap-4">
-            <CopyLink label={t('page.teacherLink')} hint={t('page.teacherLinkHint')} url={teacherLink} copyLabel={t('page.copyTeacher')} />
-            <CopyLink label={t('page.adminLink')} url={adminLink} copyLabel={t('page.copyAdmin')} />
-          </div>
-          {qr && <img src={qr} alt={t('page.qrAlt')} width={112} height={112} className="shrink-0 rounded-lg border border-line-soft" />}
+        <div className="mt-4">
+          <CopyLink label={t('page.adminLink')} url={adminLink} copyLabel={t('page.copyAdmin')} />
         </div>
+        <p className="mb-0 mt-4 text-sm text-ink-soft">
+          {t('page.teachersJoin')}{' '}
+          <Link to={`${base}/teachers`} className="font-semibold text-brand underline underline-offset-2">
+            {t('page.teachersPage')}
+          </Link>
+        </p>
       </section>
 
       {inviting && (
@@ -122,39 +115,6 @@ export function MembersPage() {
           }}
         />
       )}
-    </div>
-  );
-}
-
-function CopyLink({ label, hint, url, copyLabel }: { label: string; hint?: string; url: string; copyLabel: string }) {
-  const { t } = useTranslation('members');
-  const toast = useToast();
-  const [copied, setCopied] = useState(false);
-  useEffect(() => {
-    if (!copied) return;
-    const id = setTimeout(() => setCopied(false), 2000);
-    return () => clearTimeout(id);
-  }, [copied]);
-
-  async function copy() {
-    try {
-      await navigator.clipboard.writeText(url);
-      setCopied(true);
-    } catch {
-      toast.show(t('page.copyFailed'), 'error');
-    }
-  }
-
-  return (
-    <div className="min-w-0">
-      <p className="m-0 text-[13px] font-semibold text-ink-soft">{label}</p>
-      {hint && <p className="m-0 text-xs text-ink-muted">{hint}</p>}
-      <div className="mt-1.5 flex flex-wrap items-center gap-2.5">
-        <code className="min-w-0 break-all text-sm text-brand">{url}</code>
-        <Button size="sm" aria-label={copyLabel} onClick={() => void copy()}>
-          <span aria-live="polite">{copied ? t('page.copied') : t('page.copy')}</span>
-        </Button>
-      </div>
     </div>
   );
 }

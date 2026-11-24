@@ -4,16 +4,11 @@
     "subtitle": "Admins can edit the timetable. Teachers with access can view their own.",
     "invite": "Invite admin",
     "linkTitle": "App links",
-    "linkBody": "Share these links so teachers and admins can sign in.",
-    "teacherLink": "Teacher sign-in link",
-    "teacherLinkHint": "Opens the teacher sign-in with your school already chosen.",
+    "linkBody": "Admins sign in with this link.",
+    "teachersJoin": "Teachers join with the invite link on the",
+    "teachersPage": "Teachers page",
     "adminLink": "Admin sign-in link",
-    "copy": "Copy",
-    "copyTeacher": "Copy teacher sign-in link",
-    "copyAdmin": "Copy admin sign-in link",
-    "copied": "Copied!",
-    "qrAlt": "QR code for the teacher sign-in link",
-    "copyFailed": "Could not copy. Select the link and copy it."
+    "copyAdmin": "Copy admin sign-in link"
   },
   "list": {
     "name": "Name",

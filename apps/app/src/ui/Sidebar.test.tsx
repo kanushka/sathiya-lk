@@ -10,6 +10,14 @@ import { pickOption } from '../test/pickOption';
 import { renderWithSchool } from '../test/renderWithSchool';
 import { Sidebar, navItems } from './Sidebar';
 
+const join = vi.hoisted(() => ({ count: 0, sid: null as string | null }));
+vi.mock('../features/teachers/useJoinRequests', () => ({
+  useJoinRequests: (sid: string | null) => {
+    join.sid = sid;
+    return { data: sid ? Array.from({ length: join.count }, (_, i) => ({ id: `u${i}` })) : [], loading: false };
+  },
+}));
+
 vi.mock('../app/memberSchools', () => ({
   fetchSchoolNames: async (ids: string[]) => Object.fromEntries(ids.map((id) => [id, id === 'siripura' ? 'Siripura Central College' : 'Royal College'])),
 }));
@@ -167,5 +175,27 @@ describe('Sidebar', () => {
       claims: { schools: { a: { r: 'a' }, b: { r: 'a' } }, super: true },
     });
     expect(screen.queryByRole('combobox', { name: /^School/ })).not.toBeInTheDocument();
+  });
+
+  it('shows the pending join request count on Teachers', () => {
+    join.count = 2;
+    renderSidebar();
+    expect(screen.getByRole('link', { name: /Teachers/ })).toHaveTextContent('2');
+    expect(screen.getByText('2 join requests')).toBeInTheDocument();
+    join.count = 0;
+  });
+
+  it('shows no badge without requests', () => {
+    join.count = 0;
+    renderSidebar();
+    expect(screen.getByRole('link', { name: 'Teachers' })).toHaveTextContent(/^Teachers$/);
+  });
+
+  it('does not listen for requests in the read-only view', () => {
+    join.count = 3;
+    renderWithSchool(<Sidebar readOnly />, { ctx, years: twoYears, route: '/super/schools/siripura/admin' });
+    expect(join.sid).toBeNull();
+    expect(screen.queryByText(/join requests/)).not.toBeInTheDocument();
+    join.count = 0;
   });
 });

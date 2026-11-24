@@ -9,6 +9,7 @@ import { useAuth } from '../app/AuthProvider';
 import { useMaybeLang } from '../app/LangProvider';
 import { useSchool, useYear } from '../app/SchoolProvider';
 import { SuperAdminLink } from '../features/superadmin/SuperAdminLink';
+import { useJoinRequests } from '../features/teachers/useJoinRequests';
 import { cx } from './cx';
 import { Icon, type IconName } from './Icon';
 import { PHONE_QUERY } from './PhoneNotice';
@@ -92,6 +93,7 @@ export function Sidebar({ basePath: baseProp, readOnly = false }: SidebarProps) 
   const name = pickName(school, lang);
   const currentYear = years.find((y) => y.id === yearId);
   const basePath = baseProp ?? `/s/${school.id}/admin`;
+  const pending = useJoinRequests(readOnly ? null : school.id).data.length;
 
   function toggle() {
     const next = !collapsed;
@@ -192,16 +194,20 @@ export function Sidebar({ basePath: baseProp, readOnly = false }: SidebarProps) 
                 ))}
               {items.map((item) => {
                 const label = t(item.labelKey);
+                const count = item.path === '/admin/teachers' ? pending : 0;
+                const countLabel = count > 0 ? t('nav.joinRequests', { count }) : '';
+                const fullLabel = count > 0 ? `${label}, ${countLabel}` : label;
                 return (
                   <NavLink
                     key={item.path}
                     to={href(item.path)}
                     end={item.path === '/admin'}
-                    aria-label={collapsed ? label : undefined}
-                    title={collapsed ? label : undefined}
+                    aria-label={collapsed ? fullLabel : undefined}
+                    title={collapsed ? fullLabel : undefined}
                     className={({ isActive }) =>
                       cx(
                         linkBase,
+                        'relative',
                         collapsed ? 'h-11 w-11 justify-center' : 'gap-2.5 px-3 py-[9px]',
                         isActive && linkActive,
                       )
@@ -209,6 +215,17 @@ export function Sidebar({ basePath: baseProp, readOnly = false }: SidebarProps) 
                   >
                     <Icon name={item.icon} size={collapsed ? 20 : 18} />
                     {!collapsed && label}
+                    {count > 0 && (
+                      <span
+                        className={cx(
+                          'flex h-5 min-w-5 items-center justify-center rounded-full bg-fill-warning px-1.5 text-[11px] font-bold text-ink',
+                          collapsed ? 'absolute right-0 top-0' : 'ml-auto',
+                        )}
+                      >
+                        <span aria-hidden="true">{count}</span>
+                        {!collapsed && <span className="sr-only">{countLabel}</span>}
+                      </span>
+                    )}
                   </NavLink>
                 );
               })}

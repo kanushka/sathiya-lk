@@ -8,7 +8,6 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 const fb = vi.hoisted(() => ({
   listener: null as null | ((u: unknown) => void),
   signOut: vi.fn(async () => undefined),
-  clear: vi.fn(),
 }));
 
 const fbAuth = vi.hoisted(() => ({ currentUser: null as unknown }));
@@ -20,7 +19,6 @@ vi.mock('firebase/auth', () => ({
   },
   signOut: fb.signOut,
 }));
-vi.mock('../features/teachers/sessionPasswords', () => ({ clearSessionPasswords: fb.clear }));
 
 const { AuthProvider, parseClaims, useAuth } = await import('./AuthProvider');
 
@@ -31,11 +29,10 @@ function SignOutButton() {
 
 beforeEach(() => {
   fb.signOut.mockClear();
-  fb.clear.mockClear();
 });
 
 describe('AuthProvider', () => {
-  it('clears session teacher passwords on explicit sign-out', async () => {
+  it('signs out through Firebase', async () => {
     render(
       <AuthProvider>
         <SignOutButton />
@@ -43,17 +40,6 @@ describe('AuthProvider', () => {
     );
     await userEvent.setup().click(screen.getByText('out'));
     expect(fb.signOut).toHaveBeenCalled();
-    expect(fb.clear).toHaveBeenCalled();
-  });
-
-  it('clears them when the session ends without an explicit sign-out', () => {
-    render(
-      <AuthProvider>
-        <SignOutButton />
-      </AuthProvider>,
-    );
-    act(() => fb.listener?.(null));
-    expect(fb.clear).toHaveBeenCalled();
   });
 });
 

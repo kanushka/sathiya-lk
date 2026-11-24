@@ -2,16 +2,13 @@
   "page": {
     "title": "Teachers",
     "search": "Search by name or staff ID",
-    "printAll": "Print all login slips",
     "add": "+ Add teacher",
     "edit": "Edit",
     "delete": "Delete",
     "empty": "No teachers yet",
-    "emptyBody": "Add your first teacher to give them a login.",
+    "emptyBody": "Add your first teacher. They can join later with an invite link.",
     "noMatch": "No teachers match your search",
     "primaryTeacher": "Primary teacher",
-    "neverLoggedIn": "Not logged in yet",
-    "printBlocked": "Allow pop-ups to print the slips",
     "cols": {
       "staffId": "Staff ID",
       "name": "Name",
@@ -19,11 +16,16 @@
       "grades": "Grades",
       "maxPerDay": "Max / day",
       "classTeacher": "Class teacher",
-      "login": "Login",
-      "actions": "Actions"
+      "actions": "Actions",
+      "account": "Account"
     },
-    "printPartial_one": "{{count}} teacher could not be reset and was left out of the slips",
-    "printPartial_other": "{{count}} teachers could not be reset and were left out of the slips"
+    "linkSelfDone": "Linked to your account",
+    "cancelled": "Personal link cancelled",
+    "unlinked": "{{name}} unlinked",
+    "actionFailed": "Could not do that. Try again.",
+    "alreadyLinked": "This teacher is already linked to an account. Unlink it first.",
+    "tooManySchools": "That account already belongs to the most schools allowed (15).",
+    "rateLimited": "Too many links today. Try again tomorrow."
   },
   "modal": {
     "nameEn": "Name in English",
@@ -47,7 +49,6 @@
     "email": "Email (optional)",
     "save": "Save teacher",
     "saving": "Saving…",
-    "done": "Done",
     "cancel": "Cancel",
     "saved": "Teacher saved",
     "saveFailed": "Could not save the teacher. Try again.",
@@ -58,24 +59,8 @@
       "subjects": "Pick at least one subject",
       "grades": "Pick at least one grade",
       "maxPerDay": "Enter a number from 1 to 10"
-    }
-  },
-  "slip": {
-    "title": "Login slip",
-    "staffId": "Staff ID",
-    "password": "Password",
-    "resetNeeded": "Reset needed",
-    "resetHint": "Reset to get a new password",
-    "afterSave": "The password appears here after you save",
-    "shownOnce": "Shown only now. Print or share it before closing.",
-    "loginAt": "Log in at",
-    "print": "Print slip",
-    "whatsapp": "Share on WhatsApp",
-    "reset": "Reset password",
-    "resetting": "Resetting…",
-    "resetFailed": "Could not reset the password. Try again.",
-    "qrAlt": "QR code to the teacher login page",
-    "needsReset": "Reset the password first to print a slip"
+    },
+    "added": "Teacher added"
   },
   "deleteGuard": {
     "title": "Delete {{name}}?",
@@ -87,7 +72,7 @@
     "body": {
       "grade": "This removes the grade and its classes: {{classes}}. It cannot be undone.",
       "gradeEmpty": "This removes the grade. It has no classes. It cannot be undone.",
-      "teacher": "This removes the teacher and their login. It cannot be undone.",
+      "teacher": "This removes the teacher and their account's access to this school. It cannot be undone.",
       "subject": "This removes the subject. It cannot be undone.",
       "class": "This removes the class. It cannot be undone.",
       "template": "This removes the period template. It cannot be undone."
@@ -100,33 +85,52 @@
       "template": "Used by {{count}} classes. Move those classes to another template first."
     }
   },
-  "print": {
-    "title": "Teacher login slips"
+  "status": {
+    "notLinked": "Not linked",
+    "pending": "Pending",
+    "linked": "Linked",
+    "lastLogin": "Last login {{when}}",
+    "neverSignedIn": "Not signed in yet"
   },
-  "resetConfirm": {
-    "title": "Reset {{name}}'s password?",
-    "body": "The current password stops working immediately. {{name}} cannot sign in until you give them the new one.",
-    "confirm": "Reset password",
+  "actions": {
+    "personalLink": "Personal link",
+    "cancelLink": "Cancel link",
+    "unlink": "Unlink",
+    "thisIsMe": "This is me"
+  },
+  "inviteLink": {
+    "title": "Invite link",
+    "body": "Share one link with all your teachers. A teacher whose email matches their record joins at once; others enter their staff ID and wait for your approval.",
+    "hidden": "For safety the link is shown only when it is made. Make a new link to share it again; the old one stops working.",
+    "create": "Create link",
+    "replace": "New link (old one stops working)",
+    "off": "Turn off link",
+    "isOff": "The invite link is off. Nobody can join with an old link.",
+    "copy": "Copy invite link",
+    "shareHint": "Copy it now and share it on your staff group.",
+    "failed": "Could not change the link. Try again."
+  },
+  "requests": {
+    "title": "Join requests ({{count}})",
+    "body": "Check that each person is the teacher they chose before you approve.",
+    "claims": "says they are {{teacher}} · {{staffId}}",
+    "unknownTeacher": "a teacher who was deleted",
+    "approve": "Approve",
+    "reject": "Reject",
+    "approved": "{{name}} can now see their timetable",
+    "rejected": "Request rejected"
+  },
+  "personalLink": {
+    "title": "Personal link for {{name}}",
+    "body": "Send this link only to {{name}}. It links the account they sign in with to this teacher, with no approval.",
+    "expires": "Works once, until {{when}}. Making a new link cancels this one.",
+    "copy": "Copy link",
+    "done": "Done"
+  },
+  "unlink": {
+    "title": "Unlink {{name}}?",
+    "body": "Their account loses access to this school right away. They can join again with a new link.",
+    "confirm": "Unlink",
     "cancel": "Cancel"
-  },
-  "printAll": {
-    "title": "Print login slips",
-    "body": "A password is only known right after it is created or reset. Slips for other teachers cannot show it.",
-    "withKnown_one": "Print {{count}} slip with new password",
-    "withKnown_other": "Print {{count}} slips with new passwords",
-    "knownHint": "{{count}} of {{total}} teachers have a fresh password in this session.",
-    "resetAll": "Reset all passwords and print",
-    "resetAllHint": "Gives every teacher a new password, then prints all {{total}} slips.",
-    "confirmTitle": "Reset every teacher's password?",
-    "confirmBody": "Every teacher's current password stops working immediately. Teachers cannot sign in until they get their new slip.",
-    "confirmAction": "Reset all and print",
-    "resetting": "Resetting…",
-    "back": "Back",
-    "close": "Close",
-    "failed": "Could not reset the passwords. Try again.",
-    "doneTitle": "Passwords reset",
-    "doneBody": "New passwords are ready. Print the slips now: they are lost if you reload or leave this page.",
-    "printReset_one": "Print {{count}} slip",
-    "printReset_other": "Print {{count}} slips"
   }
 }

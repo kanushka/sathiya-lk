@@ -1,7 +1,6 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
 // Copyright (C) 2026 Kanushka Gayan
 import {
-  pickName,
   readSheets,
   subjectsFingerprint,
   teacherDisplayName,
@@ -24,10 +23,6 @@ import { FormError } from '../../ui/FormError';
 import { Modal } from '../../ui/Modal';
 import { Table, TBody, Td, Th, THead, Tr } from '../../ui/Table';
 import { useToast } from '../../ui/Toast';
-import { usePrintLabels } from '../teachers/LoginSlip';
-import { printSlips } from '../teachers/printSlips';
-import { useSessionPasswords } from '../teachers/sessionPasswords';
-import { teacherLoginUrl } from '../teachers/slip';
 import { importSetup } from './api';
 import { ImportFileError, readImportFile } from './readFile';
 import { fetchDefaultSubjects } from '../subjects/api';
@@ -94,8 +89,6 @@ export function ImportModal({ onClose }: { onClose: () => void }) {
   const lang = i18n.language as Lang;
   const { school, subjects, teachers } = useSchool();
   const toast = useToast();
-  const printLabels = usePrintLabels();
-  const { set: setSessionPassword } = useSessionPasswords();
   const [view, setView] = useState<View>({ kind: 'start' });
   const [reading, setReading] = useState(false);
   const [fileError, setFileError] = useState<string | null>(null);
@@ -197,18 +190,6 @@ export function ImportModal({ onClose }: { onClose: () => void }) {
     }
   }
 
-  async function printNew(res: ImportSetupRes) {
-    const url = teacherLoginUrl(window.location.origin, school.id);
-    const slips = res.teachers.map((x) => ({
-      schoolName: pickName(school, lang),
-      staffId: x.staffId,
-      name: teacherDisplayName(x, lang),
-      password: '',
-      url,
-    }));
-    if (!(await printSlips(slips, printLabels))) toast.show(t('teachers:page.printBlocked'), 'error');
-  }
-
   if (view.kind === 'done') {
     const { res } = view;
     return (
@@ -219,18 +200,13 @@ export function ImportModal({ onClose }: { onClose: () => void }) {
         title={t('doneTitle')}
         onClose={onClose}
         footer={
-          <>
-            <Button onClick={() => void printNew(res)} disabled={res.teachers.length === 0}>
-              {t('printSlips')}
-            </Button>
-            <Button variant="primary" onClick={onClose}>
-              {t('done')}
-            </Button>
-          </>
+          <Button variant="primary" onClick={onClose}>
+            {t('done')}
+          </Button>
         }
       >
         <p className="m-0 text-sm text-ink">{t('doneBody', counts(res.subjectIds.length, res.teachers.length))}</p>
-        {res.teachers.length > 0 && <p className="m-0 mt-2 text-sm text-ink-soft">{t('slipsHint')}</p>}
+        {res.teachers.length > 0 && <p className="m-0 mt-2 text-sm text-ink-soft">{t('inviteHint')}</p>}
         {res.notCreated.length > 0 && <FormError className="mt-3">{t('notCreated', { list: res.notCreated.join(', ') })}</FormError>}
       </Modal>
     );

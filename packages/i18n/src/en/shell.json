@@ -1,5 +1,7 @@
 {
   "nav": {
+    "joinRequests_one": "{{count}} join request",
+    "joinRequests_other": "{{count}} join requests",
     "menu": "Menu",
     "dashboard": "Dashboard",
     "groups": {

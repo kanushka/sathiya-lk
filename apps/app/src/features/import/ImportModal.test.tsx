@@ -8,13 +8,10 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { ApiError, call } from '../../lib/callable';
 import { renderWithSchool } from '../../test/renderWithSchool';
 import { SubjectsPage } from '../subjects/SubjectsPage';
-import { printSlips } from '../teachers/printSlips';
-import { clearSessionPasswords } from '../teachers/sessionPasswords';
 import { TeachersPage } from '../teachers/TeachersPage';
 import { ImportModal } from './ImportModal';
 import { downloadBlob, templateCsv } from './template';
 
-vi.mock('../teachers/printSlips', async (orig) => ({ ...(await orig<typeof import('../teachers/printSlips')>()), printSlips: vi.fn() }));
 vi.mock('../../lib/callable', async (orig) => ({ ...(await orig<typeof import('../../lib/callable')>()), call: vi.fn() }));
 vi.mock('./template', async (orig) => ({ ...(await orig<typeof import('./template')>()), downloadBlob: vi.fn() }));
 
@@ -24,8 +21,6 @@ vi.mock('../../ui/AdminLayout', async (orig) => ({ ...(await orig<typeof import(
 beforeEach(() => {
   vi.resetAllMocks();
   flags.readOnly = false;
-  clearSessionPasswords();
-  vi.mocked(printSlips).mockResolvedValue(true);
 });
 
 const SUBJECTS_CSV = 'Name (English),Name (Sinhala),Short name\nDrama,නාට්‍ය,Drama\n';
@@ -63,7 +58,7 @@ describe('ImportModal preview', () => {
     }, { timeout: 310_000 });
     const done = await screen.findByRole('dialog', { name: 'Import complete' });
     expect(within(done).getByText('Added 1 subject and 0 teachers.')).toBeInTheDocument();
-    expect(within(done).getByRole('button', { name: 'Print login slips' })).toBeDisabled();
+    expect(within(done).queryByRole('button', { name: /slip/i })).not.toBeInTheDocument();
   });
 
   it('lists the teachers to add', async () => {

@@ -17,9 +17,6 @@ import { useToast } from '../../ui/Toast';
 import { useSchool } from '../../app/SchoolProvider';
 import { isSchoolDisabled } from '../../lib/callable';
 import * as api from './api';
-import { LoginSlip } from './LoginSlip';
-import { useSessionPasswords } from './sessionPasswords';
-import { teacherLoginUrl } from './slip';
 
 export interface TeacherModalProps {
   teacher?: Teacher;
@@ -55,7 +52,6 @@ export function TeacherModal({ teacher, onClose }: TeacherModalProps) {
   const { school, teachers, subjects } = useSchool();
   const readOnly = useReadOnly();
   const toast = useToast();
-  const { passwords, set: setSessionPassword } = useSessionPasswords();
   const [form, setForm] = useState<Form>(() => ({
     staffId: teacher?.staffId ?? formatStaffId(school.staffPrefix, nextStaffNumber(teachers.map((x) => x.staffId), school.staffPrefix)),
     ...initialName(teacher),
@@ -67,15 +63,10 @@ export function TeacherModal({ teacher, onClose }: TeacherModalProps) {
     phone: teacher?.phone ?? '',
     email: teacher?.email ?? '',
   }));
-  const [savedId, setSavedId] = useState<string | null>(null);
   const [submitted, setSubmitted] = useState(false);
   const [saving, setSaving] = useState(false);
   const [saveError, setSaveError] = useState<string | null>(null);
-  const [resetting, setResetting] = useState(false);
-  const [resetError, setResetError] = useState(false);
-  const [confirmingReset, setConfirmingReset] = useState(false);
 
-  const teacherId = teacher?.id ?? savedId;
   const locked = readOnly;
   const set = <K extends keyof Form>(key: K, value: Form[K]) => setForm((f) => ({ ...f, [key]: value }));
 
@@ -86,7 +77,7 @@ export function TeacherModal({ teacher, onClose }: TeacherModalProps) {
       ? null
       : !isValidStaffId(school.staffPrefix, form.staffId)
         ? t('modal.errors.staffId', { example: formatStaffId(school.staffPrefix, 24) })
-        : teachers.some((x) => x.staffId === form.staffId && x.id !== teacherId)
+        : teachers.some((x) => x.staffId === form.staffId)
           ? t('modal.errors.staffIdTaken')
           : null,
     subjects: form.isPrimary || form.subjectIds.length > 0 ? null : t('modal.errors.subjects'),
@@ -118,11 +109,11 @@ export function TeacherModal({ teacher, onClose }: TeacherModalProps) {
       if (teacher) {
         await api.updateTeacher(school.id, teacher.id, input);
         toast.show(t('modal.saved'), 'success');
-        onClose();
       } else {
-        const res = await api.createTeacher(school.id, input);
-        setSavedId(res.teacherId);
+        await api.createTeacher(school.id, input);
+        toast.show(t('modal.added'), 'success');
       }
+      onClose();
     } catch (err) {
       setSaveError(t(isSchoolDisabled(err) ? 'shell:suspended.writeBlocked' : 'modal.saveFailed'));
     } finally {
@@ -130,181 +121,122 @@ export function TeacherModal({ teacher, onClose }: TeacherModalProps) {
     }
   }
 
-  async function reset() {
-    if (!teacherId) return;
-    setResetting(true);
-    setResetError(false);
-    try {
-      setSessionPassword(teacherId, await api.resetTeacherPassword(school.id, teacherId));
-    } catch {
-      setResetError(true);
-    } finally {
-      setResetting(false);
-      setConfirmingReset(false);
-    }
-  }
-
   return (
     <Modal
       open
-      width={900}
+      width={640}
       title={teacher ? t('modal.titleEdit') : t('modal.titleAdd')}
       subtitle={teacher ? `${teacherDisplayName(teacher, lang)} · ${teacher.staffId}` : undefined}
       onClose={onClose}
       busy={saving}
       footer={
-        savedId ? (
-          <Button variant="primary" onClick={onClose}>
-            {t('modal.done')}
-          </Button>
-        ) : (
-          <>
-            {saveError && (
-              <FormError className="mr-auto">{saveError}</FormError>
-            )}
-            <Button onClick={onClose} disabled={saving}>{t('modal.cancel')}</Button>
-            {!readOnly && (
-              <Button variant="primary" type="submit" form="teacher-form" loading={saving} loadingLabel={t('modal.saving')}>
-                {t('modal.save')}
-              </Button>
-            )}
-          </>
-        )
+        <>
+          {saveError && (
+            <FormError className="mr-auto">{saveError}</FormError>
+          )}
+          <Button onClick={onClose} disabled={saving}>{t('modal.cancel')}</Button>
+          {!readOnly && (
+            <Button variant="primary" type="submit" form="teacher-form" loading={saving} loadingLabel={t('modal.saving')}>
+              {t('modal.save')}
+            </Button>
+          )}
+        </>
       }
     >
-      <div className={savedId ? 'mx-auto max-w-[340px]' : 'grid gap-8 md:grid-cols-[1fr_300px]'}>
-        {!savedId && (
-        <form id="teacher-form" onSubmit={save} noValidate className="flex flex-col gap-4">
-          <fieldset disabled={locked} className="m-0 flex min-w-0 flex-col gap-4 border-0 p-0">
-            <div className="grid grid-cols-[140px_140px] gap-3">
-              <Field label={t('modal.staffId')} error={show('staffId')}>
-                <input
-                  className={inputClass}
-                  value={form.staffId}
-                  disabled={locked || !!teacher}
-                  onChange={(e) => set('staffId', e.target.value.toUpperCase())}
-                />
-              </Field>
-              <Field label={t('modal.title')}>
-                <Select
-                  value={form.title}
-                  onChange={(v) => set('title', v)}
-                  options={[
-                    { value: '', label: t('modal.noTitle') },
-                    ...TEACHER_TITLES.map((x) => ({ value: x, label: TEACHER_TITLE_LABELS[lang === 'si' ? 'si' : 'en'][x] })),
-                  ]}
-                />
-              </Field>
-            </div>
-            <NameFields
-              enLabel={t('modal.nameEn')}
-              siLabel={t('modal.nameSi')}
-              en={form.name}
-              si={form.nameSi}
-              onEn={(v) => set('name', v)}
-              onSi={(v) => set('nameSi', v)}
-              missing={!!show('name')}
-              enPlaceholder={t('modal.namePlaceholderEn')}
-              siPlaceholder={t('modal.namePlaceholderSi')}
-              hint={t('modal.nameHint')}
-            />
-            <div className="rounded-lg border border-line bg-surface p-3">
-              <Checkbox
-                checked={form.isPrimary}
-                onChange={(v) => set('isPrimary', v)}
-                disabled={locked}
-                label={t('modal.primary')}
-                hint={t('modal.primaryHint')}
+      <form id="teacher-form" onSubmit={save} noValidate className="flex flex-col gap-4">
+        <fieldset disabled={locked} className="m-0 flex min-w-0 flex-col gap-4 border-0 p-0">
+          <div className="grid grid-cols-[140px_140px] gap-3">
+            <Field label={t('modal.staffId')} error={show('staffId')}>
+              <input
+                className={inputClass}
+                value={form.staffId}
+                disabled={locked || !!teacher}
+                onChange={(e) => set('staffId', e.target.value.toUpperCase())}
               />
+            </Field>
+            <Field label={t('modal.title')}>
+              <Select
+                value={form.title}
+                onChange={(v) => set('title', v)}
+                options={[
+                  { value: '', label: t('modal.noTitle') },
+                  ...TEACHER_TITLES.map((x) => ({ value: x, label: TEACHER_TITLE_LABELS[lang === 'si' ? 'si' : 'en'][x] })),
+                ]}
+              />
+            </Field>
+          </div>
+          <NameFields
+            enLabel={t('modal.nameEn')}
+            siLabel={t('modal.nameSi')}
+            en={form.name}
+            si={form.nameSi}
+            onEn={(v) => set('name', v)}
+            onSi={(v) => set('nameSi', v)}
+            missing={!!show('name')}
+            enPlaceholder={t('modal.namePlaceholderEn')}
+            siPlaceholder={t('modal.namePlaceholderSi')}
+            hint={t('modal.nameHint')}
+          />
+          <div className="rounded-lg border border-line bg-surface p-3">
+            <Checkbox
+              checked={form.isPrimary}
+              onChange={(v) => set('isPrimary', v)}
+              disabled={locked}
+              label={t('modal.primary')}
+              hint={t('modal.primaryHint')}
+            />
+          </div>
+          {!form.isPrimary && (
+            <Field label={t('modal.subjects')} error={show('subjects')}>
+              <MultiSelect
+                value={form.subjectIds}
+                onChange={(v) => set('subjectIds', v)}
+                placeholder={t('modal.subjectsPlaceholder')}
+                maxChips={Infinity}
+                disabled={locked}
+                wrap
+                options={subjects.map((s) => ({ value: s.id, label: pickName(s, lang) }))}
+              />
+            </Field>
+          )}
+          <div role="group" aria-labelledby="teacher-grades">
+            <p id="teacher-grades" className="mb-1.5 text-[13px] font-semibold text-ink-soft">
+              {t('modal.grades')}
+            </p>
+            <div className="flex flex-wrap gap-1.5">
+              {[...school.grades].sort((a, b) => a - b).map((g) => (
+                <ToggleChip
+                  key={g}
+                  pressed={form.grades.includes(g)}
+                  onToggle={() => set('grades', toggle(form.grades, g))}
+                  className="min-w-9"
+                >
+                  {g}
+                </ToggleChip>
+              ))}
             </div>
-            {!form.isPrimary && (
-              <Field label={t('modal.subjects')} error={show('subjects')}>
-                <MultiSelect
-                  value={form.subjectIds}
-                  onChange={(v) => set('subjectIds', v)}
-                  placeholder={t('modal.subjectsPlaceholder')}
-                  maxChips={Infinity}
-                  disabled={locked}
-                  wrap
-                  options={subjects.map((s) => ({ value: s.id, label: pickName(s, lang) }))}
-                />
-              </Field>
-            )}
-            <div role="group" aria-labelledby="teacher-grades">
-              <p id="teacher-grades" className="mb-1.5 text-[13px] font-semibold text-ink-soft">
-                {t('modal.grades')}
-              </p>
-              <div className="flex flex-wrap gap-1.5">
-                {[...school.grades].sort((a, b) => a - b).map((g) => (
-                  <ToggleChip
-                    key={g}
-                    pressed={form.grades.includes(g)}
-                    onToggle={() => set('grades', toggle(form.grades, g))}
-                    className="min-w-9"
-                  >
-                    {g}
-                  </ToggleChip>
-                ))}
-              </div>
-              <FormError size="field" className="mt-1">{show('grades')}</FormError>
-            </div>
-            <div className="grid grid-cols-3 gap-3">
-              <Field label={t('modal.maxPerDay')} error={show('maxPerDay')}>
-                <input
-                  type="number"
-                  min={1}
-                  max={10}
-                  className={inputClass}
-                  value={form.maxPerDay}
-                  onChange={(e) => set('maxPerDay', e.target.value)}
-                />
-              </Field>
-              <Field label={t('modal.phone')}>
-                <input type="tel" className={inputClass} value={form.phone} onChange={(e) => set('phone', e.target.value)} />
-              </Field>
-              <Field label={t('modal.email')}>
-                <input type="email" className={inputClass} value={form.email} onChange={(e) => set('email', e.target.value)} />
-              </Field>
-            </div>
-          </fieldset>
-        </form>
-        )}
-        <LoginSlip
-          slip={{
-            schoolName: pickName(school, lang),
-            staffId: form.staffId,
-            name: teacherDisplayName({ name: form.name, nameSi: form.nameSi, ...(form.title ? { title: form.title } : {}) }, lang),
-            password: teacherId ? passwords[teacherId] : undefined,
-            url: teacherLoginUrl(window.location.origin, school.id),
-          }}
-          hasStaffId={!!teacherId}
-          focusPrint={!!savedId}
-          onReset={teacherId && !readOnly ? () => setConfirmingReset(true) : undefined}
-          resetting={resetting}
-          resetError={resetError}
-        />
-      </div>
-      {confirmingReset && (
-        <Modal
-          open
-          width={440}
-          title={t('resetConfirm.title', { name: teacherDisplayName({ name: form.name, nameSi: form.nameSi, ...(form.title ? { title: form.title } : {}) }, lang) })}
-          onClose={() => setConfirmingReset(false)}
-          busy={resetting}
-          footer={
-            <>
-              <Button onClick={() => setConfirmingReset(false)} disabled={resetting}>{t('resetConfirm.cancel')}</Button>
-              <Button variant="dangerSolid" onClick={() => void reset()} loading={resetting} loadingLabel={t('slip.resetting')}>
-                {t('resetConfirm.confirm')}
-              </Button>
-            </>
-          }
-        >
-          <p className="text-sm text-ink-soft">
-            {t('resetConfirm.body', { name: teacherDisplayName({ name: form.name, nameSi: form.nameSi, ...(form.title ? { title: form.title } : {}) }, lang) })}
-          </p>
-        </Modal>
-      )}
+            <FormError size="field" className="mt-1">{show('grades')}</FormError>
+          </div>
+          <div className="grid grid-cols-3 gap-3">
+            <Field label={t('modal.maxPerDay')} error={show('maxPerDay')}>
+              <input
+                type="number"
+                min={1}
+                max={10}
+                className={inputClass}
+                value={form.maxPerDay}
+                onChange={(e) => set('maxPerDay', e.target.value)}
+              />
+            </Field>
+            <Field label={t('modal.phone')}>
+              <input type="tel" className={inputClass} value={form.phone} onChange={(e) => set('phone', e.target.value)} />
+            </Field>
+            <Field label={t('modal.email')}>
+              <input type="email" className={inputClass} value={form.email} onChange={(e) => set('email', e.target.value)} />
+            </Field>
+          </div>
+        </fieldset>
+      </form>
     </Modal>
   );
 }

@@ -55,6 +55,6 @@ describe('registered routes', () => {
 
   it('leaves the public routes unguarded', () => {
     const open = all.filter((l) => l.role === null).map((l) => l.full).sort();
-    expect(open).toEqual(['/', '/*', '/admin/*', '/auth/action', '/login', '/me/*', '/register', '/s/:sid', '/start']);
+    expect(open).toEqual(['/', '/*', '/admin/*', '/auth/action', '/join/:sid/:token', '/join/t/:token', '/login', '/me/*', '/register', '/s/:sid', '/start']);
   });
 });
