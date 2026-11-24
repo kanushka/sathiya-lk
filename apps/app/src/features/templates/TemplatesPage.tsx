@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
 // Copyright (C) 2026 Kanushka Gayan
-import { orphanedEntries, usageCount, type PeriodTemplate } from '@sathiya/core';
+import { orphanedEntries, usageCount, type PeriodTemplate, type TemplatePatch } from '@sathiya/core';
 import { useEffect, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useSchool, useYear } from '../../app/SchoolProvider';
@@ -151,18 +151,27 @@ function TemplateDetail({ template, readOnly, dialog, setDialog }: DetailProps) 
     }
   }
 
-  const patch = () => ({ name: draft.name, mode: draft.mode, rows: draftToTemplate(template, draft).rows, ...(draft.mode === 'perDay' && draft.days ? { days: draft.days } : {}) });
-  const persist = () => guard('save', () => api.saveTemplateWithRemap(sid, template.id, patch()).then(() => undefined), t('page.saved'));
+  const latest = useRef(draft);
+  latest.current = draft;
+  const checked = useRef<TemplatePatch | null>(null);
+  const patchOf = (d: TemplateDraft): TemplatePatch => ({ name: d.name, mode: d.mode, rows: draftToTemplate(template, d).rows, ...(d.mode === 'perDay' && d.days ? { days: d.days } : {}) });
+  const persist = (p: TemplatePatch) => guard('save', () => api.saveTemplateWithRemap(sid, template.id, p).then(() => undefined), t('page.saved'));
 
   async function check(): Promise<void> {
     setPending('save');
     try {
-      const res = await api.saveTemplateWithRemap(sid, template.id, patch(), true);
+      const p = patchOf(latest.current);
+      const res = await api.saveTemplateWithRemap(sid, template.id, p, true);
       if (!mounted.current) return;
+      if (JSON.stringify(patchOf(latest.current)) !== JSON.stringify(p)) {
+        return await check();
+      }
       if (res.blocked > 0) setInUse(res.blocked);
-      else if (res.orphaned > 0) setDialog({ kind: 'shrink', count: res.orphaned });
-      else {
-        await api.saveTemplateWithRemap(sid, template.id, patch());
+      else if (res.orphaned > 0) {
+        checked.current = p;
+        setDialog({ kind: 'shrink', count: res.orphaned });
+      } else {
+        await api.saveTemplateWithRemap(sid, template.id, p);
         toast.show(t('page.saved'), 'success');
       }
     } catch (err) {
@@ -178,7 +187,7 @@ function TemplateDetail({ template, readOnly, dialog, setDialog }: DetailProps) 
     setInUse(0);
     if (found.length > 0) return;
     if (classes > 0) void check();
-    else void persist();
+    else void persist(patchOf(draft));
   }
 
   const nameError = errors.some((e) => e.code === 'name');
@@ -252,7 +261,9 @@ function TemplateDetail({ template, readOnly, dialog, setDialog }: DetailProps) 
           onClose={() => setDialog(null)}
           onConfirm={() => {
             setDialog(null);
-            void persist();
+            const p = checked.current;
+            if (p && JSON.stringify(patchOf(latest.current)) === JSON.stringify(p)) void persist(p);
+            else void check();
           }}
         />
       )}

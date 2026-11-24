@@ -106,6 +106,20 @@ describe('templates page', () => {
     expect(screen.queryByRole('dialog')).toBeNull();
   });
 
+  it('re-runs the dry run when the draft changes while it is pending', async () => {
+    const user = setup();
+    let finish!: (r: SaveTemplateRes) => void;
+    vi.mocked(api.saveTemplateWithRemap).mockReturnValueOnce(new Promise((r) => (finish = r)));
+    await user.click(screen.getByRole('button', { name: 'Save template' }));
+    fireEvent.change(screen.getByLabelText('Template name'), { target: { value: 'Renamed' } });
+    finish(res({ orphaned: 1 }));
+    await vi.waitFor(() => expect(api.saveTemplateWithRemap).toHaveBeenCalledTimes(3));
+    const calls = vi.mocked(api.saveTemplateWithRemap).mock.calls;
+    expect(calls.map((c) => c[3])).toEqual([true, true, undefined]);
+    expect(calls[1]![2].name).toBe('Renamed');
+    expect(calls[2]![2].name).toBe('Renamed');
+  });
+
   it('saves through the callable after a clean dry run when the template is used', async () => {
     const user = setup();
     await pickOption(user, screen.getByRole('combobox', { name: /^Type, row 5/ }), 'Period');
