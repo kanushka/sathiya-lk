@@ -67,7 +67,7 @@ describe('Table', () => {
   it('no table keeps a fixed minimum width below md', () => {
     const sources = import.meta.glob('../**/*.tsx', { query: '?raw', import: 'default', eager: true }) as Record<string, string>;
     const offenders = Object.entries(sources)
-      .filter(([, src]) => /<Table className="[^"]*(?<!md:)min-w-\[/.test(src))
+      .filter(([, src]) => /<Table\b[^>]*\bclassName="[^"]*(?<!md:)min-w-\[/.test(src))
       .map(([file]) => file);
     expect(offenders).toEqual([]);
   });
