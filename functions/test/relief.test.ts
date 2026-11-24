@@ -102,6 +102,16 @@ describe('saveReliefDay', () => {
     expect(res.uncovered).toBe(0);
   });
 
+  it.skipIf(day === null)('two absent teachers sharing a group entry each get a relief', async () => {
+    const { admin, sid } = await publishedSeed([entry('e-g', d, 3, [C.c6a], [[S.maths, T.bandara], [S.science, T.gunasekara]], 'grp')]);
+    const both = [{ teacherId: T.bandara, type: 'full' as const, entryIds: ['e-g'] }, { teacherId: T.gunasekara, type: 'full' as const, entryIds: ['e-g'] }];
+    const reliefs = [pick('e-g', T.kumara), { ...pick('e-g', T.herath), absentTeacherId: T.gunasekara }];
+    await admin.call('saveReliefDay', req(sid, { leaves: both, reliefs }));
+    const doc = (await adminDb.doc(paths.reliefDay(sid, YEAR, today.date)).get()).data() as ReliefDay;
+    expect(doc.reliefs.map((r) => [r.absentTeacherId, r.reliefTeacherId]).sort()).toEqual([[T.bandara, T.kumara], [T.gunasekara, T.herath]].sort());
+    await expectFnError(admin.call('saveReliefDay', req(sid, { leaves: both, reliefs: [...reliefs, pick('e-g', T.kumara)], expectedUpdatedAt: doc.updatedAt })), 'invalid-argument', 'invalid');
+  });
+
   it.skipIf(day === null)('does not queue a mail doc synchronously', async () => {
     const { admin, sid } = await publishedSeed(entries());
     const before = (await adminDb.collection('mail').get()).size;

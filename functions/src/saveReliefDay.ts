@@ -15,6 +15,7 @@ import {
   type SaveReliefDayRes,
   type Teacher,
 } from '@sathiya/core';
+import { logger } from 'firebase-functions/v2';
 import { onCall } from 'firebase-functions/v2/https';
 import { db } from './lib/admin';
 import { callOpts } from './lib/callOptions';
@@ -41,14 +42,16 @@ function parseLeaves(v: unknown): Leave[] {
 function parsePicks(v: unknown): Map<string, string | null> {
   if (!Array.isArray(v) || v.length > MAX_RELIEFS) invalid(`reliefs must be a list of at most ${MAX_RELIEFS}`);
   const picks = new Map<string, string | null>();
+  const seen = new Set<string>();
   for (const x of v as unknown[]) {
     const r = obj(x, 'relief');
     const entryId = docId(r.entryId, 'entryId');
-    if (picks.has(entryId)) invalid('A lesson can have only one relief');
     const absent = docId(r.absentTeacherId, 'absentTeacherId');
+    const key = JSON.stringify([entryId, absent]);
+    if (seen.has(key)) invalid('A lesson can have only one relief');
+    seen.add(key);
     const pick = r.reliefTeacherId === null ? null : docId(r.reliefTeacherId, 'reliefTeacherId');
     picks.set(`${entryId}|${absent}`, pick);
-    picks.set(entryId, pick);
   }
   return picks;
 }
@@ -141,7 +144,13 @@ export const saveReliefDay = onCall(callOpts, async (req): Promise<SaveReliefDay
   for (const id of changed) {
     const t = teacherById.get(id);
     let to = t?.email?.trim();
-    if (!to && t?.uid) to = ((await db.doc(`${members}/${t.uid}`).get()).data() as { email?: string } | undefined)?.email?.trim();
+    if (!to && t?.uid) {
+      try {
+        to = ((await db.doc(`${members}/${t.uid}`).get()).data() as { email?: string } | undefined)?.email?.trim();
+      } catch (e) {
+        logger.error('relief mail address lookup failed', e);
+      }
+    }
     if (to) withEmail.push(id);
     else skippedNoEmail++;
   }
