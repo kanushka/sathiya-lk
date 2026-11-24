@@ -60,7 +60,7 @@ export function weekSkeleton(rows: Record<DayIndex, TemplateRow[]>): SkeletonRow
   return out;
 }
 
-export function cellsAt(snap: TeacherSnapshot, day: DayIndex, period: number): SnapshotCell[] {
+export function cellsAt<C extends SnapshotCell>(snap: { cells: C[] }, day: DayIndex, period: number): C[] {
   return snap.cells.filter((c) => c.day === day && c.period === period);
 }
 

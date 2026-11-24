@@ -3,7 +3,7 @@
 
 import type { ImportRow, SubjectColumn, TeacherColumn } from './importSheet';
 import type { TemplatePatch } from './templateValidate';
-import type { AuthEmailKind, EntryDraft, Lang, ReportReason, School, Teacher, TeacherTitle } from './types';
+import type { AuthEmailKind, EntryDraft, Lang, Leave, Relief, ReportReason, School, Teacher, TeacherTitle } from './types';
 
 export const callables = {
   registerSchool: 'registerSchool',
@@ -29,6 +29,7 @@ export const callables = {
   unlinkTeacher: 'unlinkTeacher',
   linkSelf: 'linkSelf',
   saveTemplate: 'saveTemplate',
+  saveReliefDay: 'saveReliefDay',
 } as const;
 
 export interface RegisterSchoolReq { school: Omit<School, 'id' | 'status' | 'createdAt' | 'activeYearId'>; adminName: string; acceptedTermsVersion: string }
@@ -77,6 +78,8 @@ export interface UnlinkTeacherReq { schoolId: string; teacherId: string }
 export interface UnlinkTeacherRes { ok: true }
 export interface LinkSelfReq { schoolId: string; teacherId: string }
 export interface LinkSelfRes { ok: true }
+export interface SaveReliefDayReq { schoolId: string; yearId: string; date: string; leaves: Leave[]; reliefs: Relief[]; expectedUpdatedAt: number | null }
+export interface SaveReliefDayRes { updatedAt: number; queued: number; skippedNoEmail: number; uncovered: number }
 interface CallableMap {
   registerSchool: { req: RegisterSchoolReq; res: RegisterSchoolRes };
   createTeacher: { req: CreateTeacherReq; res: CreateTeacherRes };
@@ -101,7 +104,8 @@ interface CallableMap {
   unlinkTeacher: { req: UnlinkTeacherReq; res: UnlinkTeacherRes };
   linkSelf: { req: LinkSelfReq; res: LinkSelfRes };
   saveTemplate: { req: SaveTemplateReq; res: SaveTemplateRes };
+  saveReliefDay: { req: SaveReliefDayReq; res: SaveReliefDayRes };
 }
 export type CallableName = keyof typeof callables;
 export type CallableTypes = { [K in CallableName]: CallableMap[K] };
-export type ApiErrorCode = 'clash' | 'in-use' | 'not-allowed' | 'invalid' | 'email-unverified' | 'rate-limited' | 'school-disabled' | 'already-linked' | 'staff-id-unknown' | 'link-invalid' | 'too-many-schools' | 'school-registered' | 'template-in-use' | 'template-too-many-moves';
+export type ApiErrorCode = 'clash' | 'in-use' | 'not-allowed' | 'invalid' | 'email-unverified' | 'rate-limited' | 'school-disabled' | 'already-linked' | 'staff-id-unknown' | 'link-invalid' | 'too-many-schools' | 'school-registered' | 'template-in-use' | 'template-too-many-moves' | 'stale' | 'republish' | 'invalid-relief' | 'not-today';

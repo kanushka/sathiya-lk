@@ -7,7 +7,7 @@ import { effectivePlan } from './plan';
 import { bestOverlapPeriod, periodsFor, rowsFor, toMinutes } from './time';
 import type { Bilingual, DayIndex, Entry, Hhmm, PeriodTemplate, SchoolClass, SchoolContext, Subject, Teacher, TemplateRow, Year } from './types';
 
-export interface SnapshotCell { day: DayIndex; period: number; start: Hhmm; end: Hhmm; title: string; titleSi?: string; sub: string; subSi?: string; otherClasses?: string[]; color: string; isGroup: boolean }
+export interface SnapshotCell { day: DayIndex; period: number; start: Hhmm; end: Hhmm; title: string; titleSi?: string; sub: string; subSi?: string; otherClasses?: string[]; color: string; isGroup: boolean; entryId?: string; classIds?: string[]; subjectId?: string }
 export interface ClassSnapshot { classId: string; className: string; gradeNumber: number; classTeacher?: string; classTeacherSi?: string; rows: Record<DayIndex, TemplateRow[]>; cells: SnapshotCell[]; yearLabel: string; schoolName: Bilingual }
 export interface TeacherSnapshot { teacherId: string; name: string; nameSi?: string; staffId: string; rows: Record<DayIndex, TemplateRow[]>; cells: SnapshotCell[]; yearLabel: string; schoolName: Bilingual }
 
@@ -51,7 +51,7 @@ function withSi<T extends object>(base: T, nameSi: string | undefined): T & { ti
 }
 
 function classCell(ctx: SchoolContext, cls: SchoolClass, e: Entry, slot: { start: Hhmm; end: Hhmm }, subjects: Map<string, Subject>): SnapshotCell {
-  const base = { day: e.day, period: e.period, start: slot.start, end: slot.end, isGroup: e.groupKey !== undefined };
+  const base = { day: e.day, period: e.period, start: slot.start, end: slot.end, isGroup: e.groupKey !== undefined, entryId: e.id, classIds: e.classIds, ...(e.lessons[0] ? { subjectId: e.lessons[0].subjectId } : {}) };
   if (e.groupKey !== undefined) {
     const grade = gradeOf(ctx, cls);
     const item = grade && effectivePlan(cls, grade).find((p) => p.kind === 'group' && p.key === e.groupKey);
@@ -97,7 +97,7 @@ export function buildSnapshots(ctx: SchoolContext, entries: Entry[], year: Year)
       const subject = subjects.get(lesson.subjectId);
       const title = e.classIds.map((id) => findClass(ctx, id)?.name ?? id).join('+');
       const subSi = subject?.nameSi?.trim();
-      cells.push({ day: e.day, period, start: slot.start, end: slot.end, title, sub: subject ? pickName(subject, 'en') : '', ...(subSi ? { subSi } : {}), color: subject?.color ?? '', isGroup: e.groupKey !== undefined });
+      cells.push({ day: e.day, period, start: slot.start, end: slot.end, title, sub: subject ? pickName(subject, 'en') : '', ...(subSi ? { subSi } : {}), color: subject?.color ?? '', isGroup: e.groupKey !== undefined, entryId: e.id, classIds: e.classIds, subjectId: lesson.subjectId });
     }
     cells.sort(byDayStart);
     const names = displayNames(teacher);

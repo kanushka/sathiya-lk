@@ -6,6 +6,7 @@ import { act, screen, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { LangContextProvider } from '../../app/LangProvider';
+import { onSnapshot } from 'firebase/firestore';
 import { renderWithSchool } from '../../test/renderWithSchool';
 import tailwindConfig from '../../../tailwind.config';
 import { colomboNow } from './colomboNow';
@@ -14,6 +15,13 @@ import { WeekPage } from './WeekPage';
 import { recordSignInOnce } from './signIn';
 
 vi.mock('./signIn');
+
+vi.mock('firebase/firestore', async (orig) => ({ ...(await orig<typeof import('firebase/firestore')>()), onSnapshot: vi.fn(() => () => undefined) }));
+afterEach(() => {
+  const listeners = vi.mocked(onSnapshot).mock.calls.length;
+  vi.mocked(onSnapshot).mockClear();
+  expect(listeners).toBe(0);
+});
 
 const year: Year = { id: 'y-2026', label: '2026', status: 'published' };
 const ctx = { ...baseCtx, school: { ...baseCtx.school, activeYearId: year.id } };
@@ -25,6 +33,7 @@ function snapshotFor(tid: string, extra = entries): TeacherSnapshot {
   return found;
 }
 
+const noRelief = { loading: false };
 const wed0920 = () => new Date('2026-11-25T03:50:00Z');
 const sat = () => new Date('2026-11-21T04:30:00Z');
 
@@ -44,7 +53,7 @@ describe('colomboNow', () => {
 
 describe('TodayPage', () => {
   it('shows P3 in the now card on Wednesday 09:20', () => {
-    renderWithSchool(<TodayPage now={wed0920} snapshot={{ loading: false, data: snapshotFor(T.perera) }} />, {
+    renderWithSchool(<TodayPage now={wed0920} reliefDay={noRelief} snapshot={{ loading: false, data: snapshotFor(T.perera) }} />, {
       ctx,
       claims: claims(T.perera),
     });
@@ -56,7 +65,7 @@ describe('TodayPage', () => {
   });
 
   it('on Saturday shows No classes today with Monday list', () => {
-    renderWithSchool(<TodayPage now={sat} snapshot={{ loading: false, data: snapshotFor(T.perera) }} />, {
+    renderWithSchool(<TodayPage now={sat} reliefDay={noRelief} snapshot={{ loading: false, data: snapshotFor(T.perera) }} />, {
       ctx,
       claims: claims(T.perera),
     });
@@ -74,14 +83,14 @@ describe('TodayPage', () => {
   });
 
   it('shows the empty state when the snapshot doc is missing', () => {
-    renderWithSchool(<TodayPage now={wed0920} snapshot={{ loading: false }} />, { ctx, claims: claims(T.perera) });
+    renderWithSchool(<TodayPage now={wed0920} reliefDay={noRelief} snapshot={{ loading: false }} />, { ctx, claims: claims(T.perera) });
     expect(screen.getByText('Not published yet')).toBeInTheDocument();
   });
 
   it('refreshes now every 30 seconds', () => {
     vi.useFakeTimers();
     let current = new Date('2026-11-25T03:50:00Z');
-    renderWithSchool(<TodayPage now={() => current} snapshot={{ loading: false, data: snapshotFor(T.perera) }} />, {
+    renderWithSchool(<TodayPage now={() => current} reliefDay={noRelief} snapshot={{ loading: false, data: snapshotFor(T.perera) }} />, {
       ctx,
       claims: claims(T.perera),
     });
@@ -94,7 +103,7 @@ describe('TodayPage', () => {
   });
 
   it('uses Sinhala subject names when lang is si', () => {
-    renderWithSchool(<TodayPage now={wed0920} snapshot={{ loading: false, data: snapshotFor(T.perera) }} />, {
+    renderWithSchool(<TodayPage now={wed0920} reliefDay={noRelief} snapshot={{ loading: false, data: snapshotFor(T.perera) }} />, {
       ctx,
       claims: claims(T.perera),
       lang: 'si',
@@ -106,14 +115,14 @@ describe('TodayPage', () => {
   });
 
   it('shows the date line in the active language', () => {
-    const { unmount } = renderWithSchool(<TodayPage now={wed0920} snapshot={{ loading: false, data: snapshotFor(T.perera) }} />, {
+    const { unmount } = renderWithSchool(<TodayPage now={wed0920} reliefDay={noRelief} snapshot={{ loading: false, data: snapshotFor(T.perera) }} />, {
       ctx,
       claims: claims(T.perera),
       lang: 'si',
     });
     expect(screen.getByText('බදාදා 25 නොවැම්බර්')).toBeInTheDocument();
     unmount();
-    renderWithSchool(<TodayPage now={wed0920} snapshot={{ loading: false, data: snapshotFor(T.perera) }} />, {
+    renderWithSchool(<TodayPage now={wed0920} reliefDay={noRelief} snapshot={{ loading: false, data: snapshotFor(T.perera) }} />, {
       ctx,
       claims: claims(T.perera),
     });
@@ -125,39 +134,39 @@ describe('TeacherFrame chrome', () => {
   const snap = () => ({ loading: false, data: snapshotFor(T.perera) });
 
   it('links back to the school admin for an admin who teaches', () => {
-    renderWithSchool(<TodayPage now={wed0920} snapshot={snap()} />, { ctx, claims: claims(T.perera, 'a') });
+    renderWithSchool(<TodayPage now={wed0920} reliefDay={noRelief} snapshot={snap()} />, { ctx, claims: claims(T.perera, 'a') });
     expect(screen.getByRole('link', { name: 'School admin' })).toHaveAttribute('href', `/s/${ctx.school.id}/admin`);
   });
 
   it('links the Today and Week tabs under the school', () => {
-    renderWithSchool(<TodayPage now={wed0920} snapshot={snap()} />, { ctx, claims: claims(T.perera) });
+    renderWithSchool(<TodayPage now={wed0920} reliefDay={noRelief} snapshot={snap()} />, { ctx, claims: claims(T.perera) });
     expect(screen.getByRole('link', { name: 'Today' })).toHaveAttribute('href', `/s/${ctx.school.id}/me`);
     expect(screen.getByRole('link', { name: 'Week' })).toHaveAttribute('href', `/s/${ctx.school.id}/me/week`);
   });
 
   it('has no change-password button', () => {
-    renderWithSchool(<TodayPage now={wed0920} snapshot={snap()} />, { ctx, claims: claims(T.perera) });
+    renderWithSchool(<TodayPage now={wed0920} reliefDay={noRelief} snapshot={snap()} />, { ctx, claims: claims(T.perera) });
     expect(screen.queryByRole('button', { name: 'Change password' })).toBeNull();
   });
 
   it('shows no badge in place of a missing logo', () => {
-    renderWithSchool(<TodayPage now={wed0920} snapshot={snap()} />, { ctx, claims: claims(T.perera) });
+    renderWithSchool(<TodayPage now={wed0920} reliefDay={noRelief} snapshot={snap()} />, { ctx, claims: claims(T.perera) });
     expect(screen.queryByTestId('school-logo')).toBeNull();
     expect(screen.queryByText(ctx.school.staffPrefix)).toBeNull();
   });
 
   it('shows the uploaded logo', () => {
-    renderWithSchool(<TodayPage now={wed0920} snapshot={snap()} />, { ctx: { ...ctx, school: { ...ctx.school, logoUrl: 'https://example.test/logo.png' } }, claims: claims(T.perera) });
+    renderWithSchool(<TodayPage now={wed0920} reliefDay={noRelief} snapshot={snap()} />, { ctx: { ...ctx, school: { ...ctx.school, logoUrl: 'https://example.test/logo.png' } }, claims: claims(T.perera) });
     expect(screen.getByTestId('school-logo')).toHaveAttribute('src', 'https://example.test/logo.png');
   });
 
   it('records the sign-in once the teacher frame loads', () => {
-    renderWithSchool(<TodayPage now={wed0920} snapshot={snap()} />, { ctx, claims: claims(T.perera) });
+    renderWithSchool(<TodayPage now={wed0920} reliefDay={noRelief} snapshot={snap()} />, { ctx, claims: claims(T.perera) });
     expect(recordSignInOnce).toHaveBeenCalled();
   });
 
   it('hides the admin link for a plain teacher', () => {
-    renderWithSchool(<TodayPage now={wed0920} snapshot={snap()} />, { ctx, claims: claims(T.perera) });
+    renderWithSchool(<TodayPage now={wed0920} reliefDay={noRelief} snapshot={snap()} />, { ctx, claims: claims(T.perera) });
     expect(screen.queryByRole('link', { name: 'School admin' })).toBeNull();
   });
 
@@ -165,7 +174,7 @@ describe('TeacherFrame chrome', () => {
     const setLang = vi.fn();
     renderWithSchool(
       <LangContextProvider value={{ lang: 'en', setLang }}>
-        <TodayPage now={wed0920} snapshot={snap()} />
+        <TodayPage now={wed0920} reliefDay={noRelief} snapshot={snap()} />
       </LangContextProvider>,
       { ctx, claims: claims(T.perera) },
     );
@@ -191,7 +200,7 @@ describe('WeekPage', () => {
     const snap = snapshotFor(T.wickramasinghe, extra);
     const row5 = snap.cells.filter((c) => c.day === 0 && c.period === 5);
     expect(row5).toHaveLength(2);
-    renderWithSchool(<WeekPage now={wed0920} snapshot={{ loading: false, data: snap }} />, {
+    renderWithSchool(<WeekPage now={wed0920} reliefDay={noRelief} snapshot={{ loading: false, data: snap }} />, {
       ctx,
       claims: claims(T.wickramasinghe),
     });
@@ -200,7 +209,7 @@ describe('WeekPage', () => {
   });
 
   it('wraps Sinhala subject names instead of truncating them', () => {
-    renderWithSchool(<WeekPage now={wed0920} snapshot={{ loading: false, data: snapshotFor(T.perera) }} />, {
+    renderWithSchool(<WeekPage now={wed0920} reliefDay={noRelief} snapshot={{ loading: false, data: snapshotFor(T.perera) }} />, {
       ctx,
       claims: claims(T.perera),
       lang: 'si',
@@ -216,7 +225,7 @@ describe('combined classes', () => {
   it('shows the joined class names on the week grid', () => {
     const extra = [...entries, entry('x-comb', 0, 5, [C.c6a, C.c6b], [[S.maths, T.wickramasinghe]])];
     const snap = snapshotFor(T.wickramasinghe, extra);
-    renderWithSchool(<WeekPage now={wed0920} snapshot={{ loading: false, data: snap }} />, { ctx, claims: claims(T.wickramasinghe) });
+    renderWithSchool(<WeekPage now={wed0920} reliefDay={noRelief} snapshot={{ loading: false, data: snap }} />, { ctx, claims: claims(T.wickramasinghe) });
     expect(within(screen.getByTestId('week-cell-0-5')).getByText('6A+6B')).toBeInTheDocument();
   });
 });
@@ -232,7 +241,7 @@ describe('WeekPage per-day templates', () => {
       rows: { 0: short, 1: short, 2: short, 3: long, 4: short },
       cells: [{ day: 3, period: 4, start: '09:50', end: '10:30', title: '7A', sub: 'Science', color: '', isGroup: false }],
     };
-    renderWithSchool(<WeekPage now={wed0920} snapshot={{ loading: false, data: snap }} />, { ctx, claims: claims(T.perera) });
+    renderWithSchool(<WeekPage now={wed0920} reliefDay={noRelief} snapshot={{ loading: false, data: snap }} />, { ctx, claims: claims(T.perera) });
     expect(within(screen.getByTestId('week-cell-3-4')).getByText('7A')).toBeInTheDocument();
   });
 });
@@ -244,7 +253,7 @@ describe('activity rows', () => {
 
   it('names activity rows on the week and today views, including before period 1', () => {
     const snap: TeacherSnapshot = { ...snapshotFor(T.perera), rows: { 0: rows, 1: rows, 2: rows, 3: rows, 4: rows }, cells: [] };
-    const props = { snapshot: { loading: false, data: snap } };
+    const props = { snapshot: { loading: false, data: snap }, reliefDay: noRelief };
     const week = renderWithSchool(<WeekPage now={wed0920} {...props} />, { ctx, claims: claims(T.perera) });
     expect(screen.getByText(/Assembly/)).toBeInTheDocument();
     expect(screen.getByText(/School meal/)).toBeInTheDocument();
@@ -256,7 +265,7 @@ describe('activity rows', () => {
   it('does not name an activity that only some weekdays have', () => {
     const only = { 0: rows, 1: rows.slice(1), 2: rows.slice(1), 3: rows.slice(1), 4: rows.slice(1) };
     const snap: TeacherSnapshot = { ...snapshotFor(T.perera), rows: only, cells: [] };
-    renderWithSchool(<WeekPage now={wed0920} snapshot={{ loading: false, data: snap }} />, { ctx, claims: claims(T.perera) });
+    renderWithSchool(<WeekPage now={wed0920} reliefDay={noRelief} snapshot={{ loading: false, data: snap }} />, { ctx, claims: claims(T.perera) });
     expect(screen.queryByText(/Assembly/)).toBeNull();
   });
 });

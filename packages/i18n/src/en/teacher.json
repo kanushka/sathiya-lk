@@ -25,5 +25,13 @@
   },
   "loadError": "Could not load your timetable. Please try again.",
   "signOut": "Sign out",
-  "adminLink": "School admin"
+  "adminLink": "School admin",
+  "relief": {
+    "tag": "Relief",
+    "for": "for {{name}}"
+  },
+  "leave": {
+    "withRelief": "On leave · relief: {{name}}",
+    "noRelief": "On leave · no relief"
+  }
 }

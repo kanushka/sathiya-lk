@@ -28,5 +28,19 @@
     "teacherNotFoundBody": "This teacher does not exist in the selected year.",
     "errorTitle": "Could not load the timetable",
     "errorBody": "Please check your connection and try again."
+  },
+  "relief": {
+    "title": "Relief periods",
+    "emptyTitle": "No relief recorded for this day",
+    "emptyBody": "Nothing was saved on the Relief page for this date.",
+    "uncovered": "UNCOVERED",
+    "cols": {
+      "reliefTeacher": "Relief teacher",
+      "period": "Period",
+      "time": "Time",
+      "class": "Class",
+      "subject": "Subject",
+      "for": "For (on leave)"
+    }
   }
 }

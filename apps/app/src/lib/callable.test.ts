@@ -38,6 +38,12 @@ describe('toApiError', () => {
     }
   });
 
+  it('maps relief error codes from details', () => {
+    for (const code of ['stale', 'republish', 'invalid-relief', 'not-today'] as const) {
+      expect(toApiError(fnError('failed-precondition', code, { code })).code).toBe(code);
+    }
+  });
+
   it('ignores unknown detail codes', () => {
     expect(toApiError(fnError('internal', 'x', { code: 'weird' })).code).toBe('invalid');
   });

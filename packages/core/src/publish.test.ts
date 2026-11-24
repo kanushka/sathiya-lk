@@ -4,7 +4,7 @@
 import { describe, expect, it } from 'vitest';
 import { withTeacherIds } from './clash';
 import { fillWithClassTeacher } from './fill';
-import { C, ctx, entries, entries6B, mahasen, T } from './fixtures';
+import { C, ctx, entries, entries6B, mahasen, S, T } from './fixtures';
 import { buildSnapshots } from './publish';
 import type { Entry, Year } from './types';
 
@@ -27,7 +27,18 @@ describe('buildSnapshots', () => {
     expect(sixB.cells).toHaveLength(40);
     expect(sixB.cells.find((c) => c.day === 0 && c.period === 5)?.start).toBe('10:50');
     expect(sixB).toMatchObject({ className: '6B', gradeNumber: 6, classTeacher: 'Mrs. N. Perera', yearLabel: '2026', schoolName: { nameEn: 'Siripura Central College', nameSi: 'සිරිපුර මධ්‍ය විද්‍යාලය' } });
-    expect(sixB.cells.find((c) => c.day === 0 && c.period === 1)).toEqual({ day: 0, period: 1, start: '07:45', end: '08:30', title: 'Maths', titleSi: 'ගණිතය', sub: 'Mrs. N. Perera', color: '#D4ECEA', isGroup: false });
+    expect(sixB.cells.find((c) => c.day === 0 && c.period === 1)).toEqual({ day: 0, period: 1, start: '07:45', end: '08:30', title: 'Maths', titleSi: 'ගණිතය', sub: 'Mrs. N. Perera', color: '#D4ECEA', isGroup: false, entryId: 'e-6b-0-1', classIds: [C.c6b], subjectId: S.maths });
+  });
+
+  it('teacher cells carry entryId, classIds, subjectId', () => {
+    const e = filled6B.find((x) => x.teacherIds.includes(T.perera) && x.groupKey === undefined)!;
+    const lesson = e.lessons.find((l) => l.teacherId === T.perera)!;
+    const cell = teachers.find((t) => t.teacherId === T.perera)!.cells.find((c) => c.entryId === e.id)!;
+    expect(cell).toMatchObject({ entryId: e.id, classIds: e.classIds, subjectId: lesson.subjectId });
+    const classCellFor = sixB.cells.find((c) => c.entryId === e.id)!;
+    expect(classCellFor).toMatchObject({ entryId: e.id, classIds: e.classIds, subjectId: e.lessons[0]!.subjectId });
+    const group = filled6B.find((x) => x.groupKey !== undefined && x.classIds.includes(C.c6b))!;
+    expect(sixB.cells.find((c) => c.entryId === group.id)).toMatchObject({ classIds: group.classIds, subjectId: group.lessons[0]!.subjectId });
   });
 
   it('keeps activity rows in class snapshots', () => {
@@ -54,7 +65,7 @@ describe('buildSnapshots', () => {
     expect(perera).toMatchObject({ name: 'Mrs. N. Perera', staffId: 'SCC024', yearLabel: '2026' });
     const maths = perera.cells.filter((c) => c.title === '6B' && c.sub === 'Mathematics');
     expect(maths).toHaveLength(6);
-    expect(maths[0]).toEqual({ day: 0, period: 1, start: '07:45', end: '08:30', title: '6B', sub: 'Mathematics', subSi: 'ගණිතය', color: '#D4ECEA', isGroup: false });
+    expect(maths[0]).toEqual({ day: 0, period: 1, start: '07:45', end: '08:30', title: '6B', sub: 'Mathematics', subSi: 'ගණිතය', color: '#D4ECEA', isGroup: false, entryId: 'e-6b-0-1', classIds: [C.c6b], subjectId: S.maths });
     expect(perera.rows[0]).toEqual(ctx.templates.find((t) => t.isDefault)!.rows);
   });
 

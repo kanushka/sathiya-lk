@@ -1,12 +1,14 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
 // Copyright (C) 2026 Kanushka Gayan
-import { activityName, currentAndNext, toMinutes, type DayIndex, type SnapshotCell, type TeacherSnapshot } from '@sathiya/core';
+import { activityName, currentAndNext, toMinutes, type DayIndex } from '@sathiya/core';
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useLang } from '../../app/LangProvider';
 import { Badge } from '../../ui/Badge';
 import { cx } from '../../ui/cx';
 import { cellText, cellsAt, clock, slotsOf, weekdays } from './cells';
+import { CellNote } from './CellNote';
+import type { OverlayCell, OverlaySnapshot } from './reliefOverlay';
 import { TeacherFrame, type TeacherViewProps } from './TeacherFrame';
 
 export function TodayPage(props: TeacherViewProps) {
@@ -17,7 +19,7 @@ export function TodayPage(props: TeacherViewProps) {
   );
 }
 
-function TodayBody({ snap, now }: { snap: TeacherSnapshot; now: Date }) {
+function TodayBody({ snap, now }: { snap: OverlaySnapshot; now: Date }) {
   const { t } = useTranslation(['teacher', 'common']);
   const { lang } = useLang();
   const weekday = now.getDay();
@@ -95,13 +97,14 @@ function TodayBody({ snap, now }: { snap: TeacherSnapshot; now: Date }) {
                     className={cx(
                       'flex items-center gap-3 rounded-xl px-3.5 py-3',
                       isNow ? 'border-2 border-fill-warning bg-warning-soft' : 'border border-line bg-white',
-                      past(cell.end) && 'opacity-55',
+                      (past(cell.end) || cell.onLeave) && 'opacity-55',
                     )}
                   >
                     <PeriodLabel n={slot.n} start={cell.start} />
                     <div className="min-w-0 flex-1">
                       <b className="block text-[15px]">{text.title}</b>
                       <span className="text-[13px] text-ink-muted">{text.sub}</span>
+                      <CellNote cell={cell} />
                     </div>
                     {isNow && <NowTag>{t('teacher:now')}</NowTag>}
                   </div>
@@ -132,7 +135,7 @@ function NowTag({ children }: { children: string }) {
 interface NowCardProps {
   todayIndex: DayIndex | null;
   current: ReturnType<typeof currentAndNext>['current'];
-  next: SnapshotCell | undefined;
+  next: OverlayCell | undefined;
   minutesLeft: number | undefined;
   minutes: number;
 }
@@ -187,6 +190,7 @@ function NowCard({ todayIndex, current, next, minutesLeft, minutes }: NowCardPro
       <p className="mt-2.5 text-[22px] font-extrabold leading-tight">
         {text.sub} · {text.title}
       </p>
+      <CellNote cell={current as OverlayCell} />
       <div
         role="progressbar"
         aria-valuemin={0}

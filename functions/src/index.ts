@@ -9,6 +9,8 @@ export { setSchoolStatus } from './setSchoolStatus';
 export { releaseCensusNo } from './releaseCensusNo';
 export { checkCensusNo } from './checkCensusNo';
 export { saveEntry } from './saveEntry';
+export { saveReliefDay } from './saveReliefDay';
+export { reliefMail } from './reliefMail';
 export { deleteEntry } from './deleteEntry';
 export { deleteSetupItem } from './deleteSetupItem';
 export { saveTemplate } from './saveTemplate';

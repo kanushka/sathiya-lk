@@ -105,6 +105,12 @@ service cloud.firestore {
         match /publishedTeachers/{tid} {
           allow read: if adminRead(sid) || (active(sid) && ownTeacher(sid, tid));
         }
+        match /reliefDays/{date} {
+          allow read: if adminRead(sid) || teacherRead(sid);
+        }
+        match /reliefMeta/{id} {
+          allow read: if adminRead(sid);
+        }
         // slotLocks: functions only, no client access.
       }
     }

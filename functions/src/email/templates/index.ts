@@ -5,4 +5,5 @@ export { schoolRegistered, type SchoolRegisteredInput } from './schoolRegistered
 export { reportReceived, type ReportReceivedInput } from './reportReceived';
 export { schoolSuspended, schoolReactivated, type SchoolStatusInput } from './schoolStatus';
 export { verifyEmail, passwordReset, type LinkEmailInput } from './authLinks';
+export { reliefAssigned, reliefCancelled, type ReliefAssignedInput, type ReliefCancelledInput, type ReliefMailRow } from './relief';
 export { render, esc, safeUrl, type Rendered } from './layout';

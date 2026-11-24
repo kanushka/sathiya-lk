@@ -49,6 +49,12 @@ const shapes = {
       <path d="M12 7v5l3 2" />
     </>
   ),
+  relief: (
+    <>
+      <circle cx="8" cy="7" r="3" />
+      <path d="M3 18c.8-3 2.6-4.5 5-4.5 1.2 0 2.3.4 3.1 1.1M14 9h7l-2.5-2.5M21 15h-7l2.5 2.5" />
+    </>
+  ),
   members: (
     <>
       <circle cx="9" cy="8" r="3.5" />

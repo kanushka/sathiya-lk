@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
 // Copyright (C) 2026 Kanushka Gayan
-import { normalizeTeacher, paths, type Entry, type SchoolContext } from '@sathiya/core';
+import { normalizeTeacher, paths, type Entry, type SchoolContext, type TeacherSnapshot } from '@sathiya/core';
 import { db } from './admin';
 
 async function list<T>(path: string): Promise<T[]> {
@@ -22,3 +22,8 @@ export async function loadContext(sid: string): Promise<SchoolContext> {
 }
 
 export const loadEntries = (sid: string, yid: string): Promise<Entry[]> => list<Entry>(paths.entries(sid, yid));
+
+export async function loadTeacherSnapshots(sid: string, yid: string): Promise<Map<string, TeacherSnapshot>> {
+  const snap = await db.collection(paths.publishedTeachers(sid, yid)).get();
+  return new Map(snap.docs.map((d) => [d.id, d.data() as TeacherSnapshot]));
+}
