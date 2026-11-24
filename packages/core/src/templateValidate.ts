@@ -23,7 +23,7 @@ export interface ValidationError {
 function validateRows(rows: TemplateRow[], day: DayIndex | null): ValidationError[] {
   const out: ValidationError[] = [];
   if (!rows.some((r) => r.type === 'period')) out.push({ code: 'noPeriod', day, row: null });
-  const validTime = (v: string) => /^\d\d:\d\d$/.test(v);
+  const validTime = (v: string) => /^([01]\d|2[0-3]):[0-5]\d$/.test(v);
   rows.forEach((r, i) => {
     if (!validTime(r.start) || !validTime(r.end)) out.push({ code: 'empty', day, row: i });
     else if (toMinutes(r.start) >= toMinutes(r.end)) out.push({ code: 'order', day, row: i });
