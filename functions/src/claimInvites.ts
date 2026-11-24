@@ -6,6 +6,8 @@ import type { DocumentReference } from 'firebase-admin/firestore';
 import { db } from './lib/admin';
 import { callOpts } from './lib/callOptions';
 import { assertSchoolRoom, syncClaims } from './lib/claims';
+import { linkTeacher } from './lib/linkTeacher';
+import { runTx } from './lib/tx';
 import { isVerified, notAllowed, requireAuth } from './lib/guards';
 
 const INVITES = paths.invites('_').split('/').pop()!;
@@ -13,6 +15,20 @@ const INVITES = paths.invites('_').split('/').pop()!;
 interface Invite {
   email: string;
   teacherId?: string;
+}
+
+// A teacher that is already linked, or gone, still lets the invitee become admin, just without the teacher link.
+async function tryLink(sid: string, teacherId: string, uid: string, email: string, name: string): Promise<boolean> {
+  const teacher = await db.doc(`${paths.teachers(sid)}/${teacherId}`).get();
+  if (teacher.get('uid') === uid) return false;
+  try {
+    await runTx((tx) => linkTeacher(tx, sid, teacherId, uid, { role: 'admin', email, ...(name && { name }) }));
+    return true;
+  } catch (e) {
+    const err = e as { code?: string; details?: { code?: string } };
+    if (err.details?.code === 'already-linked' || err.code === 'not-found') return false;
+    throw e;
+  }
 }
 
 export const claimInvites = onCall(callOpts, async (req): Promise<ClaimInvitesRes> => {
@@ -31,8 +47,11 @@ export const claimInvites = onCall(callOpts, async (req): Promise<ClaimInvitesRe
     if ((school.data() as School | undefined)?.status !== 'active') continue;
     await assertSchoolRoom(uid, sid);
     const existing = member.data() as Member | undefined;
-    const tid = (doc.data() as Invite).teacherId ?? existing?.teacherId;
-    await memberRef.set({ uid, role: 'admin', email, teacherId: tid, ...(name && !existing?.name ? { name } : {}) }, { merge: true });
+    const teacherId = (doc.data() as Invite).teacherId;
+    const linked = teacherId ? await tryLink(sid, teacherId, uid, email, name) : false;
+    if (!linked) {
+      await memberRef.set({ uid, role: 'admin', email, ...(name && !existing?.name ? { name } : {}) }, { merge: true });
+    }
     claimed.push({ sid, ref: doc.ref });
   }
   if (claimed.length === 0) return { schoolIds: [] };

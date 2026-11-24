@@ -3,7 +3,7 @@
 
 import type { Claims, Membership } from './types';
 
-export const MAX_SCHOOLS = 20;
+export const MAX_SCHOOLS = 15;
 
 export function membershipOf(c: Claims, sid: string): Membership | undefined {
   return c.schools?.[sid];

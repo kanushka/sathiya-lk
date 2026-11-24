@@ -70,6 +70,28 @@ describe('deleteSetupItem', () => {
     await expect(admin.call('createTeacher', { schoolId: sid, teacher: teacherInput('SCC201') })).resolves.toBeTruthy();
   });
 
+  it('keeps the admin membership when deleting the teacher linked to an admin', async () => {
+    const { admin, sid } = await seededSchool();
+    const { teacherId } = await admin.call('createTeacher', { schoolId: sid, teacher: teacherInput('SCC202') });
+    await admin.call('inviteAdmin', { schoolId: sid, email: admin.auth.currentUser!.email!, teacherId });
+    await admin.call('claimInvites', {});
+    expect((await adminDb.doc(`${paths.teachers(sid)}/${teacherId}`).get()).get('uid')).toBe(admin.uid);
+
+    await admin.call('deleteSetupItem', { schoolId: sid, kind: 'teacher', id: teacherId });
+    const member = (await adminDb.doc(`${paths.members(sid)}/${admin.uid}`).get()).data();
+    expect(member).toMatchObject({ uid: admin.uid, role: 'admin' });
+    expect(member).not.toHaveProperty('teacherId');
+    expect((await adminAuth.getUser(admin.uid)).customClaims).toEqual({ schools: { [sid]: { r: 'a' } } });
+  });
+
+  it('never removes an admin member whose uid sits on the deleted teacher', async () => {
+    const { admin, sid } = await seededSchool();
+    const { teacherId } = await admin.call('createTeacher', { schoolId: sid, teacher: teacherInput('SCC203') });
+    await adminDb.doc(`${paths.teachers(sid)}/${teacherId}`).update({ uid: admin.uid });
+    await admin.call('deleteSetupItem', { schoolId: sid, kind: 'teacher', id: teacherId });
+    expect((await adminDb.doc(`${paths.members(sid)}/${admin.uid}`).get()).data()).toMatchObject({ role: 'admin' });
+  });
+
   it('refuses a grade whose classes are used by entries in any year', async () => {
     const { admin, sid } = await seededSchool();
     await adminDb.doc(`${paths.years(sid)}/zz-old`).set({ label: '2026', status: 'published' });

@@ -96,7 +96,7 @@ export const importSetup = onCall({ ...callOpts, timeoutSeconds: 300 }, async (r
     throw e;
   }
 
-  // All-or-nothing only up to the first account failure: created subjects and teachers stay.
+  // All-or-nothing only up to the first teacher failure: created subjects and teachers stay.
   const created: (ImportSetupRes['teachers'][number] | undefined)[] = [];
   let failed = false;
   let next = 0;

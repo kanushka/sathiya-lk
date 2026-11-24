@@ -2,7 +2,7 @@
 // Copyright (C) 2026 Kanushka Gayan
 import { MAX_SCHOOLS, paths } from '@sathiya/core';
 import { describe, expect, it } from 'vitest';
-import { adminAuth, adminDb, adminWithSchool, expectFnError, signInGoogle, signUp, teacherInput, uniq, unverifiedSignUp } from './helpers';
+import { adminAuth, adminDb, adminWithSchool, expectFnError, linkedTeacher, signInGoogle, signUp, teacherInput, uniq, unverifiedSignUp } from './helpers';
 
 describe('inviteAdmin', () => {
   it('stores the invite under the lowercased email', async () => {
@@ -54,8 +54,35 @@ describe('claimInvites', () => {
     const member = (await adminDb.doc(`${paths.members(sid)}/${c.uid}`).get()).data();
     expect(member).toMatchObject({ uid: c.uid, role: 'admin', teacherId, email });
     expect((await adminDb.doc(`${paths.invites(sid)}/${email}`).get()).exists).toBe(false);
+    expect((await adminDb.doc(`${paths.teachers(sid)}/${teacherId}`).get()).get('uid')).toBe(c.uid);
 
     await expect(c.call('claimInvites', {})).resolves.toEqual({ schoolIds: [] });
+  });
+
+  it('grants admin without a teacher link when the invited teacher is already linked', async () => {
+    const { admin, sid } = await adminWithSchool();
+    const { teacherId, teacher } = await linkedTeacher(admin, sid, 'SCC043');
+    const email = `taken-${uniq()}@example.com`;
+    await admin.call('inviteAdmin', { schoolId: sid, email, teacherId });
+    const c = await signInGoogle(email, true);
+    await expect(c.call('claimInvites', {})).resolves.toEqual({ schoolIds: [sid] });
+    expect(await c.claims()).toEqual({ schools: { [sid]: { r: 'a' } } });
+    expect((await adminDb.doc(`${paths.teachers(sid)}/${teacherId}`).get()).get('uid')).toBe(teacher.uid);
+    expect((await adminDb.doc(`${paths.invites(sid)}/${email}`).get()).exists).toBe(false);
+  });
+
+  it('keeps the existing link when a re-invite names a different teacher', async () => {
+    const { admin, sid } = await adminWithSchool();
+    const { teacherId: first } = await admin.call('createTeacher', { schoolId: sid, teacher: teacherInput('SCC044') });
+    const { teacherId: second } = await admin.call('createTeacher', { schoolId: sid, teacher: teacherInput('SCC045') });
+    const email = `switch-${uniq()}@example.com`;
+    await admin.call('inviteAdmin', { schoolId: sid, email, teacherId: first });
+    const c = await signInGoogle(email, true);
+    await c.call('claimInvites', {});
+    await admin.call('inviteAdmin', { schoolId: sid, email, teacherId: second });
+    await c.call('claimInvites', {});
+    expect(await c.claims()).toEqual({ schools: { [sid]: { r: 'a', t: first } } });
+    expect((await adminDb.doc(`${paths.teachers(sid)}/${second}`).get()).get('uid')).toBeUndefined();
   });
 
   it('keeps an existing tid when a re-invite has no teacherId', async () => {

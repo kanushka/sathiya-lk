@@ -45,6 +45,16 @@ describe('syncClaims', () => {
     expect(await claimsOf(c.uid)).toEqual({});
   });
 
+  it('accepts the maximum number of schools with real-length ids and teacher ids', async () => {
+    const c = await signUp();
+    const pad = (i: number, ch: string) => `${ch}${String(i).padStart(2, '0')}`.padEnd(20, ch);
+    for (let i = 0; i < MAX_SCHOOLS; i++) await addMember(pad(i, 's'), c.uid, { role: 'admin', teacherId: pad(i, 't') });
+    await syncClaims(c.uid);
+    const claims = await claimsOf(c.uid);
+    expect(Object.keys(claims!.schools)).toHaveLength(MAX_SCHOOLS);
+    expect(JSON.stringify(claims).length).toBeLessThan(1000);
+  });
+
   it('fails with too-many-schools above the limit', async () => {
     const c = await signUp();
     const tag = uniq();
@@ -52,7 +62,7 @@ describe('syncClaims', () => {
     await expect(syncClaims(c.uid)).rejects.toMatchObject({ code: 'failed-precondition', details: { code: 'too-many-schools' } });
   });
 
-  it('assertSchoolRoom allows the 20th school, refuses the 21st, and allows one it already belongs to', async () => {
+  it('assertSchoolRoom allows the last school, refuses one beyond the limit, and allows one it already belongs to', async () => {
     const c = await signUp();
     const tag = uniq();
     for (let i = 0; i < MAX_SCHOOLS - 1; i++) await addMember(`${tag}-${i}`, c.uid, { role: 'teacher' });

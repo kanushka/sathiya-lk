@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
 // Copyright (C) 2026 Kanushka Gayan
 import { paths, usageCount, type DeleteSetupItemReq, type DeleteSetupItemRes, type Entry, type PlanItem, type SchoolContext } from '@sathiya/core';
-import { FieldValue } from 'firebase-admin/firestore';
+import { FieldValue, type DocumentSnapshot } from 'firebase-admin/firestore';
 import { onCall } from 'firebase-functions/v2/https';
 import { auth, db } from './lib/admin';
 import { callOpts } from './lib/callOptions';
@@ -86,19 +86,23 @@ export const deleteSetupItem = onCall(callOpts, async (req): Promise<DeleteSetup
   }
 
   const uid = snap.get('uid') as string | undefined;
-  const linked = await db.collection(paths.members(sid)).where('teacherId', '==', id).get();
-  const requests = await db.collection(paths.joinRequests(sid)).where('teacherId', '==', id).get();
+  const [linked, own, requests] = await Promise.all([
+    db.collection(paths.members(sid)).where('teacherId', '==', id).get(),
+    uid ? db.doc(`${paths.members(sid)}/${uid}`).get() : Promise.resolve(undefined),
+    db.collection(paths.joinRequests(sid)).where('teacherId', '==', id).get(),
+  ]);
+  const members = new Map<string, DocumentSnapshot>(linked.docs.map((m) => [m.id, m]));
+  if (own?.exists) members.set(own.id, own);
   const batch = db.batch();
   batch.delete(ref);
   requests.docs.forEach((r) => batch.delete(r.ref));
-  // Linked admins keep their admin role but lose the teacher link; a teacher-only member is removed.
-  for (const m of linked.docs) {
-    if (m.get('role') === 'admin') batch.update(m.ref, { teacherId: FieldValue.delete() });
-    else batch.delete(m.ref);
+  // An admin member is never removed: it only loses the link to this teacher. A teacher-only member is removed.
+  for (const m of members.values()) {
+    if (m.get('role') === 'admin') {
+      if (m.get('teacherId') === id) batch.update(m.ref, { teacherId: FieldValue.delete() });
+    } else batch.delete(m.ref);
   }
-  if (uid && !linked.docs.some((m) => m.id === uid)) batch.delete(db.doc(`${paths.members(sid)}/${uid}`));
   await batch.commit();
-  const affected = new Set([...linked.docs.map((m) => m.id), ...(uid ? [uid] : [])]);
-  await Promise.all([...affected].map((u) => syncClaims(u).then(() => auth.revokeRefreshTokens(u))));
+  await Promise.all([...members.keys()].map((u) => syncClaims(u).then(() => auth.revokeRefreshTokens(u))));
   return { deleted: true, usedIn: 0 };
 });

@@ -115,7 +115,7 @@ describe('registerSchool several schools per user', () => {
     expect(await c.claims()).toEqual({ schools: { [a]: { r: 'a' }, [b]: { r: 'a' } } });
   });
 
-  it('refuses registering a 21st school', async () => {
+  it('refuses registering a school beyond the limit', async () => {
     const c = await signUp();
     for (let i = 0; i < MAX_SCHOOLS; i++) await adminDb.doc(`${paths.members(`s${i}`)}/${c.uid}`).set({ uid: c.uid, role: 'teacher' });
     await expectFnError(c.call('registerSchool', schoolReq()), 'failed-precondition', 'too-many-schools');
