@@ -8,6 +8,7 @@
     "saved": "Template saved",
     "inUse_one": "{{count}} timetable entry sits in a period that would stop being a period. Move it first.",
     "inUse_other": "{{count}} timetable entries sit in periods that would stop being periods. Move them first.",
+    "tooManyMoves": "Too many timetable entries would move at once. Edit fewer periods per save.",
     "saveFailed": "Could not save. Try again."
   },
   "list": {

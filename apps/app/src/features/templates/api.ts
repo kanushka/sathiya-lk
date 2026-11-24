@@ -26,8 +26,8 @@ function cleanPatch(patch: TemplatePatch): TemplatePatch {
   return out;
 }
 
-export function saveTemplateWithRemap(schoolId: string, templateId: string, patch: TemplatePatch): Promise<SaveTemplateRes> {
-  return call('saveTemplate', { schoolId, templateId, patch: cleanPatch(patch) });
+export function saveTemplateWithRemap(schoolId: string, templateId: string, patch: TemplatePatch, dryRun = false): Promise<SaveTemplateRes> {
+  return call('saveTemplate', { schoolId, templateId, patch: cleanPatch(patch), ...(dryRun ? { dryRun } : {}) });
 }
 
 export async function createTemplate(schoolId: string, name: string, rows: TemplateRow[]): Promise<void> {

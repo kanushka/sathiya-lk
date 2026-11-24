@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
 // Copyright (C) 2026 Kanushka Gayan
-import { orphanedEntries, remapEntries, toMinutes, type DayIndex, type Entry, type PeriodTemplate, type RemapResult, type SchoolContext, type TemplatePatch, type TemplateRow } from '@sathiya/core';
+import { toMinutes, type DayIndex, type PeriodTemplate, type TemplatePatch, type TemplateRow } from '@sathiya/core';
 
 export { DAY_INDEXES, validateTemplate, type ValidationCode, type ValidationError } from '@sathiya/core';
 
@@ -30,17 +30,6 @@ export function draftToTemplate(base: PeriodTemplate, draft: TemplateDraft): Per
   return next;
 }
 
-export function newlyOrphaned(entries: Entry[], ctx: SchoolContext, next: PeriodTemplate): number {
-  const before = orphanedEntries(entries, ctx).length;
-  const after = orphanedEntries(entries, { ...ctx, templates: ctx.templates.map((t) => (t.id === next.id ? next : t)) }).length;
-  return Math.max(after - before, 0);
-}
-
 export function periodCount(rows: TemplateRow[]): number {
   return rows.filter((r) => r.type === 'period').length;
-}
-
-export function remapFor(entries: Entry[], ctx: SchoolContext, template: PeriodTemplate, next: PeriodTemplate): RemapResult {
-  const classIds = ctx.classes.filter((c) => c.templateId === template.id).map((c) => c.id);
-  return remapEntries(template, next, entries, classIds);
 }

@@ -15,7 +15,7 @@ import { useToast } from '../../ui/Toast';
 import { DeleteSetupModal } from '../teachers/DeleteSetupModal';
 import * as api from './api';
 import { toApiError } from '../../lib/callable';
-import { draftToTemplate, newlyOrphaned, periodCount, remapFor, validateTemplate, type TemplateDraft, type ValidationError } from './model';
+import { draftToTemplate, periodCount, validateTemplate, type TemplateDraft, type ValidationError } from './model';
 import { NewTemplateModal } from './NewTemplateModal';
 import { ShrinkWarningModal } from './ShrinkWarningModal';
 import { TemplateEditor } from './TemplateEditor';
@@ -125,40 +125,56 @@ function TemplateDetail({ template, readOnly, dialog, setDialog }: DetailProps) 
   const sid = school.school.id;
   const classes = usageCount('template', template.id, school, entries);
 
+  function showSaveError(err: unknown) {
+    const e = toApiError(err);
+    const count = (e.details as { count?: unknown } | undefined)?.count;
+    if (e.code === 'template-in-use' && typeof count === 'number') setInUse(count);
+    else toast.show(t(e.code === 'template-too-many-moves' ? 'page.tooManyMoves' : 'page.saveFailed'), 'error');
+  }
+
   async function guard(kind: 'save' | 'default', fn: () => Promise<void>, ok?: string) {
     setPending(kind);
     try {
       await fn();
       if (ok) toast.show(ok, 'success');
     } catch (err) {
-      const e = toApiError(err);
-      const count = (e.details as { count?: unknown } | undefined)?.count;
-      if (e.code === 'template-in-use' && typeof count === 'number') setInUse(count);
-      else toast.show(t('page.saveFailed'), 'error');
+      showSaveError(err);
     } finally {
       setPending(null);
     }
   }
 
   const patch = () => ({ name: draft.name, mode: draft.mode, rows: draftToTemplate(template, draft).rows, ...(draft.mode === 'perDay' && draft.days ? { days: draft.days } : {}) });
-  const persist = (remap = false) =>
+  const persist = (remap: boolean) =>
     guard('save', async () => {
       if (remap) await api.saveTemplateWithRemap(sid, template.id, patch());
       else await api.saveTemplate(sid, template.id, patch());
     }, t('page.saved'));
+
+  async function check(): Promise<void> {
+    setPending('save');
+    try {
+      const res = await api.saveTemplateWithRemap(sid, template.id, patch(), true);
+      if (res.blocked > 0) setInUse(res.blocked);
+      else if (res.orphaned > 0) setDialog({ kind: 'shrink', count: res.orphaned });
+      else {
+        await api.saveTemplateWithRemap(sid, template.id, patch());
+        toast.show(t('page.saved'), 'success');
+      }
+    } catch (err) {
+      showSaveError(err);
+    } finally {
+      setPending(null);
+    }
+  }
 
   function save() {
     const found = validateTemplate(draft);
     setErrors(found);
     setInUse(0);
     if (found.length > 0) return;
-    const next = draftToTemplate(template, draft);
-    const { moves, blocked } = remapFor(entries, school, template, next);
-    if (blocked.length > 0) return setInUse(blocked.length);
-    if (moves.length > 0) return void persist(true);
-    const count = newlyOrphaned(entries, school, next);
-    if (count > 0) setDialog({ kind: 'shrink', count });
-    else void persist();
+    if (classes > 0) void check();
+    else void persist(false);
   }
 
   const nameError = errors.some((e) => e.code === 'name');
@@ -232,7 +248,7 @@ function TemplateDetail({ template, readOnly, dialog, setDialog }: DetailProps) 
           onClose={() => setDialog(null)}
           onConfirm={() => {
             setDialog(null);
-            void persist();
+            void persist(true);
           }}
         />
       )}

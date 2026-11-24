@@ -1,13 +1,13 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
 // Copyright (C) 2026 Kanushka Gayan
-import { DAY_INDEXES, paths, remapEntries, validateTemplate, type DayIndex, type PeriodTemplate, type SaveTemplateRes, type TemplatePatch, type TemplateRow } from '@sathiya/core';
+import { DAY_INDEXES, paths, remapEntries, validateTemplate, type DayIndex, type Entry, type PeriodTemplate, type SaveTemplateRes, type TemplatePatch, type TemplateRow } from '@sathiya/core';
 import { FieldValue } from 'firebase-admin/firestore';
 import { onCall } from 'firebase-functions/v2/https';
 import { db } from './lib/admin';
 import { callOpts } from './lib/callOptions';
 import { docId, fail, invalid, obj, optDocId, optStr, requireSchoolAdmin, str } from './lib/guards';
 import { latestYearId } from './lib/yearEntries';
-import { loadEntries } from './lib/loadContext';
+import { runTx } from './lib/tx';
 
 const BATCH_LIMIT = 450;
 const MAX_ROWS = 40;
@@ -49,29 +49,37 @@ export const saveTemplate = onCall(callOpts, async (req): Promise<SaveTemplateRe
   const { sid } = await requireSchoolAdmin(req, data.schoolId);
   const templateId = docId(data.templateId, 'templateId');
   const patch = parsePatch(data.patch);
+  const dryRun = data.dryRun === true;
+
+  const subjectIds = [...new Set([...patch.rows, ...Object.values(patch.days ?? {}).flat()].flatMap((r) => (r.subjectId ? [r.subjectId] : [])))];
+  if (subjectIds.length > 0) {
+    const found = await db.getAll(...subjectIds.map((id) => db.doc(`${paths.subjects(sid)}/${id}`)));
+    if (found.some((d) => !d.exists)) invalid('Unknown subject on an activity row');
+  }
 
   const ref = db.doc(`${paths.templates(sid)}/${templateId}`);
-  const [snap, classes, yid] = await Promise.all([
-    ref.get(),
-    db.collection(paths.classes(sid)).where('templateId', '==', templateId).get(),
-    latestYearId(sid),
-  ]);
-  if (!snap.exists) fail('not-found', 'invalid', 'Unknown template');
-  const before = { ...(snap.data() as Omit<PeriodTemplate, 'id'>), id: templateId };
-  const after: PeriodTemplate = { ...before, name: patch.name, mode: patch.mode, rows: patch.rows };
-  delete after.days;
-  if (patch.days) after.days = patch.days;
+  const yid = await latestYearId(sid);
+  return runTx(async (tx) => {
+    const [snap, classes, entrySnap] = await Promise.all([
+      tx.get(ref),
+      tx.get(db.collection(paths.classes(sid)).where('templateId', '==', templateId)),
+      yid ? tx.get(db.collection(paths.entries(sid, yid))) : Promise.resolve(undefined),
+    ]);
+    if (!snap.exists) fail('not-found', 'invalid', 'Unknown template');
+    const before = { ...(snap.data() as Omit<PeriodTemplate, 'id'>), id: templateId };
+    const after: PeriodTemplate = { ...before, name: patch.name, mode: patch.mode, rows: patch.rows };
+    delete after.days;
+    if (patch.days) after.days = patch.days;
 
-  const entries = yid && classes.size > 0 ? await loadEntries(sid, yid) : [];
-  const { moves, blocked } = remapEntries(before, after, entries, classes.docs.map((c) => c.id));
-  if (blocked.length > 0) fail('failed-precondition', 'template-in-use', 'Used periods cannot become activities', { count: blocked.length });
+    const entries = classes.size > 0 && entrySnap ? entrySnap.docs.map((d) => ({ ...(d.data() as Omit<Entry, 'id'>), id: d.id })) : [];
+    const { moves, blocked, orphaned } = remapEntries(before, after, entries, classes.docs.map((c) => c.id));
+    const res: SaveTemplateRes = { moved: moves.length, blocked: blocked.length, orphaned: orphaned.length };
+    if (dryRun) return res;
+    if (blocked.length > 0) fail('failed-precondition', 'template-in-use', 'Used periods cannot become activities or intervals', { count: blocked.length });
+    if (moves.length + 1 > BATCH_LIMIT) fail('failed-precondition', 'template-too-many-moves', 'Too many timetable entries would move in one save', { count: moves.length });
 
-  // Entries first: a failure part-way leaves the template unchanged, and a retry recomputes the remaining moves.
-  for (let i = 0; i < moves.length; i += BATCH_LIMIT) {
-    const batch = db.batch();
-    for (const m of moves.slice(i, i + BATCH_LIMIT)) batch.update(db.doc(`${paths.entries(sid, yid!)}/${m.entryId}`), { period: m.period });
-    await batch.commit();
-  }
-  await ref.update({ name: patch.name, mode: patch.mode, rows: patch.rows, days: patch.days ?? FieldValue.delete() });
-  return { moved: moves.length };
+    for (const m of moves) tx.update(db.doc(`${paths.entries(sid, yid!)}/${m.entryId}`), { period: m.period });
+    tx.update(ref, { name: patch.name, mode: patch.mode, rows: patch.rows, days: patch.days ?? FieldValue.delete() });
+    return res;
+  });
 });

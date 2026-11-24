@@ -14,7 +14,7 @@ const before = tpl([p('07:45', '08:25'), p('08:25', '09:05'), p('09:05', '09:45'
 describe('remapEntries', () => {
   it('keeps clock time when an activity row is inserted before periods', () => {
     const after = tpl([act('07:15', '07:45'), ...before.rows]);
-    expect(remapEntries(before, after, [entry('a', 0, 1), entry('b', 0, 3)], ['c1'])).toEqual({ moves: [], blocked: [] });
+    expect(remapEntries(before, after, [entry('a', 0, 1), entry('b', 0, 3)], ['c1'])).toEqual({ moves: [], blocked: [], orphaned: [] });
   });
 
   it('renumbers entries when a period is inserted before them', () => {
@@ -25,29 +25,52 @@ describe('remapEntries', () => {
         { entryId: 'b', period: 4 },
       ],
       blocked: [],
+      orphaned: [],
     });
   });
 
   it('blocks entries whose period became an activity', () => {
     const after = tpl([act('07:45', '08:25'), p('08:25', '09:05'), p('09:05', '09:45')]);
     const e = entry('a', 0, 1);
-    expect(remapEntries(before, after, [e, entry('b', 0, 2)], ['c1'])).toEqual({ moves: [{ entryId: 'b', period: 1 }], blocked: [e] });
+    expect(remapEntries(before, after, [e, entry('b', 0, 2)], ['c1'])).toEqual({ moves: [{ entryId: 'b', period: 1 }], blocked: [e], orphaned: [] });
   });
 
   it('no moves when nothing shifted', () => {
     const after = tpl([p('07:45', '08:20'), p('08:25', '09:05'), p('09:05', '09:45')]);
-    expect(remapEntries(before, after, [entry('a', 0, 1), entry('b', 3, 3)], ['c1'])).toEqual({ moves: [], blocked: [] });
+    expect(remapEntries(before, after, [entry('a', 0, 1), entry('b', 3, 3)], ['c1'])).toEqual({ moves: [], blocked: [], orphaned: [] });
   });
 
   it('ignores entries of other classes and entries already outside the old template', () => {
     const after = tpl([act('07:45', '08:25'), p('08:25', '09:05')]);
-    expect(remapEntries(before, after, [entry('x', 0, 2, ['c2']), entry('o', 0, 9)], ['c1'])).toEqual({ moves: [], blocked: [] });
+    expect(remapEntries(before, after, [entry('x', 0, 2, ['c2']), entry('o', 0, 9)], ['c1'])).toEqual({ moves: [], blocked: [], orphaned: [] });
   });
 
   it('uses the entry day for per-day templates', () => {
     const pd = (fri: TemplateRow[]): PeriodTemplate => ({ ...before, mode: 'perDay', days: { 0: before.rows, 1: before.rows, 2: before.rows, 3: before.rows, 4: fri } });
     const b = pd(before.rows);
     const a = pd([act('07:45', '08:25'), p('08:25', '09:05'), p('09:05', '09:45')]);
-    expect(remapEntries(b, a, [entry('mon', 0, 1), entry('fri', 4, 2)], ['c1'])).toEqual({ moves: [{ entryId: 'fri', period: 1 }], blocked: [] });
+    expect(remapEntries(b, a, [entry('mon', 0, 1), entry('fri', 4, 2)], ['c1'])).toEqual({ moves: [{ entryId: 'fri', period: 1 }], blocked: [], orphaned: [] });
+  });
+
+  it('keeps an entry on its row when the period is retimed', () => {
+    const after = tpl([p('07:50', '08:25'), p('08:25', '09:05'), p('09:05', '09:45')]);
+    expect(remapEntries(before, after, [entry('a', 0, 1)], ['c1'])).toEqual({ moves: [], blocked: [], orphaned: [] });
+  });
+
+  it('moves nothing when the whole day shifts by five minutes', () => {
+    const after = tpl([p('07:50', '08:30'), p('08:30', '09:10'), p('09:10', '09:50')]);
+    expect(remapEntries(before, after, [entry('a', 0, 1), entry('b', 0, 2), entry('c', 0, 3)], ['c1'])).toEqual({ moves: [], blocked: [], orphaned: [] });
+  });
+
+  it('orphans entries of trailing periods that are removed without blocking them', () => {
+    const after = tpl(before.rows.slice(0, 2));
+    const e = entry('c', 0, 3);
+    expect(remapEntries(before, after, [entry('a', 0, 1), e], ['c1'])).toEqual({ moves: [], blocked: [], orphaned: [e] });
+  });
+
+  it('blocks an entry whose period became an interval', () => {
+    const after = tpl([{ type: 'interval', start: '07:45', end: '08:25' }, p('08:25', '09:05'), p('09:05', '09:45')]);
+    const e = entry('a', 0, 1);
+    expect(remapEntries(before, after, [e], ['c1'])).toEqual({ moves: [], blocked: [e], orphaned: [] });
   });
 });
