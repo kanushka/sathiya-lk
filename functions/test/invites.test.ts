@@ -3,7 +3,7 @@
 import { createHash } from 'node:crypto';
 import { MAX_SCHOOLS, paths } from '@sathiya/core';
 import { describe, expect, it } from 'vitest';
-import { adminAuth, adminDb, adminWithSchool, expectFnError, linkedTeacher, signInGoogle, signUp, teacherInput, uniq, unverifiedSignUp } from './helpers';
+import { adminAuth, adminDb, adminWithSchool, type Client, expectFnError, linkedTeacher, signInGoogle, signUp, teacherInput, uniq, unverifiedSignUp } from './helpers';
 
 describe('inviteAdmin', () => {
   it('stores the invite under the lowercased email', async () => {
@@ -173,6 +173,8 @@ const sha = (t: string) => createHash('sha256').update(t).digest('hex');
 const teacherDoc = async (sid: string, id: string) => (await adminDb.doc(`${paths.teachers(sid)}/${id}`).get()).data()!;
 const memberDoc = async (sid: string, uid: string) => (await adminDb.doc(`${paths.members(sid)}/${uid}`).get()).data();
 const requestDoc = async (sid: string, uid: string) => adminDb.doc(`${paths.joinRequests(sid)}/${uid}`).get();
+const decide = async (admin: Client, sid: string, uid: string, teacherId: string, approve: boolean, createdAt?: number) =>
+  admin.call('decideJoinRequest', { schoolId: sid, uid, teacherId, approve, createdAt: createdAt ?? ((await requestDoc(sid, uid)).get('createdAt') as number | undefined) ?? 0 });
 
 async function school(staffIds: string[] = ['SCC001'], emails: Record<string, string> = {}) {
   const { admin, sid } = await adminWithSchool();
@@ -344,7 +346,7 @@ describe('decideJoinRequest', () => {
     const { admin, sid, ids, token } = await school();
     const u = await signUp();
     await u.call('joinSchool', { schoolId: sid, token, staffId: 'SCC001' });
-    await expect(admin.call('decideJoinRequest', { schoolId: sid, uid: u.uid, teacherId: ids[0]!, approve: true })).resolves.toEqual({ ok: true });
+    await expect(decide(admin, sid, u.uid, ids[0]!, true)).resolves.toEqual({ ok: true });
     expect(await u.claims()).toEqual({ schools: { [sid]: { r: 't', t: ids[0] } } });
     expect((await requestDoc(sid, u.uid)).exists).toBe(false);
   });
@@ -353,7 +355,7 @@ describe('decideJoinRequest', () => {
     const { admin, sid, ids, token } = await school();
     const u = await signUp();
     await u.call('joinSchool', { schoolId: sid, token, staffId: 'SCC001' });
-    await admin.call('decideJoinRequest', { schoolId: sid, uid: u.uid, teacherId: ids[0]!, approve: false });
+    await decide(admin, sid, u.uid, ids[0]!, false);
     const doc = (await requestDoc(sid, u.uid)).data()!;
     expect(doc).toMatchObject({ uid: u.uid, teacherId: ids[0], status: 'rejected' });
     expect(typeof doc.decidedAt).toBe('number');
@@ -365,9 +367,9 @@ describe('decideJoinRequest', () => {
     const { admin, sid, ids, token } = await school();
     const u = await signUp();
     await u.call('joinSchool', { schoolId: sid, token, staffId: 'SCC001' });
-    await admin.call('decideJoinRequest', { schoolId: sid, uid: u.uid, teacherId: ids[0]!, approve: false });
-    await expectFnError(admin.call('decideJoinRequest', { schoolId: sid, uid: u.uid, teacherId: ids[0]!, approve: true }), 'failed-precondition', 'invalid');
-    await expectFnError(admin.call('decideJoinRequest', { schoolId: sid, uid: u.uid, teacherId: ids[0]!, approve: false }), 'failed-precondition', 'invalid');
+    await decide(admin, sid, u.uid, ids[0]!, false);
+    await expectFnError(decide(admin, sid, u.uid, ids[0]!, true), 'failed-precondition', 'invalid');
+    await expectFnError(decide(admin, sid, u.uid, ids[0]!, false), 'failed-precondition', 'invalid');
     expect((await teacherDoc(sid, ids[0]!)).uid).toBeUndefined();
     expect(await u.claims()).toEqual({});
   });
@@ -376,7 +378,7 @@ describe('decideJoinRequest', () => {
     const { admin, sid, ids, token } = await school(['SCC001', 'SCC002']);
     const u = await signUp();
     await u.call('joinSchool', { schoolId: sid, token, staffId: 'SCC001' });
-    await admin.call('decideJoinRequest', { schoolId: sid, uid: u.uid, teacherId: ids[0]!, approve: false });
+    await decide(admin, sid, u.uid, ids[0]!, false);
     await expect(u.call('joinSchool', { schoolId: sid, token, staffId: 'SCC002' })).resolves.toEqual({ status: 'pending', schoolId: sid, teacherId: ids[1] });
     const doc = (await requestDoc(sid, u.uid)).data()!;
     expect(doc).toMatchObject({ staffId: 'SCC002', teacherId: ids[1], status: 'pending' });
@@ -391,7 +393,7 @@ describe('decideJoinRequest', () => {
     const other = await signUp();
     await other.call('joinSchool', { token: personal });
     expect((await requestDoc(sid, u.uid)).data()).toMatchObject({ status: 'rejected' });
-    await expectFnError(admin.call('decideJoinRequest', { schoolId: sid, uid: u.uid, teacherId: ids[0]!, approve: true }), 'failed-precondition', 'invalid');
+    await expectFnError(decide(admin, sid, u.uid, ids[0]!, true), 'failed-precondition', 'invalid');
     expect((await teacherDoc(sid, ids[0]!)).uid).toBe(other.uid);
   });
 
@@ -400,13 +402,48 @@ describe('decideJoinRequest', () => {
     const u = await signUp();
     await u.call('joinSchool', { schoolId: sid, token, staffId: 'SCC001' });
     await u.call('joinSchool', { schoolId: sid, token, staffId: 'SCC002' });
-    await expectFnError(admin.call('decideJoinRequest', { schoolId: sid, uid: u.uid, teacherId: ids[0]!, approve: true }), 'failed-precondition', 'invalid');
-    await expectFnError(admin.call('decideJoinRequest', { schoolId: sid, uid: u.uid, teacherId: ids[0]!, approve: false }), 'failed-precondition', 'invalid');
+    await expectFnError(decide(admin, sid, u.uid, ids[0]!, true), 'failed-precondition', 'invalid');
+    await expectFnError(decide(admin, sid, u.uid, ids[0]!, false), 'failed-precondition', 'invalid');
     expect((await teacherDoc(sid, ids[0]!)).uid).toBeUndefined();
     expect((await teacherDoc(sid, ids[1]!)).uid).toBeUndefined();
     expect((await requestDoc(sid, u.uid)).data()).toMatchObject({ teacherId: ids[1], status: 'pending' });
-    await expect(admin.call('decideJoinRequest', { schoolId: sid, uid: u.uid, teacherId: ids[1]!, approve: true })).resolves.toEqual({ ok: true });
+    await expect(decide(admin, sid, u.uid, ids[1]!, true)).resolves.toEqual({ ok: true });
     expect((await teacherDoc(sid, ids[1]!)).uid).toBe(u.uid);
+  });
+
+  it('refuses a decision on a submission the user replaced after the admin reviewed it', async () => {
+    const { admin, sid, ids, token } = await school();
+    const u = await signUp();
+    await u.call('joinSchool', { schoolId: sid, token, staffId: 'SCC001' });
+    const reviewed = (await requestDoc(sid, u.uid)).get('createdAt') as number;
+    await decide(admin, sid, u.uid, ids[0]!, false, reviewed);
+    await new Promise((r) => setTimeout(r, 5));
+    await u.call('joinSchool', { schoolId: sid, token, staffId: 'SCC001' });
+    await expectFnError(decide(admin, sid, u.uid, ids[0]!, true, reviewed), 'failed-precondition', 'invalid');
+    expect((await teacherDoc(sid, ids[0]!)).uid).toBeUndefined();
+    expect((await requestDoc(sid, u.uid)).data()).toMatchObject({ status: 'pending' });
+    await expect(decide(admin, sid, u.uid, ids[0]!, true)).resolves.toEqual({ ok: true });
+  });
+
+  it('refuses a decision carrying the createdAt of a pending submission the user refiled for the same teacher', async () => {
+    const { admin, sid, ids, token } = await school();
+    const u = await signUp();
+    await u.call('joinSchool', { schoolId: sid, token, staffId: 'SCC001' });
+    const reviewed = (await requestDoc(sid, u.uid)).get('createdAt') as number;
+    await new Promise((r) => setTimeout(r, 5));
+    await u.call('joinSchool', { schoolId: sid, token, staffId: 'SCC001' });
+    expect((await requestDoc(sid, u.uid)).get('createdAt')).not.toBe(reviewed);
+    await expectFnError(decide(admin, sid, u.uid, ids[0]!, true, reviewed), 'failed-precondition', 'invalid');
+    await expectFnError(decide(admin, sid, u.uid, ids[0]!, false, reviewed), 'failed-precondition', 'invalid');
+    expect((await teacherDoc(sid, ids[0]!)).uid).toBeUndefined();
+    expect((await requestDoc(sid, u.uid)).data()).toMatchObject({ teacherId: ids[0], status: 'pending' });
+  });
+
+  it('requires createdAt', async () => {
+    const { admin, sid, ids, token } = await school();
+    const u = await signUp();
+    await u.call('joinSchool', { schoolId: sid, token, staffId: 'SCC001' });
+    await expectFnError(admin.call('decideJoinRequest', { schoolId: sid, uid: u.uid, teacherId: ids[0]!, approve: true } as never), 'invalid-argument', 'invalid');
   });
 
   it('approving a stale request for a linked teacher is already-linked', async () => {
@@ -415,7 +452,7 @@ describe('decideJoinRequest', () => {
     const { token: personal } = await admin.call('createTeacherLink', { schoolId: sid, teacherId: ids[0]! });
     await (await signUp()).call('joinSchool', { token: personal });
     await adminDb.doc(`${paths.joinRequests(sid)}/${u.uid}`).set({ uid: u.uid, email: 'x@example.com', staffId: 'SCC001', teacherId: ids[0], createdAt: Date.now() });
-    await expectFnError(admin.call('decideJoinRequest', { schoolId: sid, uid: u.uid, teacherId: ids[0]!, approve: true }), 'failed-precondition', 'already-linked');
+    await expectFnError(decide(admin, sid, u.uid, ids[0]!, true), 'failed-precondition', 'already-linked');
   });
 });
 
@@ -460,6 +497,6 @@ describe('admin-only invite callables', () => {
   it.each(['setJoinLink', 'decideJoinRequest', 'createTeacherLink', 'cancelTeacherLink', 'unlinkTeacher', 'linkSelf'] as const)('%s refuses a non-admin', async (name) => {
     const { sid } = await adminWithSchool();
     const stranger = await signUp();
-    await expectFnError(stranger.call(name, { schoolId: sid, teacherId: 't', uid: 'u', approve: true, action: 'create' } as never), 'permission-denied', 'not-allowed');
+    await expectFnError(stranger.call(name, { schoolId: sid, teacherId: 't', uid: 'u', createdAt: 1, approve: true, action: 'create' } as never), 'permission-denied', 'not-allowed');
   });
 });

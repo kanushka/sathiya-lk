@@ -379,7 +379,7 @@ describe('teacher accounts', () => {
     expect(within(section).getByText('rizan@gmail.com')).toBeInTheDocument();
     expect(within(section).getByText(/Mr\. A\. Rizan · SCC031/)).toBeInTheDocument();
     await user.click(within(section).getByRole('button', { name: 'Approve' }));
-    expect(api.decideJoinRequest).toHaveBeenCalledWith('siripura', 'u-rizan', rizan.id, true);
+    expect(api.decideJoinRequest).toHaveBeenCalledWith('siripura', 'u-rizan', rizan.id, 1, true);
   });
 
   it('rejects a join request', async () => {
@@ -388,7 +388,7 @@ describe('teacher accounts', () => {
     const user = userEvent.setup();
     renderLinked();
     await user.click(within(screen.getByRole('region', { name: 'Join requests (1)' })).getByRole('button', { name: 'Reject' }));
-    expect(api.decideJoinRequest).toHaveBeenCalledWith('siripura', 'u-rizan', rizan.id, false);
+    expect(api.decideJoinRequest).toHaveBeenCalledWith('siripura', 'u-rizan', rizan.id, 1, false);
   });
 
   it('explains a failed approval', async () => {

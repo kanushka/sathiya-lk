@@ -6,7 +6,7 @@ import { onCall } from 'firebase-functions/v2/https';
 import { db } from './lib/admin';
 import { callOpts } from './lib/callOptions';
 import { assertSchoolRoom, syncClaims } from './lib/claims';
-import { bool, docId, fail, obj, requireSchoolAdmin } from './lib/guards';
+import { bool, docId, fail, int, obj, requireSchoolAdmin } from './lib/guards';
 import { linkTeacher } from './lib/linkTeacher';
 import { runTx } from './lib/tx';
 
@@ -15,15 +15,16 @@ export const decideJoinRequest = onCall(callOpts, async (req): Promise<DecideJoi
   const { sid } = await requireSchoolAdmin(req, data.schoolId);
   const target = docId(data.uid, 'uid');
   const teacherId = docId(data.teacherId, 'teacherId');
+  const createdAt = int(data.createdAt, 'createdAt', 0, Number.MAX_SAFE_INTEGER);
   const approve = bool(data.approve, 'approve');
   const ref = db.doc(`${paths.joinRequests(sid)}/${target}`);
 
-  // The decision applies only to the request the admin reviewed: same teacher, still pending.
+  // The decision applies only to the submission the admin reviewed: same teacher, same createdAt, still pending.
   const pending = async (tx: Transaction): Promise<JoinRequest> => {
     const request = (await tx.get(ref)).data() as JoinRequest | undefined;
     if (!request) fail('not-found', 'invalid', 'Request not found');
     if (request!.status && request!.status !== 'pending') fail('failed-precondition', 'invalid', 'This request was already decided');
-    if (request!.teacherId !== teacherId) fail('failed-precondition', 'invalid', 'This request changed since it was reviewed');
+    if (request!.teacherId !== teacherId || request!.createdAt !== createdAt) fail('failed-precondition', 'invalid', 'This request changed since it was reviewed');
     return request!;
   };
 

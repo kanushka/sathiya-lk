@@ -28,7 +28,7 @@ export function JoinRequests({ schoolId, requests, teachers, readOnly }: JoinReq
   async function decide(r: JoinRequestDoc, approve: boolean) {
     setBusy({ uid: r.uid, approve });
     try {
-      await api.decideJoinRequest(schoolId, r.uid, r.teacherId, approve);
+      await api.decideJoinRequest(schoolId, r.uid, r.teacherId, r.createdAt, approve);
       toast.show(approve ? t('requests.approved', { name: r.name || r.email }) : t('requests.rejected'), 'success');
     } catch (err) {
       toast.show(accountActionError(err, t), 'error');
