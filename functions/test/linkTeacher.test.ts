@@ -38,7 +38,7 @@ describe('linkTeacher', () => {
     expect(await memberDoc(sid, user.uid)).toMatchObject({ role: 'admin', teacherId });
   });
 
-  it('deletes every join request for that teacher and leaves others', async () => {
+  it('deletes the linking user request, rejects other requests for that teacher, leaves others', async () => {
     const { admin, sid, teacherId, user } = await setup();
     const { teacherId: other } = await admin.call('createTeacher', { schoolId: sid, teacher: teacherInput('SCC002') });
     const rival = await signUp();
@@ -48,7 +48,11 @@ describe('linkTeacher', () => {
     await request(sid, bystander.uid, other);
     await link(sid, teacherId, user.uid);
     const left = await adminDb.collection(paths.joinRequests(sid)).get();
-    expect(left.docs.map((d) => d.id)).toEqual([bystander.uid]);
+    expect(left.docs.map((d) => d.id).sort()).toEqual([bystander.uid, rival.uid].sort());
+    const rivalDoc = left.docs.find((d) => d.id === rival.uid)!.data();
+    expect(rivalDoc).toMatchObject({ status: 'rejected', teacherId });
+    expect(typeof rivalDoc.decidedAt).toBe('number');
+    expect(left.docs.find((d) => d.id === bystander.uid)!.data().status).toBeUndefined();
   });
 
   it('fails already-linked when the teacher has a uid, changing nothing', async () => {

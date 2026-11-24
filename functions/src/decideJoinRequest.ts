@@ -17,6 +17,7 @@ export const decideJoinRequest = onCall(callOpts, async (req): Promise<DecideJoi
   const ref = db.doc(`${paths.joinRequests(sid)}/${target}`);
   const request = (await ref.get()).data() as JoinRequest | undefined;
   if (!request) fail('not-found', 'invalid', 'Request not found');
+  if (request!.status && request!.status !== 'pending') fail('failed-precondition', 'invalid', 'This request was already decided');
   if (!approve) {
     await ref.update({ status: 'rejected', decidedAt: Date.now() });
     return { ok: true };

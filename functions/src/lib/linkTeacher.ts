@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
 // Copyright (C) 2026 Kanushka Gayan
-import { paths, type Member, type Teacher } from '@sathiya/core';
+import { paths, type JoinRequest, type Member, type Teacher } from '@sathiya/core';
 import { FieldValue, type Transaction } from 'firebase-admin/firestore';
 import { db } from './admin';
 import { fail } from './guards';
@@ -35,6 +35,9 @@ export async function linkTeacher(tx: Transaction, sid: string, teacherId: strin
     { uid, role, teacherId, ...(opts.email && { email: opts.email }), ...(opts.name && !existing?.name && { name: opts.name }) },
     { merge: true },
   );
-  requests.docs.forEach((d) => tx.delete(d.ref));
+  const decidedAt = Date.now();
+  requests.docs.forEach((d) => {
+    if (d.id !== uid && (d.data() as JoinRequest).status !== 'rejected') tx.update(d.ref, { status: 'rejected', decidedAt });
+  });
   tx.delete(db.doc(`${paths.joinRequests(sid)}/${uid}`));
 }

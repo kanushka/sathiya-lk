@@ -333,6 +333,17 @@ describe('decideJoinRequest', () => {
     expect(await u.claims()).toEqual({});
   });
 
+  it('refuses to approve or reject a rejected request', async () => {
+    const { admin, sid, ids, token } = await school();
+    const u = await signUp();
+    await u.call('joinSchool', { schoolId: sid, token, staffId: 'SCC001' });
+    await admin.call('decideJoinRequest', { schoolId: sid, uid: u.uid, approve: false });
+    await expectFnError(admin.call('decideJoinRequest', { schoolId: sid, uid: u.uid, approve: true }), 'failed-precondition', 'invalid');
+    await expectFnError(admin.call('decideJoinRequest', { schoolId: sid, uid: u.uid, approve: false }), 'failed-precondition', 'invalid');
+    expect((await teacherDoc(sid, ids[0]!)).uid).toBeUndefined();
+    expect(await u.claims()).toEqual({});
+  });
+
   it('a rejected user can file again, which makes the request pending', async () => {
     const { admin, sid, ids, token } = await school(['SCC001', 'SCC002']);
     const u = await signUp();
@@ -344,15 +355,15 @@ describe('decideJoinRequest', () => {
     expect(doc.decidedAt).toBeUndefined();
   });
 
-  it('approve after the teacher was linked by a personal link finds no request', async () => {
+  it('linking the teacher by a personal link rejects the other request, which cannot then be approved', async () => {
     const { admin, sid, ids, token } = await school();
     const u = await signUp();
     await u.call('joinSchool', { schoolId: sid, token, staffId: 'SCC001' });
     const { token: personal } = await admin.call('createTeacherLink', { schoolId: sid, teacherId: ids[0]! });
     const other = await signUp();
     await other.call('joinSchool', { token: personal });
-    expect((await requestDoc(sid, u.uid)).exists).toBe(false);
-    await expectFnError(admin.call('decideJoinRequest', { schoolId: sid, uid: u.uid, approve: true }), 'not-found', 'invalid');
+    expect((await requestDoc(sid, u.uid)).data()).toMatchObject({ status: 'rejected' });
+    await expectFnError(admin.call('decideJoinRequest', { schoolId: sid, uid: u.uid, approve: true }), 'failed-precondition', 'invalid');
     expect((await teacherDoc(sid, ids[0]!)).uid).toBe(other.uid);
   });
 
