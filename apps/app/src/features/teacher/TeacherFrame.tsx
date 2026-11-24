@@ -8,6 +8,7 @@ import { useAuth } from '../../app/AuthProvider';
 import { useLang } from '../../app/LangProvider';
 import { useSchool } from '../../app/SchoolProvider';
 import { useDoc, type DocState } from '../../lib/firestore';
+import { Alert } from '../../ui/Alert';
 import { Button, buttonClass } from '../../ui/Button';
 import { EmptyState } from '../../ui/EmptyState';
 import { LoadingState } from '../../ui/LoadingState';
@@ -49,7 +50,8 @@ export function TeacherFrame({ view, now: nowFn, snapshot, reliefDay, children }
   const today = colomboToday(instant);
   const reliefPath = !reliefDay && today.day !== null && yearId ? paths.reliefDay(sid, yearId, today.date) : null;
   const liveRelief = useDoc<ReliefDay>(reliefPath);
-  const relief = (reliefDay ?? liveRelief).data ?? null;
+  const reliefState = reliefDay ?? liveRelief;
+  const relief = reliefState.data ?? null;
   const base = state.data;
   const snap = useMemo(() => base && overlayRelief(base, relief, base.teacherId, lang), [base, relief, lang]);
 
@@ -62,7 +64,22 @@ export function TeacherFrame({ view, now: nowFn, snapshot, reliefDay, children }
   if (state.loading) body = <LoadingState />;
   else if (state.error) body = <EmptyState title={t('teacher:loadError')} />;
   else if (!snap) body = <EmptyState icon="calendar" title={t('teacher:notPublished.title')} body={t('teacher:notPublished.body')} />;
-  else body = children(snap, now);
+  else
+    body = (
+      <>
+        {reliefState.error && (
+          <Alert tone="warning" role="alert" className="mb-3">
+            <span className="flex flex-wrap items-center justify-between gap-3">
+              <span>{t('teacher:reliefLoadError')}</span>
+              <Button size="sm" variant="secondary" onClick={() => window.location.reload()}>
+                {t('teacher:reload')}
+              </Button>
+            </span>
+          </Alert>
+        )}
+        {children(snap, now)}
+      </>
+    );
 
   const tab = (to: string, label: string, active: boolean) => (
     <Link

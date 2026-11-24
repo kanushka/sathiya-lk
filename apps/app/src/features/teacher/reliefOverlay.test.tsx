@@ -102,6 +102,18 @@ describe('teacher views with relief', () => {
     expect(screen.getAllByText('On leave · no relief').length).toBeGreaterThan(0);
   });
 
+  it('warns without hiding the timetable when today\'s relief fails to load', () => {
+    renderWithSchool(<TodayPage now={wed0920} snapshot={props.snapshot} reliefDay={{ loading: false, error: new Error('x') }} />, { ctx, claims: claims(T.perera) });
+    expect(screen.getByRole('alert')).toHaveTextContent("Couldn't load today's relief");
+    expect(within(screen.getByRole('alert')).getByRole('button', { name: 'Reload' })).toBeInTheDocument();
+    expect(screen.getByTestId('now-card')).toBeInTheDocument();
+  });
+
+  it('treats a missing relief doc as no relief, without a warning', () => {
+    renderWithSchool(<WeekPage now={wed0920} snapshot={props.snapshot} reliefDay={{ loading: false }} />, { ctx, claims: claims(T.perera) });
+    expect(screen.queryByRole('alert')).toBeNull();
+  });
+
   it('week view shows the overlay in today column only', () => {
     renderWithSchool(<WeekPage now={wed0920} {...props} />, { ctx, claims: claims(T.perera) });
     expect(within(screen.getByTestId(`week-cell-2-${freeSlot.n}`)).getByText('Relief')).toBeInTheDocument();

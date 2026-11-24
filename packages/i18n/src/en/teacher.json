@@ -26,6 +26,8 @@
   "loadError": "Could not load your timetable. Please try again.",
   "signOut": "Sign out",
   "adminLink": "School admin",
+  "reliefLoadError": "Couldn't load today's relief. Reload to try again.",
+  "reload": "Reload",
   "relief": {
     "tag": "Relief",
     "for": "for {{name}}"
