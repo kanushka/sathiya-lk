@@ -71,18 +71,21 @@ describe('TimetableGrid', () => {
     expect(screen.getByRole('button', { name: /Friday, period 3,/ })).toBeInTheDocument();
   });
 
-  it('names an activity band only when every weekday has it', () => {
-    const act = (nameEn: string): TemplateRow => ({ type: 'activity', start: '07:00', end: '07:10', nameEn });
-    const p = (n: number): TemplateRow => ({ type: 'period', start: `0${7 + n}:00`, end: `0${7 + n}:40` });
-    const base = [p(1), p(2)];
-    setup({ rows: { 0: [act('Assembly'), ...base], 1: [act('Choir'), ...base], 2: [act('Assembly'), ...base], 3: [act('Assembly'), ...base], 4: [act('Assembly'), ...base] } });
-    expect(screen.queryByText('Assembly')).toBeNull();
+  it('renders a gap row per weekday when activity names or times differ', () => {
+    const act = (nameEn: string, end = '07:10'): TemplateRow => ({ type: 'activity', start: '07:00', end, nameEn });
+    const per: TemplateRow = { type: 'period', start: '07:10', end: '07:50' };
+    const week = (f: (d: DayIndex) => TemplateRow) => Object.fromEntries(days.map((d) => [d, [f(d), per]])) as Record<DayIndex, TemplateRow[]>;
+    setup({ rows: week((d) => (d === 1 ? act('Choir') : act('Assembly'))) });
+    expect(screen.getAllByText('Assembly')).toHaveLength(4);
+    expect(screen.getByText('Choir')).toBeInTheDocument();
     cleanup();
-    setup({ rows: { 0: [act('Assembly'), ...base], 1: base, 2: base, 3: base, 4: base } });
-    expect(screen.queryByText('Assembly')).toBeNull();
+    setup({ rows: week((d) => act('Assembly', d === 1 ? '07:05' : '07:10')) });
+    expect(screen.getAllByText('Assembly')).toHaveLength(5);
+    expect(screen.getByText('07:00–07:05')).toBeInTheDocument();
+    expect(screen.getAllByText('07:00–07:10')).toHaveLength(4);
     cleanup();
-    setup({ rows: { 0: [act('Assembly'), ...base], 1: [act('Assembly'), ...base], 2: [act('Assembly'), ...base], 3: [act('Assembly'), ...base], 4: [act('Assembly'), ...base] } });
-    expect(screen.getByText('Assembly')).toBeInTheDocument();
+    setup({ rows: week(() => act('Assembly')) });
+    expect(screen.getAllByText('Assembly')).toHaveLength(1);
   });
 
   it('renders 5 day headers and a button per slot', () => {
