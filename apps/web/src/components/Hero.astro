@@ -38,7 +38,7 @@ const tint: Partial<Record<Subject, string>> = {
       <a class="btn btn-secondary" href={app.teacherLogin}>{t.hero.teacherLogin}</a>
     </div>
   </div>
-  <figure class="grid-card" role="img" aria-label={t.grid.label}>
+  <figure class="grid-card" role="img" aria-label={t.grid.label} data-clash={t.grid.clash}>
     <div class="grid-head" aria-hidden="true">
       <strong>{t.grid.title}</strong>
       <span>{t.grid.summary}</span>
@@ -57,3 +57,74 @@ const tint: Partial<Record<Subject, string>> = {
     </div>
   </figure>
 </section>
+
+<script>
+  const card = document.querySelector<HTMLElement>('.grid-card');
+  if (card && !matchMedia('(prefers-reduced-motion: reduce)').matches) build(card);
+
+  function build(card: HTMLElement) {
+    const sleep = (ms: number) => new Promise((r) => setTimeout(r, ms));
+    const summary = card.querySelector<HTMLElement>('.grid-head span');
+    const template = summary?.textContent ?? '';
+    const cells = [...card.querySelectorAll<HTMLElement>('.tt-cell')];
+    const filled = cells.filter((c) => !c.classList.contains('tt-empty'));
+    const gap = cells.find((c) => c.classList.contains('tt-empty'));
+    const isMaths = (c: HTMLElement) => c.classList.contains('tint-teal');
+    const isScience = (c: HTMLElement) => c.classList.contains('tint-blue');
+    const mathsTotal = filled.filter(isMaths).length;
+
+    const note = document.createElement('p');
+    note.className = 'tt-note';
+    note.setAttribute('aria-hidden', 'true');
+    note.textContent = card.dataset.clash ?? '';
+    card.append(note);
+
+    let visible = false;
+    let wake: (() => void) | null = null;
+    new IntersectionObserver(([e]) => {
+      visible = !!e?.isIntersecting;
+      if (visible) wake?.();
+    }).observe(card);
+    const whenVisible = () => (visible ? Promise.resolve() : new Promise<void>((r) => (wake = r)));
+
+    const render = (maths: number, science: number) => {
+      const vals = [maths, science];
+      let n = 0;
+      if (summary) summary.textContent = template.replace(/\d+(?=\/)/g, () => String(vals[n++] ?? 0));
+      summary?.classList.toggle('tt-done', maths === mathsTotal);
+    };
+
+    (async () => {
+      for (;;) {
+        await whenVisible();
+        const order = [...filled].sort(() => Math.random() - 0.5);
+        const clashAt = order.findIndex((c, i) => i > order.length / 2 && isMaths(c));
+        let maths = 0;
+        let science = 0;
+        render(0, 0);
+        gap?.classList.remove('tt-gap');
+        filled.forEach((c) => c.classList.add('tt-blank'));
+        await sleep(500);
+        for (const [i, c] of order.entries()) {
+          if (i === clashAt) {
+            c.classList.remove('tt-blank');
+            c.classList.add('tt-clash');
+            note.classList.add('show');
+            await sleep(1300);
+            c.classList.remove('tt-clash');
+            note.classList.remove('show');
+          }
+          c.classList.remove('tt-blank', 'tt-in');
+          void c.offsetWidth;
+          c.classList.add('tt-in');
+          if (isMaths(c)) maths++;
+          if (isScience(c)) science++;
+          render(maths, science);
+          await sleep(120);
+        }
+        gap?.classList.add('tt-gap');
+        await sleep(4000);
+      }
+    })();
+  }
+</script>
