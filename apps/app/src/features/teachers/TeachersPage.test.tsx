@@ -454,6 +454,18 @@ describe('teacher accounts', () => {
     expect(api.setJoinLink).toHaveBeenLastCalledWith('siripura', 'off');
   });
 
+  it('shows the new invite link right after New link, before the listener catches up', async () => {
+    data.joinLink = { id: 'joinLink', token: 'tokA', hash: 'h', createdAt: 1, createdBy: 'u' };
+    vi.mocked(api.setJoinLink).mockResolvedValue({ token: 'tokB' });
+    const user = userEvent.setup();
+    renderLinked();
+    const card = screen.getByRole('region', { name: 'Invite link' });
+    await user.click(within(card).getByRole('button', { name: 'New link' }));
+    await user.click(within(screen.getByRole('dialog', { name: 'Make a new invite link?' })).getByRole('button', { name: 'Make new link' }));
+    expect(await within(card).findByText(`${window.location.origin}/join/siripura/tokB`)).toBeInTheDocument();
+    expect(within(card).queryByText(`${window.location.origin}/join/siripura/tokA`)).not.toBeInTheDocument();
+  });
+
   it('puts join requests above the invite link card', () => {
     data.requests = [request];
     renderLinked();

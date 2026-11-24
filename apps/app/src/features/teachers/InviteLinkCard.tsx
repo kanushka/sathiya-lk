@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
 // Copyright (C) 2026 Kanushka Gayan
-import { useId, useState } from 'react';
+import { useEffect, useId, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Button } from '../../ui/Button';
 import { CopyLink } from '../../ui/CopyLink';
@@ -19,13 +19,21 @@ export function InviteLinkCard({ schoolId }: { schoolId: string }) {
   const [busy, setBusy] = useState<Action | null>(null);
   const [confirming, setConfirming] = useState<Action | null>(null);
   const [failed, setFailed] = useState(false);
-  const token = link.data?.token;
+  const [created, setCreated] = useState<string | null>(null);
+  const listened = link.data?.token;
+  const token = created ?? listened;
+
+  // The listener can still hold the replaced token right after create; show ours until it catches up.
+  useEffect(() => {
+    if (created && listened === created) setCreated(null);
+  }, [created, listened]);
 
   async function run(action: Action) {
     setBusy(action);
     setFailed(false);
     try {
-      await api.setJoinLink(schoolId, action);
+      const res = await api.setJoinLink(schoolId, action);
+      setCreated(action === 'create' && res.token ? res.token : null);
       setConfirming(null);
     } catch {
       setFailed(true);
