@@ -15,6 +15,8 @@ export interface ReliefMailArgs {
 }
 
 async function enqueueReliefMail(args: ReliefMailArgs): Promise<boolean> {
+  // The emulator dispatches task queues at once, ignoring the delay, which races tests that drive runReliefMail themselves.
+  if (process.env.FUNCTIONS_EMULATOR === 'true' && process.env.RELIEF_MAIL_EMULATOR !== 'on') return true;
   try {
     await getFunctions().taskQueue('reliefMail').enqueue(args, { scheduleDelaySeconds: 120 });
     return true;
