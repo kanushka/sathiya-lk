@@ -32,7 +32,7 @@ export function createI18n(lang: Lang): i18n {
     ns: namespaces,
     defaultNS: 'common',
     interpolation: { escapeValue: false },
-    initImmediate: false,
+    initAsync: false,
     resources: structuredClone(bundles),
   });
   return instance;
