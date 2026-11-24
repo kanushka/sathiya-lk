@@ -12,7 +12,7 @@ Production deploys only from `main`, after the same build was checked on staging
 ## 1. Create the staging project (once)
 1. Firebase console → add project `sathiya-lk-staging`.
 2. Upgrade to Blaze (functions need it) and add a budget alert (e.g. 5 USD) in Google Cloud billing.
-3. Authentication → enable Email/Password. Settings → Authorized domains → add `staging.sathiya.kanushka.com` and `app.staging.sathiya.kanushka.com`.
+3. Authentication → enable **Email/Password** and **Google** (see "Teacher access" below). Settings → Authorized domains → add `staging.sathiya.kanushka.com` and `app.staging.sathiya.kanushka.com`.
 4. Firestore database: create in the same location as production (native mode). Storage: create the default bucket.
 5. Hosting: add two sites, `sathiya-lk-staging-web` and `sathiya-lk-staging-app` (these ids are what `.firebaserc` maps; if the console gives different ids, update `.firebaserc`).
 6. Project settings → add two web apps (website and app). Copy their config into `stagingWebConfig` / `stagingAppConfig` in `packages/firebase-config/src/index.ts` (replace the `REPLACE_WITH_...` placeholders; these are public values, not secrets). The app picks them when built with `VITE_FIREBASE_ENV=staging` (already set in `apps/app/.env.staging`).
@@ -65,13 +65,23 @@ Per project (production `sathiya-lk` / app domain `app.sathiya.kanushka.com`; st
 7. Later, once App Check metrics show (nearly) all requests verified: App Check → APIs → enforce for Authentication, Cloud Firestore and Cloud Storage. Old app versions without App Check stop working at that point.
 
 ## Password policy
-The app requires at least 8 characters wherever a password is set (`apps/app/src/lib/password.ts`): admin sign-up, password reset, and a teacher changing their password. Generated teacher passwords are 8 characters from `functions/src/lib/password.ts`. To enforce the same minimum on the server, per project (once, by hand):
+The app requires at least 8 characters wherever a password is set (`apps/app/src/lib/password.ts`): account sign-up, school registration and password reset. To enforce the same minimum on the server, per project (once, by hand):
 
 1. Firebase console → Authentication → Settings → Password policy (if it is missing, the project needs the Identity Platform upgrade first).
 2. Enforcement mode: **Require enforcement**. Minimum length: **8**.
-3. Leave every character requirement (uppercase, lowercase, numeric, special) **off**: generated passwords are lowercase letters and digits with no guaranteed digit, and Admin SDK writes skip the policy, so a requirement would only bite when a teacher changes it.
+3. Leave every character requirement (uppercase, lowercase, numeric, special) **off**: the app only checks the length, so a stricter server rule would reject passwords the app lets through without saying why.
 4. Leave "Require users to update password on sign in" **off**, so admins with an older 6–7 character password can still sign in.
 5. Save. Sign-up, reset and change attempts below the minimum now fail with `auth/password-does-not-meet-requirements`, which the app shows as the length rule.
+
+## Teacher access
+Teachers have no accounts until they want one. Adding a teacher (form or import) creates only the record; there are no generated passwords or login slips.
+
+- Everyone signs in on `/login` with **Google** (shown first) or **email + password** (the email must be verified before joining or registering a school).
+- **Google provider:** Firebase console → Authentication → Sign-in method → enable **Google** in each project (`sathiya-lk` and `sathiya-lk-staging`), set the support email, and keep the app domain in Authorized domains. Without it the Google button fails with `auth/operation-not-allowed`.
+- **School invite link** (`APP_URL/join/<sid>/<token>`): the admin creates, copies, replaces or turns it off on the Teachers page. A signed-in user whose verified email matches one unlinked teacher record is linked at once; anyone else enters a staff ID and the request waits for the admin to approve or reject it at the top of the Teachers page.
+- **Personal link** (`APP_URL/join/t/<token>`): for one teacher, one use, valid 7 days; links whoever opens it, with no approval.
+- **Unlink** removes the account's access to that school at once (refresh tokens are revoked); the teacher can link another account later.
+- An account can belong to at most 15 schools; the role per school is in the `schools` custom claim, rebuilt from `schools/*/members` on every change.
 
 ## After the first deploy (per project)
 - Firestore → TTL: confirm the policy on `rateLimits.expiresAt` is active.

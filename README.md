@@ -6,7 +6,7 @@
 
 A free, open-source school timetable app for Sri Lankan schools, in Sinhala and English.
 
-School admins register their school, build class and teacher timetables, print them, and hand teachers a login slip. Teachers sign in with their staff ID and see their week on their phone. There are no fees, no paid plans and no ads.
+School admins register their school, build class and teacher timetables, print them, and share an invite link with their teachers. Teachers sign in with Google or email, join their school with the link and see their week on their phone. One account can belong to several schools. There are no fees, no paid plans and no ads.
 
 - Website: https://sathiya.kanushka.com
 - App: https://app.sathiya.kanushka.com
@@ -21,7 +21,7 @@ School admins register their school, build class and teacher timetables, print t
 - **Teacher mobile view.** Teachers see what they teach now and next, and their week.
 - **Publishing.** A timetable year stays a draft until the admin publishes it.
 - **Super admin.** Moderate school registrations, handle reports of fake or duplicate schools, post announcements, maintain the default subject list and the published terms and privacy policy, and see usage per school.
-- **Email.** Admin invites, school registration, verification and password reset emails (sent by a Cloud Function through the Resend API). Teachers never need an email address.
+- **Email.** Admin invites, school registration, verification and password reset emails (sent by a Cloud Function through the Resend API). Teachers who only need a printed timetable never need an account.
 - **Bilingual.** Every screen and printout in Sinhala and English; each person picks their own language.
 - **Devices.** Admin and super admin screens are made for a laptop or desktop, and tablets work too. Teachers' own timetable, the today view and sign-in work on phones.
 
@@ -74,9 +74,12 @@ Demo logins. These exist only in the local emulators (defined in `scripts/seed.t
 
 | Role | Where | Login |
 |---|---|---|
-| School admin | `/login` → Admin login | `admin@siripura.example.com` / `admin-pass-1` |
-| Teacher | `/login?as=teacher`, school "Siripura Central College" | staff ID `SCC024` / `teach234` |
-| Super admin | `/login` → Admin login | `super@sathiya.example.com` / `super-pass-1` |
+| School admin | `/login` | `admin@siripura.example.com` / `admin-pass-1` |
+| Teacher (linked) | `/login` | `n.perera@siripura.example.com` / `teach-pass-1` (also `r.silva@…`) |
+| Join request (pending) | `/login` | `kumari@siripura.example.com` / `request-pass-1` |
+| Super admin | `/login` | `super@sathiya.example.com` / `super-pass-1` |
+
+The other teachers are not linked. The seed prints the school invite link (`/join/<school id>/<token>`); sign up as `bandara@siripura.example.com` and open it to link to that teacher at once, or use any other email to send a join request.
 
 The seeded year is a draft, so teachers see "Not published yet" until the admin publishes it from the dashboard. `pnpm seed` re-seeds running emulators (it wipes their data first).
 
