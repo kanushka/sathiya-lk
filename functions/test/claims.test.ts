@@ -2,6 +2,7 @@
 // Copyright (C) 2026 Kanushka Gayan
 import { MAX_SCHOOLS, paths } from '@sathiya/core';
 import { afterEach, describe, expect, it, vi } from 'vitest';
+import { logger } from 'firebase-functions/logger';
 import { auth } from '../src/lib/admin';
 import { assertSchoolRoom, syncClaims, syncClaimsAndRevoke } from '../src/lib/claims';
 import { isAdminOf } from '../src/lib/guards';
@@ -91,11 +92,19 @@ describe('syncClaims', () => {
     expect(spy).toHaveBeenCalledTimes(3);
   });
 
-  it('fails with too-many-schools above the limit', async () => {
+  it('above the limit publishes admin schools first, then teacher schools by id, and logs the overflow', async () => {
     const c = await signUp();
     const tag = uniq();
-    for (let i = 0; i <= MAX_SCHOOLS; i++) await addMember(`${tag}-${i}`, c.uid, { role: 'teacher', teacherId: 't' });
-    await expect(syncClaims(c.uid)).rejects.toMatchObject({ code: 'failed-precondition', details: { code: 'too-many-schools' } });
+    const err = vi.spyOn(logger, 'error').mockImplementation(() => undefined);
+    const pad = (i: number) => String(i).padStart(2, '0');
+    for (let i = 0; i < MAX_SCHOOLS; i++) await addMember(`${tag}-t${pad(i)}`, c.uid, { role: 'teacher', teacherId: 't' });
+    await addMember(`${tag}-z-admin`, c.uid, { role: 'admin' });
+    await expect(syncClaims(c.uid)).resolves.toBeUndefined();
+    const schools = (await adminAuth.getUser(c.uid)).customClaims?.schools as Record<string, unknown>;
+    const expected = [`${tag}-z-admin`, ...Array.from({ length: MAX_SCHOOLS - 1 }, (_, i) => `${tag}-t${pad(i)}`)];
+    expect(Object.keys(schools).sort()).toEqual(expected.sort());
+    expect(schools[`${tag}-z-admin`]).toEqual({ r: 'a' });
+    expect(err).toHaveBeenCalledWith(expect.any(String), { uid: c.uid, count: MAX_SCHOOLS + 1 });
   });
 
   it('assertSchoolRoom allows the last school, refuses one beyond the limit, and allows one it already belongs to', async () => {

@@ -1,6 +1,7 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
 // Copyright (C) 2026 Kanushka Gayan
 import { MAX_SCHOOLS, paths, type Claims, type Member } from '@sathiya/core';
+import { logger } from 'firebase-functions/logger';
 import { auth, db } from './admin';
 import { fail } from './guards';
 
@@ -21,14 +22,16 @@ export async function assertSchoolRoom(uid: string, sid: string): Promise<void> 
 
 type MemberSnap = Awaited<ReturnType<typeof membersOf>>;
 
-function schoolsOf(snap: MemberSnap): Claims['schools'] {
-  if (snap.size > MAX_SCHOOLS) tooManySchools();
+// Joins stop at MAX_SCHOOLS, but a race can pass it. Throwing here would leave the claims unrepairable, so publish a
+// stable subset (admin memberships first, then by school id) and log it.
+function schoolsOf(snap: MemberSnap, uid: string): Claims['schools'] {
   if (snap.size === 0) return undefined;
+  const entries = snap.docs
+    .map((doc) => ({ sid: doc.ref.parent.parent!.id, m: doc.data() as Member }))
+    .sort((a, b) => Number(b.m.role === 'admin') - Number(a.m.role === 'admin') || (a.sid < b.sid ? -1 : a.sid > b.sid ? 1 : 0));
+  if (entries.length > MAX_SCHOOLS) logger.error('Account is over the school limit; publishing a subset of its memberships', { uid, count: entries.length });
   const schools: NonNullable<Claims['schools']> = {};
-  for (const doc of [...snap.docs].sort((a, b) => a.ref.path.localeCompare(b.ref.path))) {
-    const m = doc.data() as Member;
-    schools[doc.ref.parent.parent!.id] = { r: m.role === 'admin' ? 'a' : 't', ...(m.teacherId && { t: m.teacherId }) };
-  }
+  for (const { sid, m } of entries.slice(0, MAX_SCHOOLS)) schools[sid] = { r: m.role === 'admin' ? 'a' : 't', ...(m.teacherId && { t: m.teacherId }) };
   return schools;
 }
 
@@ -38,14 +41,14 @@ const SYNC_ATTEMPTS = 3;
 // publish and republishing on a difference narrows that window; the next sign-in (claimInvites) repairs what is left.
 export async function syncClaims(uid: string): Promise<void> {
   const [user, first] = await Promise.all([auth.getUser(uid), membersOf(uid)]);
-  let schools = schoolsOf(first);
+  let schools = schoolsOf(first, uid);
   for (let i = 1; ; i++) {
     const next: Claims = {};
     if (schools) next.schools = schools;
     if (user.customClaims?.super === true) next.super = true;
     await auth.setCustomUserClaims(uid, next);
     if (i >= SYNC_ATTEMPTS) return;
-    const now = schoolsOf(await membersOf(uid));
+    const now = schoolsOf(await membersOf(uid), uid);
     if (JSON.stringify(now) === JSON.stringify(schools)) return;
     schools = now;
   }
