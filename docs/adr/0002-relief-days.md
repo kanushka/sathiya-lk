@@ -10,7 +10,7 @@ Admins need to cover absent teachers each morning, suggest fair relief teachers 
 - C. Relief as dated timetable entries plus republish. Mixes dated changes into the weekly model and publish rebuilds every snapshot.
 
 ## Decision
-- A. `reliefDays/{date}` overlays the published snapshots; the weekly timetable is untouched. The callable validates in a transaction against the published snapshots (not draft entries), so a relief teacher is free exactly when teachers see them free. Republishing mid-day is rejected for affected leaves (`republish`), stale saves are rejected (`stale`).
+- A. `reliefDays/{date}` overlays the published snapshots; the weekly timetable is untouched. The callable validates in a transaction against the published snapshots (not draft entries), so a relief teacher is free exactly when teachers see them free. Saves are rejected with `republish` when the active year's snapshots predate relief (cells lack `entryId`) and with `stale` when another admin saved first. `reliefMeta/stats` holds the year's relief counts used for fair suggestions.
 - Emails are debounced through a task queue. Each save stores `reliefNotified.pending[teacherId] = savedAt`; the task sends only if its teacher's token still matches, so a later save that changes other teachers does not cancel this teacher's mail. Relief address is the teacher's email, else the linked member's email.
 - Teachers cannot read setup data (classes, subjects), so display labels (`labels[entryId]`: class, subject, Sinhala subject) are denormalised into the day doc when saved.
 - Same-day only; no planned substitutions.

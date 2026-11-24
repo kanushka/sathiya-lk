@@ -46,7 +46,7 @@ A free web app for Sri Lankan schools to build their yearly timetables. A school
 - **Deletes** of anything the draft uses are blocked ("used in N slots"). Shrinking a template leaves orphaned entries listed under Needs attention.
 - **Names**: schools, subjects, groups and teachers have an English name, a Sinhala name, or both. Display picks the app language and falls back to the other.
 - **Branding**: each school's logo and colours drive its screens and printouts, with text colour chosen for contrast. The public site, login and super admin use Sathiya's own palette.
-- **Relief days**: one dated doc per day (leaves and reliefs) overlays the published snapshots; the timetable itself never changes. Only the `saveReliefDay` callable writes it, re-checking availability against the published snapshots. Emails to relief teachers are debounced through a task queue ([ADR 0002](adr/0002-relief-days.md)).
+- **Relief days**: one dated doc per day overlays the published snapshots; the weekly timetable never changes ([ADR 0002](adr/0002-relief-days.md)).
 
 ## Constraints
 - Keep Firestore reads low: load per school and year, no per-cell listeners.
