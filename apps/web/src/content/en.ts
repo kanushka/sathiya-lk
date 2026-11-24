@@ -95,6 +95,7 @@ export const en = {
       { title: 'Religion, aesthetic & combined classes', body: 'Religion and aesthetic options run in the same period, each with its own teacher, even across 6A and 6B together.' },
       { title: 'Teachers on their phone', body: "Publish the timetable and every teacher sees today's periods and their week on their phone. Printed timetables cover anyone without one." },
       { title: 'Sinhala & English', body: 'Every screen and every printout in Sinhala or English. Each person picks their own.' },
+      { title: 'Relief periods', body: "Mark who is on leave each morning, get fair relief suggestions for every missed period, and print the day's relief sheet." },
     ],
   },
   steps: {

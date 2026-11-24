@@ -1,0 +1,98 @@
+{
+  "title": "Relief",
+  "date": "Day",
+  "print": "Print",
+  "printSaveFirst": "Save first to print",
+  "today": "Today",
+  "viewOnly": "Past day · view only",
+  "loadFailed": "Could not load relief. Check your connection and try again.",
+  "leave": {
+    "title": "On leave today",
+    "titlePast": "On leave",
+    "add": "Add teacher",
+    "search": "Search teachers",
+    "none": "No one is on leave. Add a teacher to plan relief.",
+    "nonePast": "No one was on leave.",
+    "remove": "Remove {{name}}",
+    "type": "Leave type",
+    "noLessons": "No lessons on this day",
+    "lessons": "Lessons to cover"
+  },
+  "types": {
+    "full": "Full day",
+    "morning": "Morning",
+    "afternoon": "Afternoon",
+    "late": "Late",
+    "early": "Early"
+  },
+  "reliefs": {
+    "title": "Relief",
+    "suggest": "Suggest relief",
+    "none": "Tick lessons above to plan relief.",
+    "nonePast": "No relief was given.",
+    "for": "for {{name}}",
+    "pickFor": "Relief for {{lesson}}",
+    "uncovered": "Uncovered",
+    "notAvailable": "Not available",
+    "gone": "No longer in the timetable"
+  },
+  "picker": {
+    "title": "Choose relief teacher",
+    "uncovered": "Leave uncovered",
+    "noneFree": "No free teacher for this period.",
+    "notAvailable": "No longer available",
+    "teachesClass": "Teaches this class",
+    "teachesSubject": "Teaches this subject",
+    "yearCount_one": "{{count}} relief this year",
+    "yearCount_other": "{{count}} reliefs this year",
+    "todayCount_one": "{{count}} period today",
+    "todayCount_other": "{{count}} periods today",
+    "noLessonsToday": "No lessons today"
+  },
+  "uncovered_one": "{{count}} period without relief",
+  "uncovered_other": "{{count}} periods without relief",
+  "save": "Save & notify",
+  "saving": "Saving…",
+  "savedAt": "Saved {{time}}",
+  "summary": {
+    "queued_one": "{{count}} teacher will be emailed",
+    "queued_other": "{{count}} teachers will be emailed",
+    "skipped_one": "{{count}} has no email",
+    "skipped_other": "{{count}} have no email",
+    "uncovered_one": "{{count}} uncovered",
+    "uncovered_other": "{{count}} uncovered",
+    "none": "No emails needed"
+  },
+  "status": {
+    "pending": "Email pending",
+    "sent": "Emailed {{time}}",
+    "noEmail": "No email"
+  },
+  "errors": {
+    "stale": "Someone else changed today's relief. Reload to see the latest, then make your changes again.",
+    "reload": "Reload",
+    "invalid": "Some picks are not valid any more. Fix the marked rows and save again.",
+    "failed": "Could not save: {{message}}",
+    "notToday": "This day is over. Only today's relief can be changed.",
+    "codes": {
+      "not-on-leave-lesson": "This lesson is not ticked for leave",
+      "on-leave": "This teacher is on leave at this time",
+      "busy": "This teacher is busy then",
+      "over-limit": "This teacher would go over their daily limit",
+      "wrong-grade": "This teacher does not teach this grade",
+      "double-booked": "This teacher is picked twice at the same time",
+      "unknown-teacher": "This teacher is no longer on the staff"
+    }
+  },
+  "empty": {
+    "weekend": "No school today",
+    "weekendPast": "No school on this day",
+    "weekendBody": "Relief is planned on school days, Monday to Friday.",
+    "unpublished": "Publish a timetable first",
+    "unpublishedBody": "Relief uses the published timetable of the active year.",
+    "republish": "Republish once to enable relief",
+    "republishBody": "This timetable was published before relief was available. Publish it again from the dashboard.",
+    "noRecord": "No relief was recorded for this day.",
+    "dashboard": "Go to dashboard"
+  }
+}

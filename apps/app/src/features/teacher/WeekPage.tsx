@@ -1,10 +1,12 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
 // Copyright (C) 2026 Kanushka Gayan
-import { activityName, type TeacherSnapshot } from '@sathiya/core';
+import { activityName } from '@sathiya/core';
 import { useTranslation } from 'react-i18next';
 import { useLang } from '../../app/LangProvider';
 import { cx } from '../../ui/cx';
 import { cellText, cellsAt, clock, weekSkeleton, weekdays } from './cells';
+import { CellNote } from './CellNote';
+import type { OverlaySnapshot } from './reliefOverlay';
 import { TeacherFrame, type TeacherViewProps } from './TeacherFrame';
 
 export function WeekPage(props: TeacherViewProps) {
@@ -15,7 +17,7 @@ export function WeekPage(props: TeacherViewProps) {
   );
 }
 
-function WeekBody({ snap, todayWeekday }: { snap: TeacherSnapshot; todayWeekday: number }) {
+function WeekBody({ snap, todayWeekday }: { snap: OverlaySnapshot; todayWeekday: number }) {
   const { t } = useTranslation(['teacher', 'common']);
   const { lang } = useLang();
   const slots = weekSkeleton(snap.rows);
@@ -47,7 +49,7 @@ function WeekBody({ snap, todayWeekday }: { snap: TeacherSnapshot; todayWeekday:
   );
 }
 
-function WeekRow({ n, start, snap, lang }: { n: number; start?: string; snap: TeacherSnapshot; lang: 'en' | 'si' }) {
+function WeekRow({ n, start, snap, lang }: { n: number; start?: string; snap: OverlaySnapshot; lang: 'en' | 'si' }) {
   const { t } = useTranslation('common');
   return (
     <>
@@ -67,11 +69,12 @@ function WeekRow({ n, start, snap, lang }: { n: number; start?: string; snap: Te
                 return (
                   <div
                     key={k}
-                    className="rounded-md border-l-4 bg-surface-2 px-1.5 py-1"
+                    className={cx('rounded-md border-l-4 bg-surface-2 px-1.5 py-1', cell.onLeave && 'opacity-55')}
                     style={{ borderLeftColor: cell.color || 'var(--brand)' }}
                   >
                     <b className="line-clamp-2 break-words text-xs">{text.title}</b>
                     <span className="line-clamp-2 break-words text-[10px] text-ink-muted">{text.sub}</span>
+                    <CellNote cell={cell} compact />
                     {!start && <span className="block text-[10px] text-ink-muted">{clock(cell.start)}</span>}
                   </div>
                 );

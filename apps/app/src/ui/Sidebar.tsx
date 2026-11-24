@@ -29,6 +29,7 @@ export const navItems: readonly NavItem[] = [
   { path: '/admin', labelKey: 'nav.dashboard', icon: 'dashboard', group: 'main' },
   { path: '/admin/timetable/class', labelKey: 'nav.byClass', icon: 'classView', group: 'timetable' },
   { path: '/admin/timetable/teacher', labelKey: 'nav.byTeacher', icon: 'teacherView', group: 'timetable' },
+  { path: '/admin/relief', labelKey: 'nav.relief', icon: 'relief', group: 'timetable' },
   { path: '/admin/teachers', labelKey: 'nav.teachers', icon: 'teachers', group: 'setup' },
   { path: '/admin/subjects', labelKey: 'nav.subjects', icon: 'subjects', group: 'setup' },
   { path: '/admin/grades', labelKey: 'nav.grades', icon: 'grades', group: 'setup' },

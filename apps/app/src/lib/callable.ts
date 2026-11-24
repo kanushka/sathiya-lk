@@ -20,6 +20,10 @@ const apiCodes: readonly ApiErrorCode[] = [
   'school-registered',
   'template-in-use',
   'template-too-many-moves',
+  'stale',
+  'republish',
+  'invalid-relief',
+  'not-today',
 ];
 
 export class ApiError extends Error {
