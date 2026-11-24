@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
 // Copyright (C) 2026 Kanushka Gayan
-import { usageCount } from '@sathiya/core';
-import { ctx, entries } from '@sathiya/core/fixtures';
+import { formatAmount, teacherLoad, usageCount } from '@sathiya/core';
+import { T, ctx, entries } from '@sathiya/core/fixtures';
 import { fireEvent, screen, waitFor, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
@@ -181,6 +181,54 @@ describe('teachers page', () => {
     expect(within(dialog).getByRole('button', { name: 'Print slip' })).toBeEnabled();
     expect(within(dialog).getByRole('link', { name: 'Share on WhatsApp' })).toBeInTheDocument();
     expect(within(dialog).queryByText('Reset the password first to print a slip')).not.toBeInTheDocument();
+  });
+
+  it('shows each teacher load and min per week when set', () => {
+    const withMin = { ...ctx, teachers: ctx.teachers.map((x, i) => (x.id === T.perera ? { ...x, minPerWeek: 12 } : x)) };
+    renderWithSchool(<TeachersPage />, { ctx: withMin, entries });
+    const load = teacherLoad(T.perera, entries, withMin);
+    expect(load.entries).toBeGreaterThan(0);
+    const row = screen.getByText('Mrs. N. Perera').closest('tr')!;
+    expect(within(row).getByText('min 12/wk')).toBeInTheDocument();
+    const expected = load.minutes > 0 ? `${load.entries} · ${formatAmount(load.minutes, 'minutes', 'en')}` : String(load.entries);
+    expect(within(row).getAllByRole('cell')[5]).toHaveTextContent(expected);
+    const other = screen.getByText('Mr. R. Silva').closest('tr')!;
+    expect(within(other).queryByText(/min \d+\/wk/)).not.toBeInTheDocument();
+  });
+
+  it('saves min per week, and validates it against max per day', async () => {
+    const user = userEvent.setup();
+    vi.mocked(api.createTeacher).mockResolvedValue({ teacherId: 'tNew', password: 'k7m4x9pq' });
+    render();
+    const dialog = await openAdd(user);
+    await user.type(within(dialog).getByLabelText('Name in English'), 'Mr. New Teacher');
+    await pickOption(user, within(dialog).getByRole('combobox', { name: 'Subjects' }), 'Mathematics');
+    await user.click(within(dialog).getByRole('button', { name: '6', pressed: false }));
+    await user.type(within(dialog).getByLabelText('Min periods / week (optional)'), '36');
+    await user.click(within(dialog).getByRole('button', { name: 'Save teacher' }));
+    expect(await within(dialog).findByText('Enter a whole number from 0 to 35')).toBeInTheDocument();
+    expect(api.createTeacher).not.toHaveBeenCalled();
+    await user.clear(within(dialog).getByLabelText('Min periods / week (optional)'));
+    await user.type(within(dialog).getByLabelText('Min periods / week (optional)'), '20');
+    await user.click(within(dialog).getByRole('button', { name: 'Save teacher' }));
+    await waitFor(() => expect(api.createTeacher).toHaveBeenCalled());
+    expect(api.createTeacher).toHaveBeenCalledWith('siripura', expect.objectContaining({ minPerWeek: 20 }));
+  });
+
+  it('omits minPerWeek when the field is empty', async () => {
+    const user = userEvent.setup();
+    vi.mocked(api.updateTeacher).mockResolvedValue(undefined);
+    const withMin = { ...ctx, teachers: ctx.teachers.map((x, i) => (x.id === T.perera ? { ...x, minPerWeek: 12 } : x)) };
+    renderWithSchool(<TeachersPage />, { ctx: withMin, entries });
+    const row = screen.getByText('Mrs. N. Perera').closest('tr')!;
+    await user.click(within(row).getByRole('button', { name: 'Edit' }));
+    const dialog = screen.getByRole('dialog');
+    expect(within(dialog).getByLabelText('Min periods / week (optional)')).toHaveValue(12);
+    await user.clear(within(dialog).getByLabelText('Min periods / week (optional)'));
+    await user.click(within(dialog).getByRole('button', { name: 'Save teacher' }));
+    await waitFor(() => expect(api.updateTeacher).toHaveBeenCalled());
+    const sent = vi.mocked(api.updateTeacher).mock.calls[0]![2];
+    expect(sent).not.toHaveProperty('minPerWeek');
   });
 
   it('updates an existing teacher without the callable', async () => {

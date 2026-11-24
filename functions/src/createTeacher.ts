@@ -3,7 +3,7 @@
 import { isValidStaffId, TEACHER_TITLES, type CreateTeacherRes, type Teacher, type TeacherTitle } from '@sathiya/core';
 import { onCall } from 'firebase-functions/v2/https';
 import { callOpts } from './lib/callOptions';
-import { bool, docIdList, email, int, intList, invalid, obj, optStr, requireSchoolAdmin, str, twoNames } from './lib/guards';
+import { bool, docIdList, email, int, intList, invalid, obj, optInt, optStr, requireSchoolAdmin, str, twoNames } from './lib/guards';
 import { createTeacherAccount } from './lib/teacherAccount';
 
 const optTitle = (v: unknown): TeacherTitle | undefined => {
@@ -19,6 +19,8 @@ export const createTeacher = onCall(callOpts, async (req): Promise<CreateTeacher
   const staffId = str(t.staffId, 'staffId', 10);
   if (!isValidStaffId(school.staffPrefix, staffId)) invalid(`staffId must look like ${school.staffPrefix}001`);
   const names = twoNames(t.name, t.nameSi, 'name', 'nameSi');
+  const maxPerDay = int(t.maxPerDay, 'maxPerDay', 1, 20);
+  const minPerWeek = optInt(t.minPerWeek, 'minPerWeek', 0, maxPerDay * 5);
   const teacher: Omit<Teacher, 'id' | 'uid' | 'lastLoginAt'> = {
     staffId,
     title: optTitle(t.title),
@@ -27,7 +29,8 @@ export const createTeacher = onCall(callOpts, async (req): Promise<CreateTeacher
     isPrimary: bool(t.isPrimary, 'isPrimary'),
     subjectIds: docIdList(t.subjectIds, 'subjectIds'),
     grades: intList(t.grades, 'grades', 1, 13),
-    maxPerDay: int(t.maxPerDay, 'maxPerDay', 1, 20),
+    maxPerDay,
+    ...(minPerWeek !== undefined && { minPerWeek }),
     phone: optStr(t.phone, 'phone', 30),
     email: t.email === undefined || t.email === null || t.email === '' ? undefined : email(t.email),
   };

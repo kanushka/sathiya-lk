@@ -82,6 +82,11 @@ export function int(v: unknown, name: string, min: number, max: number): number 
   return v as number;
 }
 
+export function optInt(v: unknown, name: string, min: number, max: number): number | undefined {
+  if (v === undefined || v === null) return undefined;
+  return int(v, name, min, max);
+}
+
 export function intList(v: unknown, name: string, min: number, max: number): number[] {
   if (!Array.isArray(v)) invalid(`${name} must be a list`);
   return [...new Set((v as unknown[]).map((x) => int(x, name, min, max)))].sort((a, b) => a - b);
