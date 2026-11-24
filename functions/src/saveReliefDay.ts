@@ -135,6 +135,9 @@ export const saveReliefDay = onCall(callOpts, async (req): Promise<SaveReliefDay
     const before = entrySets(old?.reliefs ?? []);
     const after = entrySets(reliefs);
     const changedIds = [...new Set([...before.keys(), ...after.keys()])].filter((t) => before.get(t) !== after.get(t));
+    if (changedIds.length) {
+      tx.set(db.doc(paths.reliefNotified(sid, yid, date)), { pending: Object.fromEntries(changedIds.map((t) => [t, savedAt])) }, { merge: true });
+    }
     return { updatedAt: savedAt, changed: changedIds };
   });
 

@@ -4,6 +4,8 @@ import { describe, expect, it } from 'vitest';
 import {
   adminInvite,
   passwordReset,
+  reliefAssigned,
+  reliefCancelled,
   reportReceived,
   schoolReactivated,
   schoolRegistered,
@@ -142,5 +144,41 @@ describe('email templates for a school with only a Sinhala name', () => {
     expect(r.text).toContain('සිරිපුර විද්‍යාලය is registered on Sathiya');
     expect(r.html).not.toContain('<br><span style="font-family:');
     expect(adminInvite({ inviter: 'W. Perera', school: siOnly, loginUrl, webUrl }).subject).toContain('සිරිපුර විද්‍යාලය');
+  });
+});
+
+describe('relief email templates', () => {
+  const todayUrl = 'https://app.example.test/s/abc/me';
+  const row = { period: 3, start: '09:15', end: '10:00', className: '6B', subject: 'Maths', forTeacher: 'Mr P. Bandara', subjectSi: 'ගණිතය', forTeacherSi: 'පී. බණ්ඩාර මහතා' };
+  const cases = {
+    one: () => reliefAssigned({ school, teacherName: 'Mr S. Kumara', teacherNameSi: 'එස්. කුමාර මහතා', date: '2026-11-24', rows: [row], todayUrl }),
+    many: () => reliefAssigned({ school, teacherName: 'Mr S. Kumara', date: '2026-11-24', rows: [row, { ...row, period: 5, start: '11:00', end: '11:45', className: '7A', subject: 'Science', subjectSi: undefined }], todayUrl }),
+    cancelled: () => reliefCancelled({ school, teacherName: 'Mr S. Kumara', date: '2026-11-24', todayUrl }),
+  };
+
+  for (const [name, make] of Object.entries(cases)) {
+    it(`${name} snapshot`, () => {
+      const { subject, html, text } = make();
+      expect({ subject, html, text }).toMatchSnapshot();
+    });
+    it(`${name} is bilingual and email-safe`, () => {
+      const { html, text } = make();
+      expect(html).toMatch(/[\u0D80-\u0DFF]/);
+      expect(text).toMatch(/[\u0D80-\u0DFF]/);
+      expect(html).not.toMatch(/<script|<style|<svg|display:flex|color-mix/);
+      expect(html).toContain(todayUrl);
+    });
+  }
+
+  it('subjects follow the row count', () => {
+    expect(cases.one().subject).toBe('Relief today: P3 6B Maths');
+    expect(cases.many().subject).toBe('2 relief periods today');
+    expect(cases.cancelled().subject).toBe('Relief cancelled today');
+  });
+
+  it('lists every row with the covered teacher', () => {
+    const { text } = cases.many();
+    expect(text).toContain('P3 · 09:15–10:00: 6B · Maths (for Mr P. Bandara)');
+    expect(text).toContain('P5 · 11:00–11:45: 7A · Science (for Mr P. Bandara)');
   });
 });
