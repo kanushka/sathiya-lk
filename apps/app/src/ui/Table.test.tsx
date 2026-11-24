@@ -58,7 +58,7 @@ describe('Table', () => {
     expect(screen.getByText('Nobody yet')).not.toHaveAttribute('data-label');
   });
 
-  it('turns rows into cards below md and keeps the table from md up', () => {
+  it('marks the wrapper with the phone card layout hook', () => {
     const { container } = render(<People names={['Silva']} />);
     const wrap = container.firstElementChild!;
     expect(wrap).toHaveClass('phone-cards', 'overflow-x-auto');

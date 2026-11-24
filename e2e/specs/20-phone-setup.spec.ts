@@ -24,7 +24,9 @@ test('teachers and subjects show as labelled cards on a phone', async ({ page })
   const rizan = page.getByRole('row').filter({ hasText: 'Mr. A. Rizan' });
   await expect(rizan.getByRole('cell').filter({ hasText: 'SCC031' })).toBeVisible();
   await expect(rizan.locator('td[data-label="Grades"]')).toBeVisible();
-  await expect(page.getByRole('columnheader')).toHaveCount(0);
+  const headers = page.getByRole('columnheader');
+  await expect(headers.first()).toBeAttached();
+  expect((await page.locator('thead').first().boundingBox())?.width ?? 0).toBeLessThanOrEqual(1);
   await shot(page, 'phone-teachers');
 
   await page.goto('/admin/subjects');
