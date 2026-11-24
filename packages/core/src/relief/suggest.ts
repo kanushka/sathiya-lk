@@ -24,7 +24,7 @@ function assess(t: Teacher, slot: Relief, others: Relief[], ctx: ReliefCtx): Can
 
   if (t.id === slot.absentTeacherId) return 'on-leave';
   const leave = ctx.leaves.find((l) => l.teacherId === t.id);
-  if (leave && (!snap || overlaps(leaveWindow(leave.type, snap.rows[ctx.day] ?? []), at))) return 'on-leave';
+  if (leave && (!snap || leave.type === 'full' || overlaps(leaveWindow(leave.type, snap.rows[ctx.day] ?? []), at))) return 'on-leave';
   if (today.some((c) => overlaps(span(c), at)) || mine.some((r) => overlaps(span(r), at))) return 'busy';
   const todayCount = today.length + mine.length;
   if (todayCount + 1 > t.maxPerDay) return 'over-limit';

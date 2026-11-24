@@ -129,6 +129,14 @@ describe('candidatesFor eligibility', () => {
     expect(ids(slot('e9', 'abs', '09:50', '10:30'), ctx)).toContain('L');
   });
 
+  it('full-day leave blocks a class period after the default day end', () => {
+    const ctx = mkCtx([teacher('L'), teacher('A')], [snap('L', [cell('l1', '14:00', '14:40', { classIds: ['c6b'] })])], {
+      leaves: [absLeave, { teacherId: 'L', type: 'full', entryIds: ['l1'] }],
+    });
+    expect(ids(slot('e9', 'abs', '13:40', '14:20'), ctx)).toEqual(['A']);
+    expect(ids(slot('e9', 'abs', '14:40', '15:20'), ctx)).toEqual(['A']);
+  });
+
   it('treats a teacher on leave without a snapshot as away all day', () => {
     const ctx = mkCtx([teacher('N'), teacher('A')], [], { leaves: [absLeave, { teacherId: 'N', type: 'early', entryIds: [] }] });
     expect(ids(s1, ctx)).toEqual(['A']);
