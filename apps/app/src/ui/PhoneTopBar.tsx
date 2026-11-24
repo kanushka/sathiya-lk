@@ -6,7 +6,7 @@ import { useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useLocation } from 'react-router-dom';
 import { useSchool, useYear } from '../app/SchoolProvider';
-import { Icon } from './Icon';
+import { IconButton } from './IconButton';
 import { PHONE_QUERY, useMediaQuery } from './PhoneNotice';
 import { PhoneMenu } from './PhoneMenu';
 import { SchoolLogo } from './Sidebar';
@@ -34,16 +34,14 @@ export function PhoneTopBar({ basePath = '/admin', readOnly = false }: PhoneTopB
       <SchoolLogo school={school} name={name} decorative />
       <strong className="min-w-0 flex-1 truncate text-sm text-ink">{name}</strong>
       {currentYear && <span className="shrink-0 text-[11px] font-extrabold text-brand">{currentYear.label}</span>}
-      <button
-        type="button"
+      <IconButton
+        icon="menu"
+        label={t('nav.openMenu')}
         onClick={() => setOpen(true)}
-        aria-label={t('nav.openMenu')}
         aria-haspopup="dialog"
         aria-expanded={open}
-        className="-mr-1.5 flex h-11 w-11 shrink-0 items-center justify-center rounded-lg text-ink hover:bg-surface focus-visible:outline focus-visible:outline-2 focus-visible:outline-brand"
-      >
-        <Icon name="menu" size={22} strokeWidth={2} />
-      </button>
+        className="-mr-1.5 h-11 w-11"
+      />
       {open && isPhone && <PhoneMenu basePath={basePath} readOnly={readOnly} onClose={() => setOpen(false)} />}
     </header>
   );
