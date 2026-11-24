@@ -17,6 +17,7 @@ export * from './paths';
 export * from './api';
 export * from './clash';
 export * from './plan';
+export * from './staffing';
 export * from './progress';
 export * from './availability';
 export * from './blocks';

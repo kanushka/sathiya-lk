@@ -69,7 +69,7 @@ export function PrintSheet(props: Props) {
     const present = DAYS.flatMap((d) => (rows[d]?.[i] ? [{ d, row: rows[d]![i]! }] : []));
     const first = present[0]?.row;
     if (!first) continue;
-    if (present.every((p) => p.row.type === 'interval')) {
+    if (present.every((p) => p.row.type !== 'period')) {
       grid.push(
         <div
           key={`r${i}`}
@@ -96,7 +96,7 @@ export function PrintSheet(props: Props) {
         grid.push(<div key={`${i}-${d}`} style={{ background: '#F3F4F6' }} />);
         continue;
       }
-      if (row.type === 'interval') {
+      if (row.type !== 'period') {
         grid.push(
           <div key={`${i}-${d}`} style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 11, color: '#7A5410', background: '#FBF1DC' }}>
             {t('sheet.interval', { start: row.start, end: row.end })}
