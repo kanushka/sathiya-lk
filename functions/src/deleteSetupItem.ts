@@ -1,12 +1,13 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
 // Copyright (C) 2026 Kanushka Gayan
-import { paths, usageCount, type DeleteSetupItemReq, type DeleteSetupItemRes, type Entry, type PlanItem, type SchoolContext } from '@sathiya/core';
+import { paths, usageCount, type DeleteSetupItemReq, type DeleteSetupItemRes, type PlanItem, type SchoolContext } from '@sathiya/core';
 import { FieldValue } from 'firebase-admin/firestore';
 import { onCall } from 'firebase-functions/v2/https';
 import { auth, db } from './lib/admin';
 import { callOpts } from './lib/callOptions';
 import { docId, fail, invalid, obj, requireSchoolAdmin } from './lib/guards';
-import { loadContext, loadEntries } from './lib/loadContext';
+import { loadContext } from './lib/loadContext';
+import { latestYearEntries } from './lib/yearEntries';
 
 type Kind = DeleteSetupItemReq['kind'];
 const KINDS: Record<Kind, (sid: string) => string> = { teacher: paths.teachers, subject: paths.subjects, class: paths.classes, template: paths.templates, grade: paths.grades };
@@ -27,15 +28,6 @@ function setupRefs(kind: Kind, id: string, ctx: SchoolContext): number {
     case 'grade':
       return 0;
   }
-}
-
-// Entry usage counts only the latest year (highest label: the draft being edited); older years keep their snapshots.
-async function latestYearEntries(sid: string): Promise<Entry[]> {
-  const years = await db.collection(paths.years(sid)).get();
-  const latest = years.docs
-    .map((y) => ({ id: y.id, label: String(y.get('label') ?? '') }))
-    .sort((a, b) => b.label.localeCompare(a.label, 'en', { numeric: true }))[0];
-  return latest ? loadEntries(sid, latest.id) : [];
 }
 
 const IN_LIMIT = 30;

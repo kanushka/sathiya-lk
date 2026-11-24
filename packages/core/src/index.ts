@@ -23,6 +23,8 @@ export * from './availability';
 export * from './blocks';
 export * from './fill';
 export * from './usage';
+export * from './remap';
+export * from './templateValidate';
 export * from './publish';
 export * from './now';
 export * from './pin';
