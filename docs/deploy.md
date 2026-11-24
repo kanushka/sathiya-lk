@@ -50,7 +50,22 @@ Set up once (repository → Settings → Environments):
 4. Environment secret `FIREBASE_SERVICE_ACCOUNT_PROD`: the JSON key of a service account in `sathiya-lk` with **Firebase Admin**, **Cloud Functions Admin**, **Secret Manager Admin** (to attach the `RESEND_API_KEY` secret to `sendMail`) and **Service Account User** (the last on the default compute service account `<project-number>-compute@developer.gserviceaccount.com`, which gen-2 functions run as). Google Cloud console → IAM & Admin → Service accounts → create `github-deploy-prod` → grant the roles → Keys → Add key → JSON. Paste the whole file, then delete the local copy. The workflow writes it to a temp file and removes it when the step exits.
 5. Environment secret `FUNCTIONS_ENV_PROD`: the full contents of `functions/.env.sathiya-lk` (multi-line, `KEY=value` per line), e.g. `SUPER_EMAILS=…` or `ENFORCE_APP_CHECK=false`. It is a secret rather than a variable because it can hold email addresses. Keep it in step with the file you use for hand deploys. A deploy replaces the functions env as a whole, so without it every production override is dropped; the workflow therefore fails when it is unset, unless the run ticks `use_committed_functions_env` to deploy only the committed `functions/.env`.
 
-Before the first run: the service account cannot do one-time project setup, so do one deploy by hand as an Owner first (enables APIs and service-agent bindings), and run `firebase functions:artifacts:setpolicy -P default` once so the non-interactive deploy is not stopped by the Artifact Registry cleanup prompt. The workflow never deletes functions (`--non-interactive` without `--force` aborts instead, after `hosting:app` has already gone out); when a function is removed from source, delete it by hand first with `firebase functions:delete <name> -P default`.
+Before the first run: the service account cannot do one-time project setup, so do one deploy by hand as an Owner first (enables APIs and service-agent bindings), and run `firebase functions:artifacts:setpolicy -P default` once so the non-interactive deploy is not stopped by the Artifact Registry cleanup prompt. The workflow never deletes functions (`--non-interactive` without `--force` aborts instead, after `hosting:app` has already gone out); when a function is removed from source, delete it by hand first with `firebase functions:delete <name> -P default`. For the invite-links release that is `resetTeacherPassword` (see "Release: teacher invite links").
+
+## Release: teacher invite links
+One-time steps for the first deploy of invite links and multi-school claims, per project (staging `-P staging` first, then production `-P default`), in this order:
+1. **Google provider:** enable it in Authentication → Sign-in method (see "Teacher access" below). Do it in both projects.
+2. **Wipe old data:** delete every Auth user and all Firestore school data (`schools` with its subcollections, `schoolDirectory`, `censusIndex`, `users`, `reports`), e.g. `firebase firestore:delete schools -r -P <alias>` per collection. Keep `platform`. There are no real users yet, and the old `{sid, role, tid}` claims no longer work with the new rules.
+3. **Delete the removed function** before any deploy, or the non-interactive deploy aborts after `hosting:app` has gone out:
+   ```bash
+   firebase functions:delete resetTeacherPassword -P staging    # production: -P default
+   ```
+4. **Indexes and rules before functions:**
+   ```bash
+   firebase deploy -P staging --only firestore:indexes,firestore:rules    # production: -P default
+   ```
+   Then wait until the `members.uid` collection-group index shows **Enabled** (Firestore → Indexes → Single field, exemption for `members.uid` with collection-group scope). Until it is built, sign-in (`claimInvites`), joining and registering fail.
+5. **Then the normal deploy:** section 2 (staging) or 3 (production), by hand or with the workflow.
 
 ## App Check
 Every callable function enforces App Check (`functions/src/lib/callOptions.ts`) unless `ENFORCE_APP_CHECK=false` is set in the project's functions env. An app built without `VITE_APPCHECK_SITE_KEY` sends no App Check token, so every callable (register, save, publish, …) fails with `unauthenticated`. The `app` hosting target's predeploy (`apps/app/deploy/check-app-check.mjs`, also a step in the staging and production workflows) therefore refuses to deploy a build without a site key while the target project enforces App Check. It reads `apps/app/dist/.build-env.json` (written by the build, never uploaded) and `functions/.env` + `functions/.env.<project id>`. `firebase deploy --only functions` does not run it, so keep the order below.
@@ -80,7 +95,7 @@ Teachers have no accounts until they want one. Adding a teacher (form or import)
 - **Google provider:** Firebase console → Authentication → Sign-in method → enable **Google** in each project (`sathiya-lk` and `sathiya-lk-staging`), set the support email, and keep the app domain in Authorized domains. Without it the Google button fails with `auth/operation-not-allowed`.
 - **School invite link** (`APP_URL/join/<sid>/<token>`): the admin creates, copies, replaces or turns it off on the Teachers page. A signed-in user whose verified email matches one unlinked teacher record is linked at once; anyone else enters a staff ID and the request waits for the admin to approve or reject it at the top of the Teachers page.
 - **Personal link** (`APP_URL/join/t/<token>`): for one teacher, one use, valid 7 days; links whoever opens it, with no approval.
-- **Unlink** removes the account's access to that school at once (refresh tokens are revoked); the teacher can link another account later.
+- **Unlink** (or deleting a linked teacher) removes the account's access to that school the next time the app is opened, and within an hour at the latest: refresh tokens are revoked, but an ID token already issued keeps its claims until it expires (up to an hour). An open app watches the user's own member doc and refreshes the token (or signs out) as soon as it disappears. The teacher can link another account later.
 - An account can belong to at most 15 schools; the role per school is in the `schools` custom claim, rebuilt from `schools/*/members` on every change.
 
 ## After the first deploy (per project)
