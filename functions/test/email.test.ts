@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
 // Copyright (C) 2026 Kanushka Gayan
-import { paths, syntheticEmail } from '@sathiya/core';
+import { paths } from '@sathiya/core';
 import { logger } from 'firebase-functions/v2';
 import { httpsCallable } from 'firebase/functions';
 import { afterEach, describe, expect, it, vi } from 'vitest';
@@ -113,11 +113,10 @@ describe('app emails', () => {
     expect(all.some((m) => (m.to as string[]).some((t) => t.startsWith('t-')))).toBe(false);
   });
 
-  it('teacher creation and password reset write no mail', async () => {
+  it('teacher creation writes no mail', async () => {
     const { admin, sid } = await adminWithSchool();
     const before = (await adminDb.collection('mail').get()).size;
-    const { teacherId } = await admin.call('createTeacher', { schoolId: sid, teacher: teacherInput('SCC031') });
-    await admin.call('resetTeacherPassword', { schoolId: sid, teacherId });
+    await admin.call('createTeacher', { schoolId: sid, teacher: teacherInput('SCC031') });
     expect((await adminDb.collection('mail').get()).size).toBe(before);
   });
 
@@ -192,7 +191,7 @@ describe('sendAuthEmail', () => {
   });
 
   it('reset for a teacher login address answers ok and sends nothing', async () => {
-    const to = syntheticEmail(`T${uniq()}`, 'sid1');
+    const to = `t${uniq()}@sid1.teachers.sathiya.lk`;
     await adminAuth.createUser({ email: to, password: 'secret123' });
     await expect(sendAuth(client(), { kind: 'reset', email: to, lang: 'en' })).resolves.toEqual({ ok: true });
     expect(await mailsTo(to)).toHaveLength(0);

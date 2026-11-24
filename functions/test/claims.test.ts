@@ -1,0 +1,74 @@
+// SPDX-License-Identifier: AGPL-3.0-or-later
+// Copyright (C) 2026 Kanushka Gayan
+import { MAX_SCHOOLS, paths } from '@sathiya/core';
+import { describe, expect, it } from 'vitest';
+import { assertSchoolRoom, syncClaims } from '../src/lib/claims';
+import { isAdminOf } from '../src/lib/guards';
+import { adminAuth, adminDb, signUp, uniq } from './helpers';
+
+const addMember = (sid: string, uid: string, m: Record<string, unknown>) => adminDb.doc(`${paths.members(sid)}/${uid}`).set({ uid, ...m });
+const claimsOf = async (uid: string) => (await adminAuth.getUser(uid)).customClaims;
+
+describe('syncClaims', () => {
+  it('builds the schools map from two schools and keeps super', async () => {
+    const c = await signUp();
+    const [a, b] = [`a-${uniq()}`, `b-${uniq()}`];
+    await adminAuth.setCustomUserClaims(c.uid, { super: true, schools: { stale: { r: 'a' } } });
+    await addMember(a, c.uid, { role: 'admin' });
+    await addMember(b, c.uid, { role: 'teacher', teacherId: 't1' });
+    await syncClaims(c.uid);
+    expect(await claimsOf(c.uid)).toEqual({ schools: { [a]: { r: 'a' }, [b]: { r: 't', t: 't1' } }, super: true });
+  });
+
+  it('keeps the teacher id on an admin member', async () => {
+    const c = await signUp();
+    const a = `a-${uniq()}`;
+    await addMember(a, c.uid, { role: 'admin', teacherId: 't9' });
+    await syncClaims(c.uid);
+    expect(await claimsOf(c.uid)).toEqual({ schools: { [a]: { r: 'a', t: 't9' } } });
+  });
+
+  it('drops schools whose membership is gone and leaves no schools key when empty', async () => {
+    const c = await signUp();
+    const a = `a-${uniq()}`;
+    await addMember(a, c.uid, { role: 'teacher', teacherId: 't1' });
+    await syncClaims(c.uid);
+    await adminDb.doc(`${paths.members(a)}/${c.uid}`).delete();
+    await syncClaims(c.uid);
+    expect(await claimsOf(c.uid)).toEqual({});
+  });
+
+  it('ignores other users’ memberships', async () => {
+    const [c, d] = [await signUp(), await signUp()];
+    await addMember(`a-${uniq()}`, d.uid, { role: 'admin' });
+    await syncClaims(c.uid);
+    expect(await claimsOf(c.uid)).toEqual({});
+  });
+
+  it('fails with too-many-schools above the limit', async () => {
+    const c = await signUp();
+    const tag = uniq();
+    for (let i = 0; i <= MAX_SCHOOLS; i++) await addMember(`${tag}-${i}`, c.uid, { role: 'teacher', teacherId: 't' });
+    await expect(syncClaims(c.uid)).rejects.toMatchObject({ code: 'failed-precondition', details: { code: 'too-many-schools' } });
+  });
+
+  it('assertSchoolRoom allows the 20th school, refuses the 21st, and allows one it already belongs to', async () => {
+    const c = await signUp();
+    const tag = uniq();
+    for (let i = 0; i < MAX_SCHOOLS - 1; i++) await addMember(`${tag}-${i}`, c.uid, { role: 'teacher' });
+    await expect(assertSchoolRoom(c.uid, 'new1')).resolves.toBeUndefined();
+    await addMember(`${tag}-last`, c.uid, { role: 'teacher' });
+    await expect(assertSchoolRoom(c.uid, 'new2')).rejects.toMatchObject({ code: 'failed-precondition', details: { code: 'too-many-schools' } });
+    await expect(assertSchoolRoom(c.uid, `${tag}-last`)).resolves.toBeUndefined();
+  });
+});
+
+describe('isAdminOf', () => {
+  it('reads the role from the schools map', () => {
+    const claims = { schools: { s1: { r: 'a' as const }, s2: { r: 't' as const, t: 'x' } } };
+    expect(isAdminOf(claims, 's1')).toBe(true);
+    expect(isAdminOf(claims, 's2')).toBe(false);
+    expect(isAdminOf(claims, 's3')).toBe(false);
+    expect(isAdminOf({}, 's1')).toBe(false);
+  });
+});

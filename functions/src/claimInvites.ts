@@ -2,9 +2,10 @@
 // Copyright (C) 2026 Kanushka Gayan
 import { paths, type ClaimInvitesRes, type Member, type School } from '@sathiya/core';
 import { onCall } from 'firebase-functions/v2/https';
-import { auth, db } from './lib/admin';
+import type { DocumentReference } from 'firebase-admin/firestore';
+import { db } from './lib/admin';
 import { callOpts } from './lib/callOptions';
-import { setSchoolClaims } from './lib/claims';
+import { assertSchoolRoom, syncClaims } from './lib/claims';
 import { isVerified, notAllowed, requireAuth } from './lib/guards';
 
 const INVITES = paths.invites('_').split('/').pop()!;
@@ -20,31 +21,22 @@ export const claimInvites = onCall(callOpts, async (req): Promise<ClaimInvitesRe
   const email = token.email!.toLowerCase();
   const name = typeof token.name === 'string' ? token.name.trim() : '';
 
-  // Claims hold one school: claim the first invite of an active school, or any for the school the user already belongs to.
-  // Claims are set before the invite is consumed (both idempotent), so a failure leaves the invite for a retry.
-  const current = (await auth.getUser(uid)).customClaims ?? {};
-  let sid = current.sid as string | undefined;
+  // Members are written before claims are synced, and invites are consumed only after, so a failure leaves them for a retry.
   const invites = await db.collectionGroup(INVITES).where('email', '==', email).get();
-  const claimed: string[] = [];
+  const claimed: { sid: string; ref: DocumentReference }[] = [];
   for (const doc of invites.docs) {
-    const inviteSid = doc.ref.parent.parent!.id;
-    if (sid && sid !== inviteSid) continue;
-    const memberRef = db.doc(`${paths.members(inviteSid)}/${uid}`);
-    const [school, member] = await Promise.all([db.doc(paths.school(inviteSid)).get(), memberRef.get()]);
+    const sid = doc.ref.parent.parent!.id;
+    const memberRef = db.doc(`${paths.members(sid)}/${uid}`);
+    const [school, member] = await Promise.all([db.doc(paths.school(sid)).get(), memberRef.get()]);
     if ((school.data() as School | undefined)?.status !== 'active') continue;
-    const tid =
-      (doc.data() as Invite).teacherId ??
-      (member.data() as Member | undefined)?.teacherId ??
-      (current.sid === inviteSid ? (current.tid as string | undefined) : undefined);
-
-    await setSchoolClaims(uid, { sid: inviteSid, role: 'admin', tid });
-    sid = inviteSid;
-    await db.runTransaction(async (tx) => {
-      const invite = await tx.get(doc.ref);
-      tx.set(memberRef, { uid, role: 'admin', email, teacherId: tid, ...(name && !(member.data() as Member | undefined)?.name ? { name } : {}) }, { merge: true });
-      if (invite.exists) tx.delete(doc.ref);
-    });
-    claimed.push(inviteSid);
+    await assertSchoolRoom(uid, sid);
+    const existing = member.data() as Member | undefined;
+    const tid = (doc.data() as Invite).teacherId ?? existing?.teacherId;
+    await memberRef.set({ uid, role: 'admin', email, teacherId: tid, ...(name && !existing?.name ? { name } : {}) }, { merge: true });
+    claimed.push({ sid, ref: doc.ref });
   }
-  return { schoolIds: claimed };
+  if (claimed.length === 0) return { schoolIds: [] };
+  await syncClaims(uid);
+  await Promise.all(claimed.map((c) => c.ref.delete()));
+  return { schoolIds: claimed.map((c) => c.sid) };
 });

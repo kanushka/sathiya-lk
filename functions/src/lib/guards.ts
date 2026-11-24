@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
 // Copyright (C) 2026 Kanushka Gayan
-import { EMAIL_RE, paths, type ApiErrorCode, type Claims, type School } from '@sathiya/core';
+import { EMAIL_RE, isSchoolAdmin, paths, type ApiErrorCode, type Claims, type School } from '@sathiya/core';
 import { HttpsError, type CallableRequest, type FunctionsErrorCode } from 'firebase-functions/v2/https';
 import { db } from './admin';
 
@@ -21,7 +21,7 @@ export interface Caller {
 export function requireAuth(req: CallableRequest): Caller {
   if (!req.auth) fail('unauthenticated', 'not-allowed', 'Sign in required');
   const { uid, token } = req.auth;
-  const claims: Claims = { sid: token.sid, role: token.role, tid: token.tid, super: token.super === true };
+  const claims: Claims = { schools: token.schools, super: token.super === true };
   return { uid, claims, token };
 }
 
@@ -35,7 +35,7 @@ export function requireSuper(req: CallableRequest): Caller {
   return caller;
 }
 
-export const isAdminOf = (claims: Claims, sid: string): boolean => claims.sid === sid && claims.role === 'admin';
+export const isAdminOf = (claims: Claims, sid: string): boolean => isSchoolAdmin(claims, sid);
 
 // Admin of sid, school exists and is not disabled. Reuse for every school-scoped admin callable.
 export async function requireSchoolAdmin(req: CallableRequest, sid: unknown): Promise<Caller & { sid: string; school: Omit<School, 'id'> }> {

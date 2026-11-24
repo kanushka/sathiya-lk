@@ -1,26 +1,22 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
 // Copyright (C) 2026 Kanushka Gayan
-import { paths, syntheticEmail } from '@sathiya/core';
+import { paths } from '@sathiya/core';
 import { describe, expect, it } from 'vitest';
-import { adminAuth, adminDb, adminWithSchool, expectFnError, makeSuper, signIn, signUp, teacherInput } from './helpers';
+import { adminAuth, adminDb, adminWithSchool, expectFnError, makeSuper, signUp, teacherInput } from './helpers';
 
 describe('createTeacher', () => {
-  it('creates an auth account the teacher can sign in with', async () => {
+  it('creates only the teacher record, no auth user and no member', async () => {
     const { admin, sid } = await adminWithSchool();
-    const { teacherId, password } = await admin.call('createTeacher', { schoolId: sid, teacher: teacherInput('SCC024') });
-    expect(password).toMatch(/^[abcdefghjkmnpqrstuvwxyz23456789]{8}$/);
+    const users = (await adminAuth.listUsers()).users.length;
+    const res = await admin.call('createTeacher', { schoolId: sid, teacher: teacherInput('SCC024') });
+    expect(res).toEqual({ teacherId: expect.any(String) });
+    const { teacherId } = res;
 
     const teacher = (await adminDb.doc(`${paths.teachers(sid)}/${teacherId}`).get()).data()!;
     expect(teacher).toMatchObject({ staffId: 'SCC024', name: 'Mrs. K. Perera', grades: [6, 7], maxPerDay: 6 });
-    expect(teacher.uid).toEqual(expect.any(String));
-    expect(JSON.stringify(teacher)).not.toContain(password);
-
-    const member = (await adminDb.doc(`${paths.members(sid)}/${teacher.uid}`).get()).data();
-    expect(member).toMatchObject({ uid: teacher.uid, role: 'teacher', teacherId });
-
-    const t = await signIn(syntheticEmail('SCC024', sid), password);
-    expect(t.uid).toBe(teacher.uid);
-    expect(await t.claims()).toEqual({ sid, role: 'teacher', tid: teacherId });
+    expect(teacher.uid).toBeUndefined();
+    expect((await adminDb.collection(paths.members(sid)).get()).size).toBe(1);
+    expect((await adminAuth.listUsers()).users.length).toBe(users);
   });
 
   it('stores a known title and rejects an unknown one', async () => {
@@ -28,7 +24,6 @@ describe('createTeacher', () => {
     const { teacherId } = await admin.call('createTeacher', { schoolId: sid, teacher: { ...teacherInput('SCC025'), name: 'K. Perera', title: 'Ven.' } });
     const stored = (await adminDb.doc(`${paths.teachers(sid)}/${teacherId}`).get()).data()!;
     expect(stored).toMatchObject({ title: 'Ven.', name: 'K. Perera' });
-    expect((await adminAuth.getUser(stored.uid as string)).displayName).toBe('Ven. K. Perera');
     const { teacherId: untitled } = await admin.call('createTeacher', { schoolId: sid, teacher: { ...teacherInput('SCC026'), title: '' as never } });
     expect((await adminDb.doc(`${paths.teachers(sid)}/${untitled}`).get()).data()).not.toHaveProperty('title');
     await expectFnError(admin.call('createTeacher', { schoolId: sid, teacher: { ...teacherInput('SCC027'), title: 'King' as never } }), 'invalid-argument', 'invalid');
@@ -39,7 +34,6 @@ describe('createTeacher', () => {
     const { teacherId } = await admin.call('createTeacher', { schoolId: sid, teacher: { ...teacherInput('SCC030'), name: '', nameSi: 'ජී. ජයසේකර', title: 'Mr' } });
     const stored = (await adminDb.doc(`${paths.teachers(sid)}/${teacherId}`).get()).data()!;
     expect(stored).toMatchObject({ name: '', nameSi: 'ජී. ජයසේකර' });
-    expect((await adminAuth.getUser(stored.uid as string)).displayName).toBe('ජී. ජයසේකර මහතා');
     const { teacherId: both } = await admin.call('createTeacher', { schoolId: sid, teacher: { ...teacherInput('SCC031'), name: 'N. Perera', nameSi: 'එන්. පෙරේරා' } });
     expect((await adminDb.doc(`${paths.teachers(sid)}/${both}`).get()).data()).toMatchObject({ name: 'N. Perera', nameSi: 'එන්. පෙරේරා' });
     await expectFnError(admin.call('createTeacher', { schoolId: sid, teacher: { ...teacherInput('SCC032'), name: ' ', nameSi: '' } }), 'invalid-argument', 'invalid');
@@ -83,28 +77,5 @@ describe('createTeacher', () => {
     await makeSuper(sup);
     await sup.call('setSchoolStatus', { schoolId: sid, status: 'disabled' });
     await expectFnError(admin.call('createTeacher', { schoolId: sid, teacher: teacherInput('SCC010') }), 'failed-precondition', 'school-disabled');
-  });
-});
-
-describe('resetTeacherPassword', () => {
-  it('issues a new password and the old one stops working', async () => {
-    const { admin, sid } = await adminWithSchool();
-    const { teacherId, password: oldPw } = await admin.call('createTeacher', { schoolId: sid, teacher: teacherInput('SCC030') });
-    const email = syntheticEmail('SCC030', sid);
-    await signIn(email, oldPw);
-
-    const { password } = await admin.call('resetTeacherPassword', { schoolId: sid, teacherId });
-    expect(password).toMatch(/^[abcdefghjkmnpqrstuvwxyz23456789]{8}$/);
-    if (password !== oldPw) await expect(signIn(email, oldPw)).rejects.toMatchObject({ code: expect.stringMatching(/wrong-password|invalid-credential/) });
-    const t = await signIn(email, password);
-    expect(await t.claims()).toEqual({ sid, role: 'teacher', tid: teacherId });
-  });
-
-  it('refuses a non-admin and an unknown teacher', async () => {
-    const { admin, sid } = await adminWithSchool();
-    const { teacherId } = await admin.call('createTeacher', { schoolId: sid, teacher: teacherInput('SCC031') });
-    const { admin: other } = await adminWithSchool();
-    await expectFnError(other.call('resetTeacherPassword', { schoolId: sid, teacherId }), 'permission-denied', 'not-allowed');
-    await expectFnError(admin.call('resetTeacherPassword', { schoolId: sid, teacherId: 'nope' }), 'not-found', 'invalid');
   });
 });

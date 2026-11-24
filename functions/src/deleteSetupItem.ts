@@ -5,6 +5,7 @@ import { FieldValue } from 'firebase-admin/firestore';
 import { onCall } from 'firebase-functions/v2/https';
 import { auth, db } from './lib/admin';
 import { callOpts } from './lib/callOptions';
+import { syncClaims } from './lib/claims';
 import { docId, fail, invalid, obj, requireSchoolAdmin } from './lib/guards';
 import { loadContext, loadEntries } from './lib/loadContext';
 
@@ -86,14 +87,18 @@ export const deleteSetupItem = onCall(callOpts, async (req): Promise<DeleteSetup
 
   const uid = snap.get('uid') as string | undefined;
   const linked = await db.collection(paths.members(sid)).where('teacherId', '==', id).get();
+  const requests = await db.collection(paths.joinRequests(sid)).where('teacherId', '==', id).get();
   const batch = db.batch();
   batch.delete(ref);
-  if (uid) batch.delete(db.doc(`${paths.members(sid)}/${uid}`));
-  // Admin members linked to this teacher keep their admin role but lose the link.
-  for (const m of linked.docs) if (m.id !== uid) batch.update(m.ref, { teacherId: FieldValue.delete() });
-  if (uid) {
-    await auth.deleteUser(uid).catch((e: { code?: string }) => (e.code === 'auth/user-not-found' ? undefined : Promise.reject(e)));
+  requests.docs.forEach((r) => batch.delete(r.ref));
+  // Linked admins keep their admin role but lose the teacher link; a teacher-only member is removed.
+  for (const m of linked.docs) {
+    if (m.get('role') === 'admin') batch.update(m.ref, { teacherId: FieldValue.delete() });
+    else batch.delete(m.ref);
   }
+  if (uid && !linked.docs.some((m) => m.id === uid)) batch.delete(db.doc(`${paths.members(sid)}/${uid}`));
   await batch.commit();
+  const affected = new Set([...linked.docs.map((m) => m.id), ...(uid ? [uid] : [])]);
+  await Promise.all([...affected].map((u) => syncClaims(u).then(() => auth.revokeRefreshTokens(u))));
   return { deleted: true, usedIn: 0 };
 });

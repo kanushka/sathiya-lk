@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
 // Copyright (C) 2026 Kanushka Gayan
-import { paths } from '@sathiya/core';
+import { MAX_SCHOOLS, paths } from '@sathiya/core';
 import { describe, expect, it } from 'vitest';
 import { adminAuth, adminDb, adminWithSchool, expectFnError, signInGoogle, signUp, teacherInput, uniq, unverifiedSignUp } from './helpers';
 
@@ -50,7 +50,7 @@ describe('claimInvites', () => {
     await c.auth.currentUser!.getIdToken(true);
 
     await expect(c.call('claimInvites', {})).resolves.toEqual({ schoolIds: [sid] });
-    expect(await c.claims()).toEqual({ sid, role: 'admin', tid: teacherId });
+    expect(await c.claims()).toEqual({ schools: { [sid]: { r: 'a', t: teacherId } } });
     const member = (await adminDb.doc(`${paths.members(sid)}/${c.uid}`).get()).data();
     expect(member).toMatchObject({ uid: c.uid, role: 'admin', teacherId, email });
     expect((await adminDb.doc(`${paths.invites(sid)}/${email}`).get()).exists).toBe(false);
@@ -68,7 +68,7 @@ describe('claimInvites', () => {
 
     await admin.call('inviteAdmin', { schoolId: sid, email });
     await expect(c.call('claimInvites', {})).resolves.toEqual({ schoolIds: [sid] });
-    expect(await c.claims()).toEqual({ sid, role: 'admin', tid: teacherId });
+    expect(await c.claims()).toEqual({ schools: { [sid]: { r: 'a', t: teacherId } } });
     const member = (await adminDb.doc(`${paths.members(sid)}/${c.uid}`).get()).data();
     expect(member).toMatchObject({ role: 'admin', teacherId });
   });
@@ -78,7 +78,7 @@ describe('claimInvites', () => {
     const { teacherId } = await admin.call('createTeacher', { schoolId: sid, teacher: teacherInput('SCC042') });
     await admin.call('inviteAdmin', { schoolId: sid, email: admin.auth.currentUser!.email!, teacherId });
     await expect(admin.call('claimInvites', {})).resolves.toEqual({ schoolIds: [sid] });
-    expect(await admin.claims()).toEqual({ sid, role: 'admin', tid: teacherId });
+    expect(await admin.claims()).toEqual({ schools: { [sid]: { r: 'a', t: teacherId } } });
     const member = (await adminDb.doc(`${paths.members(sid)}/${admin.uid}`).get()).data();
     expect(member).toMatchObject({ role: 'admin', teacherId, name: 'Principal' });
   });
@@ -89,7 +89,7 @@ describe('claimInvites', () => {
     await admin.call('inviteAdmin', { schoolId: sid, email });
     const c = await signInGoogle(email, false);
     await expect(c.call('claimInvites', {})).resolves.toEqual({ schoolIds: [sid] });
-    expect(await c.claims()).toEqual({ sid, role: 'admin', tid: undefined });
+    expect(await c.claims()).toEqual({ schools: { [sid]: { r: 'a' } } });
   });
 
   it('stores the invited admin’s name from their sign-in', async () => {
@@ -100,6 +100,25 @@ describe('claimInvites', () => {
     await c.call('claimInvites', {});
     const member = (await adminDb.doc(`${paths.members(sid)}/${c.uid}`).get()).data();
     expect(member).toMatchObject({ role: 'admin', email, name: 'Nimal Perera' });
+  });
+
+  it('works when the user already belongs to another school and keeps both', async () => {
+    const { admin, sid } = await adminWithSchool();
+    const { admin: other, sid: otherSid } = await adminWithSchool();
+    const email = other.auth.currentUser!.email!;
+    await admin.call('inviteAdmin', { schoolId: sid, email });
+    await expect(other.call('claimInvites', {})).resolves.toEqual({ schoolIds: [sid] });
+    expect(await other.claims()).toEqual({ schools: { [otherSid]: { r: 'a' }, [sid]: { r: 'a' } } });
+  });
+
+  it('refuses an invite that would pass the school limit and keeps the invite', async () => {
+    const { admin, sid } = await adminWithSchool();
+    const email = `full-${uniq()}@example.com`;
+    await admin.call('inviteAdmin', { schoolId: sid, email });
+    const c = await signUp(email);
+    for (let i = 0; i < MAX_SCHOOLS; i++) await adminDb.doc(`${paths.members(`full${i}`)}/${c.uid}`).set({ uid: c.uid, role: 'teacher' });
+    await expectFnError(c.call('claimInvites', {}), 'failed-precondition', 'too-many-schools');
+    expect((await adminDb.doc(`${paths.invites(sid)}/${email}`).get()).exists).toBe(true);
   });
 
   it('skips invites of a disabled school', async () => {

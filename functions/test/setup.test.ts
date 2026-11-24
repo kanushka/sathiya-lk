@@ -1,9 +1,9 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
 // Copyright (C) 2026 Kanushka Gayan
-import { paths, syntheticEmail } from '@sathiya/core';
+import { paths } from '@sathiya/core';
 import { C, ctx, entries as fixtureEntries, entry, G, S, T, TPL } from '@sathiya/core/fixtures';
 import { describe, expect, it } from 'vitest';
-import { adminAuth, adminDb, adminWithSchool, expectFnError, signIn, teacherInput } from './helpers';
+import { adminAuth, adminDb, adminWithSchool, expectFnError, linkedTeacher, teacherInput } from './helpers';
 import { putEntries, seededSchool, YEAR } from './seed';
 
 describe('deleteSetupItem', () => {
@@ -56,17 +56,16 @@ describe('deleteSetupItem', () => {
     expect(await admin.call('deleteSetupItem', { schoolId: sid, kind: 'template', id: TPL.shortFriday })).toEqual({ deleted: true, usedIn: 0 });
   });
 
-  it('deletes a teacher with its member doc and Auth user', async () => {
+  it('deletes a teacher with its member doc, keeps the Auth user and drops the school from its claims', async () => {
     const { admin, sid } = await seededSchool();
-    const { teacherId, password } = await admin.call('createTeacher', { schoolId: sid, teacher: teacherInput('SCC201') });
-    const email = syntheticEmail('SCC201', sid);
-    await signIn(email, password);
+    const { teacher, teacherId } = await linkedTeacher(admin, sid, 'SCC201');
     const { uid } = (await adminDb.doc(`${paths.teachers(sid)}/${teacherId}`).get()).data()!;
 
     expect(await admin.call('deleteSetupItem', { schoolId: sid, kind: 'teacher', id: teacherId })).toEqual({ deleted: true, usedIn: 0 });
     expect((await adminDb.doc(`${paths.teachers(sid)}/${teacherId}`).get()).exists).toBe(false);
     expect((await adminDb.doc(`${paths.members(sid)}/${uid}`).get()).exists).toBe(false);
-    await expect(adminAuth.getUser(uid)).rejects.toMatchObject({ code: 'auth/user-not-found' });
+    expect((await adminAuth.getUser(uid)).customClaims?.schools).toBeUndefined();
+    expect(teacher.uid).toBe(uid);
     // The staff ID is free again.
     await expect(admin.call('createTeacher', { schoolId: sid, teacher: teacherInput('SCC201') })).resolves.toBeTruthy();
   });

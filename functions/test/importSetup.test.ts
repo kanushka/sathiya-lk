@@ -1,8 +1,8 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
 // Copyright (C) 2026 Kanushka Gayan
-import { importFingerprint, paths, subjectsFingerprint, syntheticEmail, type ImportRow, type SubjectColumn, type TeacherColumn } from '@sathiya/core';
+import { importFingerprint, paths, subjectsFingerprint, type ImportRow, type SubjectColumn, type TeacherColumn } from '@sathiya/core';
 import { describe, expect, it } from 'vitest';
-import { adminAuth, adminDb, adminWithSchool, expectFnError, signIn, signUp, teacherInput } from './helpers';
+import { adminDb, adminWithSchool, expectFnError, signUp, teacherInput } from './helpers';
 
 const sub = (row: number, cells: Partial<Record<SubjectColumn, string>>): ImportRow<SubjectColumn> => ({ row, cells });
 const tch = (row: number, cells: Partial<Record<TeacherColumn, string>>): ImportRow<TeacherColumn> => ({ row, cells });
@@ -31,17 +31,13 @@ describe('importSetup', () => {
     expect(chess).toMatchObject({ nameEn: 'Chess', nameSi: 'චෙස්' });
 
     const [t1, t2] = res.teachers;
-    expect(t1!.password).toMatch(/^[abcdefghjkmnpqrstuvwxyz23456789]{8}$/);
+    expect(t1).not.toHaveProperty('password');
     const doc1 = (await adminDb.doc(`${paths.teachers(sid)}/${t1!.teacherId}`).get()).data()!;
     expect(doc1).toMatchObject({ staffId: t1!.staffId, name: 'Nimal Silva', subjectIds: [res.subjectIds[0]], grades: [6, 7] });
-    expect(JSON.stringify(doc1)).not.toContain(t1!.password);
     const doc2 = (await adminDb.doc(`${paths.teachers(sid)}/${t2!.teacherId}`).get()).data()!;
     expect(doc2).toMatchObject({ isPrimary: true, subjectIds: [] });
-
-    const member = (await adminDb.doc(`${paths.members(sid)}/${doc1.uid}`).get()).data();
-    expect(member).toMatchObject({ uid: doc1.uid, role: 'teacher', teacherId: t1!.teacherId });
-    const signed = await signIn(syntheticEmail(t1!.staffId, sid), t1!.password);
-    expect(await signed.claims()).toEqual({ sid, role: 'teacher', tid: t1!.teacherId });
+    expect(doc1.uid).toBeUndefined();
+    expect((await adminDb.collection(paths.members(sid)).get()).size).toBe(1);
   });
 
   it('continues auto staff IDs after existing teachers', async () => {
@@ -165,17 +161,6 @@ describe('importSetup', () => {
     expect((await marker.get()).data()!.createdAt).toBeGreaterThan(old);
   });
 
-  it('lets the same file be retried when the first attempt created nothing', async () => {
-    const { admin, sid } = await adminWithSchool();
-    const auth = await adminAuth.createUser({ email: syntheticEmail('SCC045', sid), password: 'whatever123' });
-    const body = { schoolId: sid, subjectsVersion: NONE, subjects: [], teachers: [tch(2, { staffId: 'SCC045', name: 'A', grades: '6', isPrimary: 'yes' })] };
-    const first = await admin.call('importSetup', body);
-    expect(first).toMatchObject({ teachers: [], notCreated: ['SCC045'] });
-    expect((await adminDb.collection(paths.imports(sid)).get()).size).toBe(0);
-    await adminAuth.deleteUser(auth.uid);
-    expect((await admin.call('importSetup', body)).teachers).toHaveLength(1);
-  });
-
   it('refuses non-admins, oversized and empty imports, unknown columns', async () => {
     const { admin, sid } = await adminWithSchool();
     const stranger = await signUp();
@@ -185,24 +170,6 @@ describe('importSetup', () => {
     await expectFnError(admin.call('importSetup', { schoolId: sid, subjectsVersion: NONE, subjects: [], teachers: [] }), 'invalid-argument', 'invalid');
     await expectFnError(admin.call('importSetup', { schoolId: sid, subjectsVersion: NONE, subjects: [{ row: 2, cells: { bogus: 'x' } }] as never, teachers: [] }), 'invalid-argument', 'invalid');
     await expectFnError(admin.call('importSetup', { schoolId: sid, subjectsVersion: NONE, subjects: [{ row: 1, cells: { nameEn: 'x' } }] as never, teachers: [] }), 'invalid-argument', 'invalid');
-  });
-
-  it('stops at the first account failure and reports notCreated', async () => {
-    const { admin, sid } = await adminWithSchool();
-    await adminAuth.createUser({ email: syntheticEmail('SCC045', sid), password: 'whatever123' });
-    const ids = Array.from({ length: 8 }, (_, i) => `SCC0${45 + i}`);
-    const res = await admin.call('importSetup', {
-      schoolId: sid,
-      subjectsVersion: NONE,
-      subjects: [sub(2, { nameEn: 'Dance' })],
-      teachers: ids.map((staffId, i) => tch(i + 2, { staffId, name: `T${i}`, grades: '6', subjects: 'Dance' })),
-    });
-    expect(res.subjectIds).toHaveLength(1);
-    const created = res.teachers.map((t) => t.staffId);
-    expect(res.notCreated).toContain('SCC045');
-    expect([...created, ...res.notCreated].sort()).toEqual(ids);
-    const docs = await adminDb.collection(paths.teachers(sid)).get();
-    expect(docs.docs.map((d) => d.data().staffId as string).sort()).toEqual([...created].sort());
   });
 
   it('rejects malformed request shapes', async () => {

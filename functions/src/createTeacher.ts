@@ -4,7 +4,7 @@ import { isValidStaffId, TEACHER_TITLES, type CreateTeacherRes, type Teacher, ty
 import { onCall } from 'firebase-functions/v2/https';
 import { callOpts } from './lib/callOptions';
 import { bool, docIdList, email, int, intList, invalid, obj, optStr, requireSchoolAdmin, str, twoNames } from './lib/guards';
-import { createTeacherAccount } from './lib/teacherAccount';
+import { createTeacherRecord } from './lib/teacherRecord';
 
 const optTitle = (v: unknown): TeacherTitle | undefined => {
   if (v === undefined || v === null || v === '') return undefined;
@@ -32,5 +32,5 @@ export const createTeacher = onCall(callOpts, async (req): Promise<CreateTeacher
     email: t.email === undefined || t.email === null || t.email === '' ? undefined : email(t.email),
   };
 
-  return createTeacherAccount(sid, teacher);
+  return { teacherId: await createTeacherRecord(sid, teacher) };
 });

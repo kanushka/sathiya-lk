@@ -16,6 +16,9 @@ import {
   type Auth,
 } from 'firebase/auth';
 import { connectFunctionsEmulator, getFunctions, httpsCallable, type Functions } from 'firebase/functions';
+import { linkTeacher } from '../src/lib/linkTeacher';
+import { syncClaims } from '../src/lib/claims';
+import { runTx } from '../src/lib/tx';
 import { afterAll, beforeEach, expect } from 'vitest';
 
 export const PROJECT_ID = 'sathiya-lk';
@@ -68,8 +71,8 @@ export function client(): Client {
       const user = auth.currentUser;
       if (!user) return {};
       const { claims } = await user.getIdTokenResult(true);
-      const { sid, role, tid } = claims as Claims;
-      return { sid, role, tid, ...(claims.super ? { super: true } : {}) } as Claims;
+      const { schools } = claims as Claims;
+      return { ...(schools ? { schools } : {}), ...(claims.super ? { super: true } : {}) };
     },
     get uid() {
       return auth.currentUser?.uid ?? '';
@@ -142,6 +145,15 @@ export const teacherInput = (staffId: string) => ({
   grades: [6, 7],
   maxPerDay: 6,
 });
+
+export async function linkedTeacher(admin: Client, sid: string, staffId: string): Promise<{ teacher: Client; teacherId: string }> {
+  const { teacherId } = await admin.call('createTeacher', { schoolId: sid, teacher: teacherInput(staffId) });
+  const teacher = await signUp();
+  await runTx((tx) => linkTeacher(tx, sid, teacherId, teacher.uid, {}));
+  await syncClaims(teacher.uid);
+  await teacher.auth.currentUser!.getIdToken(true);
+  return { teacher, teacherId };
+}
 
 export const randomCensus = () => String(100_000 + Math.floor(Math.random() * 900_000));
 

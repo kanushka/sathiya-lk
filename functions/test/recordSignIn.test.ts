@@ -1,15 +1,14 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
 // Copyright (C) 2026 Kanushka Gayan
-import { paths, syntheticEmail } from '@sathiya/core';
+import { paths } from '@sathiya/core';
 import { describe, expect, it } from 'vitest';
-import { adminDb, adminWithSchool, expectFnError, makeSuper, signIn, signUp, teacherInput } from './helpers';
+import { adminDb, adminWithSchool, expectFnError, linkedTeacher, makeSuper, signUp, teacherInput } from './helpers';
 
 const lastLogin = async (sid: string, tid: string) => (await adminDb.doc(`${paths.teachers(sid)}/${tid}`).get()).get('lastLoginAt') as number | undefined;
 
 async function teacher(staffId: string) {
   const { admin, sid } = await adminWithSchool();
-  const { teacherId, password } = await admin.call('createTeacher', { schoolId: sid, teacher: teacherInput(staffId) });
-  const t = await signIn(syntheticEmail(staffId, sid), password);
+  const { teacher: t, teacherId } = await linkedTeacher(admin, sid, staffId);
   return { admin, sid, teacherId, t };
 }
 
