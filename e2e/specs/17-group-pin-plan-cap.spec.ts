@@ -2,12 +2,12 @@
 // Copyright (C) 2026 Kanushka Gayan
 import { expect, test } from '@playwright/test';
 import { C } from '@sathiya/core/fixtures';
-import { ADMIN } from '../../scripts/seed';
+import { ADMIN, SID } from '../../scripts/seed';
 import { loginAdmin } from '../helpers';
 
 test('class view: a class that already has the group’s target is not offered to join', async ({ page }) => {
   await loginAdmin(page, ADMIN.email, ADMIN.password);
-  await page.goto(`/admin/timetable/class/${C.c6a}`);
+  await page.goto(`/s/${SID}/admin/timetable/class/${C.c6a}`);
 
   await page.getByRole('button', { name: 'Pin Aesthetic' }).click();
   const group = page.getByRole('dialog', { name: 'Set teachers for Aesthetic' });

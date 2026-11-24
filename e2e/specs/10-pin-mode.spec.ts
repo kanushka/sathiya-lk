@@ -57,7 +57,7 @@ test('class view: assign once, then pin, unpin, go over plan and exit pin mode',
 
 test('class view: a pin that clashes on the server is rolled back with the conflict', async ({ page }) => {
   await loginAdmin(page, ADMIN.email, ADMIN.password);
-  await page.goto('/admin/timetable/class/c-6c');
+  await page.goto(`/s/${SID}/admin/timetable/class/c-6c`);
   await page.getByRole('button', { name: 'Pin Geography' }).click();
   const teachers = page.getByRole('dialog', { name: 'Choose a teacher' });
   await teachers.getByRole('option', { name: /^Mr\. K\. Herath/ }).click();

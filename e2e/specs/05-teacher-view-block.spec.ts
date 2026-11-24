@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
 // Copyright (C) 2026 Kanushka Gayan
 import { expect, test } from '@playwright/test';
-import { ADMIN } from '../../scripts/seed';
+import { ADMIN, SID } from '../../scripts/seed';
 import { loginAdmin, shot } from '../helpers';
 
 test('teacher view: build a religion block through the assign popup', async ({ page }) => {
@@ -45,6 +45,6 @@ test('teacher view: build a religion block through the assign popup', async ({ p
   await expect(page.getByRole('meter', { name: 'Tuesday load' })).toHaveAttribute('aria-valuetext', '1/6');
   await shot(page, 'teacher-view');
 
-  await page.goto('/admin/timetable/class/c-6c');
+  await page.goto(`/s/${SID}/admin/timetable/class/c-6c`);
   await expect(page.getByRole('button', { name: /^Tuesday, period 2, 08:30–09:10: Religion/ })).toBeVisible();
 });

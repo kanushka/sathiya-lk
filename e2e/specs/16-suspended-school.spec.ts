@@ -3,14 +3,14 @@
 import { expect, test } from '@playwright/test';
 import { school, T } from '@sathiya/core/fixtures';
 import { ADMIN, SID, SUPER, teacherLogin } from '../../scripts/seed';
-import { adminForm, callAs, idToken, loginAdmin, loginTeacher, shot, teacherForm } from '../helpers';
+import { callAs, idToken, loginAdmin, loginTeacher, shot, signIn } from '../helpers';
 
 const suspendedHeading = { name: 'This school is suspended' } as const;
 
 test('a suspended school locks out its admin and teachers until re-enabled', async ({ page, browser }) => {
   const teacher = await (await browser.newContext()).newPage();
   const perera = teacherLogin(T.perera);
-  await loginTeacher(teacher, perera.staffId, perera.password);
+  await loginTeacher(teacher, perera.email, perera.password);
 
   try {
     await loginAdmin(page, SUPER.email, SUPER.password, /\/super$/);
@@ -23,11 +23,7 @@ test('a suspended school locks out its admin and teachers until re-enabled', asy
     await expect(page.getByRole('heading', suspendedHeading)).toHaveCount(0);
 
     const admin = await (await browser.newContext()).newPage();
-    await admin.goto('/login');
-    const form = adminForm(admin);
-    await form.getByLabel('Email').fill(ADMIN.email);
-    await form.getByLabel('Password', { exact: true }).fill(ADMIN.password);
-    await form.getByRole('button', { name: 'Log in' }).click();
+    await signIn(admin, ADMIN.email, ADMIN.password);
     await expect(admin.getByRole('heading', suspendedHeading)).toBeVisible();
     await expect(admin.getByRole('link', { name: 'Contact the Sathiya team' })).toBeVisible();
     await expect(admin.getByRole('button', { name: 'Report a problem' })).toBeVisible();
@@ -38,16 +34,12 @@ test('a suspended school locks out its admin and teachers until re-enabled', asy
     await teacher.reload();
     await expect(teacher.getByRole('heading', suspendedHeading)).toBeVisible();
     await expect(teacher.getByText('Mathematics')).toHaveCount(0);
-
-    const slip = await (await browser.newContext()).newPage();
-    await slip.goto(`/login?as=teacher&school=${SID}`);
-    await expect(teacherForm(slip).getByText('This school is currently suspended. Contact your school admin.')).toBeVisible();
   } finally {
     await callAs(await idToken(SUPER.email, SUPER.password), 'setSchoolStatus', { schoolId: SID, status: 'active' });
   }
 
   await teacher.reload();
-  await expect(teacher).toHaveURL(/\/me$/);
+  await expect(teacher).toHaveURL(new RegExp(`/s/${SID}/me$`));
   await expect(teacher.getByRole('heading', suspendedHeading)).toHaveCount(0);
   await expect(teacher.getByRole('banner')).toContainText('SCC024');
 });

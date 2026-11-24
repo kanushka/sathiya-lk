@@ -13,9 +13,9 @@ test('teacher signs in on a phone and sees the current lesson', async ({ page })
   await page.clock.setFixedTime(new Date('2026-11-23T08:00:00+05:30'));
 
   const perera = teacherLogin(T.perera);
-  await page.goto('/login?as=teacher');
+  await page.goto('/login');
   await shot(page, 'login-mobile');
-  await loginTeacher(page, perera.staffId, perera.password);
+  await loginTeacher(page, perera.email, perera.password);
   await expect(page.getByRole('banner')).toContainText('Mrs. N. Perera · SCC024');
   await expect(page.getByRole('banner')).toContainText('Monday 23 November');
   const main = page.getByRole('main');
