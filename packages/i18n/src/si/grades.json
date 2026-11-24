@@ -48,7 +48,8 @@
     "removeItem": "{{name}} ඉවත් කරන්න",
     "removeOption": "{{group}} වෙතින් {{name}} ඉවත් කරන්න",
     "addOption": "{{group}} වෙත විකල්පයක් එක් කරන්න",
-    "optionPlaceholder": "+ විකල්පය"
+    "optionPlaceholder": "+ විකල්පය",
+    "timedTotal": "+ {{amount}} කාලය අනුව"
   },
   "group": {
     "name": "කණ්ඩායමේ නම",
@@ -78,5 +79,38 @@
     "cancel": "අවලංගු කරන්න",
     "saved": "{{name}} සඳහා වෙනම සැලැස්මක් සුරැකිණි",
     "cleared": "{{name}} ශ්‍රේණි සැලැස්ම භාවිත කරයි"
+  },
+  "amount": {
+    "periods": "පැය",
+    "time": "කාලය",
+    "hShort": "පැ.",
+    "minShort": "මි.",
+    "perDayShort": "මි. දිනකට",
+    "unit": "ඉලක්කයේ ඒකකය",
+    "unitFor": "{{name}} සඳහා ඉලක්කයේ ඒකකය",
+    "periodsUnit": "පැය",
+    "periodsUnitFor": "{{name}} සඳහා පැය",
+    "timeUnit": "කාලය",
+    "timeUnitFor": "{{name}} සඳහා කාලය",
+    "hours": "සතියකට පැය",
+    "hoursFor": "{{name}} සඳහා සතියකට පැය",
+    "minutes": "සතියකට මිනිත්තු",
+    "minutesFor": "{{name}} සඳහා සතියකට මිනිත්තු",
+    "perDay": "දිනකට මිනිත්තු",
+    "perDayFor": "{{name}} සඳහා දිනකට මිනිත්තු"
+  },
+  "staffing": {
+    "title": "ගුරු සේවා නියුක්තිය",
+    "mode": "ගුරු සේවා නියුක්තිය",
+    "modeHint": "මෙම ශ්‍රේණියට උගන්වන්නේ කවුද. ස්වයංක්‍රීය පිරවීම මෙය අනුගමනය කරයි.",
+    "defaultNote": "මෙම ශ්‍රේණියේ සාමාන්‍ය පෙරනිමිය භාවිතා කෙරේ.",
+    "modes": {
+      "classTeacherAll": "පන්ති ගුරුවරයා සියල්ල උගන්වයි",
+      "classTeacherPlusSpecialists": "පන්ති ගුරුවරයා සහ විශේෂඥ ගුරුවරුන්",
+      "subjectTeachers": "විෂය ගුරුවරුන්"
+    },
+    "specialists": "විශේෂඥ විෂයන්",
+    "specialistsPlaceholder": "+ විෂයක්",
+    "removeSpecialist": "විශේෂඥ විෂයන්වලින් {{name}} ඉවත් කරන්න"
   }
 }

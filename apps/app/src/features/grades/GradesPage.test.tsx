@@ -216,4 +216,77 @@ describe('grades page', () => {
     await user.click(screen.getByRole('button', { name: /^Grade 1\b/ }));
     expect(api.saveGradePlan).not.toHaveBeenCalled();
   });
+
+  it('toggling a row to time saves it as minutes', async () => {
+    const user = await openGrade6();
+    await user.click(screen.getByRole('button', { name: 'Time for Mathematics' }));
+    const plan = vi.mocked(api.saveGradePlan).mock.calls.at(-1)![2];
+    expect(plan.find((p) => p.kind === 'subject' && p.subjectId === S.maths)).toMatchObject({ unit: 'minutes', perWeek: 0 });
+  });
+
+  describe('with a time-based row', () => {
+    const timed = {
+      ...ctx,
+      grades: ctx.grades.map((g) => (g.id === G.g6 ? { ...g, plan: g.plan.map((p) => (p.kind === 'subject' && p.subjectId === S.maths ? { ...p, perWeek: 50, unit: 'minutes' as const } : p)) } : g)),
+    };
+
+    async function openTimed() {
+      const user = userEvent.setup();
+      renderWithSchool(<GradesPage />, { ctx: timed, entries });
+      await user.click(screen.getByRole('button', { name: /^Grade 6\b/ }));
+      return user;
+    }
+
+    it('stores hours and minutes as total minutes', async () => {
+      const user = await openTimed();
+      expect(screen.getByLabelText('Hours per week for Mathematics')).toHaveValue(0);
+      expect(screen.getByLabelText('Minutes per week for Mathematics')).toHaveValue(50);
+      const hours = screen.getByLabelText('Hours per week for Mathematics');
+      await user.clear(hours);
+      await user.type(hours, '3');
+      await user.tab();
+      const plan = vi.mocked(api.saveGradePlan).mock.calls.at(-1)![2];
+      expect(plan.find((p) => p.kind === 'subject' && p.subjectId === S.maths)).toMatchObject({ unit: 'minutes', perWeek: 230 });
+    });
+
+    it('per-day minutes set the weekly total to five days', async () => {
+      const user = await openTimed();
+      await user.type(screen.getByLabelText('Minutes per day for Mathematics'), '10');
+      await user.tab();
+      const plan = vi.mocked(api.saveGradePlan).mock.calls.at(-1)![2];
+      expect(plan.find((p) => p.kind === 'subject' && p.subjectId === S.maths)).toMatchObject({ unit: 'minutes', perWeek: 50, perDay: 10 });
+    });
+
+    it('keeps time rows out of the period total', async () => {
+      await openTimed();
+      expect(screen.getByTestId('plan-total')).toHaveTextContent('34 / 39–40');
+    });
+  });
+
+  it('shows the default staffing for the grade and saves a change', async () => {
+    const user = await openGrade6();
+    const mode = screen.getByRole('combobox', { name: /^Staffing/ });
+    expect(mode).toHaveTextContent('Subject teachers');
+    await pickOption(user, mode, 'Class teacher plus specialist teachers');
+    expect(api.saveGradeStaffing).toHaveBeenCalledWith('siripura', G.g6, { mode: 'classTeacherPlusSpecialists', specialistSubjectIds: [S.english] });
+  });
+
+  it('offers specialist subjects only for class teacher plus specialists', async () => {
+    const user = userEvent.setup();
+    renderWithSchool(<GradesPage />, { ctx, entries });
+    expect(screen.getByRole('combobox', { name: /^Staffing/ })).toHaveTextContent('Class teacher teaches everything');
+    expect(screen.queryByRole('combobox', { name: /Specialist subjects/ })).not.toBeInTheDocument();
+    await user.click(screen.getByRole('button', { name: /^Grade 6\b/ }));
+    expect(screen.queryByRole('combobox', { name: /Specialist subjects/ })).not.toBeInTheDocument();
+  });
+
+  it('shows the specialist subjects for a grade set to class teacher plus specialists', async () => {
+    const user = userEvent.setup();
+    const set = { ...ctx, grades: ctx.grades.map((g) => (g.id === G.g6 ? { ...g, staffing: { mode: 'classTeacherPlusSpecialists' as const, specialistSubjectIds: [S.english] } } : g)) };
+    renderWithSchool(<GradesPage />, { ctx: set, entries });
+    await user.click(screen.getByRole('button', { name: /^Grade 6\b/ }));
+    expect(screen.getByRole('combobox', { name: /^Specialist subjects/ })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'Remove English from specialist subjects' })).toBeInTheDocument();
+    expect(screen.queryByText('Using the default for this grade.')).not.toBeInTheDocument();
+  });
 });

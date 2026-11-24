@@ -5,7 +5,9 @@ import { useState, type FormEvent } from 'react';
 import { useTranslation } from 'react-i18next';
 import { NameFields } from '../../ui/NameFields';
 import { Button } from '../../ui/Button';
-import { Field, inputClass } from '../../ui/Field';
+import { Field } from '../../ui/Field';
+import { AmountEditor } from './AmountEditor';
+import { applyAmount, type Amount } from './planModel';
 import { MultiSelect } from '../../ui/MultiSelect';
 import { Modal } from '../../ui/Modal';
 
@@ -24,7 +26,11 @@ export function GroupModal({ initial, subjects, newKey, onSave, onClose }: Group
   const lang = i18n.language as Lang;
   const [nameEn, setNameEn] = useState(initial?.nameEn ?? '');
   const [nameSi, setNameSi] = useState(initial?.nameSi ?? '');
-  const [perWeek, setPerWeek] = useState(initial?.perWeek ?? 1);
+  const [amount, setAmount] = useState<Amount>({
+    perWeek: initial?.perWeek ?? 1,
+    ...(initial?.unit === 'minutes' ? { unit: 'minutes' as const } : {}),
+    ...(initial?.perDay !== undefined ? { perDay: initial.perDay } : {}),
+  });
   const [options, setOptions] = useState<string[]>(initial?.optionSubjectIds ?? []);
   const [submitted, setSubmitted] = useState(false);
 
@@ -36,14 +42,15 @@ export function GroupModal({ initial, subjects, newKey, onSave, onClose }: Group
     e.preventDefault();
     setSubmitted(true);
     if (nameError || optionsError) return;
-    onSave({
+    const group: Group = {
       kind: 'group',
       key: initial?.key ?? newKey(),
       nameEn: nameEn.trim(),
       ...(nameSi.trim() ? { nameSi: nameSi.trim() } : {}),
       optionSubjectIds: options,
-      perWeek,
-    });
+      perWeek: amount.perWeek,
+    };
+    onSave(applyAmount(group, amount) as Group);
   }
 
   return (
@@ -64,15 +71,7 @@ export function GroupModal({ initial, subjects, newKey, onSave, onClose }: Group
     >
       <form id="group-form" onSubmit={submit} noValidate className="flex flex-col gap-4">
         <NameFields legend={t('group.name')} enLabel={t('group.nameEn')} siLabel={t('group.nameSi')} en={nameEn} si={nameSi} onEn={setNameEn} onSi={setNameSi} missing={submitted && !!nameError} />
-        <Field label={t('group.perWeek')} className="w-40">
-          <input
-            className={inputClass}
-            type="number"
-            min={0}
-            value={perWeek}
-            onChange={(e) => setPerWeek(Math.max(0, Math.floor(Number(e.target.value) || 0)))}
-          />
-        </Field>
+        <AmountEditor item={amount} disabled={false} onChange={setAmount} />
         <Field label={t('group.options')} error={submitted ? optionsError : null}>
           <MultiSelect
             value={options}

@@ -48,7 +48,8 @@
     "removeItem": "Remove {{name}}",
     "removeOption": "Remove {{name}} from {{group}}",
     "addOption": "Add option to {{group}}",
-    "optionPlaceholder": "+ option"
+    "optionPlaceholder": "+ option",
+    "timedTotal": "+ {{amount}} timed"
   },
   "group": {
     "name": "Group name",
@@ -78,5 +79,38 @@
     "cancel": "Cancel",
     "saved": "{{name}} now has its own plan",
     "cleared": "{{name}} uses the grade plan"
+  },
+  "amount": {
+    "periods": "Periods",
+    "time": "Time",
+    "hShort": "h",
+    "minShort": "min",
+    "perDayShort": "min per day",
+    "unit": "Target unit",
+    "unitFor": "Target unit for {{name}}",
+    "periodsUnit": "Periods",
+    "periodsUnitFor": "Periods for {{name}}",
+    "timeUnit": "Time",
+    "timeUnitFor": "Time for {{name}}",
+    "hours": "Hours per week",
+    "hoursFor": "Hours per week for {{name}}",
+    "minutes": "Minutes per week",
+    "minutesFor": "Minutes per week for {{name}}",
+    "perDay": "Minutes per day",
+    "perDayFor": "Minutes per day for {{name}}"
+  },
+  "staffing": {
+    "title": "Staffing",
+    "mode": "Staffing",
+    "modeHint": "Who teaches this grade. Auto-fill follows this.",
+    "defaultNote": "Using the default for this grade.",
+    "modes": {
+      "classTeacherAll": "Class teacher teaches everything",
+      "classTeacherPlusSpecialists": "Class teacher plus specialist teachers",
+      "subjectTeachers": "Subject teachers"
+    },
+    "specialists": "Specialist subjects",
+    "specialistsPlaceholder": "+ subject",
+    "removeSpecialist": "Remove {{name}} from specialist subjects"
   }
 }

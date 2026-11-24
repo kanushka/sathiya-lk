@@ -35,3 +35,19 @@ describe('GroupModal option subjects', () => {
     expect(onSave).toHaveBeenCalledWith(expect.objectContaining({ key: 'aesthetic', optionSubjectIds: [S.music, S.art, S.pali, S.tamil] }));
   });
 });
+
+describe('GroupModal time target', () => {
+  it('saves a group as minutes per week', async () => {
+    const { onSave, user } = setup();
+    const dialog = screen.getByRole('dialog');
+    await user.click(within(dialog).getByRole('button', { name: 'Time' }));
+    const hours = within(dialog).getByLabelText('Hours per week');
+    await user.clear(hours);
+    await user.type(hours, '1');
+    const mins = within(dialog).getByLabelText('Minutes per week');
+    await user.clear(mins);
+    await user.type(mins, '20');
+    await user.click(within(dialog).getByRole('button', { name: 'Save group' }));
+    expect(onSave).toHaveBeenCalledWith(expect.objectContaining({ unit: 'minutes', perWeek: 80 }));
+  });
+});
