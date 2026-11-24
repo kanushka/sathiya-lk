@@ -271,7 +271,7 @@ function ReliefDayEditor({ sid, yid, date, day, readOnly, data, base, onDirty }:
       const e = toApiError(err);
       if (e.code === 'stale') setProblem({ kind: 'stale' });
       else if (e.code === 'republish') setProblem({ kind: 'republish' });
-      else if (e.code === 'invalid' && e.message === "Only today's relief can be edited") setProblem({ kind: 'notToday' });
+      else if (e.code === 'not-today') setProblem({ kind: 'notToday' });
       else if (e.code === 'invalid-relief') setProblem({ kind: 'invalid', errors: (e.details as { errors?: ReliefError[] } | undefined)?.errors ?? [] });
       else setProblem({ kind: 'failed', message: e.message });
     } finally {

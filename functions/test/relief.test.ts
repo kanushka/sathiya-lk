@@ -39,7 +39,7 @@ describe('saveReliefDay', () => {
 
   it('refuses another date', async () => {
     const { admin, sid } = await publishedSeed();
-    await expectFnError(admin.call('saveReliefDay', req(sid, { date: yesterday })), 'invalid-argument', 'invalid');
+    await expectFnError(admin.call('saveReliefDay', req(sid, { date: yesterday })), 'invalid-argument', 'not-today');
   });
 
   it('refuses non-admin', async () => {

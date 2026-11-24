@@ -39,7 +39,7 @@ describe('toApiError', () => {
   });
 
   it('maps relief error codes from details', () => {
-    for (const code of ['stale', 'republish', 'invalid-relief'] as const) {
+    for (const code of ['stale', 'republish', 'invalid-relief', 'not-today'] as const) {
       expect(toApiError(fnError('failed-precondition', code, { code })).code).toBe(code);
     }
   });

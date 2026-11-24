@@ -268,7 +268,7 @@ describe('relief page', () => {
   });
 
   it('explains a save refused because the day has passed', async () => {
-    vi.mocked(call).mockRejectedValue(new ApiError('invalid', "Only today's relief can be edited"));
+    vi.mocked(call).mockRejectedValue(new ApiError('not-today', 'Day is over'));
     const user = setup();
     await markMorning(user);
     await user.click(screen.getByRole('button', { name: 'Save & notify' }));

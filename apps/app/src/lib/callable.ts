@@ -23,6 +23,7 @@ const apiCodes: readonly ApiErrorCode[] = [
   'stale',
   'republish',
   'invalid-relief',
+  'not-today',
 ];
 
 export class ApiError extends Error {

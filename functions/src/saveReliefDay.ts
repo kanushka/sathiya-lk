@@ -82,7 +82,7 @@ export const saveReliefDay = onCall(callOpts, async (req): Promise<SaveReliefDay
   const yid = docId(data.yearId, 'yearId');
   const date = str(data.date, 'date', 10);
   const today = colomboToday(new Date());
-  if (date !== today.date || today.day === null) invalid("Only today's relief can be edited");
+  if (date !== today.date || today.day === null) fail('invalid-argument', 'not-today', "Only today's relief can be edited");
   const day = today.day!;
   const asked = parseLeaves(data.leaves);
   const picks = parsePicks(data.reliefs);

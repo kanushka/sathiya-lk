@@ -108,4 +108,4 @@ interface CallableMap {
 }
 export type CallableName = keyof typeof callables;
 export type CallableTypes = { [K in CallableName]: CallableMap[K] };
-export type ApiErrorCode = 'clash' | 'in-use' | 'not-allowed' | 'invalid' | 'email-unverified' | 'rate-limited' | 'school-disabled' | 'already-linked' | 'staff-id-unknown' | 'link-invalid' | 'too-many-schools' | 'school-registered' | 'template-in-use' | 'template-too-many-moves' | 'stale' | 'republish' | 'invalid-relief';
+export type ApiErrorCode = 'clash' | 'in-use' | 'not-allowed' | 'invalid' | 'email-unverified' | 'rate-limited' | 'school-disabled' | 'already-linked' | 'staff-id-unknown' | 'link-invalid' | 'too-many-schools' | 'school-registered' | 'template-in-use' | 'template-too-many-moves' | 'stale' | 'republish' | 'invalid-relief' | 'not-today';
