@@ -4,6 +4,7 @@ import { screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { ActionPage } from './ActionPage';
+import { verifyContinuePath } from './ActionViews';
 import * as api from './api';
 import { routes } from './routes';
 import { renderAuth } from './testHarness';
@@ -45,6 +46,12 @@ describe('verifyEmail', () => {
   it('ignores a continueUrl on another origin', async () => {
     vi.mocked(api.applyEmailCode).mockResolvedValue(undefined);
     at(`mode=verifyEmail&oobCode=abc&continueUrl=${encodeURIComponent('https://evil.example/join/x/y')}`);
+    expect(await screen.findByRole('link', { name: 'Continue registering' })).toHaveAttribute('href', '/register');
+  });
+
+  it.each(['//evil.example/x', '/\\evil.example/x'])('ignores a same-origin continueUrl whose path is the network path %s', async (path) => {
+    vi.mocked(api.applyEmailCode).mockResolvedValue(undefined);
+    at(`mode=verifyEmail&oobCode=abc&continueUrl=${encodeURIComponent(window.location.origin + path)}`);
     expect(await screen.findByRole('link', { name: 'Continue registering' })).toHaveAttribute('href', '/register');
   });
 
@@ -180,5 +187,16 @@ describe('bad requests', () => {
     at(qs);
     expect(await screen.findByRole('alert')).toHaveTextContent('This link is not valid');
     expect(api.applyEmailCode).not.toHaveBeenCalled();
+  });
+});
+
+describe('verifyContinuePath', () => {
+  const origin = 'https://app.example.test';
+  it('keeps a same-origin app path with its query', () => {
+    expect(verifyContinuePath(`${origin}/join/s1/tok?x=1`, origin)).toBe('/join/s1/tok?x=1');
+  });
+
+  it.each([`${origin}//evil.example/x`, `${origin}/\\evil.example/x`, 'https://evil.example/join/x', `${origin}/login`, `${origin}/register`, null])('rejects %s', (url) => {
+    expect(verifyContinuePath(url, origin)).toBeNull();
   });
 });

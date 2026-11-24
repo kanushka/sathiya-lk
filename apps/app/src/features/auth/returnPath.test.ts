@@ -13,7 +13,7 @@ describe('returnPathFrom', () => {
     expect(returnPathFrom({ from: { pathname: '/s/s1/me' } })).toBe('/s/s1/me');
   });
 
-  it.each([null, undefined, {}, { from: {} }, { from: { pathname: 'https://evil.example' } }, { from: { pathname: '//evil.example/x' } }, { from: { pathname: 5 } }])(
+  it.each([null, undefined, {}, { from: {} }, { from: { pathname: 'https://evil.example' } }, { from: { pathname: '//evil.example/x' } }, { from: { pathname: '/\\evil.example/x' } }, { from: { pathname: 5 } }])(
     'returns null for %j',
     (state) => {
       expect(returnPathFrom(state)).toBeNull();

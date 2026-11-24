@@ -4,10 +4,11 @@ import { useCallback } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { useAuth } from '../../app/AuthProvider';
 import { claimInvites } from './api';
+import { isAppPath } from './appPath';
 
 export function returnPathFrom(state: unknown): string | null {
   const from = (state as { from?: { pathname?: unknown; search?: unknown } } | null)?.from;
-  if (typeof from?.pathname !== 'string' || !from.pathname.startsWith('/') || from.pathname.startsWith('//')) return null;
+  if (!isAppPath(from?.pathname)) return null;
   return from.pathname + (typeof from.search === 'string' ? from.search : '');
 }
 

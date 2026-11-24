@@ -5,6 +5,7 @@ import { useTranslation } from 'react-i18next';
 import { Link } from 'react-router-dom';
 import { ActionErrorView, ActionShell } from './ActionShell';
 import { applyEmailCode, getRecoveredEmail } from './api';
+import { isAppPath } from './appPath';
 import { useActionCode } from './useActionCode';
 
 const linkButton =
@@ -24,7 +25,7 @@ export function verifyContinuePath(continueUrl: string | null, origin = window.l
   } catch {
     return null;
   }
-  if (url.origin !== origin || url.pathname === '/login' || url.pathname === '/register') return null;
+  if (url.origin !== origin || !isAppPath(url.pathname) || url.pathname === '/login' || url.pathname === '/register') return null;
   return url.pathname + url.search;
 }
 
