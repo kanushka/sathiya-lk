@@ -92,6 +92,20 @@ describe('suggestPins', () => {
     expect(new Set(picks.map((p) => p.day)).size).toBe(5);
   });
 
+  it('does not cap an own-class teacher in a classTeacherAll grade at maxPerDay', () => {
+    const c = { ...mahasen.ctx, teachers: mahasen.ctx.teachers.map((t) => (t.id === 'mh-t-1a' ? { ...t, maxPerDay: 1 } : t)) };
+    const spec = singleSpec('mh-c-1a', mahasen.S.maths, 'mh-t-1a');
+    const picks = suggestPins({ ctx: c, entries: [], spec, count: 6 });
+    expect(picks).toHaveLength(6);
+    const slots = pinSlots({ ctx: c, entries: [entry('x', 0, 1, ['mh-c-1b'], [[mahasen.S.maths, 'mh-t-1a']])], spec });
+    expect(slots.filter((s) => s.cell.kind === 'free' && s.cell.limit)).toEqual([]);
+  });
+
+  it('returns no suggestions when the base class no longer exists', () => {
+    const spec = singleSpec('gone', S.sinhala, T.ranasinghe);
+    expect(suggestPins({ ctx, entries: [], spec, count: 3 })).toEqual([]);
+  });
+
   it('treats a clock-time overlap in another template as busy and never suggests it', () => {
     const primary = entry('p', 0, 5, [C.c1a], [[S.sinhala, T.ranasinghe]]);
     const slots = pinSlots({ ...target, entries: [primary] });

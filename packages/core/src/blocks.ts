@@ -4,6 +4,7 @@
 import { findConflicts } from './clash';
 import { findClass, gradeOf } from './lookup';
 import { effectivePlan } from './plan';
+import { isMinutes } from './staffing';
 import type { DayIndex, Entry, SchoolClass, SchoolContext } from './types';
 
 export function joinableClasses(args: { ctx: SchoolContext; entries: Entry[]; baseClassId: string; day: DayIndex; period: number; editingEntryId?: string }): SchoolClass[] {
@@ -20,14 +21,16 @@ export function blockMates(args: { ctx: SchoolContext; baseClassId: string; item
   const { ctx, baseClassId, item } = args;
   const base = findClass(ctx, baseClassId);
   if (!base) return [];
+  const itemOf = (c: SchoolClass) => {
+    const grade = gradeOf(ctx, c);
+    return grade && effectivePlan(c, grade).find((p) => ('groupKey' in item ? p.kind === 'group' && p.key === item.groupKey : p.kind === 'subject' && p.subjectId === item.subjectId));
+  };
+  const baseItem = itemOf(base);
   return ctx.classes
     .filter((c) => c.id !== base.id && c.gradeId === base.gradeId && c.templateId === base.templateId)
     .filter((c) => {
-      const grade = gradeOf(ctx, c);
-      if (!grade) return false;
-      return effectivePlan(c, grade).some((p) =>
-        'groupKey' in item ? p.kind === 'group' && p.key === item.groupKey : p.kind === 'subject' && p.subjectId === item.subjectId,
-      );
+      const found = itemOf(c);
+      return !!found && (!baseItem || isMinutes(found) === isMinutes(baseItem));
     })
     .sort((a, b) => a.name.localeCompare(b.name, undefined, { numeric: true }));
 }

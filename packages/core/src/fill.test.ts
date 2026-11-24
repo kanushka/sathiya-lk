@@ -3,7 +3,7 @@
 
 import { describe, expect, it } from 'vitest';
 import { fillWithClassTeacher } from './fill';
-import { C, ctx, entries, entries6B, entry, S, T } from './fixtures';
+import { C, ctx, entries, entries6B, entry, mahasen, S, T } from './fixtures';
 import type { Entry } from './types';
 
 describe('fillWithClassTeacher', () => {
@@ -56,5 +56,16 @@ describe('fillWithClassTeacher', () => {
     const noTeacher = { ...ctx, classes: ctx.classes.map((c) => (c.id === C.c6b ? { ...c, classTeacherId: undefined } : c)) };
     expect(fillWithClassTeacher({ ctx: noTeacher, entries: entries6B, classId: C.c6b })).toEqual([]);
     expect(fillWithClassTeacher({ ctx, entries: entries6B, classId: 'nope' })).toEqual([]);
+  });
+
+  it('ignores the daily limit for a classTeacherAll class teacher in their own class', () => {
+    const plan = [{ kind: 'subject' as const, subjectId: mahasen.S.maths, perWeek: 20 }];
+    const c = {
+      ...mahasen.ctx,
+      teachers: mahasen.ctx.teachers.map((t) => (t.id === 'mh-t-1a' ? { ...t, maxPerDay: 1 } : t)),
+      classes: mahasen.ctx.classes.map((k) => (k.id === 'mh-c-1a' ? { ...k, planOverride: plan } : k)),
+    };
+    const drafts = fillWithClassTeacher({ ctx: c, entries: [], classId: 'mh-c-1a' });
+    expect(drafts.filter((d) => d.day === 0).length).toBeGreaterThan(1);
   });
 });

@@ -31,6 +31,12 @@ describe('blockMates', () => {
     expect(names(blockMates({ ctx, baseClassId: C.c6a, item: { groupKey: 'nope' } }))).toEqual([]);
   });
 
+  it('leaves out classes whose item uses a different unit than the base class', () => {
+    const timed = { ...ctx, classes: ctx.classes.map((c) => (c.id === C.c6b ? { ...c, planOverride: [{ kind: 'subject' as const, subjectId: S.maths, perWeek: 200, unit: 'minutes' as const }] } : c)) };
+    expect(names(blockMates({ ctx: timed, baseClassId: C.c6a, item: { subjectId: S.maths } }))).toEqual([]);
+    expect(names(blockMates({ ctx: timed, baseClassId: C.c6b, item: { subjectId: S.maths } }))).toEqual([]);
+  });
+
   it('returns [] for an unknown base class', () => {
     expect(blockMates({ ctx, baseClassId: 'nope', item: { groupKey: 'religion' } })).toEqual([]);
   });

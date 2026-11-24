@@ -46,6 +46,17 @@ describe('teacherDayLoad', () => {
   });
 });
 
+describe('teacherOptionsForSlot own-class exemption', () => {
+  it('keeps a classTeacherAll class teacher available in their own class when the day is otherwise full', () => {
+    const c = { ...mahasen.ctx, teachers: mahasen.ctx.teachers.map((t) => (t.id === 'mh-t-1a' ? { ...t, maxPerDay: 2 } : t)) };
+    const other = [1, 2].map((p) => entry(`o-${p}`, 0, p, ['mh-c-1b'], [[mahasen.S.maths, 'mh-t-1a']]));
+    const own = teacherOptionsForSlot({ ctx: c, entries: other, classIds: ['mh-c-1a'], day: 0, period: 3, subjectId: mahasen.S.maths });
+    expect([...own.available, ...own.unavailable].find((o) => o.teacher.id === 'mh-t-1a')?.reason).toBeUndefined();
+    const elsewhere = teacherOptionsForSlot({ ctx: c, entries: other, classIds: ['mh-c-1c'], day: 0, period: 3, subjectId: mahasen.S.maths });
+    expect(elsewhere.unavailable.find((o) => o.teacher.id === 'mh-t-1a')?.reason).toBe('limit');
+  });
+});
+
 describe('teacherLoad', () => {
   it('sums minutes across templates', () => {
     const es = [
@@ -68,6 +79,18 @@ describe('teacherLoad', () => {
     expect(b.entries).toBe(1);
     expect(b.minutes).toBeGreaterThan(0);
     expect(b.timedMinutes).toBe(0);
+  });
+});
+
+describe('teacherLoad joined blocks', () => {
+  it('counts timed minutes the same whichever class is listed first', () => {
+    const periodsPlan = [{ kind: 'subject' as const, subjectId: mahasen.S.maths, perWeek: 5 }];
+    const c = { ...mahasen.ctx, classes: mahasen.ctx.classes.map((k) => (k.id === 'mh-c-1b' ? { ...k, planOverride: periodsPlan } : k)) };
+    const lessons: Array<[string, string]> = [[mahasen.S.maths, 'mh-t-1a']];
+    const ab = teacherLoad('mh-t-1a', [entry('l-1', 0, 1, ['mh-c-1a', 'mh-c-1b'], lessons)], c);
+    const ba = teacherLoad('mh-t-1a', [entry('l-1', 0, 1, ['mh-c-1b', 'mh-c-1a'], lessons)], c);
+    expect(ba.timedMinutes).toBe(ab.timedMinutes);
+    expect(ab.timedMinutes).toBeGreaterThan(0);
   });
 });
 

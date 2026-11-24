@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
 // Copyright (C) 2026 Kanushka Gayan
 
-import { busyDetail, teacherDayLoad, type BusyDetail } from './availability';
+import { busyDetail, isExemptPlacement, teacherDayLoad, type BusyDetail } from './availability';
 import { entryWindow, findConflicts } from './clash';
 import { DAYS, findClass, gradeOf, templateOf } from './lookup';
 import { effectivePlan } from './plan';
@@ -70,9 +70,10 @@ export function pinSlots(args: PinArgs): PinSlot[] {
   const specTeachers = teachers as NonNullable<(typeof teachers)[number]>[];
   const out: PinSlot[] = [];
   for (const day of DAYS) {
-    let tight = { teacherId: '', load: 0, max: 0 };
+    let tight = { teacherId: specTeachers[0]!.id, load: 0, max: Infinity };
     let tightGap = -Infinity;
     for (const t of specTeachers) {
+      if (isExemptPlacement(t.id, spec.classIds, ctx)) continue;
       const load = teacherDayLoad(t.id, day, entries, ctx);
       if (load - t.maxPerDay > tightGap) {
         tightGap = load - t.maxPerDay;
@@ -109,24 +110,26 @@ export function pinSlots(args: PinArgs): PinSlot[] {
 export function suggestPins(args: PinArgs & { count: number; teacherId?: string; minutes?: number }): Array<{ day: DayIndex; period: number }> {
   const { ctx, entries, spec, teacherId } = args;
   const baseId = spec.classIds[0];
+  const baseClass = baseId === undefined ? undefined : findClass(ctx, baseId);
   const rows =
     teacherId === undefined
       ? null
       : new Set(teacherPinSlots({ ctx, entries, spec, teacherId }).filter((s) => s.cell.kind === 'free').map((s) => `${s.day}-${s.period}`));
   const slots = pinSlots(args).filter((s) => s.cell.kind === 'free' && (!rows || rows.has(`${s.day}-${s.period}`)));
   const teachers = specTeacherIds(spec).map((id) => ctx.teachers.find((t) => t.id === id));
-  if (!baseId || teachers.some((t) => !t)) return [];
+  if (!baseId || !baseClass || teachers.some((t) => !t)) return [];
   const specTeachers = teachers as NonNullable<(typeof teachers)[number]>[];
+  const exempt = new Set(specTeachers.filter((t) => isExemptPlacement(t.id, spec.classIds, ctx)).map((t) => t.id));
   const load = new Map<DayIndex, Map<string, number>>();
   const subjectCount = new Map<DayIndex, number>();
   for (const day of DAYS) {
     load.set(day, new Map(specTeachers.map((t) => [t.id, teacherDayLoad(t.id, day, entries, ctx)])));
     subjectCount.set(day, entries.filter((e) => e.day === day && e.classIds.includes(baseId) && hasSubjectThatDay(e, spec)).length);
   }
-  const atLimit = (day: DayIndex) => specTeachers.some((t) => load.get(day)!.get(t.id)! >= t.maxPerDay);
+  const atLimit = (day: DayIndex) => specTeachers.some((t) => !exempt.has(t.id) && load.get(day)!.get(t.id)! >= t.maxPerDay);
   const picks: Array<{ day: DayIndex; period: number }> = [];
   const left = [...slots];
-  const template = templateOf(ctx, findClass(ctx, baseId)!);
+  const template = templateOf(ctx, baseClass);
   let budget = args.minutes ?? Infinity;
   const cost = (s: PinSlot) => (args.minutes === undefined || !template ? 0 : slotMinutes(template, s.day, s.period));
   while (picks.length < args.count) {
@@ -142,7 +145,7 @@ export function suggestPins(args: PinArgs & { count: number; teacherId?: string;
     budget -= cost(s!);
     picks.push({ day: s!.day, period: s!.period });
     const dayLoad = load.get(s!.day)!;
-    for (const t of specTeachers) dayLoad.set(t.id, dayLoad.get(t.id)! + 1);
+    for (const t of specTeachers) if (!exempt.has(t.id)) dayLoad.set(t.id, dayLoad.get(t.id)! + 1);
     subjectCount.set(s!.day, subjectCount.get(s!.day)! + 1);
   }
   return picks;
