@@ -35,7 +35,7 @@ export const navItems: readonly NavItem[] = [
   { path: '/admin/profile', labelKey: 'nav.profile', icon: 'profile', group: 'school' },
 ];
 
-const groups: NavGroup[] = ['main', 'timetable', 'setup', 'school'];
+export const groups: NavGroup[] = ['main', 'timetable', 'setup', 'school'];
 const storageKey = 'sathiya.sidebar';
 const yearLabelClass = 'mx-3 mb-1.5 mt-3.5 block text-[11px] font-bold uppercase tracking-[.08em] text-ink-muted';
 
@@ -57,7 +57,7 @@ function writeCollapsed(collapsed: boolean): void {
   }
 }
 
-function SchoolLogo({ school, name, decorative }: { school: School; name: string; decorative: boolean }) {
+export function SchoolLogo({ school, name, decorative }: { school: School; name: string; decorative: boolean }) {
   if (!school.logoUrl) return null;
   return (
     <img
@@ -71,9 +71,13 @@ function SchoolLogo({ school, name, decorative }: { school: School; name: string
   );
 }
 
-const linkBase =
+export const linkBase =
   'flex items-center rounded-lg text-sm font-medium text-ink-soft no-underline hover:bg-[color-mix(in_srgb,var(--brand)_6%,white)] focus-visible:outline focus-visible:outline-2 focus-visible:outline-brand';
-const linkActive = 'bg-[color-mix(in_srgb,var(--brand)_10%,white)] font-bold text-brand';
+export const linkActive = 'bg-[color-mix(in_srgb,var(--brand)_10%,white)] font-bold text-brand';
+
+export function navHref(basePath: string, path: string): string {
+  return path === '/admin' ? basePath : basePath + path.slice('/admin'.length);
+}
 
 export interface SidebarProps {
   basePath?: string;
@@ -97,7 +101,6 @@ export function Sidebar({ basePath = '/admin', readOnly = false }: SidebarProps)
     writeCollapsed(next);
   }
 
-  const href = (path: string) => (path === '/admin' ? basePath : basePath + path.slice('/admin'.length));
   const toggleLabel = collapsed ? t('sidebar.expand') : t('sidebar.collapse');
   const yearSelectId = 'sidebar-year';
 
@@ -192,7 +195,7 @@ export function Sidebar({ basePath = '/admin', readOnly = false }: SidebarProps)
                 return (
                   <NavLink
                     key={item.path}
-                    to={href(item.path)}
+                    to={navHref(basePath, item.path)}
                     end={item.path === '/admin'}
                     aria-label={collapsed ? label : undefined}
                     title={collapsed ? label : undefined}

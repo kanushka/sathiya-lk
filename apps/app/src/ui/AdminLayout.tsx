@@ -5,6 +5,7 @@ import { createContext, useContext } from 'react';
 import { Outlet } from 'react-router-dom';
 import { SchoolProvider, useHasSchool } from '../app/SchoolProvider';
 import { AnnouncementBanner } from '../features/superadmin/AnnouncementBanner';
+import { PhoneTopBar } from './PhoneTopBar';
 import { Sidebar } from './Sidebar';
 
 export interface AdminLayoutProps {
@@ -21,10 +22,13 @@ export function useReadOnly(): boolean {
 function Shell({ basePath, readOnly = false }: AdminLayoutProps) {
   return (
     <ReadOnlyCtx.Provider value={readOnly}>
-      <div className="flex min-h-screen md:min-w-[1024px] flex-col bg-[#F6F6F4] font-sans text-ink">
+      <div className="flex min-h-screen flex-col bg-[#F6F6F4] font-sans text-ink">
         {!readOnly && <AnnouncementBanner />}
+        <PhoneTopBar basePath={basePath} readOnly={readOnly} />
         <div className="flex flex-1">
-          <Sidebar basePath={basePath} readOnly={readOnly} />
+          <div className="hidden md:block">
+            <Sidebar basePath={basePath} readOnly={readOnly} />
+          </div>
           <main className="min-w-0 flex-1 px-4 py-5 md:px-9 md:py-7">
             <Outlet />
           </main>

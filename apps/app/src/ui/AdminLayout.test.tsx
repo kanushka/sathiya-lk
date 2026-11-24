@@ -7,7 +7,8 @@ import { describe, expect, it, vi } from 'vitest';
 
 vi.mock('../lib/firebase', () => ({ app: {}, auth: {}, db: {}, functions: {}, storage: {} }));
 vi.mock('../features/superadmin/AnnouncementBanner', () => ({ AnnouncementBanner: () => <div data-testid="banner" /> }));
-vi.mock('./Sidebar', () => ({ Sidebar: () => <nav /> }));
+vi.mock('./Sidebar', () => ({ Sidebar: () => <nav data-testid="sidebar" /> }));
+vi.mock('./PhoneTopBar', () => ({ PhoneTopBar: () => <header data-testid="phone-top-bar" /> }));
 vi.mock('../app/SchoolProvider', () => ({
   useHasSchool: () => true,
   SchoolProvider: ({ children }: { children: React.ReactNode }) => children,
@@ -40,6 +41,24 @@ describe('useReadOnly', () => {
   it('is false in the normal admin layout', () => {
     renderLayout();
     expect(screen.getByText('editable')).toBeInTheDocument();
+  });
+});
+
+describe('phone shell', () => {
+  it('renders the phone top bar and keeps the sidebar for md and up', () => {
+    renderLayout();
+    expect(screen.getByTestId('phone-top-bar')).toBeInTheDocument();
+    const sidebar = screen.getByTestId('sidebar');
+    expect(sidebar.parentElement).toHaveClass('hidden', 'md:block');
+  });
+
+  it('has no desktop minimum width', () => {
+    const { container } = render(
+      <MemoryRouter>
+        <AdminLayout />
+      </MemoryRouter>,
+    );
+    expect(container.innerHTML).not.toContain('min-w-[1024px]');
   });
 });
 
