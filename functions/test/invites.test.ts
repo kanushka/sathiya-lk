@@ -158,6 +158,14 @@ describe('claimInvites', () => {
     await expect(c.call('claimInvites', {})).resolves.toEqual({ schoolIds: [] });
     expect(await c.claims()).toEqual({});
   });
+
+  it('repairs missing claims of an existing member when there are no invites', async () => {
+    const { admin, sid } = await adminWithSchool();
+    await adminAuth.setCustomUserClaims(admin.uid, {});
+    expect(await admin.claims()).toEqual({});
+    await expect(admin.call('claimInvites', {})).resolves.toEqual({ schoolIds: [] });
+    expect(await admin.claims()).toEqual({ schools: { [sid]: { r: 'a' } } });
+  });
 });
 
 const sha = (t: string) => createHash('sha256').update(t).digest('hex');

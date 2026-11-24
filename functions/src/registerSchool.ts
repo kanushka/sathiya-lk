@@ -89,6 +89,8 @@ export const registerSchool = onCall(callOpts, async (req): Promise<RegisterScho
     if ((e as { code?: unknown }).code === 6 && censusRef) censusTaken();
     throw e;
   }
+  // The school is already committed, so a throw would only invite a retry that registers a second school.
+  // claimInvites re-syncs claims on the next sign-in.
   await syncClaims(uid).catch((e) => logger.error('registerSchool: claims sync failed', { sid, e }));
   await sendMail('schoolRegistered', async () => {
     const { appUrl, webUrl } = mailConfig();

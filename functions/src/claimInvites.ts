@@ -54,7 +54,7 @@ export const claimInvites = onCall(callOpts, async (req): Promise<ClaimInvitesRe
     }
     claimed.push({ sid, ref: doc.ref });
   }
-  if (claimed.length === 0) return { schoolIds: [] };
+  // Runs on every sign-in, so it also repairs claims a failed sync elsewhere (e.g. registerSchool) left behind.
   await syncClaims(uid);
   await Promise.all(claimed.map((c) => c.ref.delete()));
   return { schoolIds: claimed.map((c) => c.sid) };
