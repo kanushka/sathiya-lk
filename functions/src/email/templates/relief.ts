@@ -33,6 +33,9 @@ export interface ReliefCancelledInput {
 
 const footer = (school: SchoolBrand) => schoolFooter(school, 'Not expecting this? Ignore it.');
 
+const dateIn = (locale: string, date: string): string =>
+  new Intl.DateTimeFormat(locale, { timeZone: 'UTC', weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' }).format(new Date(`${date}T00:00:00Z`));
+
 export function reliefAssigned({ school, teacherName, teacherNameSi, date, rows, todayUrl }: ReliefAssignedInput): Rendered {
   const first = rows[0]!;
   const subject = rows.length === 1 ? `Relief today: P${first.period} ${first.className} ${first.subject}` : `${rows.length} relief periods today`;
@@ -44,14 +47,14 @@ export function reliefAssigned({ school, teacherName, teacherNameSi, date, rows,
     header: schoolHeader(school),
     en: {
       title: rows.length === 1 ? 'You have a relief period today' : `You have ${rows.length} relief periods today`,
-      paras: [['Hello ', { b: teacherName }, `, you are covering the following on ${date}.`]],
+      paras: [['Hello ', { b: teacherName }, `, you are covering the following on ${dateIn('en-GB', date)}.`]],
       facts: factsEn,
       cta: { label: "Open today's timetable", url: todayUrl },
       note: 'This is the full current list. A later email replaces it if anything changes.',
     },
     si: {
       title: rows.length === 1 ? 'අද ඔබට ආදේශක වාරයක් ඇත' : `අද ඔබට ආදේශක වාර ${rows.length}ක් ඇත`,
-      paras: [`${si}, ${date} දින ඔබ ආවරණය කළ යුතු වාර පහත දැක්වේ.`],
+      paras: [`${si}, ${dateIn('si-LK', date)} දින ඔබ ආවරණය කළ යුතු වාර පහත දැක්වේ.`],
       facts: factsSi,
     },
     footer: footer(school),
@@ -65,12 +68,12 @@ export function reliefCancelled({ school, teacherName, teacherNameSi, date, toda
     header: schoolHeader(school),
     en: {
       title: 'Your relief periods are cancelled',
-      paras: [['Hello ', { b: teacherName }, `, you no longer have relief periods on ${date}.`]],
+      paras: [['Hello ', { b: teacherName }, `, you no longer have relief periods on ${dateIn('en-GB', date)}.`]],
       cta: { label: "Open today's timetable", url: todayUrl },
     },
     si: {
       title: 'ඔබගේ ආදේශක වාර අවලංගු කර ඇත',
-      paras: [`${si}, ${date} දින ඔබට තවදුරටත් ආදේශක වාර නොමැත.`],
+      paras: [`${si}, ${dateIn('si-LK', date)} දින ඔබට තවදුරටත් ආදේශක වාර නොමැත.`],
     },
     footer: footer(school),
   });

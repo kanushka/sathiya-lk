@@ -176,6 +176,15 @@ describe('relief email templates', () => {
     expect(cases.cancelled().subject).toBe('Relief cancelled today');
   });
 
+  it('formats the date instead of showing the ISO date', () => {
+    for (const make of Object.values(cases)) {
+      const { text } = make();
+      expect(text).not.toContain('2026-11-24');
+      expect(text).toContain('Tuesday');
+      expect(text).toContain('අඟහරුවාදා');
+    }
+  });
+
   it('lists every row with the covered teacher', () => {
     const { text } = cases.many();
     expect(text).toContain('P3 · 09:15–10:00: 6B · Maths (for Mr P. Bandara)');

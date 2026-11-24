@@ -118,6 +118,17 @@ describe.skipIf(day === null)('runReliefMail', () => {
     expect(await mails(to)).toHaveLength(2);
   });
 
+  it('joins combined classes with +', async () => {
+    const { admin, sid } = await publishedSeed([entry('e-ab', d, 1, [C.c6a, C.c6b], [[S.maths, T.bandara]])]);
+    const email = `kumara-${uniq()}@example.test`;
+    await adminDb.doc(`${paths.teachers(sid)}/${T.kumara}`).update({ email });
+    const { updatedAt } = await admin.call('saveReliefDay', {
+      schoolId: sid, yearId: YEAR, date: today.date, leaves: [{ teacherId: T.bandara, type: 'full', entryIds: ['e-ab'] }], reliefs: [pick('e-ab', T.kumara)], expectedUpdatedAt: null,
+    });
+    expect(await runReliefMail({ sid, yid: YEAR, date: today.date, teacherId: T.kumara, savedAt: updatedAt })).toBe('sent');
+    expect((await mails(email))[0]!.message.subject).toBe('Relief today: P1 6A+6B Maths');
+  });
+
   it('falls back to the linked member email', async () => {
     const c = await setup();
     const uid = `u-${uniq()}`;

@@ -56,7 +56,7 @@ export async function runReliefMail(args: ReliefMailArgs): Promise<'sent' | 'ski
                   period: r.period,
                   start: r.start,
                   end: r.end,
-                  className: r.classIds.map((id) => ctx.classes.find((c) => c.id === id)?.name ?? id).join(', '),
+                  className: r.classIds.map((id) => ctx.classes.find((c) => c.id === id)?.name ?? id).join('+'),
                   subject: subject?.short || subject?.nameEn || r.subjectId,
                   forTeacher: absent?.en ?? r.absentTeacherId,
                   subjectSi: subject?.nameSi || undefined,
