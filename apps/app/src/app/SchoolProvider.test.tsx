@@ -9,10 +9,12 @@ const calls = vi.hoisted(() => ({
   docs: [] as (string | null)[],
   collections: [] as (string | null)[],
   override: {} as Record<string, { loading: boolean; error?: Error }>,
+  watched: [] as (string | null)[],
 }));
 
 vi.mock('../lib/firebase', () => ({ app: {}, auth: {}, db: {}, functions: {}, storage: {} }));
 vi.mock('./AuthProvider', () => ({ useAuth: () => ({ claims: { schools: { s1: { r: 't', t: 't1' } } } }) }));
+vi.mock('./useMembershipWatch', () => ({ useMembershipWatch: (sid: string | null) => void calls.watched.push(sid) }));
 vi.mock('../lib/firestore', () => ({
   useDoc: (path: string | null) => {
     calls.docs.push(path);
@@ -77,6 +79,12 @@ describe('SchoolProvider', () => {
     calls.docs.length = 0;
     calls.collections.length = 0;
     calls.override = {};
+    calls.watched.length = 0;
+  });
+
+  it('watches the signed-in user’s membership of the open school', () => {
+    renderWith('school');
+    expect(calls.watched).toContain('s1');
   });
 
   it("with scope 'school' opens only the school doc listener", () => {

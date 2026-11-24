@@ -23,6 +23,7 @@ import { EmptyState } from '../ui/EmptyState';
 import { LoadingState } from '../ui/LoadingState';
 import { useAuth } from './AuthProvider';
 import { SuspendedSchool } from './SuspendedSchool';
+import { useMembershipWatch } from './useMembershipWatch';
 
 export type SchoolState = SchoolContext & { loading: boolean; error?: Error };
 
@@ -65,6 +66,7 @@ export function SchoolProvider({ scope = 'full', children }: SchoolProviderProps
   const school = useDoc<School>(sid ? paths.school(sid) : null);
   const suspended = school.data?.status === 'disabled' && claims.super !== true;
   const full = scope === 'full' && school.data && !suspended ? sid : null;
+  useMembershipWatch(school.data && !suspended ? sid : null);
   const teachers = useCollection<Teacher>(full ? paths.teachers(full) : null);
   const subjects = useCollection<Subject>(full ? paths.subjects(full) : null);
   const templates = useCollection<PeriodTemplate>(full ? paths.templates(full) : null);

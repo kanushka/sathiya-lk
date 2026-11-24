@@ -137,7 +137,7 @@
   },
   "unlink": {
     "title": "Unlink {{name}}?",
-    "body": "Their account loses access to this school right away. They can join again with a new link.",
+    "body": "Their account loses access to this school the next time they open the app, and within an hour at the latest. They can join again with a new link.",
     "confirm": "Unlink",
     "cancel": "Cancel",
     "selfBody": "This is your own record. You will be signed out and must sign in again; you stay an admin."
