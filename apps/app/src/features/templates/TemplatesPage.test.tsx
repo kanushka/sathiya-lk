@@ -84,7 +84,7 @@ describe('templates page', () => {
     await pickOption(user, screen.getByRole('combobox', { name: /^Type, row 1/ }), 'Activity');
     await user.type(screen.getByLabelText('Activity name in English, row 1'), 'Assembly');
     await user.click(screen.getByRole('button', { name: 'Save template' }));
-    expect(await screen.findByRole('alert')).toHaveTextContent(/2 timetable entries sit in periods/i);
+    expect(await screen.findByRole('alert')).toHaveTextContent(/2 lessons sit in periods/i);
     expect(api.saveTemplateWithRemap).toHaveBeenCalledTimes(1);
   });
 
@@ -127,7 +127,7 @@ describe('templates page', () => {
     vi.mocked(api.saveTemplateWithRemap).mockResolvedValueOnce(res()).mockRejectedValueOnce(new ApiError('template-in-use', 'x', { count: 3 }));
     await pickOption(user, screen.getByRole('combobox', { name: /^Type, row 5/ }), 'Period');
     await user.click(screen.getByRole('button', { name: 'Save template' }));
-    expect(await screen.findByRole('alert')).toHaveTextContent(/3 timetable entries sit in periods/i);
+    expect(await screen.findByRole('alert')).toHaveTextContent(/3 lessons sit in periods/i);
   });
 
   it('sets a non-default template as default', async () => {
