@@ -4,6 +4,8 @@ import { paths, type EntryDraft } from '@sathiya/core';
 import { C, defaultTemplate, entry, G, S, T, TPL } from '@sathiya/core/fixtures';
 import { FieldValue } from 'firebase-admin/firestore';
 import { describe, expect, it } from 'vitest';
+import { writeInChunks, PartialWrite } from '../src/lib/applyWrites';
+import { releaseLease } from '../src/lib/yearBusy';
 import { adminDb, adminWithSchool, expectFnError, signUp } from './helpers';
 import { draft, entriesOf, putEntries, seededSchool, YEAR } from './seed';
 
@@ -64,7 +66,7 @@ describe('applyAutoFill', () => {
       },
       (e: { details?: { conflicts?: Array<{ draftIndex: number }> } }) => e,
     );
-    expect(err.details?.conflicts?.map((c) => c.draftIndex).sort()).toEqual([0, 1]);
+    expect(err.details?.conflicts?.map((c) => c.draftIndex)).toEqual([0]);
     expect(await entriesOf(sid)).toHaveLength(1);
   });
 
@@ -130,4 +132,65 @@ describe('applyAutoFill', () => {
     expect(await entriesOf(sid)).toHaveLength(460);
     expect(await flagOf(sid)).toBeUndefined();
   });
+
+  it('does not release another apply\'s newer lease', async () => {
+    const { sid } = await seededSchool();
+    const ref = adminDb.doc(`${paths.years(sid)}/${YEAR}`) as never;
+    const mine = Date.now() + 1000;
+    const newer = Date.now() + 500_000;
+    await setBusy(sid, newer);
+    await releaseLease(ref, mine);
+    expect(await flagOf(sid)).toBe(newer);
+    await releaseLease(ref, newer);
+    expect(await flagOf(sid)).toBeUndefined();
+  });
+
+  it('refuses publishYear busy while applying', async () => {
+    const { admin, sid } = await seededSchool();
+    await setBusy(sid);
+    await expectFnError(admin.call('publishYear', { schoolId: sid, yearId: YEAR }), 'failed-precondition', 'busy');
+    expect((await yearRef(sid).get()).get('status')).toBe('draft');
+  });
+
+  it('dedupes deleteEntryIds and reports a draft-vs-draft clash once', async () => {
+    const { admin, sid } = await seededSchool();
+    await putEntries(sid, [entry('old', 0, 1, [C.c6a], [[S.maths, T.bandara]])]);
+    await expect(apply(admin, sid, [], ['old', 'old'])).resolves.toEqual({ written: 0, deleted: 1 });
+    const err = await apply(admin, sid, [draft(1, 1, [C.c6a], [[S.maths, T.bandara]]), draft(1, 1, [C.c6b], [[S.maths, T.bandara]])]).then(
+      () => {
+        throw new Error('expected clash');
+      },
+      (e: { details?: { conflicts?: unknown[] } }) => e,
+    );
+    expect(err.details?.conflicts).toEqual([{ draftIndex: 0, kind: 'teacher', id: T.bandara, entryId: 'draft-1' }]);
+  });
+
+  it('reports what was written when a chunk fails', async () => {
+    const refs = (n: number) => Array.from({ length: n }, (_, i) => adminDb.doc(`scratch/pw-${i}`));
+    let commits = 0;
+    const newBatch = () => {
+      const b = adminDb.batch();
+      const commit = b.commit.bind(b);
+      b.commit = async () => {
+        if (++commits === 2) throw new Error('boom');
+        return commit();
+      };
+      return b;
+    };
+    const err = await writeInChunks([], refs(460).map((ref) => ({ ref, data: { x: 1 } })), newBatch).catch((e: unknown) => e);
+    expect(err).toBeInstanceOf(PartialWrite);
+    expect(err).toMatchObject({ written: 450, deleted: 0 });
+    await adminDb.recursiveDelete(adminDb.collection('scratch'));
+  });
+
+  it('times a 3000-draft apply', async () => {
+    const { admin, sid } = await seededSchool();
+    const cls = (await adminDb.doc(`${paths.classes(sid)}/${C.c6a}`).get()).data()!;
+    const ids = Array.from({ length: 94 }, (_, i) => `y${i}`);
+    for (let i = 0; i < ids.length; i += 400) await Promise.all(ids.slice(i, i + 400).map((id) => adminDb.doc(`${paths.classes(sid)}/${id}`).set({ ...cls, name: id, gradeId: G.g6 })));
+    const drafts = Array.from({ length: 3000 }, (_, i) => draft(Math.floor((i % 32) / 8), 1 + (i % 8), [ids[Math.floor(i / 32)]!], [[S.maths, null]]));
+    const t0 = Date.now();
+    await expect(apply(admin, sid, drafts)).resolves.toEqual({ written: 3000, deleted: 0 });
+    console.log(`apply 3000 drafts: ${Date.now() - t0} ms`);
+  }, 120_000);
 });
