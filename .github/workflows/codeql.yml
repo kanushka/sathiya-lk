@@ -6,12 +6,18 @@ on:
   schedule:
     - cron: '41 3 * * 2'
   workflow_dispatch:
+  workflow_call:
+    inputs:
+      blocking:
+        description: Fail when CodeQL has open high or critical alerts on this ref
+        type: boolean
+        default: false
 
 permissions:
   contents: read
 
 concurrency:
-  group: codeql-${{ github.ref }}
+  group: ${{ github.workflow }}-codeql-${{ github.ref }}
   cancel-in-progress: ${{ github.event_name == 'pull_request' }}
 
 jobs:
@@ -42,3 +48,25 @@ jobs:
       - uses: github/codeql-action/analyze@1bd86f2fdb4b86187fa4059f16f31a3202acc9ea # v4.39.4
         with:
           category: /language:${{ matrix.language }}
+
+  gate:
+    if: ${{ inputs.blocking }}
+    needs: analyze
+    runs-on: ubuntu-latest
+    permissions:
+      security-events: read
+    steps:
+      - name: Fail on open high or critical CodeQL alerts
+        env:
+          GH_TOKEN: ${{ github.token }}
+          REPO: ${{ github.repository }}
+          REF: ${{ github.ref }}
+        run: |
+          alerts="$(gh api "repos/$REPO/code-scanning/alerts?tool_name=CodeQL&state=open&ref=$REF&per_page=100" --paginate \
+            --jq '.[] | select(.rule.security_severity_level == "high" or .rule.security_severity_level == "critical") | "\(.rule.security_severity_level) \(.rule.id) \(.most_recent_instance.location.path):\(.most_recent_instance.location.start_line) \(.html_url)"')"
+          if [ -n "$alerts" ]; then
+            echo "Open high or critical CodeQL alerts on $REF:" >&2
+            echo "$alerts" >&2
+            exit 1
+          fi
+          echo "No open high or critical CodeQL alerts on $REF."
