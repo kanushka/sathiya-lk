@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
 // Copyright (C) 2026 Kanushka Gayan
-import { pickName } from '@sathiya/core';
+import { padCensusNo, pickName, type MoeSchool } from '@sathiya/core';
 import { useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useNavigate } from 'react-router-dom';
@@ -14,13 +14,16 @@ import { sendAuthEmail } from '../auth/authEmail';
 import { ReportSchoolModal } from '../auth/ReportSchoolModal';
 import { StepAccount } from './StepAccount';
 import { StepBrand } from './StepBrand';
+import { CensusEntry, ConfirmSchool } from './StepCensus';
 import { StepSchool } from './StepSchool';
 import { VerifyEmailGate } from './VerifyEmailGate';
 import { accountCreateError, isUnverifiedPasswordUser, registerFailure } from './errors';
 import * as api from './api';
-import { defaultBrand, emptyAccount, emptySchool, gradeList, type AccountDraft, type BrandDraft, type SchoolDraft } from './model';
+import { censusValid, defaultBrand, emptyAccount, emptySchool, gradeList, listedDraft, type AccountDraft, type BrandDraft, type SchoolDraft } from './model';
+import { toApiError } from '../../lib/callable';
 
 type Step = 1 | 2 | 3;
+type Mode = 'entry' | 'listed' | 'registered' | 'unlisted';
 const steps = ['school', 'brand', 'account'] as const;
 
 export function RegisterPage() {
@@ -45,6 +48,66 @@ export function RegisterPage() {
   const [checking, setChecking] = useState(false);
   const needsGate = gate || (!confirmed && isUnverifiedPasswordUser(user));
   const draftVersion = useRef(0);
+  const [mode, setMode] = useState<Mode>('entry');
+  const [census, setCensus] = useState('');
+  const [moe, setMoe] = useState<MoeSchool | null>(null);
+  const [looking, setLooking] = useState(false);
+  const [lookupError, setLookupError] = useState<string | null>(null);
+  const [notListedCensus, setNotListedCensus] = useState('');
+  const lookupVersion = useRef(0);
+
+  function showListed(found: MoeSchool) {
+    draftVersion.current++;
+    setMoe(found);
+    setSchool((prev) => listedDraft(found, prev));
+    setCensusTaken(null);
+    setMode('listed');
+  }
+
+  function toEntry() {
+    lookupVersion.current++;
+    setLooking(false);
+    setLookupError(null);
+    setCensusTaken(null);
+    setMode('entry');
+  }
+
+  function toUnlisted(censusNo: string) {
+    draftVersion.current++;
+    setCensusTaken(null);
+    setNotListedCensus(censusNo);
+    setMoe(null);
+    setSchool((prev) => ({
+      ...(moe ? emptySchool : prev),
+      censusNo,
+      noCensus: false,
+      ...(censusNo ? { type: 'government' as const } : {}),
+    }));
+    setMode('unlisted');
+  }
+
+  async function find() {
+    const c = census.trim();
+    if (c === '') return setLookupError(t('census.empty'));
+    if (!censusValid(c)) return setLookupError(t('school.censusError'));
+    const version = ++lookupVersion.current;
+    setLookupError(null);
+    setLooking(true);
+    try {
+      const res = await api.lookupCensus(padCensusNo(c));
+      if (version !== lookupVersion.current) return;
+      if (res.status === 'listed') showListed(res.school);
+      else if (res.status === 'registered') {
+        setCensusTaken({});
+        setMode('registered');
+      } else toUnlisted(padCensusNo(c));
+    } catch (err) {
+      if (version !== lookupVersion.current) return;
+      setLookupError(t(toApiError(err).code === 'rate-limited' ? 'errors.rateLimited' : 'census.lookupFailed'));
+    } finally {
+      if (version === lookupVersion.current) setLooking(false);
+    }
+  }
 
   function editSchool(next: SchoolDraft) {
     draftVersion.current++;
@@ -55,22 +118,23 @@ export function RegisterPage() {
 
   async function nextFromSchool() {
     const census = school.type !== 'government' && school.noCensus ? '' : school.censusNo;
-    if (census === '') {
+    if (census === '' || census === notListedCensus) {
       setStep(2);
       return;
     }
     setChecking(true);
     const version = draftVersion.current;
-    let available = true;
+    let found: Awaited<ReturnType<typeof api.lookupCensus>> = { status: 'unlisted' };
     try {
-      available = await api.censusAvailable(census);
+      found = await api.lookupCensus(padCensusNo(census));
     } catch {
-      available = true;
+      found = { status: 'unlisted' };
     }
     if (version !== draftVersion.current) return;
     setChecking(false);
-    if (available) setStep(2);
-    else setCensusTaken({});
+    if (found.status === 'registered') setCensusTaken({});
+    else if (found.status === 'listed') showListed(found.school);
+    else setStep(2);
   }
 
   async function submit() {
@@ -103,10 +167,11 @@ export function RegisterPage() {
           nameEn: school.nameEn.trim(),
           ...(school.nameSi.trim() ? { nameSi: school.nameSi.trim() } : {}),
           district: school.district.trim(),
-          city: school.city.trim(),
+          city: school.city.trim() || school.district.trim(),
           ...(school.address.trim() ? { address: school.address.trim() } : {}),
           ...(school.phone.trim() ? { phone: school.phone.trim() } : {}),
           grades: gradeList(school),
+          ...(school.medium.length ? { medium: school.medium } : {}),
           staffPrefix: school.staffPrefix,
           colors: { primary: brand.primary.toUpperCase(), second: brand.second.toUpperCase() },
           termsVersion,
@@ -118,10 +183,17 @@ export function RegisterPage() {
       const failure = registerFailure(err);
       if (failure?.code === 'school-registered') {
         setCensusTaken(failure.schoolId ? { schoolId: failure.schoolId } : {});
+        if (mode === 'listed') {
+          setCensus(school.censusNo);
+          setMode('registered');
+        }
         setStep(1);
       } else if (failure?.code === 'email-unverified') {
         setConfirmed(false);
         setGate(true);
+      } else if (failure?.code === 'terms-outdated') {
+        setAccount((a) => ({ ...a, terms: false }));
+        setError({ field: null, message: t('errors.termsOutdated') });
       } else if (failure) {
         setError({ field: null, message: t(`errors.${failure.code === 'rate-limited' ? 'rateLimited' : 'tooManySchools'}`) });
       } else {
@@ -179,7 +251,29 @@ export function RegisterPage() {
             }}
           />
         )}
-        {!needsGate && step === 1 && (
+        {!needsGate && step === 1 && (mode === 'entry' || mode === 'registered') && (
+          <CensusEntry
+            census={census}
+            onCensus={(v) => {
+              lookupVersion.current++;
+              setLooking(false);
+              setLookupError(null);
+              setCensus(v);
+              if (mode === 'registered') toEntry();
+            }}
+            onFind={() => void find()}
+            onNotListed={() => toUnlisted('')}
+            looking={looking}
+            error={lookupError}
+            taken={mode === 'registered'}
+            onReport={() => setReporting(true)}
+            onTryAnother={toEntry}
+          />
+        )}
+        {!needsGate && step === 1 && mode === 'listed' && moe && (
+          <ConfirmSchool moe={moe} value={school} onChange={editSchool} onNotMine={toEntry} onNext={() => setStep(2)} />
+        )}
+        {!needsGate && step === 1 && mode === 'unlisted' && (
           <StepSchool
             value={school}
             onChange={editSchool}
@@ -187,6 +281,8 @@ export function RegisterPage() {
             checking={checking}
             censusTaken={!!censusTaken}
             onReport={() => setReporting(true)}
+            onBack={toEntry}
+            notListedCensus={notListedCensus}
           />
         )}
         {!needsGate && step === 2 && (

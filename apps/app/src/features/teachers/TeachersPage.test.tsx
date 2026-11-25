@@ -660,3 +660,19 @@ describe('teacher accounts', () => {
     }
   });
 });
+
+describe('teacher name order by school medium', () => {
+  const nameInputs = (dialog: HTMLElement) => within(dialog).getAllByRole('textbox').filter((el) => el.getAttribute('lang')).map((el) => el.getAttribute('lang'));
+
+  it('asks for the Sinhala name first when the school teaches in Sinhala', async () => {
+    const user = userEvent.setup();
+    renderWithSchool(<TeachersPage />, { ctx: { ...ctx, school: { ...ctx.school, medium: ['si', 'en'] } }, entries });
+    expect(nameInputs(await openAdd(user))).toEqual(['si', 'en']);
+  });
+
+  it.each([['English', ['en']], ['legacy (no medium)', undefined]] as const)('keeps English first for %s', async (_, medium) => {
+    const user = userEvent.setup();
+    renderWithSchool(<TeachersPage />, { ctx: { ...ctx, school: { ...ctx.school, medium: medium && [...medium] } }, entries });
+    expect(nameInputs(await openAdd(user))).toEqual(['en', 'si']);
+  });
+});

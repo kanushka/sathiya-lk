@@ -23,10 +23,11 @@ export interface NameFieldsProps {
   siPlaceholder?: string;
   hint?: ReactNode;
   disabled?: boolean;
+  siFirst?: boolean;
   className?: string;
 }
 
-export function NameFields({ legend, enLabel, siLabel, en, si, onEn, onSi, missing, enError, siError, enPlaceholder, siPlaceholder, hint, disabled, className }: NameFieldsProps) {
+export function NameFields({ legend, enLabel, siLabel, en, si, onEn, onSi, missing, enError, siError, enPlaceholder, siPlaceholder, hint, disabled, siFirst, className }: NameFieldsProps) {
   const { t } = useTranslation('common');
   const id = useId();
   const noteId = `${id}-note`;
@@ -65,8 +66,9 @@ export function NameFields({ legend, enLabel, siLabel, en, si, onEn, onSi, missi
         <span className="ml-1.5 font-normal text-ink-muted">— {t('names.either')}</span>
       </legend>
       <div className="grid gap-3 sm:grid-cols-2">
+        {siFirst && input('si', si, onSi, siError, siErrId, siPlaceholder)}
         {input('en', en, onEn, enError, enErrId, enPlaceholder)}
-        {input('si', si, onSi, siError, siErrId, siPlaceholder)}
+        {!siFirst && input('si', si, onSi, siError, siErrId, siPlaceholder)}
       </div>
       {missing ? (
         <p id={noteId} role="alert" className="text-xs font-medium text-danger">
