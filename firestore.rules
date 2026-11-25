@@ -8,7 +8,11 @@ service cloud.firestore {
     function claim(k) { return request.auth.token.get(k, null); }
     function isSuper() { return signedIn() && claim('super') == true; }
     function membership(sid) { return claim('schools').get(sid, {}); }
-    function isAdmin(sid) { return signedIn() && claim('schools') != null && membership(sid).get('r', null) == 'a'; }
+    // The claim can outlive a removal by up to an hour, so an admin also needs the member doc.
+    function isAdmin(sid) {
+      return signedIn() && claim('schools') != null && membership(sid).get('r', null) == 'a'
+        && get(/databases/$(database)/documents/schools/$(sid)/members/$(request.auth.uid)).data.get('role', null) == 'admin';
+    }
     function isTeacher(sid) {
       return signedIn() && claim('schools') != null
         && (membership(sid).get('r', null) == 't'

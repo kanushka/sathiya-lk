@@ -44,6 +44,9 @@ const seed: Record<string, Record<string, unknown>> = {
   [`${paths.classes('s1')}/c1`]: { gradeId: 'g1', name: '6A', templateId: 'p1' },
   [`${paths.subjects('s2')}/sub9`]: { nameEn: 'Art', short: 'ART', color: '#000000' },
   [`${paths.members('s1')}/u-admin`]: { uid: 'u-admin', role: 'admin', email: 'a@x.lk' },
+  [`${paths.members('s1')}/u-admin-t`]: { uid: 'u-admin-t', role: 'admin', teacherId: 't2' },
+  [`${paths.members('s1')}/u-mixed`]: { uid: 'u-mixed', role: 'admin' },
+  [`${paths.members('s2')}/u-other`]: { uid: 'u-other', role: 'admin' },
   [`${paths.members('s1')}/u-teacher`]: { uid: 'u-teacher', role: 'teacher', teacherId: 't1' },
   [`${paths.invites('s1')}/b@x.lk`]: { email: 'b@x.lk', invitedBy: 'u-admin', createdAt: 1 },
   [`${paths.years('s1')}/y1`]: { label: '2026', status: 'published', publishedAt: 1 },
@@ -111,6 +114,21 @@ const deny = (cases: Case[], fn: (r: Role, p: string) => Promise<unknown>) =>
   it.each(cases)('denies %s on %s', async (r, p) => {
     await assertFails(fn(r, p));
   });
+
+describe('admin claim without an admin member doc', () => {
+  const member = `${paths.members('s1')}/u-admin`;
+  it.each([
+    ['deleted', undefined],
+    ['downgraded to teacher', 'teacher'],
+  ])('denies reads and writes once the member doc is %s', async (_, role) => {
+    await assertSucceeds(read('admin', paths.school('s1')));
+    await env.withSecurityRulesDisabled((ctx) => (role ? ctx.firestore().doc(member).update({ role }) : ctx.firestore().doc(member).delete()));
+    await assertFails(read('admin', paths.school('s1')));
+    await assertFails(list('admin', paths.teachers('s1')));
+    await assertFails(list('admin', paths.invites('s1')));
+    await assertFails(update('admin', paths.school('s1'), { city: 'Kandy' }));
+  });
+});
 
 describe('schoolDirectory', () => {
   const p = paths.directory('s1');

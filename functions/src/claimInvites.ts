@@ -1,8 +1,8 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
 // Copyright (C) 2026 Kanushka Gayan
-import { ADMIN_INVITE_TTL_MS, paths, type ClaimInvitesRes, type Member, type School } from '@sathiya/core';
+import { ADMIN_INVITE_TTL_MS, paths, type ClaimInvitesRes, type School } from '@sathiya/core';
 import { onCall } from 'firebase-functions/v2/https';
-import type { DocumentReference } from 'firebase-admin/firestore';
+import type { DocumentReference, DocumentSnapshot, QueryDocumentSnapshot } from 'firebase-admin/firestore';
 import { db } from './lib/admin';
 import { callOpts } from './lib/callOptions';
 import { hasSchoolRoom, syncClaims } from './lib/claims';
@@ -12,24 +12,34 @@ import { isVerified, notAllowed, requireAuth } from './lib/guards';
 
 const INVITES = paths.invites('_').split('/').pop()!;
 
-interface Invite {
-  email: string;
-  teacherId?: string;
-  createdAt?: number;
-}
+const live = (invite: DocumentSnapshot, cutoff: number): boolean => {
+  const createdAt = invite.get('createdAt') as unknown;
+  return typeof createdAt === 'number' && createdAt >= cutoff;
+};
 
+// The invite is re-read in the granting transaction, so one cancelled or expired after the query grants nothing.
 // A teacher that is already linked, or gone, still lets the invitee become admin, just without the teacher link.
-async function tryLink(sid: string, teacherId: string, uid: string, email: string, name: string): Promise<boolean> {
-  const teacher = await db.doc(`${paths.teachers(sid)}/${teacherId}`).get();
-  if (teacher.get('uid') === uid) return false;
-  try {
-    await runTx((tx) => linkTeacher(tx, sid, teacherId, uid, { role: 'admin', email, ...(name && { name }) }));
-    return true;
-  } catch (e) {
-    const err = e as { code?: string; details?: { code?: string } };
-    if (err.details?.code === 'already-linked' || err.code === 'not-found') return false;
-    throw e;
+async function grant(invite: DocumentSnapshot, cutoff: number, sid: string, uid: string, email: string, name: string): Promise<boolean> {
+  const teacherId = invite.get('teacherId') as string | undefined;
+  if (teacherId && (await db.doc(`${paths.teachers(sid)}/${teacherId}`).get()).get('uid') !== uid) {
+    try {
+      return await runTx(async (tx) => {
+        if (!live(await tx.get(invite.ref), cutoff)) return false;
+        await linkTeacher(tx, sid, teacherId, uid, { role: 'admin', email, ...(name && { name }) });
+        return true;
+      });
+    } catch (e) {
+      const err = e as { code?: string; details?: { code?: string } };
+      if (err.details?.code !== 'already-linked' && err.code !== 'not-found') throw e;
+    }
   }
+  const memberRef = db.doc(`${paths.members(sid)}/${uid}`);
+  return runTx(async (tx) => {
+    const [inv, member] = await Promise.all([tx.get(invite.ref), tx.get(memberRef)]);
+    if (!live(inv, cutoff)) return false;
+    tx.set(memberRef, { uid, role: 'admin', email, ...(name && !member.get('name') ? { name } : {}) }, { merge: true });
+    return true;
+  });
 }
 
 export const claimInvites = onCall(callOpts, async (req): Promise<ClaimInvitesRes> => {
@@ -41,29 +51,25 @@ export const claimInvites = onCall(callOpts, async (req): Promise<ClaimInvitesRe
   // Members are written before claims are synced, and invites are consumed only after, so a failure leaves them for a retry.
   const invites = await db.collectionGroup(INVITES).where('email', '==', email).get();
   const claimed: { sid: string; ref: DocumentReference }[] = [];
-  const expired: DocumentReference[] = [];
+  const expired: QueryDocumentSnapshot[] = [];
   const cutoff = Date.now() - ADMIN_INVITE_TTL_MS;
   for (const doc of invites.docs) {
-    const createdAt = (doc.data() as Invite).createdAt;
-    if (typeof createdAt !== 'number' || createdAt < cutoff) {
-      expired.push(doc.ref);
+    if (!live(doc, cutoff)) {
+      expired.push(doc);
       continue;
     }
     const sid = doc.ref.parent.parent!.id;
-    const memberRef = db.doc(`${paths.members(sid)}/${uid}`);
-    const [school, member] = await Promise.all([db.doc(paths.school(sid)).get(), memberRef.get()]);
+    const school = await db.doc(paths.school(sid)).get();
     if ((school.data() as School | undefined)?.status !== 'active') continue;
     if (!(await hasSchoolRoom(uid, sid))) continue;
-    const existing = member.data() as Member | undefined;
-    const teacherId = (doc.data() as Invite).teacherId;
-    const linked = teacherId ? await tryLink(sid, teacherId, uid, email, name) : false;
-    if (!linked) {
-      await memberRef.set({ uid, role: 'admin', email, ...(name && !existing?.name ? { name } : {}) }, { merge: true });
-    }
-    claimed.push({ sid, ref: doc.ref });
+    if (await grant(doc, cutoff, sid, uid, email, name)) claimed.push({ sid, ref: doc.ref });
   }
   // Runs on every sign-in, so it also repairs claims a failed sync elsewhere (e.g. registerSchool) left behind.
   await syncClaims(uid);
-  await Promise.all([...claimed.map((c) => c.ref), ...expired].map((ref) => ref.delete()));
+  await Promise.all([
+    ...claimed.map((c) => c.ref.delete()),
+    // The precondition keeps an invite that was reissued under the same email after the query.
+    ...expired.map((d) => d.ref.delete({ lastUpdateTime: d.updateTime }).catch(() => undefined)),
+  ]);
   return { schoolIds: claimed.map((c) => c.sid) };
 });

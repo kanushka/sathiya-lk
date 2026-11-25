@@ -75,6 +75,18 @@ describe('removeAdmin', () => {
     await expectFnError(b.call('inviteAdmin', { schoolId: sid, email: `x-${uniq()}@example.com` }), 'permission-denied', 'not-allowed');
   });
 
+  it('drops a pending invite for the removed admin so it cannot restore the role', async () => {
+    const { admin, sid } = await adminWithSchool();
+    const b = await secondAdmin(admin, sid);
+    const email = (await adminAuth.getUser(b.uid)).email!;
+    await admin.call('inviteAdmin', { schoolId: sid, email });
+    await admin.call('removeAdmin', { schoolId: sid, uid: b.uid });
+    expect((await inviteDoc(sid, email).get()).exists).toBe(false);
+    const again = await signInGoogle(email);
+    await expect(again.call('claimInvites', {})).resolves.toEqual({ schoolIds: [] });
+    expect(await memberDoc(sid, b.uid)).toBeUndefined();
+  });
+
   it('lets an admin remove themselves while another admin remains', async () => {
     const { admin, sid } = await adminWithSchool();
     const b = await secondAdmin(admin, sid);
