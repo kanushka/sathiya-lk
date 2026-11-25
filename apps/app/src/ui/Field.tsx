@@ -20,7 +20,7 @@ const fieldChromeClass =
 export const fieldBaseClass = `w-full px-3 ${fieldChromeClass}`;
 
 export const fieldFocusClass =
-  'focus:border-brand focus:outline-none focus:ring-[3px] focus:ring-brand/30 aria-[invalid=true]:focus:ring-danger/20';
+  'focus:border-brand focus:outline-hidden focus:ring-[3px] focus:ring-brand/30 aria-[invalid=true]:focus:ring-danger/20';
 
 export const fieldBoxClass =
   'w-full rounded-lg border border-line-strong bg-white text-sm text-ink hover:border-line-hover data-[disabled=true]:cursor-not-allowed data-[disabled=true]:border-line data-[disabled=true]:bg-surface-2 data-[disabled=true]:text-ink-muted data-[disabled=true]:hover:border-line data-[invalid=true]:border-danger';

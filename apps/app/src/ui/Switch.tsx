@@ -40,7 +40,7 @@ export function Switch({ checked, onChange, label, disabled, id, className }: Sw
       >
         <span
           className={cx(
-            'absolute left-0.5 top-0.5 h-4 w-4 rounded-full bg-white shadow-sm transition-transform',
+            'absolute left-0.5 top-0.5 h-4 w-4 rounded-full bg-white shadow-xs transition-transform',
             checked && 'translate-x-4',
           )}
         />

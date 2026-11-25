@@ -136,7 +136,7 @@ export function pinOverlayCell(a: PinOverlayInput): GridOverlay | null {
 function Swatch({ className, children }: { className: string; children: string }) {
   return (
     <span className="inline-flex items-center gap-1.5 text-xs text-ink-soft">
-      <i aria-hidden="true" className={cx('inline-block h-3.5 w-3.5 rounded', className)} />
+      <i aria-hidden="true" className={cx('inline-block h-3.5 w-3.5 rounded-sm', className)} />
       {children}
     </span>
   );

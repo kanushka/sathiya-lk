@@ -145,7 +145,7 @@ function SlotPickerBody({ onClose, classId, day, period, entries, editing, onSav
           type="button"
           disabled={busy !== null || isCurrent(o.teacher.id)}
           onClick={() => assign(o.teacher.id)}
-          className="flex w-full items-center gap-2.5 rounded-lg border border-warning-line bg-warning-soft/50 px-3 py-2 text-left hover:bg-warning-soft focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand focus-visible:ring-offset-2 disabled:opacity-60"
+          className="flex w-full items-center gap-2.5 rounded-lg border border-warning-line bg-warning-soft/50 px-3 py-2 text-left hover:bg-warning-soft focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-brand focus-visible:ring-offset-2 disabled:opacity-60"
         >
           <span className="flex-1 text-[13px] font-semibold text-ink">{teacherDisplayName(o.teacher, lang)}</span>
           {isPreferred(o) && preferredTag}
@@ -240,7 +240,7 @@ function SlotPickerBody({ onClose, classId, day, period, entries, editing, onSav
                   type="button"
                   disabled={busy !== null || isCurrent(o.teacher.id)}
                   onClick={() => assign(o.teacher.id)}
-                  className="flex w-full items-center gap-2.5 rounded-lg border border-success-line bg-success-soft/50 px-3 py-2.5 text-left hover:bg-success-soft focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand focus-visible:ring-offset-2 disabled:opacity-60"
+                  className="flex w-full items-center gap-2.5 rounded-lg border border-success-line bg-success-soft/50 px-3 py-2.5 text-left hover:bg-success-soft focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-brand focus-visible:ring-offset-2 disabled:opacity-60"
                 >
                   <span aria-hidden="true" className="flex h-[30px] w-[30px] shrink-0 items-center justify-center rounded-full bg-success-soft text-xs font-extrabold text-success">
                     {initials(o.teacher.name)}
