@@ -108,6 +108,17 @@ describe('SchoolDetail review', () => {
     await user.click(screen.getByRole('button', { name: 'Approve school' }));
     expect(review).toHaveBeenCalledWith({ schoolId: 'p', approve: true });
     expect(await screen.findByText('Siripura Central College approved. The school admin was emailed.')).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'Approve school' })).toBeDisabled();
+    expect(screen.getByRole('button', { name: 'Reject…' })).toBeDisabled();
+    expect(review).toHaveBeenCalledTimes(1);
+  });
+
+  it('allows another try after a failed approve', async () => {
+    const review = vi.fn().mockRejectedValue(new Error('x'));
+    const { user } = renderDetail(pending, review);
+    await user.click(screen.getByRole('button', { name: 'Approve school' }));
+    expect(await screen.findByText(/Could not save the review/)).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'Approve school' })).toBeEnabled();
   });
 
   it('requires a reason to reject', async () => {
@@ -127,6 +138,8 @@ describe('SchoolDetail review', () => {
     expect(review).toHaveBeenCalledWith({ schoolId: 'p', approve: false, reason: 'Could not confirm' });
     await waitFor(() => expect(screen.queryByRole('dialog')).not.toBeInTheDocument());
     expect(screen.getByText('Registration rejected. Email sent with your reason.')).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'Approve school' })).toBeDisabled();
+    expect(screen.getByRole('button', { name: 'Reject…' })).toBeDisabled();
   });
 
   it('keeps the reject dialog open when the call fails', async () => {

@@ -23,6 +23,7 @@ import { EmptyState } from '../ui/EmptyState';
 import { LoadingState } from '../ui/LoadingState';
 import { useAuth } from './AuthProvider';
 import { NotApprovedPage } from './NotApprovedPage';
+import { isSchoolRemoved } from './schoolHome';
 import { SuspendedSchool } from './SuspendedSchool';
 import { useMembershipWatch } from './useMembershipWatch';
 
@@ -129,6 +130,7 @@ export function SchoolProvider({ scope = 'full', children }: SchoolProviderProps
   if (suspended && sid) return <SuspendedSchool sid={sid} school={school.data!} />;
   if (rejected && sid) return <NotApprovedPage sid={sid} school={school.data!} />;
   if (!schoolValue) {
+    if (sid && isSchoolRemoved(sid)) return <LoadingState />;
     return <EmptyState icon="profile" title={t('school.missingTitle')} body={t('school.missingBody')} />;
   }
   return (

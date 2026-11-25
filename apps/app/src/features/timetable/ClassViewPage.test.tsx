@@ -608,5 +608,6 @@ describe('class view while the school is pending review', () => {
     const autoFill = screen.getByRole('button', { name: 'Auto-fill' });
     expect(autoFill).toBeDisabled();
     expect(autoFill).toHaveAccessibleDescription('Available after Sathiya approves your school.');
+    expect(screen.getByText('Available after Sathiya approves your school.')).not.toHaveClass('sr-only');
   });
 });

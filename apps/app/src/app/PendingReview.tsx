@@ -48,14 +48,12 @@ export function LockedButton({ children }: { children: ReactNode }) {
   const { t } = useTranslation('shell');
   const id = useId();
   return (
-    <>
+    <span className="inline-flex flex-wrap items-center gap-x-2.5 gap-y-1">
       <Button disabled title={t('review.locked')} aria-describedby={id}>
         <Icon name="lock" size={14} strokeWidth={2} />
         {children}
       </Button>
-      <span id={id} className="sr-only">
-        {t('review.locked')}
-      </span>
-    </>
+      <PendingNote id={id} />
+    </span>
   );
 }

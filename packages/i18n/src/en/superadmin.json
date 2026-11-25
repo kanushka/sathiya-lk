@@ -24,7 +24,6 @@
     "censusShort": "No. {{no}}",
     "statusLabel": "Status",
     "districtLabel": "District",
-    "allStatuses": "All statuses",
     "allDistricts": "All districts",
     "columns": {
       "school": "School",

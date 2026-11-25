@@ -115,6 +115,7 @@
     "confirmBody": "This deletes the school with its teachers, subjects, classes and the draft timetable. It cannot be undone.",
     "confirm": "Remove registration",
     "removed": "Registration removed",
-    "failed": "Could not remove the registration. Try again."
+    "failed": "Could not remove the registration. Try again.",
+    "teacherBody": "This school isn't active on Sathiya yet. Ask your school admin."
   }
 }

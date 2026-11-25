@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
 // Copyright (C) 2026 Kanushka Gayan
 import { pickName, type Member, type School } from '@sathiya/core';
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Link } from 'react-router-dom';
 import { useLang } from '../../app/LangProvider';
@@ -111,6 +111,8 @@ export function ReviewSection({ school, schools, members, review }: ReviewSectio
   const toast = useToast();
   const [approving, setApproving] = useState(false);
   const [rejecting, setRejecting] = useState(false);
+  const [done, setDone] = useState(false);
+  useEffect(() => setDone(false), [school.status]);
   const name = pickName(school, lang);
   const pending = school.status === 'pending';
   const registrant = members.data.find((m) => m.role === 'admin');
@@ -121,6 +123,7 @@ export function ReviewSection({ school, schools, members, review }: ReviewSectio
     setApproving(true);
     try {
       await review({ schoolId: school.id, approve: true });
+      setDone(true);
       toast.show(t('review.toastApproved', { name }), 'success');
     } catch (err) {
       toast.show(t('review.failed', { message: errorMessage(t, err) }), 'error');
@@ -132,6 +135,7 @@ export function ReviewSection({ school, schools, members, review }: ReviewSectio
   async function reject(reason: string): Promise<boolean> {
     try {
       await review({ schoolId: school.id, approve: false, reason });
+      setDone(true);
       toast.show(t('review.toastRejected'), 'success');
       setRejecting(false);
       return true;
@@ -152,10 +156,10 @@ export function ReviewSection({ school, schools, members, review }: ReviewSectio
         </div>
         {pending ? (
           <div className="flex flex-wrap gap-2.5">
-            <Button variant="danger" disabled={approving} onClick={() => setRejecting(true)}>
+            <Button variant="danger" disabled={approving || done} onClick={() => setRejecting(true)}>
               {t('review.reject')}
             </Button>
-            <Button variant="primary" loading={approving} onClick={() => void approve()}>
+            <Button variant="primary" loading={approving} disabled={done} onClick={() => void approve()}>
               {t('review.approve')}
             </Button>
           </div>

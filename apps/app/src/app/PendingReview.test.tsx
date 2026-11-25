@@ -30,11 +30,14 @@ describe('PendingBanner', () => {
 });
 
 describe('LockedButton', () => {
-  it('is disabled and described by the approval note', () => {
+  it('is disabled and described by a visible approval note', () => {
     renderWithSchool(<LockedButton>Auto-fill</LockedButton>, { ctx });
     const button = screen.getByRole('button', { name: 'Auto-fill' });
     expect(button).toBeDisabled();
     expect(button).toHaveAccessibleDescription('Available after Sathiya approves your school.');
+    const note = screen.getByText('Available after Sathiya approves your school.');
+    expect(note).toBeVisible();
+    expect(note).not.toHaveClass('sr-only');
   });
 });
 
