@@ -17,6 +17,7 @@ import { testI18n } from './render';
 export interface RenderWithSchoolOptions {
   ctx: SchoolContext;
   loading?: boolean;
+  error?: Error;
   entries?: Entry[];
   years?: Year[];
   yearId?: string;
@@ -35,6 +36,7 @@ function Providers({ options, children }: { options: RenderWithSchoolOptions; ch
   const [fixed] = useState(() => ({
     ctx: options.ctx,
     loading: options.loading ?? false,
+    error: options.error,
     entries: options.entries ?? [],
     years: options.years ?? [testYear],
     claims: options.claims ?? { schools: { [options.ctx.school.id]: { r: 'a' as const } } },
@@ -42,7 +44,7 @@ function Providers({ options, children }: { options: RenderWithSchoolOptions; ch
     user: { uid: 'test-user', ...options.user } as User,
     signOut: options.signOut ?? (async () => undefined),
   }));
-  const { ctx, loading, entries, years, claims, lang, user, signOut } = fixed;
+  const { ctx, loading, error, entries, years, claims, lang, user, signOut } = fixed;
   const [yearId, setYearId] = useState(options.yearId ?? years[0]?.id ?? '');
   const [i18n] = useState(() => (lang === 'en' ? testI18n : createI18n(lang)));
 
@@ -50,7 +52,7 @@ function Providers({ options, children }: { options: RenderWithSchoolOptions; ch
     () => ({ user, claims, loading: false, refreshClaims: async () => claims, signOut }),
     [user, claims, signOut],
   );
-  const school = useMemo<SchoolState>(() => ({ ...ctx, loading }), [ctx, loading]);
+  const school = useMemo<SchoolState>(() => ({ ...ctx, loading, ...(error && { error }) }), [ctx, loading, error]);
   const year = useMemo<YearState>(() => ({ years, yearId, setYearId, entries, loading: false }), [years, yearId, entries]);
   const langState = useMemo(() => ({ lang, setLang: () => undefined }), [lang]);
 

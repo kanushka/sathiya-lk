@@ -48,6 +48,12 @@ describe('teachers page from an empty-state link', () => {
     expect(screen.getByRole('button', { name: '+ Add teacher' })).toBeDisabled();
     expect(screen.getByRole('button', { name: 'Import' })).toBeDisabled();
   });
+
+  it('disables Add teacher and Import when the teachers fail to load', () => {
+    renderWithSchool(<TeachersPage />, { ctx: { ...ctx, teachers: [] }, entries, error: new Error('denied') });
+    for (const add of screen.getAllByRole('button', { name: '+ Add teacher' })) expect(add).toBeDisabled();
+    expect(screen.getByRole('button', { name: 'Import' })).toBeDisabled();
+  });
 });
 
 async function openAdd(user: ReturnType<typeof userEvent.setup>) {
