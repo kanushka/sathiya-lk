@@ -7,6 +7,7 @@ import { describe, expect, it, vi } from 'vitest';
 
 vi.mock('../lib/firebase', () => ({ app: {}, auth: {}, db: {}, functions: {}, storage: {} }));
 vi.mock('../features/superadmin/AnnouncementBanner', () => ({ AnnouncementBanner: () => <div data-testid="banner" /> }));
+vi.mock('../app/PendingReview', () => ({ PendingBanner: () => <div data-testid="pending-banner" /> }));
 vi.mock('./Sidebar', () => ({ Sidebar: () => <nav data-testid="sidebar" /> }));
 vi.mock('./PhoneTopBar', () => ({ PhoneTopBar: () => <header data-testid="phone-top-bar" /> }));
 vi.mock('../app/SchoolProvider', () => ({
@@ -72,5 +73,19 @@ describe('announcement banner', () => {
   it('is skipped in the read-only super view', () => {
     renderLayout(true);
     expect(screen.queryByTestId('banner')).not.toBeInTheDocument();
+  });
+});
+
+describe('pending review banner', () => {
+  it('is part of the admin shell above the phone top bar', () => {
+    renderLayout();
+    const banner = screen.getByTestId('pending-banner');
+    expect(banner.compareDocumentPosition(screen.getByTestId('phone-top-bar')) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
+    expect(banner.compareDocumentPosition(screen.getByTestId('sidebar')) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
+  });
+
+  it('is skipped in the read-only super view', () => {
+    renderLayout(true);
+    expect(screen.queryByTestId('pending-banner')).not.toBeInTheDocument();
   });
 });

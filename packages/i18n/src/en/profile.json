@@ -19,7 +19,9 @@
     "city": "City",
     "cityError": "City is required",
     "address": "Address (optional)",
-    "phone": "Phone (optional)"
+    "phone": "Phone (optional)",
+    "censusNo": "Census number",
+    "locked": "Locked after registration. Contact Sathiya to change it."
   },
   "contrast": {
     "low": "This primary colour is too light for white text (contrast {{ratio}}:1, needs 4.5:1). Buttons and headers may be hard to read. Pick a darker colour."

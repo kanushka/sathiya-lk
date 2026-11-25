@@ -593,3 +593,20 @@ describe('ClassViewPage outside the period template', () => {
     expect(screen.queryByRole('region', { name: 'Outside the period template' })).not.toBeInTheDocument();
   });
 });
+
+describe('class view while the school is pending review', () => {
+  it('hides print and locks auto-fill', () => {
+    renderWithSchool(
+      <TimetableApiContext.Provider value={makeApi()}>
+        <Routes>
+          <Route path="/s/siripura/admin/timetable/class/:classId" element={<ClassViewPage />} />
+        </Routes>
+      </TimetableApiContext.Provider>,
+      { ctx: { ...ctx, school: { ...ctx.school, status: 'pending' } }, entries: entries6B, route: `/s/siripura/admin/timetable/class/${C.c6b}` },
+    );
+    expect(screen.queryByRole('button', { name: 'Print' })).not.toBeInTheDocument();
+    const autoFill = screen.getByRole('button', { name: 'Auto-fill' });
+    expect(autoFill).toBeDisabled();
+    expect(autoFill).toHaveAccessibleDescription('Available after Sathiya approves your school.');
+  });
+});

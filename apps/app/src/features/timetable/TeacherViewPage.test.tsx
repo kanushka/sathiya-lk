@@ -419,3 +419,14 @@ describe('TeacherViewPage', () => {
     });
   });
 });
+
+describe('teacher view while the school is pending review', () => {
+  it('hides print and locks auto-fill', () => {
+    setup(T.ananda, { ctx: { ...ctx, school: { ...ctx.school, status: 'pending' } } });
+    expect(screen.queryByRole('button', { name: 'Print' })).not.toBeInTheDocument();
+    expect(screen.queryByRole('link', { name: 'Auto-fill' })).not.toBeInTheDocument();
+    const autoFill = screen.getByRole('button', { name: 'Auto-fill' });
+    expect(autoFill).toBeDisabled();
+    expect(autoFill).toHaveAccessibleDescription('Available after Sathiya approves your school.');
+  });
+});

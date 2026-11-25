@@ -88,5 +88,33 @@
       "admin": "Admin",
       "teacher": "Teacher"
     }
+  },
+  "review": {
+    "badge": "Under review",
+    "bannerTitle": "Your school is under review.",
+    "bannerBody": "Some features are not available until Sathiya approves it.",
+    "locked": "Available after Sathiya approves your school.",
+    "afterApproval": "After approval",
+    "teachersCantJoin": "Available after Sathiya approves your school. Teachers can't join yet.",
+    "personalLinks": "Personal links are available after Sathiya approves your school."
+  },
+  "notApproved": {
+    "badge": "Not approved",
+    "title": "{{name}} was not approved",
+    "body": "Sathiya reviewed your registration and could not approve it. Your school can't be used until this is sorted out.",
+    "bodyDate": "Sathiya reviewed your registration on {{date}} and could not approve it. Your school can't be used until this is sorted out.",
+    "reason": "Reason from Sathiya",
+    "next": "What you can do",
+    "contactTitle": "Contact Sathiya",
+    "contactBody": "Send what the reason asks for, or tell us why you think this is a mistake. We'll review it again.",
+    "contactButton": "Email {{email}}",
+    "removeTitle": "Remove this registration",
+    "removeBody": "Deletes the school and everything set up in it, so the school can be registered again.",
+    "removeButton": "Remove registration…",
+    "confirmTitle": "Remove {{name}}?",
+    "confirmBody": "This deletes the school with its teachers, subjects, classes and the draft timetable. It cannot be undone.",
+    "confirm": "Remove registration",
+    "removed": "Registration removed",
+    "failed": "Could not remove the registration. Try again."
   }
 }

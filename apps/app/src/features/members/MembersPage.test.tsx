@@ -5,7 +5,7 @@ import type { Member } from '@sathiya/core';
 import { screen, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
-import { call } from '../../lib/callable';
+import { ApiError, call } from '../../lib/callable';
 import { pickOption } from '../../test/pickOption';
 import { renderWithSchool } from '../../test/renderWithSchool';
 import { MembersPage } from './MembersPage';
@@ -122,5 +122,24 @@ describe('members page', () => {
     data.members = [{ id: 'u9', uid: 'u9', role: 'admin', email: 'vp@siripura.lk' }];
     setup();
     expect(screen.getAllByText('vp@siripura.lk')).toHaveLength(2);
+  });
+});
+
+describe('members page while the school is pending review', () => {
+  it('disables Invite admin with the approval note', () => {
+    renderWithSchool(<MembersPage />, { ctx: { ...ctx, school: { ...ctx.school, status: 'pending' } } });
+    const invite = screen.getByRole('button', { name: 'Invite admin' });
+    expect(invite).toBeDisabled();
+    expect(invite).toHaveAccessibleDescription('Available after Sathiya approves your school.');
+  });
+
+  it('shows the approval message when the server still refuses an invite', async () => {
+    vi.mocked(call).mockRejectedValue(new ApiError('school-pending', 'raw'));
+    const user = setup();
+    await user.click(screen.getByRole('button', { name: 'Invite admin' }));
+    const dialog = screen.getByRole('dialog');
+    await user.type(within(dialog).getByLabelText('Email'), 'new@siripura.lk');
+    await user.click(within(dialog).getByRole('button', { name: 'Send invite' }));
+    expect(await screen.findByText('Available after Sathiya approves your school.')).toBeInTheDocument();
   });
 });
