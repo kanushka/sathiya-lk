@@ -5,6 +5,7 @@ import { execFileSync } from 'node:child_process';
 import { mkdirSync, statSync, writeFileSync } from 'node:fs';
 import { dirname, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
+import { isDistrict } from '../../packages/core/src/districts.ts';
 import { parseAllSchools, parseNationalSchools } from '../../packages/core/src/moeParse.ts';
 
 const [allPdf, nationalPdf] = process.argv.slice(2);
@@ -25,6 +26,7 @@ const seenNational = new Set();
 for (const r of national) {
   if (seenNational.has(r.censusNo)) throw new Error(`Duplicate census number ${r.censusNo} in national list`);
   seenNational.add(r.censusNo);
+  if (!isDistrict(r.district)) throw new Error(`Unknown district "${r.district}" for census number ${r.censusNo}`);
   if (!allNos.has(r.censusNo)) throw new Error(`National census number ${r.censusNo} is missing from the all-schools list`);
 }
 

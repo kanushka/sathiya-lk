@@ -2,6 +2,7 @@
 // Copyright (C) 2026 Kanushka Gayan
 
 import { CENSUS_NO_RE } from './census';
+import { canonicalDistrict } from './districts';
 
 export interface AllSchoolRow {
   censusNo: string;
@@ -142,7 +143,7 @@ export function parseNationalSchools(text: string): NationalSchoolRow[] {
         name: clean(left[0] ?? ''),
         address: clean([...pending, ...left.slice(1)].join(' ')),
         province: stripNum(grp(cols, 1)),
-        district: stripNum(grp(cols, 2)),
+        district: canonicalDistrict(stripNum(grp(cols, 2))),
         zone: clean(grp(cols, 3)),
       });
       pending = [];

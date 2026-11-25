@@ -2,7 +2,7 @@
 // Copyright (C) 2026 Kanushka Gayan
 import { expect, test } from '@playwright/test';
 import { admin } from '../../scripts/seed';
-import { shot } from '../helpers';
+import { pick, shot } from '../helpers';
 
 async function verifyLinkFromMail(email: string): Promise<string> {
   const { db } = admin();
@@ -35,7 +35,7 @@ test('register a government school: census lookup, email verification gate, land
   const next = page.getByRole('button', { name: 'Next: logo & colours' });
   await page.getByLabel('School name in English').fill('Nugegoda Central College');
   await page.getByLabel('City', { exact: true }).fill('Nugegoda');
-  await page.getByLabel('District').fill('Colombo');
+  await pick(page, /^District/, 'Colombo');
   await expect(page.getByLabel('Staff ID prefix')).toHaveValue('NCC');
   await page.getByLabel('Census number', { exact: true }).fill('12');
   await expect(page.getByText('Census number must be 4 to 6 digits')).toBeVisible();

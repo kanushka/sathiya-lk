@@ -110,6 +110,8 @@ describe('registerSchool', () => {
     await expectFnError(c.call('registerSchool', schoolReq({ staffPrefix: 'scc1' })), 'invalid-argument', 'invalid');
     await expectFnError(c.call('registerSchool', schoolReq({ nameEn: '  ', nameSi: ' ' })), 'invalid-argument', 'invalid');
     await expectFnError(c.call('registerSchool', { ...schoolReq(), acceptedTermsVersion: '' }), 'invalid-argument', 'invalid');
+    await expectFnError(c.call('registerSchool', schoolReq({ district: 'Moneragala' })), 'invalid-argument', 'invalid');
+    await expectFnError(c.call('registerSchool', schoolReq({ district: 'kandy' })), 'invalid-argument', 'invalid');
   });
 
   it('requires a city', async () => {

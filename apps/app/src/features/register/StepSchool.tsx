@@ -11,8 +11,9 @@ import { Checkbox } from '../../ui/Checkbox';
 import { Field, inputClass } from '../../ui/Field';
 import { Select } from '../../ui/Select';
 import { Trans } from 'react-i18next';
-import { censusError, gradesOk, MEDIA, prefixOk, schoolOk, siFirst, type SchoolDraft } from './model';
+import { censusError, DISTRICTS, gradesOk, MEDIA, prefixOk, schoolOk, siFirst, type SchoolDraft } from './model';
 
+const districtOptions = DISTRICTS.map((d) => ({ value: d, label: d }));
 const gradeOptions = Array.from({ length: 13 }, (_, i) => ({ value: String(i + 1), label: String(i + 1) }));
 
 export interface StepSchoolProps {
@@ -120,8 +121,8 @@ export function StepSchool({ value, onChange, onNext, censusTaken, checking, onR
               }}
             />
           </Field>
-          <Field label={t('school.district')} className="flex-1">
-            <input className={inputClass} value={value.district} onChange={(e) => set('district', e.target.value)} />
+          <Field label={t('school.district')} required className="flex-1">
+            <Select searchable value={value.district} onChange={(d) => set('district', d)} options={districtOptions} />
           </Field>
         </div>
         <Field label={t('school.address')}>

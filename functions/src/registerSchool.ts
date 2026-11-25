@@ -3,6 +3,8 @@
 import {
   CENSUS_NO_RE,
   DEFAULT_TERMS_VERSION,
+  DISTRICTS,
+  isDistrict,
   padCensusNo,
   paths,
   SCHOOL_TYPES,
@@ -65,7 +67,7 @@ function listedDetails(moe: MoeSchool, s: Record<string, unknown>): Details {
   return {
     nameEn: moe.name,
     nameSi: optStr(s.nameSi, 'nameSi'),
-    district: moe.district ?? str(s.district, 'district', 60),
+    district: moe.district ?? district(s.district),
     address: moe.address ? titleCase(moe.address) : undefined,
     type: 'government',
     grades: moe.grades.length ? moe.grades : gradeList(s.grades),
@@ -81,7 +83,7 @@ function unlistedDetails(s: Record<string, unknown>, censusNo: string | undefine
   return {
     nameEn,
     nameSi,
-    district: str(s.district, 'district', 60),
+    district: district(s.district),
     address: optStr(s.address, 'address', 200),
     type,
     grades: gradeList(s.grades),
@@ -94,6 +96,11 @@ async function assertCurrentTerms(accepted: unknown): Promise<void> {
   const configured = (await db.doc(paths.platform.config).get()).get('currentTermsVersion');
   const current = typeof configured === 'string' && configured ? configured : DEFAULT_TERMS_VERSION;
   if (accepted.trim() !== current) fail('failed-precondition', 'terms-changed', 'The terms have changed; review and accept the current terms');
+}
+
+function district(v: unknown): string {
+  if (!isDistrict(v)) invalid(`district must be one of ${DISTRICTS.join(', ')}`);
+  return v as string;
 }
 
 const SAME_DISTRICT_MAX = 10;

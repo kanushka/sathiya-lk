@@ -50,10 +50,7 @@ export function gradeList(s: SchoolDraft): number[] {
 
 export const MEDIA: readonly MoeLang[] = ['si', 'en', 'ta'];
 
-export const DISTRICTS = [
-  'Ampara', 'Anuradhapura', 'Badulla', 'Batticaloa', 'Colombo', 'Galle', 'Gampaha', 'Hambantota', 'Jaffna', 'Kalutara', 'Kandy', 'Kegalle', 'Kilinochchi',
-  'Kurunegala', 'Mannar', 'Matale', 'Matara', 'Monaragala', 'Mullaitivu', 'Nuwara Eliya', 'Polonnaruwa', 'Puttalam', 'Ratnapura', 'Trincomalee', 'Vavuniya',
-] as const;
+export { DISTRICTS } from '@sathiya/core';
 
 export const siFirst = (medium: readonly MoeLang[] | undefined) => !!medium?.includes('si');
 

@@ -40,7 +40,7 @@ async function renderForm(opts: Parameters<typeof renderAuth>[1]) {
 async function fillSchool(user: ReturnType<typeof userEvent.setup>) {
   await user.type(screen.getByLabelText('School name in English'), 'Siripura Central College');
   await user.type(screen.getByLabelText('City'), 'Kandy');
-  await user.type(screen.getByLabelText('District'), 'Kandy');
+  await pickOption(user, screen.getByRole('combobox', { name: /^District/ }), 'Kandy');
   await user.clear(screen.getByLabelText('Staff ID prefix'));
   await user.type(screen.getByLabelText('Staff ID prefix'), 'scc');
   await user.type(screen.getByLabelText('Census number'), '03214');
@@ -72,7 +72,7 @@ describe('register', () => {
     const next = screen.getByRole('button', { name: 'Next: logo & colours' });
     expect(next).toBeDisabled();
     await user.type(screen.getByLabelText('School name in English'), 'Siripura');
-    await user.type(screen.getByLabelText('District'), 'Kandy');
+    await pickOption(user, screen.getByRole('combobox', { name: /^District/ }), 'Kandy');
     expect(next).toBeDisabled();
     await user.type(screen.getByLabelText('City'), 'Kandy');
     await user.clear(screen.getByLabelText('Staff ID prefix'));
@@ -381,7 +381,7 @@ describe('register', () => {
       await renderForm({ route: '/register', at: '/register', signedIn: true, claimsAfterRefresh: { schools: { s: { r: 'a' } } } });
       await user.type(screen.getByLabelText('School name in English'), 'Lake School');
       await user.type(screen.getByLabelText('City'), 'Kandy');
-      await user.type(screen.getByLabelText('District'), 'Kandy');
+      await pickOption(user, screen.getByRole('combobox', { name: /^District/ }), 'Kandy');
       await user.type(screen.getByLabelText('Staff ID prefix'), 'lsc');
       await pickOption(user, screen.getByRole('combobox', { name: /^School type/ }), 'Private');
       await user.click(screen.getByRole('checkbox', { name: /No census number/ }));
@@ -472,7 +472,7 @@ describe('register', () => {
       await user.click(screen.getByRole('checkbox', { name: /No census number/ }));
       await user.type(screen.getByLabelText('School name in English'), 'Siripura Central College');
       await user.type(screen.getByLabelText('City'), 'Kandy');
-      await user.type(screen.getByLabelText('District'), 'Kandy');
+      await pickOption(user, screen.getByRole('combobox', { name: /^District/ }), 'Kandy');
       await user.click(screen.getByRole('button', { name: 'Next: logo & colours' }));
       expect(await screen.findByRole('button', { name: 'Next: your account' })).toBeInTheDocument();
       expect(api.lookupCensus).not.toHaveBeenCalled();
@@ -768,7 +768,7 @@ describe('census step', () => {
     expect(screen.getByLabelText('School name in English')).toHaveValue('');
     expect(screen.getByLabelText('School name in Sinhala')).toHaveValue('');
     expect(screen.getByLabelText('City')).toHaveValue('');
-    expect(screen.getByLabelText('District')).toHaveValue('');
+    expect(screen.getByRole('combobox', { name: /^District/ })).not.toHaveTextContent('Colombo');
     expect(screen.getByLabelText('Census number')).toHaveValue('');
   });
 

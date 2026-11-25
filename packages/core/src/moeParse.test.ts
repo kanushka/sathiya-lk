@@ -97,6 +97,11 @@ describe('parseNationalSchools', () => {
     expect(by('00050')).toMatchObject({ name: 'COLOMBO ANANDA B.V.', address: 'REV. HIKKADUWA SRI SUMANGALA NAHIMI MW, COLOMBO 10' });
   });
 
+  it('uses the app spelling of a district', () => {
+    const line = '354   22001   BIBILE WELLASSA N.S.                                   HEWELWELA, BIBILE                8.Uva             82.Moneragala     Bibile';
+    expect(parseNationalSchools(line)[0]).toMatchObject({ censusNo: '22001', district: 'Monaragala', zone: 'Bibile' });
+  });
+
   it('copes with an address running into the province column', () => {
     expect(by('00131')).toMatchObject({ address: 'KUDA BUTHGAMUWA, MULLERIYAWA NEW TOWN', zone: 'Sri Jayawardenapura' });
   });

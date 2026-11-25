@@ -75,7 +75,7 @@ test('a school that is not listed registers as pending: banner, publish locked',
   await page.getByRole('checkbox', { name: /No census number/ }).check();
   await page.getByLabel('School name in English').fill(pendingName);
   await page.getByLabel('City', { exact: true }).fill('Ambewela');
-  await page.getByLabel('District').fill('Nuwara Eliya');
+  await pick(page, /^District/, 'Nuwara Eliya');
   await page.getByRole('button', { name: 'Next: logo & colours' }).click();
 
   pendingSid = await finishRegistration(page);
