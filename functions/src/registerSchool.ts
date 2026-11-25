@@ -17,6 +17,13 @@ import { runTx } from './lib/tx';
 
 const HEX = /^#[0-9A-Fa-f]{6}$/;
 export const CENSUS_INDEX = 'censusIndex';
+// Matches the client's FALLBACK_TERMS_VERSION, so a project without platform/config still registers.
+const FALLBACK_TERMS_VERSION = '1';
+
+async function currentTermsVersion(): Promise<string> {
+  const v = (await db.doc(paths.platform.config).get()).get('currentTermsVersion');
+  return typeof v === 'string' && v ? v : FALLBACK_TERMS_VERSION;
+}
 
 const censusTaken = (): never => fail('already-exists', 'school-registered', 'This school is already registered');
 
@@ -31,6 +38,7 @@ export const registerSchool = onCall(callOpts, async (req): Promise<RegisterScho
   const data = obj(req.data, 'request');
   const s = obj(data.school, 'school');
   const termsVersion = str(data.acceptedTermsVersion, 'acceptedTermsVersion', 40);
+  if (termsVersion !== (await currentTermsVersion())) fail('failed-precondition', 'terms-changed', 'The terms have changed; review and accept the current version');
   const adminName = str(data.adminName, 'adminName');
   const staffPrefix = str(s.staffPrefix, 'staffPrefix', 5);
   if (!/^[A-Z]{2,5}$/.test(staffPrefix)) invalid('staffPrefix must be 2–5 capital letters');

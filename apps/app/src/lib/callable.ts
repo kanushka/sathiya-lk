@@ -24,6 +24,8 @@ const apiCodes: readonly ApiErrorCode[] = [
   'republish',
   'invalid-relief',
   'not-today',
+  'terms-changed',
+  'last-admin',
   'busy',
 ];
 

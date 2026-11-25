@@ -123,7 +123,8 @@ export function RegisterPage() {
         setConfirmed(false);
         setGate(true);
       } else if (failure) {
-        setError({ field: null, message: t(`errors.${failure.code === 'rate-limited' ? 'rateLimited' : 'tooManySchools'}`) });
+        const key = failure.code === 'rate-limited' ? 'rateLimited' : failure.code === 'terms-changed' ? 'termsChanged' : 'tooManySchools';
+        setError({ field: null, message: t(`errors.${key}`) });
       } else {
         setError({ field: null, message: t('errors.generic') });
       }

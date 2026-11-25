@@ -6,7 +6,7 @@ import { db } from './lib/admin';
 import { callOpts } from './lib/callOptions';
 import { assertSchoolRoom, syncClaims } from './lib/claims';
 import { fail, invalid, isVerified, notAllowed, obj, optDocId, optStr, requireAuth, str } from './lib/guards';
-import { fileJoinRequest } from './lib/joinRequest';
+import { fileJoinRequest, staffIdUnusable } from './lib/joinRequest';
 import { linkTeacher } from './lib/linkTeacher';
 import { consumeRateLimits, JOIN_PER_UID_PER_DAY, JOIN_REQUEST_PER_UID_PER_DAY } from './lib/rateLimit';
 import { hashToken } from './lib/tokens';
@@ -64,8 +64,7 @@ export const joinSchool = onCall(callOpts, async (req): Promise<JoinSchoolRes> =
 
   if (!staffId) invalid('A staff ID is required');
   const teacher = teachers.find((t) => t.staffId === staffId);
-  if (!teacher) fail('failed-precondition', 'staff-id-unknown', 'No teacher has this staff ID');
-  if (teacher!.uid) fail('failed-precondition', 'already-linked', 'This teacher is already linked to an account', { reason: 'teacher' });
+  if (!teacher || teacher.uid) staffIdUnusable();
   if (teachers.some((t) => t.uid === uid)) {
     fail('failed-precondition', 'already-linked', 'This account is already linked to a teacher in this school', { reason: 'account' });
   }

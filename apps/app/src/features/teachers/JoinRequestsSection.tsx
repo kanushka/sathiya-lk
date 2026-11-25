@@ -57,8 +57,8 @@ export function JoinRequests({ schoolId, requests, teachers, readOnly }: JoinReq
           return (
             <li key={r.uid} className="flex flex-wrap items-center gap-x-4 gap-y-2 border-t border-line-soft py-3 text-sm first:border-t-0">
               <div className="min-w-0 flex-1">
-                {r.name && <strong className="block">{r.name}</strong>}
-                <span className={r.name ? 'block text-ink-muted' : 'block font-semibold'}>{r.email}</span>
+                <strong className="block break-words">{r.email}</strong>
+                {r.name && <span className="block text-ink-muted">{t('requests.givenName', { name: r.name })}</span>}
                 <span className="block text-ink-soft">
                   {t('requests.claims', { teacher: teacher ? teacherDisplayName(teacher, lang) : t('requests.unknownTeacher'), staffId: r.staffId })}
                 </span>

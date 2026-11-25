@@ -141,13 +141,13 @@ describe('register', () => {
     expect(screen.getByText('Use a hex colour like #7A1F3D')).toBeInTheDocument();
   });
 
-  it('rejects a logo that is not PNG or SVG', async () => {
+  it('rejects an SVG logo', async () => {
     const user = userEvent.setup();
     renderAuth(<RegisterPage />, { route: '/register', at: '/register' });
     await fillSchool(user);
     const input = document.querySelector('input[type=file]') as HTMLInputElement;
-    fireEvent.change(input, { target: { files: [new File(['x'], 'a.jpg', { type: 'image/jpeg' })] } });
-    expect(await screen.findByText('Logo must be a PNG or SVG')).toBeInTheDocument();
+    fireEvent.change(input, { target: { files: [new File(['<svg/>'], 'a.svg', { type: 'image/svg+xml' })] } });
+    expect(await screen.findByText('Logo must be a PNG, JPEG or WebP image')).toBeInTheDocument();
   });
 
   async function toStep3(user: ReturnType<typeof userEvent.setup>, withLogo = false) {
@@ -503,6 +503,18 @@ describe('register', () => {
       renderAuth(<RegisterPage />, opts);
       await submitSignedIn(user);
       expect(await screen.findByRole('alert')).toHaveTextContent(text);
+    });
+
+    it('asks to review changed terms and sends the new version on retry', async () => {
+      const user = userEvent.setup();
+      vi.mocked(api.registerSchool).mockRejectedValueOnce(new ApiError('invalid', 'raw backend text', { code: 'terms-changed' })).mockResolvedValueOnce('siripura');
+      renderAuth(<RegisterPage />, opts);
+      await submitSignedIn(user);
+      expect(await screen.findByRole('alert')).toHaveTextContent(/terms were updated/);
+      vi.mocked(api.currentTermsVersion).mockResolvedValue('4');
+      await user.click(screen.getByRole('button', { name: 'Create school' }));
+      await waitFor(() => expect(api.registerSchool).toHaveBeenCalledTimes(2));
+      expect(vi.mocked(api.registerSchool).mock.calls[1]![0]).toMatchObject({ acceptedTermsVersion: '4', school: { termsVersion: '4' } });
     });
 
     it('shows the generic message rather than raw backend text for unmapped errors', async () => {
