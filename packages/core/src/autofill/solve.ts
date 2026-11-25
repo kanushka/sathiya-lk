@@ -35,6 +35,7 @@ export interface SolveResult {
 
 const DEFAULT_BUDGET_MS = 8000;
 const STEP_BUDGET = 2000;
+const FIRST_ATTEMPT_CAP_MS = 30000;
 
 function averagePeriodMinutes(ctx: SchoolContext, classId: string): number {
   const slots = classSlots(ctx, classId);
@@ -66,7 +67,7 @@ export function solve(input: SolveInput): SolveResult {
   for (;;) {
     const random = rng(seed + attempts);
     const { allocation } = allocate({ ctx, entries: kept, classIds, overrides: input.overrides, random });
-    const { drafts, unplaced } = place({ ctx, kept, allocation, classIds, random, stepBudget: STEP_BUDGET, deadline: start + budgetMs, now });
+    const { drafts, unplaced } = place({ ctx, kept, allocation, classIds, random, stepBudget: STEP_BUDGET, deadline: start + (attempts === 0 ? Math.max(budgetMs, FIRST_ATTEMPT_CAP_MS) : budgetMs), now });
     const missing = unplaced.reduce((n, u) => n + (u.unit === 'minutes' ? Math.ceil(u.missing / (avg.get(u.classId) ?? 1)) : u.missing), 0);
     const placedEntries: Entry[] = drafts.map((d, i) => ({ ...withTeacherIds(d), id: `solve-${attempts}-${i}` }));
     const { tuple, soft } = score(ctx, [...kept, ...placedEntries], missing);

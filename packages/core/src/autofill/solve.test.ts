@@ -94,8 +94,9 @@ describe('solve', () => {
           const r = solve({ ctx, entries: input, mode, seed, budgetMs: 0, now: once });
           const kept = input.filter((e) => !r.deleteEntryIds.includes(e.id));
           expect(checkHard(ctx, kept, r.drafts)).toEqual([]);
-          const ids = new Set(kept.map((e) => e.id));
-          expect(r.drafts.some((d) => d.id !== undefined && ids.has(d.id))).toBe(false);
+          const key = (e: { classIds: string[]; day: number; period: number }): string => `${[...e.classIds].sort().join(',')}|${e.day}|${e.period}`;
+          const keptKeys = new Set(kept.map(key));
+          expect(r.drafts.some((d) => keptKeys.has(key(d)))).toBe(false);
         }
       }
     }
@@ -110,6 +111,15 @@ describe('solve', () => {
     const r = solve({ ctx, entries: kept, mode: fillAround, seed: 1, budgetMs: 0, now: once });
     expect(checkHard(ctx, kept, r.drafts)).toEqual([]);
     expect(r.unplaced).toEqual([]);
+  });
+
+  it('lets the first attempt finish even when the budget is smaller than its runtime', () => {
+    for (const ctx of [mahasen.ctx, secondary([6, 7], 3)]) {
+      const r = solve({ ctx, entries: [], mode: fillAround, seed: 1, budgetMs: 0, now: fake(5) });
+      expect(r.attempts).toBe(1);
+      expect(r.unplaced).toEqual([]);
+      expect(checkHard(ctx, [], r.drafts)).toEqual([]);
+    }
   });
 
   it('secondary 40 classes finishes within budget', () => {
