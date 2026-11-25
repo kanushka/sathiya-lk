@@ -7,8 +7,8 @@ import { placePopover, type Placement } from '../popoverPlacement';
 const LIST_MAX = 288;
 
 export function usePopover(
-  triggerRef: RefObject<HTMLElement>,
-  popRef: RefObject<HTMLElement>,
+  triggerRef: RefObject<HTMLElement | null>,
+  popRef: RefObject<HTMLElement | null>,
   open: boolean,
   deps: DependencyList,
   onOutsideMouseDown?: () => void,
