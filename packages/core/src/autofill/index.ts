@@ -8,3 +8,4 @@ export * from './combos';
 export * from './check';
 export * from './score';
 export * from './place';
+export * from './solve';
