@@ -59,13 +59,16 @@ export function TeachersPage() {
   const pendingFor = useMemo(() => new Set(requests.map((r) => r.teacherId)), [requests]);
   const [busy, setBusy] = useState<string | null>(null);
   const [search, setSearch] = useState('');
+  const teachersReady = !state.loading && !state.error;
   const [params, setParams] = useSearchParams();
-  const [dialog, setDialog] = useState<Dialog>(() => (params.get('new') === '1' && !readOnly ? { kind: 'edit' } : null));
+  const [dialog, setDialog] = useState<Dialog>(() => (params.get('new') === '1' && !readOnly && teachersReady ? { kind: 'edit' } : null));
   const dialogRef = useRef(dialog);
   dialogRef.current = dialog;
   useEffect(() => {
-    if (params.has('new')) setParams((p) => (p.delete('new'), p), { replace: true });
-  }, [params, setParams]);
+    if (!params.has('new') || !teachersReady) return;
+    if (params.get('new') === '1' && !readOnly) setDialog((d) => d ?? { kind: 'edit' });
+    setParams((p) => (p.delete('new'), p), { replace: true });
+  }, [params, setParams, teachersReady, readOnly]);
 
   const loads = useMemo(() => new Map(state.teachers.map((x) => [x.id, teacherLoad(x.id, entries, state)])), [state, entries]);
   const loadText = (x: Teacher) => {
@@ -150,8 +153,6 @@ export function TeachersPage() {
       </span>
     );
   }
-
-  const teachersReady = !state.loading && !state.error;
 
   const add = (
     <Button variant="primary" disabled={!teachersReady} onClick={() => setDialog({ kind: 'edit' })}>
@@ -259,8 +260,8 @@ export function TeachersPage() {
         </Table>
       )}
 
-      {dialog?.kind === 'edit' && teachersReady && <TeacherModal key={dialog.teacher?.id ?? 'new'} teacher={dialog.teacher} onClose={() => setDialog(null)} />}
-      {dialog?.kind === 'import' && teachersReady && <ImportModal onClose={() => setDialog(null)} />}
+      {dialog?.kind === 'edit' && <TeacherModal key={dialog.teacher?.id ?? 'new'} teacher={dialog.teacher} onClose={() => setDialog(null)} />}
+      {dialog?.kind === 'import' && <ImportModal onClose={() => setDialog(null)} />}
       {dialog?.kind === 'personalLink' && (
         <PersonalLinkModal
           name={teacherDisplayName(dialog.teacher, lang)}
