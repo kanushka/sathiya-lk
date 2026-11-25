@@ -35,7 +35,7 @@ export const callables = {
   removeRegistration: 'removeRegistration',
 } as const;
 
-export interface RegisterSchoolReq { school: Omit<School, 'id' | 'status' | 'createdAt' | 'activeYearId'>; adminName: string; acceptedTermsVersion: string; medium?: ('si' | 'en' | 'ta')[] }
+export interface RegisterSchoolReq { school: Omit<School, 'id' | 'status' | 'createdAt' | 'activeYearId'>; adminName: string; acceptedTermsVersion: string }
 export interface RegisterSchoolRes { schoolId: string }
 export interface CreateTeacherReq { schoolId: string; teacher: Omit<Teacher, 'id' | 'uid' | 'lastLoginAt'> }
 export interface CreateTeacherRes { teacherId: string }
@@ -82,7 +82,7 @@ export interface UnlinkTeacherRes { ok: true }
 export interface SaveReliefDayReq { schoolId: string; yearId: string; date: string; leaves: Leave[]; reliefs: Relief[]; expectedUpdatedAt: number | null }
 export interface SaveReliefDayRes { updatedAt: number; queued: number; skippedNoEmail: number; uncovered: number }
 export interface LookupCensusReq { censusNo: string }
-export interface LookupCensusRes { status: 'listed' | 'registered' | 'unlisted'; school?: MoeSchool }
+export type LookupCensusRes = { status: 'listed'; school: MoeSchool } | { status: 'registered' | 'unlisted' }
 export interface ReviewSchoolReq { schoolId: string; approve: boolean; reason?: string }
 export interface ReviewSchoolRes { ok: true }
 export interface RemoveRegistrationReq { schoolId: string }

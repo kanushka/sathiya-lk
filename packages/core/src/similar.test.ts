@@ -17,6 +17,23 @@ describe('similarSchools', () => {
     const r = similarSchools('Kotahena M.M.V.', pool);
     expect(r.map((m) => m.id)).toContain('a');
   });
+  it('ranks exact, then containing, then partial, in one pool', () => {
+    const r = similarSchools('Kotahena M.M.V.', pool);
+    expect(r[0]!.id).toBe('a');
+    const q = similarSchools('Kotahena Kumara V.', [{ id: 'a', name: 'KOTAHENA MAHA VIDYALAYA' }, { id: 'b', name: 'Kotahena Kumara V.' }, { id: 'x', name: 'Kotahena Kumara Maha Vidyalaya Annex' }]);
+    expect(q.map((m) => m.id)).toEqual(['b', 'x', 'a']);
+  });
+  it('matches containment both ways', () => {
+    const p = [{ id: 'r', name: 'Colombo Royal College' }];
+    expect(similarSchools('Royal College', p)).toHaveLength(1);
+    expect(similarSchools('Colombo Royal College', [{ id: 'q', name: 'Royal College' }])).toHaveLength(1);
+  });
+  it('normalises spaced initials like dotted ones', () => {
+    const a = similarSchools('Kotahena M. M. V.', pool).map((m) => m.id);
+    const b = similarSchools('Kotahena M. V.', pool).map((m) => m.id);
+    expect(a).toEqual(similarSchools('Kotahena M.M.V.', pool).map((m) => m.id));
+    expect(b).toEqual(a);
+  });
   it('excludes unrelated names', () => {
     const r = similarSchools('Kotahena M.M.V.', pool);
     expect(r.map((m) => m.id)).not.toContain('c');

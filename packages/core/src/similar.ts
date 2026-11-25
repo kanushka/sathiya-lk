@@ -4,11 +4,11 @@
 export interface SimilarCandidate { id: string; name: string }
 export interface SimilarMatch extends SimilarCandidate { score: number }
 
-const STOP = new Set(['vidyalaya', 'vidyalayam', 'v', 'mv', 'mmv', 'bmv', 'college', 'school', 'national', 'maha', 'central', 'primary', 'kanishta', 'navodya']);
+const STOP = new Set(['vidyalaya', 'vidyalayam', 'v', 'mv', 'mmv', 'bmv', 'college', 'school', 'national', 'maha', 'primary', 'kanishta', 'navodya']);
 const THRESHOLD = 0.5;
 
 function tokens(name: string): string[] {
-  const all = name.toLowerCase().replace(/[^\p{L}\p{N}\s]/gu, '').split(/\s+/).filter(Boolean);
+  const all = name.toLowerCase().replace(/[^\p{L}\p{N}\s]/gu, '').split(/\s+/).filter((t) => t.length > 1);
   const kept = all.filter((t) => !STOP.has(t));
   return kept.length ? kept : all;
 }
@@ -40,7 +40,8 @@ function score(a: string[], b: string[]): number {
   const ja = a.join(' ');
   const jb = b.join(' ');
   const edit = 1 - distance(ja, jb) / Math.max(ja.length, jb.length);
-  return Math.min(1, jaccard * 0.8 + edit * 0.2);
+  const containment = inter / Math.min(sa.size, sb.size);
+  return Math.min(1, jaccard * 0.55 + containment * 0.4 + edit * 0.05);
 }
 
 export function similarSchools(name: string, candidates: SimilarCandidate[], limit = 5): SimilarMatch[] {
