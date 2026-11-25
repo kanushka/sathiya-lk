@@ -3,7 +3,7 @@
 
 import { describe, expect, it } from 'vitest';
 import { withTeacherIds } from '../clash';
-import { mahasen, secondary } from '../fixtures';
+import { mahasen, S, secondary } from '../fixtures';
 import { classPlacement } from '../progress';
 import type { Entry, EntryDraft, PeriodTemplate, SchoolContext, TemplateRow } from '../types';
 import { checkHard } from './check';
@@ -57,6 +57,18 @@ describe('solve', () => {
     const r = solve({ ctx: secondary([6], 2), entries: [], mode: fillAround, seed: 1, budgetMs: 0, now: once });
     expect(r.attempts).toBe(1);
     expect(r.drafts.length).toBeGreaterThan(0);
+  });
+
+  it('passes allocation problems through to unplaced with their own reason', () => {
+    const ctx = secondary([6], 1);
+    const cls = ctx.classes[0]!;
+    const other = ctx.teachers.find((t) => t.id !== cls.classTeacherId)!.id;
+    const daily = [S.maths, S.science, S.sinhala, S.english].map((subjectId) => ({ classId: cls.id, planKey: `subject:${subjectId}`, subjectId, teacherId: other }));
+    const dup = [S.buddhism, S.catholicism].map((subjectId) => ({ classId: cls.id, planKey: 'group:religion', subjectId, teacherId: other }));
+    const r = solve({ ctx, entries: [], mode: fillAround, seed: 1, budgetMs: 0, now: once, overrides: [...daily, ...dup] });
+    expect(r.unplaced).toContainEqual(expect.objectContaining({ classId: cls.id, planKey: 'group:religion', reason: 'duplicate-option-teacher' }));
+    expect(r.unplaced).toContainEqual(expect.objectContaining({ classId: cls.id, planKey: 'class-teacher', missing: 0, reason: 'class-teacher-no-daily-subject', params: { teacherId: cls.classTeacherId } }));
+    expect(r.unplaced.some((u) => u.params['reason'] === 'unallocated')).toBe(false);
   });
 
   it('fill around never deletes', () => {

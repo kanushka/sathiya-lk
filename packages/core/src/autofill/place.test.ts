@@ -134,6 +134,19 @@ describe('place', () => {
     expect(unplaced).toContainEqual({ classId, planKey: `subject:${S.history}`, missing: 3, unit: 'periods', reason: 'no-free-teacher', params: { reason: 'unallocated' } });
   });
 
+  it('reports subject-cap when an allocated teacher would hold a third subject in the class', () => {
+    const ctx = secondary([6], 1);
+    const classId = ctx.classes[0]!.id;
+    const base = allocate({ ctx, entries: [], classIds: [classId], random: rng(1) }).allocation;
+    const x = base.find((a) => a.subjectId === S.history)!.teacherId!;
+    const capped: string[] = [S.history, S.geography, S.health];
+    const alloc = base.map((a) => (capped.includes(a.subjectId) ? { ...a, teacherId: x } : a));
+    const { unplaced } = run(ctx, [], 1, alloc);
+    expect(unplaced.filter((u) => u.reason === 'subject-cap')).toEqual([
+      expect.objectContaining({ classId, unit: 'periods', params: expect.objectContaining({ teacherId: x }) }),
+    ]);
+  });
+
   it('is deterministic for the same seed', () => {
     const ctx = secondary([6, 7], 3);
     expect(run(ctx, [], 7)).toEqual(run(ctx, [], 7));

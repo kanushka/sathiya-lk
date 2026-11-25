@@ -13,7 +13,15 @@ import type { Allocation } from './allocate';
 import { combos } from './combos';
 import { classSlots, type Slot } from './slots';
 
-export type UnplacedReason = 'no-free-teacher' | 'teacher-at-limit' | 'no-room' | 'minutes-unbuildable' | 'block-unavailable';
+export type UnplacedReason =
+  | 'no-free-teacher'
+  | 'teacher-at-limit'
+  | 'no-room'
+  | 'minutes-unbuildable'
+  | 'block-unavailable'
+  | 'subject-cap'
+  | 'duplicate-option-teacher'
+  | 'class-teacher-no-daily-subject';
 
 export interface Unplaced {
   classId: string;
@@ -24,7 +32,7 @@ export interface Unplaced {
   params: Record<string, string | number>;
 }
 
-const REASON_RANK: UnplacedReason[] = ['no-free-teacher', 'teacher-at-limit', 'minutes-unbuildable', 'block-unavailable', 'no-room'];
+const REASON_RANK: UnplacedReason[] = ['subject-cap', 'no-free-teacher', 'teacher-at-limit', 'minutes-unbuildable', 'block-unavailable', 'no-room'];
 const MAX_SUBJECTS_PER_CLASS = 2;
 const SPREAD_MAX_PER_WEEK = 5;
 const CANDIDATES_PER_ITEM = 30;
@@ -791,10 +799,10 @@ export function place(args: {
         const b = check(task, s);
         if (b === 'first') continue;
         if (b === 'class') note(task.group ? 'block-unavailable' : 'no-room', { day: d });
-        else if (b === 'teacher' || b === 'cap') {
+        else if (b === 'teacher') {
           const t = task.teachers.find((x) => overlap(busy.get(`t:${x}`)?.[d], s)) ?? task.teachers[0]!;
           note(task.group ? 'block-unavailable' : 'no-free-teacher', { day: d, teacherId: t });
-        } else if (b === 'limit') {
+        } else if (b === 'cap') note('subject-cap', { teacherId: task.teachers[0]! }); else if (b === 'limit') {
           const t = task.teachers.find((x, i) => !task.exempt[i] && (load.get(x)?.[d] ?? 0) + 1 > maxPerDay.get(x)!) ?? task.teachers[0]!;
           note('teacher-at-limit', { day: d, teacherId: t });
         } else usableMinutes += s.minutes;
