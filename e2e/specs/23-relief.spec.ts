@@ -29,7 +29,7 @@ test('admin plans relief for a teacher on leave and the relief teacher sees it t
   await page.getByRole('button', { name: '+ Add teacher' }).click();
   await page.getByRole('option', { name: /A\. Wijesekara/ }).click();
   const leave = page.getByRole('group', { name: /A\. Wijesekara/ });
-  await expect(leave.getByRole('button', { name: 'Full day' })).toHaveAttribute('aria-pressed', 'true');
+  await expect(leave.getByRole('radio', { name: 'Full day' })).toBeChecked();
 
   await page.getByRole('button', { name: 'Suggest relief' }).click();
   const pickRelief = page.getByRole('button', { name: /^Relief for .*: / });
