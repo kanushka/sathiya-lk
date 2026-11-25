@@ -69,7 +69,9 @@ One-time steps for the first deploy of invite links and multi-school claims, per
 
 ## Release: school review
 One-time checks for the first deploy of census-first registration and school review, per project (staging first, then production):
-- `platform/config` must have `currentTermsVersion` (Super admin → Terms, or the seed). `registerSchool` refuses an accepted version that differs from it with `terms-changed`.
+- `SUPER_EMAILS` must be set in the functions env, or the new-school and review emails go nowhere: production in the `FUNCTIONS_ENV_PROD` environment secret (and `functions/.env.sathiya-lk` for hand deploys), staging in `functions/.env.sathiya-lk-staging`.
+- Deploy order: `firestore:rules` first, then functions and the app (`hosting:app`) together. The new rules lock reviewed fields and the new callables and screens depend on each other.
+- `platform/config` `currentTermsVersion` must match the terms version the app shows (defaults to '1'). `registerSchool` refuses any other accepted version with `terms-changed`.
 - Existing schools keep `status: active` and stay in the directory. Only new registrations that are not in the MOE list start as `pending`.
 
 ## School registration data
