@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
 // Copyright (C) 2026 Kanushka Gayan
-import { findConflicts, paths, withTeacherIds, type ApplyAutoFillRes, type Conflict, type Entry, type EntryDraft } from '@sathiya/core';
+import { APPLY_AUTOFILL_MAX_ITEMS as MAX_ITEMS, findConflicts, paths, withTeacherIds, type ApplyAutoFillRes, type Conflict, type Entry, type EntryDraft } from '@sathiya/core';
 import { logger } from 'firebase-functions/logger';
 import { HttpsError, onCall } from 'firebase-functions/v2/https';
 import { db } from './lib/admin';
@@ -10,8 +10,6 @@ import { parseDraft, validateDraft } from './lib/entryDraft';
 import { docId, docIdList, fail, invalid, obj, requireSchoolAdmin } from './lib/guards';
 import { loadContext, loadEntries } from './lib/loadContext';
 import { acquireLease, APPLY_TIMEOUT_S, releaseLease } from './lib/yearBusy';
-
-const MAX_ITEMS = 3000;
 
 export const applyAutoFill = onCall({ ...callOpts, timeoutSeconds: APPLY_TIMEOUT_S }, async (req): Promise<ApplyAutoFillRes> => {
   const data = obj(req.data, 'request');
@@ -32,7 +30,7 @@ export const applyAutoFill = onCall({ ...callOpts, timeoutSeconds: APPLY_TIMEOUT
     const existing = await loadEntries(sid, yid);
     const existingIds = new Set(existing.map((e) => e.id));
     const unknown = deleteIds.find((id) => !existingIds.has(id));
-    if (unknown !== undefined) invalid(`Unknown entry ${unknown}`);
+    if (unknown !== undefined) fail('failed-precondition', 'clash', `Entry ${unknown} no longer exists`, { stale: true });
     const gone = new Set(deleteIds);
     const combined: Entry[] = [
       ...existing.filter((e) => !gone.has(e.id)),

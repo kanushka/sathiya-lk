@@ -70,9 +70,15 @@ describe('applyAutoFill', () => {
     expect(await entriesOf(sid)).toHaveLength(1);
   });
 
-  it('rejects an unknown deleteEntryId and writes nothing', async () => {
+  it('treats an unknown deleteEntryId as a stale run and writes nothing', async () => {
     const { admin, sid } = await seededSchool();
-    await expectFnError(apply(admin, sid, [draft(0, 1, [C.c6a], [[S.maths, T.bandara]])], ['nope']), 'invalid-argument', 'invalid');
+    const err = await apply(admin, sid, [draft(0, 1, [C.c6a], [[S.maths, T.bandara]])], ['nope']).then(
+      () => {
+        throw new Error('expected stale');
+      },
+      (e: unknown) => e,
+    );
+    expect(err).toMatchObject({ code: 'functions/failed-precondition', details: { code: 'clash', stale: true } });
     expect(await entriesOf(sid)).toHaveLength(0);
     expect(await flagOf(sid)).toBeUndefined();
   });

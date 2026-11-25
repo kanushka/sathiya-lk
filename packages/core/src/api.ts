@@ -50,6 +50,7 @@ export interface DeleteEntryReq { schoolId: string; yearId: string; entryId: str
 export interface DeleteEntryRes { ok: true }
 export interface ApplyAutoFillReq { schoolId: string; yearId: string; deleteEntryIds: string[]; drafts: EntryDraft[] }
 export interface ApplyAutoFillRes { written: number; deleted: number }
+export const APPLY_AUTOFILL_MAX_ITEMS = 3000;
 export interface PublishYearReq { schoolId: string; yearId: string }
 export interface PublishYearRes { classes: number; teachers: number }
 export interface SetSchoolStatusReq { schoolId: string; status: 'active' | 'disabled' }
