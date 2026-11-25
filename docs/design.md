@@ -46,6 +46,7 @@ A free web app for Sri Lankan schools to build their yearly timetables. A school
 - **Deletes** of anything the draft uses are blocked ("used in N slots"). Shrinking a template leaves orphaned entries listed under Needs attention.
 - **Names**: schools, subjects, groups and teachers have an English name, a Sinhala name, or both. Display picks the app language and falls back to the other.
 - **Branding**: each school's logo and colours drive its screens and printouts, with text colour chosen for contrast. The public site, login and super admin use Sathiya's own palette.
+- **Registration**: census number first. A school in the MOE list registers active with the official name; any other school is pending until a super admin approves or rejects it ([ADR 0003](adr/0003-census-first-registration.md)).
 - **Relief days**: one dated doc per day overlays the published snapshots; the weekly timetable never changes ([ADR 0002](adr/0002-relief-days.md)).
 
 ## Constraints

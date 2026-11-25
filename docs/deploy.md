@@ -67,6 +67,17 @@ One-time steps for the first deploy of invite links and multi-school claims, per
    Then wait until the `members.uid` collection-group index shows **Enabled** (Firestore → Indexes → Single field, exemption for `members.uid` with collection-group scope). Until it is built, sign-in (`claimInvites`), joining and registering fail.
 5. **Then the normal deploy:** section 2 (staging) or 3 (production), by hand or with the workflow.
 
+## Release: school review
+One-time checks for the first deploy of census-first registration and school review, per project (staging first, then production):
+- `platform/config` must have `currentTermsVersion` (Super admin → Terms, or the seed). `registerSchool` refuses an accepted version that differs from it with `terms-outdated`.
+- Existing schools keep `status: active` and stay in the directory. Only new registrations that are not in the MOE list start as `pending`.
+
+## School registration data
+`functions/src/data/moeSchools.json` is the Ministry of Education school list used for census lookups. It ships with functions. To refresh it when MOE publishes new lists:
+1. Download the all-schools PDF (https://moe.gov.lk/wp-content/uploads/2025/04/SchoolDetails.pdf) and the national-schools PDF (https://nstt.moe.gov.lk/instructions/List%20of%20National%20Schools.pdf).
+2. Run `pnpm moe:build <all.pdf> <national.pdf>` (needs `pdftotext`; see `scripts/moe-schools/README.md`).
+3. Review the diff, commit the JSON, then deploy functions.
+
 ## App Check
 Every callable function enforces App Check (`functions/src/lib/callOptions.ts`) unless `ENFORCE_APP_CHECK=false` is set in the project's functions env. An app built without `VITE_APPCHECK_SITE_KEY` sends no App Check token, so every callable (register, save, publish, …) fails with `unauthenticated`. The `app` hosting target's predeploy (`apps/app/deploy/check-app-check.mjs`, also a step in the staging and production workflows) therefore refuses to deploy a build without a site key while the target project enforces App Check. It reads `apps/app/dist/.build-env.json` (written by the build, never uploaded) and `functions/.env` + `functions/.env.<project id>`. `firebase deploy --only functions` does not run it, so keep the order below.
 
