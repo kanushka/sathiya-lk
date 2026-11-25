@@ -1,0 +1,20 @@
+                                                List of National Schools
+Seq. No Census No School Name                                              School Address                            Province    District      Zone
+   1      00023 KOTAHENA M.M.V.                                            MAHA VIDYALA MW, COLOMBO 13               1.Western   11.Colombo    Colombo
+   2      00045 COLOMBO ROYAL COLLEGE                                      RAJAKEEYA MW, COLOMBO 07                  1.Western   11.Colombo    Colombo
+   3      00046 COLOMBO ANANDA COLLEGE                                     COLOMBO 10                                1.Western   11.Colombo    Colombo
+   4      00047 COLOMBO NALANDA COLLEGE                                    SIRI DAMMA MW, COLOMBO 10                 1.Western   11.Colombo    Colombo
+   5      00048 COLOMBO THURSTAN COLLEGE                                   COLOMBO 07                                1.Western   11.Colombo    Colombo
+                                                                           REV. HIKKADUWA SRI SUMANGALA NAHIMI MW,
+   6     00050   COLOMBO ANANDA B.V.                                       COLOMBO 10                                1.Western   11.Colombo    Colombo
+   7     00051   COLOMBO GOTHAMI B.V.                                      TEMPLE ROAD, COLOMBO 10                   1.Western   11.Colombo    Colombo
+  15     00081   COLOMBO VISAKHA V.                                        133, VAJIRA RD, COLOMBO 05                1.Western   11.Colombo    Colombo
+  16     00098   DEHIWALA PRESBYTERIAN B.V                                 DEHIWALA                                  1.Western   11.Colombo    Piliyandala
+  17     00114   MOUNT LAVINIA SCIENGE COLLEGE                             TEMPLERS ROAD, MOUNT LAVINIA              1.Western   11.Colombo    Piliyandala
+  18     00129   KOLONNAWA BALIKA VIDYALAYA                                SUGUNASARA ROAD, KOLONNAWA                1.Western   11.Colombo    Sri Jayawardenapura
+
+  19     00131   KUDA BUTHGAMUWA SRI RAJASINGHE CENTRAL COLLEGE            KUDA BUTHGAMUWA, MULLERIYAWA NEW TOWN 1.Western       11.Colombo    Sri Jayawardenapura
+  39     00464   SUNEETHA VIDYALAYA                                        WATAREKA , PADUKKA                    1.Western       11.Colombo    Homagama
+                                                                           VINSTANT JHOSEP MW, OLD NEGOMBO
+  40     01001   WATTALA ST. ANTHONY'S M.V.                                RD,WATTALA                            1.Western       12.Gampaha    Kelaniya
+  41     01028   MIRIGAMA D.S.SENANAYAKA NATIONAL SCHOOL                   MIRIGAMA                              1.Western       12.Gampaha    Minuwangoda

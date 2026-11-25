@@ -1,0 +1,32 @@
+                                                                                               2023
+  School                                                                                                  2023 Year     2023    2023 Sch
+                         School Name 2023                      School Address                SCHOOL_
+Census No                                                                                                   Span       Medium     Sex
+                                                                                               LEVEL
+ 00001      MODARA DE LA SALLE COLLEGE           MODARA, COLOMBO 15                         Provincial   4.Grd 1-13   1.S       1.Boys
+ 00002      MODARA ANANDA M.M.V.
+                                                 SRI PANCHANANDA MW, MODARA, COLOMBO 15 Provincial       6.Grd 6-13   1.S       3.Mixed
+ 00003      MODARA ST. ANTHONY'S B.M.V.          MODARA, COLOMBO 15                     Provincial       6.Grd 6-13   1.S       2.Girls
+ 00004      KOTAHENA KUMARA V.                   KOTAHENA, COLOMBO 13                   Provincial       4.Grd 1-13   1.S       3.Mixed
+ 00005      ST. JOHN'S M.V.                      64, CENTER RD, COLOMBO 15              Provincial       3.Grd 1-11   3.S/T     3.Mixed
+ 00006      KOTAHENA ST. LUCIA'S COLLEGE         KOTAHENA, COLOMBO 13                   Provincial       3.Grd 1-11   3.S/T     1.Boys
+ 00012      MATTAKKULIYA AVE MARIA V.            MATTAKKULIYA, COLOMBO 15               Provincial       3.Grd 1-11   1.S       3.Mixed
+ 00013      SRI SANGHABODHI M.V.                 GRANDPASS, COLOMBO 14                  Provincial       3.Grd 1-11   1.S       3.Mixed
+ 00014      BLOEMENDHAL SINHALA V.
+                                                 SIRIMAVO BANDARANAYAKA MW, COLOMBO 14      Provincial   3.Grd 1-11   1.S       3.Mixed
+ 00016      KOTAHENA SRI GUNANANDA V.            JINANANDA MW, KOTAHENA, COLOMBO 13         Provincial   1.Grd 1-5    1.S       3.Mixed
+ 00017      THOTAWATTA METHODIST VIDYALAYA
+                                                 152, CHURCH RD, MATTAKKULIYA, COLOMBO 15   Provincial   1.Grd 1-5    1.S       3.Mixed
+00073   THIMBIRIGASYAYA VIDYATHILAKA V.         THIMBIRIGASYAYA, COLOMBO 05             Provincial   3.Grd 1-11   1.S       3.Mixed
+        COLOMBO SIRIMAVO BANDARANAYAKE BALIKA
+00074
+        VIDYALAYA                               COLOMBO 07                              National     4.Grd 1-13   4.S/E     2.Girls
+03411   RATHTHEPIYIYA M.V.                        MENIKDEWELA                   Provincial   3.Grd 1-11   1.S       3.Mixed
+03412
+        ERIYAGAMA SRI PUSHPADANA MODEL SCHOOL PERADANIYA                        Provincial   4.Grd 1-13   1.S       3.Mixed
+03413   UDAWELA K.V.                          DANTHURE                          Provincial   3.Grd 1-11   1.S       3.Mixed
+03613
+        NAWALAPITIYA KATHIRESAN CENTRAL COLLEGE KOTMALE RD, NAWALAPITIYA      Provincial   6.Grd 6-13   5.T/E     3.Mixed
+        PUNGUDUTIVU RAJARAJESWARY TAMIL MIXED
+09022
+        VIDYALAYAM                             WARD NO 10 PUNGUDUTIVU               Provincial   1.Grd 1-5    2.T     3.Mixed
