@@ -8,7 +8,7 @@ import { classPlacement } from './progress';
 import { staffingFor } from './staffing';
 import type { Entry, EntryDraft, SchoolContext } from './types';
 
-export type FillSkip = 'not-primary' | 'nothing-to-fill' | 'all-placed' | 'no-room';
+export type FillSkip = 'not-primary' | 'no-subjects' | 'specialists-only' | 'all-placed' | 'no-room';
 export interface FillPlan { drafts: EntryDraft[]; skip?: FillSkip; subjectIds: string[] }
 
 export function fillWithClassTeacher(args: { ctx: SchoolContext; entries: Entry[]; classId: string }): FillPlan {
@@ -20,13 +20,16 @@ export function fillWithClassTeacher(args: { ctx: SchoolContext; entries: Entry[
   if (!cls || !teacherId || !teacher || !grade || !templateOf(ctx, cls)) return { drafts: [], subjectIds: [] };
   const staffing = staffingFor(grade, ctx);
   if (staffing.mode === 'subjectTeachers') return { drafts: [], skip: 'not-primary', subjectIds: [] };
-  const eligible = classPlacement(cls, args.entries, ctx).rows.flatMap((r) =>
-    r.item.kind === 'subject' && r.unit === 'periods' && !staffing.specialistSubjectIds.includes(r.item.subjectId)
-      ? [{ subjectId: r.item.subjectId, need: r.needed - r.placed }]
-      : [],
+  const rows = classPlacement(cls, args.entries, ctx).rows.flatMap((r) =>
+    r.item.kind === 'subject' && r.unit === 'periods' ? [{ subjectId: r.item.subjectId, need: r.needed - r.placed }] : [],
   );
+  const isSpecialist = (id: string) => staffing.specialistSubjectIds.includes(id);
+  const eligible = rows.filter((r) => !isSpecialist(r.subjectId));
   const subjectIds = eligible.map((r) => r.subjectId);
-  if (eligible.length === 0) return { drafts: [], skip: 'nothing-to-fill', subjectIds };
+  if (eligible.length === 0) {
+    const specialistsLeft = rows.some((r) => isSpecialist(r.subjectId) && r.need > 0);
+    return { drafts: [], skip: specialistsLeft ? 'specialists-only' : 'no-subjects', subjectIds };
+  }
   const remaining = eligible.filter((r) => r.need > 0).sort((a, b) => b.need - a.need);
   if (remaining.length === 0) return { drafts: [], skip: 'all-placed', subjectIds };
   const all: Entry[] = [...args.entries];

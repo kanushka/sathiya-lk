@@ -97,7 +97,8 @@
     "skip": {
       "no-room": "Nothing to fill: no empty period can take {{teacher}} for a subject that still needs periods.",
       "all-placed": "Nothing to fill: {{subjects}} already have all their periods.",
-      "nothing-to-fill": "Nothing to fill: the subjects left in this class are taught by specialist teachers. Assign them from the subject list."
+      "specialists-only": "Nothing to fill: the subjects left in this class are taught by specialist teachers. Assign them from the subject list.",
+      "no-subjects": "Nothing to fill: this class has no subjects the class teacher can fill."
     }
   },
   "teacherView": {

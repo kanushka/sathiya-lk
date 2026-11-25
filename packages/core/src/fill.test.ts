@@ -53,10 +53,16 @@ describe('fillWithClassTeacher', () => {
     expect(res.subjectIds).toEqual([S.maths]);
   });
 
-  it('skips with nothing-to-fill when only specialist subjects are left', () => {
+  it('skips with specialists-only when only specialist subjects are left', () => {
     const plan: PlanItem[] = [{ kind: 'subject', subjectId: S.english, perWeek: 3 }];
     const res = fillWithClassTeacher({ ctx: withGrade1({ number: 4, plan }), entries: [], classId: C.c1a });
-    expect(res.skip).toBe('nothing-to-fill');
+    expect(res.skip).toBe('specialists-only');
+  });
+
+  it('skips with no-subjects for an empty or group-only plan', () => {
+    const group = ctx.grades.find((g) => g.id === G.g1)!.plan.filter((p) => p.kind === 'group');
+    expect(fillWithClassTeacher({ ctx: withGrade1({ plan: [] }), entries: [], classId: C.c1a }).skip).toBe('no-subjects');
+    expect(fillWithClassTeacher({ ctx: withGrade1({ plan: group }), entries: [], classId: C.c1a }).skip).toBe('no-subjects');
   });
 
   it('skips slots where the class teacher is busy elsewhere', () => {
