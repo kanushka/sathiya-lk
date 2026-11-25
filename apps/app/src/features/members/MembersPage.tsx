@@ -6,6 +6,7 @@ import { useTranslation } from 'react-i18next';
 import { Link } from 'react-router-dom';
 import { useAuth } from '../../app/AuthProvider';
 import { useLang } from '../../app/LangProvider';
+import { PendingNote, useSchoolPending } from '../../app/PendingReview';
 import { useSchool } from '../../app/SchoolProvider';
 import { toApiError } from '../../lib/callable';
 import { useCollection } from '../../lib/firestore';
@@ -28,6 +29,7 @@ export function MembersPage() {
   const { lang } = useLang();
   const { school, teachers } = useSchool();
   const readOnly = useReadOnly();
+  const pending = useSchoolPending();
   const { user, signOut } = useAuth();
   const toast = useToast();
   const [inviting, setInviting] = useState(false);
@@ -77,9 +79,17 @@ export function MembersPage() {
         subtitle={t('page.subtitle')}
         actions={
           !readOnly && (
-            <Button variant="primary" onClick={() => setInviting(true)}>
-              {t('page.invite')}
-            </Button>
+            <div className="flex flex-col items-end gap-1.5">
+              <Button
+                variant="primary"
+                disabled={pending}
+                aria-describedby={pending ? 'invite-locked' : undefined}
+                onClick={() => setInviting(true)}
+              >
+                {t('page.invite')}
+              </Button>
+              {pending && <PendingNote id="invite-locked" />}
+            </div>
           )
         }
       />
@@ -181,7 +191,7 @@ export function MembersPage() {
         />
       )}
 
-      {inviting && (
+      {inviting && !pending && (
         <InviteModal
           teachers={teachers}
           onClose={() => setInviting(false)}

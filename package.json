@@ -16,6 +16,7 @@
     "dev:web": "pnpm --filter web dev",
     "emulators": "firebase emulators:start",
     "seed": "tsx scripts/seed.ts",
+    "moe:build": "tsx scripts/moe-schools/build.mjs",
     "dev:local": "node scripts/dev-local.mjs",
     "e2e": "pnpm --filter functions build && firebase emulators:exec --only auth,firestore,storage,functions --project sathiya-lk \"pnpm --filter e2e test\""
   },

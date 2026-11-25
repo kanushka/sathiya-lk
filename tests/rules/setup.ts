@@ -16,7 +16,7 @@ export function initEnv(): Promise<RulesTestEnvironment> {
   });
 }
 
-// s1 = the school under test, s2 = another active school, sd = a disabled school.
+// s1 = the school under test, s2 = another active school, sd = a disabled school, sp = pending review, sr = rejected.
 export const roles = {
   admin: { uid: 'u-admin', claims: { schools: { s1: { r: 'a' } } } },
   adminTid: { uid: 'u-admin-t', claims: { schools: { s1: { r: 'a', t: 't2' } } } },
@@ -26,6 +26,8 @@ export const roles = {
   otherTeacher: { uid: 'u-other-t', claims: { schools: { s2: { r: 't', t: 't9' } } } },
   disabledAdmin: { uid: 'u-dis', claims: { schools: { sd: { r: 'a' } } } },
   disabledTeacher: { uid: 'u-dis-t', claims: { schools: { sd: { r: 't', t: 'td' } } } },
+  pendingAdmin: { uid: 'u-pend', claims: { schools: { sp: { r: 'a' } } } },
+  rejectedAdmin: { uid: 'u-rej', claims: { schools: { sr: { r: 'a' } } } },
   multiTeacher: { uid: 'u-multi', claims: { schools: { s1: { r: 't', t: 't1' }, s2: { r: 't', t: 't9' } } } },
   adminS1TeacherS2: { uid: 'u-mixed', claims: { schools: { s1: { r: 'a' }, s2: { r: 't', t: 't9' } } } },
   noClaims: { uid: 'u-new', claims: {} },

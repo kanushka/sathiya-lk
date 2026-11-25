@@ -5,6 +5,7 @@ import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Link } from 'react-router-dom';
 import { useAuth } from '../../app/AuthProvider';
+import { PendingNote, useSchoolPending } from '../../app/PendingReview';
 import { useSchool, useYear } from '../../app/SchoolProvider';
 import { useReadOnly } from '../../ui/AdminLayout';
 import { Button } from '../../ui/Button';
@@ -31,6 +32,7 @@ export function DashboardPage() {
   const school = useSchool();
   const { years, yearId, setYearId, entries } = useYear();
   const readOnly = useReadOnly();
+  const pending = useSchoolPending();
   const { user } = useAuth();
   const base = useAdminBase();
   const [dialog, setDialog] = useState<'new' | 'publish' | null>(null);
@@ -67,6 +69,7 @@ export function DashboardPage() {
             {year ? t('page.title', { year: year.label }) : t('page.noYear')}
           </h1>
         </div>
+        <div className="flex flex-col items-end gap-1.5">
         <div className="flex flex-wrap items-center gap-2.5">
           {years.length > 0 && (
             <Select
@@ -89,7 +92,13 @@ export function DashboardPage() {
               {t('page.continue')}
             </Link>
           )}
-          {!readOnly && year && <Button onClick={() => setDialog('publish')}>{t('publish.button')}</Button>}
+          {!readOnly && year && (
+            <Button disabled={pending} aria-describedby={pending ? 'publish-locked' : undefined} onClick={() => setDialog('publish')}>
+              {t('publish.button')}
+            </Button>
+          )}
+        </div>
+        {!readOnly && year && pending && <PendingNote id="publish-locked" />}
         </div>
       </div>
 
@@ -164,7 +173,7 @@ export function DashboardPage() {
           }}
         />
       )}
-      {dialog === 'publish' && year && (
+      {dialog === 'publish' && year && !pending && (
         <PublishModal
           yearLabel={year.label}
           problems={publishProblems(school, entries)}

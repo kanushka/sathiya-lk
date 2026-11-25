@@ -25,6 +25,7 @@ import { useEffect, useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Navigate, useLocation, useNavigate, useParams, useSearchParams } from 'react-router-dom';
 import { useLang } from '../../app/LangProvider';
+import { LockedButton, useSchoolPending } from '../../app/PendingReview';
 import { useSchool, useYear } from '../../app/SchoolProvider';
 import { useReadOnly } from '../../ui/AdminLayout';
 import { Button } from '../../ui/Button';
@@ -99,6 +100,7 @@ function ClassView({ cls, classes }: { cls: SchoolClass; classes: SchoolClass[] 
   const { t: tc } = useTranslation('common');
   const { lang } = useLang();
   const readOnly = useReadOnly();
+  const pending = useSchoolPending();
   const navigate = useNavigate();
   const base = useAdminBase();
   const { yearId } = useYear();
@@ -262,13 +264,14 @@ function ClassView({ cls, classes }: { cls: SchoolClass; classes: SchoolClass[] 
               {t('classView.fill')}
             </Button>
           )}
-          {!readOnly && (
-            <LinkButton to={`${base}/timetable/auto-fill`}>{t('autoFill')}</LinkButton>
+          {!readOnly &&
+            (pending ? <LockedButton>{t('autoFill')}</LockedButton> : <LinkButton to={`${base}/timetable/auto-fill`}>{t('autoFill')}</LinkButton>)}
+          {!pending && (
+            <Button onClick={print}>
+              <Icon name="print" size={16} />
+              {t('classView.print')}
+            </Button>
           )}
-          <Button onClick={print}>
-            <Icon name="print" size={16} />
-            {t('classView.print')}
-          </Button>
         </div>
       </div>
 

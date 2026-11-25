@@ -7,8 +7,12 @@ import {
   reliefAssigned,
   reliefCancelled,
   reportReceived,
+  schoolListed,
+  schoolPendingReview,
+  schoolApproved,
   schoolReactivated,
   schoolRegistered,
+  schoolRejected,
   schoolSuspended,
   verifyEmail,
 } from '../src/email/templates';
@@ -24,6 +28,8 @@ const cases = {
     reportReceived({ schoolName: school.nameEn, schoolId: 'abc123', reason: 'fake', details: 'No such school.\nCalled them.', reporterEmail: 'parent@example.com', loginUrl, webUrl }),
   schoolSuspended: () => schoolSuspended({ school, loginUrl, webUrl }),
   schoolReactivated: () => schoolReactivated({ school, loginUrl, webUrl }),
+  schoolApproved: () => schoolApproved({ school, adminUrl: 'https://app.example.test/s/sid1/admin' }),
+  schoolRejected: () => schoolRejected({ school, reason: 'No such school.\nCall us.', contactEmail: 'help@example.test' }),
   verifyEmail: () => verifyEmail({ link: 'https://app.example.test/auth/action?mode=verifyEmail&oobCode=abc', lang: 'en', webUrl }),
   passwordReset: () => passwordReset({ link: 'https://app.example.test/auth/action?mode=resetPassword&oobCode=abc', lang: 'si', webUrl }),
 };
@@ -115,6 +121,8 @@ describe('email templates', () => {
       reportReceived({ schoolName: evil, schoolId: evil, reason: evil, details: evil, reporterEmail: evil, loginUrl: url, webUrl: url }),
       schoolSuspended({ school: { nameEn: evil, nameSi: evil }, loginUrl: url }),
       schoolReactivated({ school: { nameEn: evil, nameSi: evil }, loginUrl: url }),
+      schoolApproved({ school: { nameEn: evil, nameSi: evil }, adminUrl: url }),
+      schoolRejected({ school: { nameEn: evil, nameSi: evil }, reason: evil, contactEmail: evil }),
       verifyEmail({ link: url, webUrl: url }),
     ];
     for (const { html, subject } of out) {
@@ -189,5 +197,72 @@ describe('relief email templates', () => {
     const { text } = cases.many();
     expect(text).toContain('P3 · 09:15–10:00: 6B · Maths (for Mr P. Bandara)');
     expect(text).toContain('P5 · 11:00–11:45: 7A · Science (for Mr P. Bandara)');
+  });
+});
+
+describe('super admin school review templates', () => {
+  const details = {
+    schoolId: 'sid1',
+    nameEn: 'Royal <College>',
+    nameSi: 'රාජකීය',
+    type: 'private',
+    district: 'Colombo',
+    city: 'Colombo 07',
+    medium: ['si', 'en'],
+    grades: [1, 2, 3, 4, 5],
+    registrant: { name: 'W. Perera', email: 'w@example.com' },
+  };
+  const schoolUrl = 'https://app.example.test/super/schools/sid1';
+
+  it('listed FYI is English only and links to the super school page', () => {
+    const { subject, html, text } = schoolListed({ school: { ...details, censusNo: '10001' }, schoolUrl, webUrl });
+    expect(subject).toBe('New school (MOE listed): Royal <College> · Sathiya (සතිය)');
+    expect(html).toContain(`href="${schoolUrl}"`);
+    expect(html).toContain('Royal &lt;College&gt;');
+    expect(html).not.toMatch(/<h2 /);
+    expect(text).toContain('Grades: 1–5');
+    expect(text).toContain('Medium: Sinhala, English');
+    expect(text).not.toContain('---');
+  });
+
+  it('pending review lists duplicates in each section, or None', () => {
+    const { html, text } = schoolPendingReview({
+      school: details,
+      schoolUrl,
+      webUrl,
+      similarRegistered: [{ id: 'sid2', name: 'Royal College', district: 'Colombo', city: 'Colombo 07', status: 'pending' }],
+      similarMoe: [{ id: '17125', name: 'Royal College' }],
+      sameDistrict: [],
+    });
+    expect(html).toContain(`href="${schoolUrl}"`);
+    expect(text).toContain('- Royal College · sid2 (Colombo 07, Colombo) [pending]');
+    expect(text).toContain('- Royal College · 17125');
+    expect(text).toMatch(/Registered in Colombo:\n> - None/);
+    expect(text).toContain('Census no: None');
+  });
+});
+
+describe('school review decision templates', () => {
+  it('approved links to the school admin page', () => {
+    const { subject, html } = schoolApproved({ school, adminUrl: 'https://app.example.test/s/sid1/admin' });
+    expect(subject).toBe('Siripura Central College is approved · Sathiya (සතිය)');
+    expect(html).toContain('href="https://app.example.test/s/sid1/admin"');
+  });
+
+  it('rejected quotes the reason and gives the contact address', () => {
+    const { subject, text } = schoolRejected({ school, reason: 'No such school.\nCall us.', contactEmail: 'help@example.test' });
+    expect(subject).toBe('Siripura Central College was not approved · Sathiya (සතිය)');
+    expect(text).toContain('Reason:\n> No such school.\n> Call us.');
+    expect(text).toContain('help@example.test');
+  });
+});
+
+describe('schoolRegistered while pending review', () => {
+  it('says the school is under review and what opens after approval, in both languages', () => {
+    const { html, text } = schoolRegistered({ adminName: 'W. Perera', school, loginUrl, webUrl, pending: true });
+    expect(text).toContain('[Under review] Sathiya is reviewing your school before it goes live.');
+    expect(text).toContain('Publishing, admin invites and printing open after approval.');
+    expect(html).toContain('සමාලෝචනය');
+    expect(text).not.toContain("Invite other admins from school settings when you're ready.");
   });
 });

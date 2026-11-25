@@ -2,6 +2,8 @@
 // Copyright (C) 2026 Kanushka Gayan
 import { assertFails, assertSucceeds, type RulesTestEnvironment } from '@firebase/rules-unit-testing';
 import { paths, STANDARD_SUBJECTS } from '@sathiya/core';
+import firebase from 'firebase/compat/app';
+import 'firebase/compat/firestore';
 import { afterAll, beforeAll, beforeEach, describe, it } from 'vitest';
 import { as, initEnv, type Role } from './setup';
 
@@ -32,6 +34,12 @@ const seed: Record<string, Record<string, unknown>> = {
   [paths.school('s1')]: school('s1'),
   [paths.school('s2')]: school('s2'),
   [paths.school('sd')]: school('sd', 'disabled'),
+  [paths.school('sp')]: { ...school('sp', 'pending'), review: { moeMatched: false } },
+  [paths.school('sr')]: { ...school('sr', 'rejected'), review: { moeMatched: false, reason: 'Not real', decidedAt: 2, decidedBy: 'u-super' } },
+  [`${paths.subjects('sr')}/sub1`]: { nameEn: 'Maths', short: 'MAT', color: '#000000' },
+  [`${paths.grades('sr')}/g1`]: { number: 6, plan: [] },
+  [`${paths.years('sr')}/y1`]: { label: '2026', status: 'draft' },
+  [`${paths.teachers('sr')}/tr`]: { staffId: 'REJ001', name: 'T R' },
   [paths.directory('s1')]: { nameEn: 'School s1', district: 'Kurunegala', city: 'Siripura', status: 'active' },
   [`${paths.teachers('s1')}/t1`]: { staffId: 'SCC001', name: 'T One', uid: 'u-teacher', subjectIds: [], grades: [6], maxPerDay: 6, isPrimary: false },
   [`${paths.teachers('s1')}/t2`]: { staffId: 'SCC002', name: 'T Two', subjectIds: [], grades: [6], maxPerDay: 6, isPrimary: false },
@@ -47,6 +55,8 @@ const seed: Record<string, Record<string, unknown>> = {
   [`${paths.members('s1')}/u-admin-t`]: { uid: 'u-admin-t', role: 'admin', teacherId: 't2' },
   [`${paths.members('s1')}/u-mixed`]: { uid: 'u-mixed', role: 'admin' },
   [`${paths.members('s2')}/u-other`]: { uid: 'u-other', role: 'admin' },
+  [`${paths.members('sp')}/u-pend`]: { uid: 'u-pend', role: 'admin' },
+  [`${paths.members('sr')}/u-rej`]: { uid: 'u-rej', role: 'admin' },
   [`${paths.members('s1')}/u-teacher`]: { uid: 'u-teacher', role: 'teacher', teacherId: 't1' },
   [`${paths.invites('s1')}/b@x.lk`]: { email: 'b@x.lk', invitedBy: 'u-admin', createdAt: 1 },
   [`${paths.years('s1')}/y1`]: { label: '2026', status: 'published', publishedAt: 1 },
@@ -498,6 +508,68 @@ describe('disabled school', () => {
   deny(lists.map((p): Case => ['disabledTeacher', p]), list);
   allow(scoped.map((p): Case => ['super', p]), read);
   allow(lists.map((p): Case => ['super', p]), list);
+});
+
+describe('rejected school', () => {
+  const sr = paths.school('sr');
+  it('denies every admin write', async () => {
+    await assertFails(update('rejectedAdmin', sr, { nameSi: 'x' }));
+    await assertFails(update('rejectedAdmin', `${paths.subjects('sr')}/sub1`, { short: 'X' }));
+    await assertFails(set('rejectedAdmin', `${paths.subjects('sr')}/sub2`, { nameEn: 'Art', short: 'ART', color: '#000000' }));
+    await assertFails(set('rejectedAdmin', `${paths.grades('sr')}/g1`, { number: 6, plan: [] }));
+    await assertFails(set('rejectedAdmin', `${paths.years('sr')}/y2`, { label: '2027', status: 'draft' }));
+    await assertFails(update('rejectedAdmin', `${paths.years('sr')}/y1`, { label: '2028' }));
+    await assertFails(update('rejectedAdmin', `${paths.teachers('sr')}/tr`, { name: 'x' }));
+  });
+  allow([['rejectedAdmin', sr], ['super', sr], ['rejectedAdmin', `${paths.subjects('sr')}/sub1`]], read);
+  deny([['otherAdmin', sr], ['anon', sr]], read);
+});
+
+describe('reviewed school identity', () => {
+  const sp = paths.school('sp');
+  const sr = paths.school('sr');
+  it.each([
+    ['nameEn', 'Renamed College'],
+    ['district', 'Colombo'],
+    ['censusNo', '54321'],
+  ])('denies the pending admin changing %s', async (k, v) => {
+    await assertFails(update('pendingAdmin', sp, { [k]: v }));
+  });
+  it('denies a full set that changes nameEn and an update that deletes review', async () => {
+    const pending = { ...school('sp', 'pending'), review: { moeMatched: false } };
+    await assertSucceeds(set('pendingAdmin', sp, { ...pending, nameSi: 'නම' }));
+    await assertFails(set('pendingAdmin', sp, { ...pending, nameEn: 'Renamed College' }));
+    const { review: _r, ...noReview } = pending;
+    await assertFails(set('pendingAdmin', sp, noReview));
+    await assertFails(set('pendingAdmin', sp, { ...noReview, nameEn: 'Renamed College' }));
+    await assertFails(update('pendingAdmin', sp, { review: firebase.firestore.FieldValue.delete() }));
+    await assertFails(update('pendingAdmin', sp, { review: firebase.firestore.FieldValue.delete(), nameEn: 'Renamed College' }));
+  });
+  it('allows the pending admin to change nameSi and other details', async () => {
+    await assertSucceeds(update('pendingAdmin', sp, { nameSi: 'නම' }));
+    await assertSucceeds(update('pendingAdmin', sp, { city: 'Kurunegala', phone: '037 222 3344' }));
+  });
+  it('denies the admin of an approved, reviewed school changing nameEn or district but allows nameSi', async () => {
+    await env.withSecurityRulesDisabled((ctx) => ctx.firestore().doc(paths.school('s1')).update({ review: { moeMatched: true } }));
+    await assertFails(update('admin', paths.school('s1'), { nameEn: 'x' }));
+    await assertFails(update('admin', paths.school('s1'), { district: 'Colombo' }));
+    await assertSucceeds(update('admin', paths.school('s1'), { nameSi: 'නම' }));
+  });
+  it('lets a Sinhala-only reviewed school add its English name once', async () => {
+    await env.withSecurityRulesDisabled((ctx) => ctx.firestore().doc(sp).update({ nameEn: '', nameSi: 'නම' }));
+    await assertFails(update('pendingAdmin', sp, { nameEn: 'English Name', district: 'Colombo' }));
+    await assertSucceeds(update('pendingAdmin', sp, { nameEn: 'English Name' }));
+    await assertFails(update('pendingAdmin', sp, { nameEn: 'Renamed College' }));
+    await assertFails(update('pendingAdmin', sp, { nameEn: '' }));
+  });
+  it('lets a reviewed school without a nameEn field add one', async () => {
+    await env.withSecurityRulesDisabled((ctx) => ctx.firestore().doc(sp).update({ nameEn: firebase.firestore.FieldValue.delete(), nameSi: 'නම' }));
+    await assertSucceeds(update('pendingAdmin', sp, { nameEn: 'English Name' }));
+  });
+  it('still lets a school without a review record change nameEn and district', async () => {
+    await assertSucceeds(update('admin', paths.school('s1'), { nameEn: 'x', district: 'Colombo' }));
+  });
+  deny([['rejectedAdmin', sr]], (r, p) => update(r, p, { nameEn: 'x' }));
 });
 
 describe('members', () => {

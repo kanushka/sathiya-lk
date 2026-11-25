@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
 // Copyright (C) 2026 Kanushka Gayan
 import { directoryFields, MAX_SCHOOLS, paths, teacherDisplayName, type Claims, type Entry, type Member } from '@sathiya/core';
-import { ctx, entries, school, subjects, T } from '@sathiya/core/fixtures';
+import { ctx, defaultTemplate, entries, school, subjects, T } from '@sathiya/core/fixtures';
 import { getApps, initializeApp } from 'firebase-admin/app';
 import { getAuth } from 'firebase-admin/auth';
 import { getFirestore, type Firestore } from 'firebase-admin/firestore';
@@ -26,6 +26,9 @@ export const JOIN_TOKEN = 'seed-join-token-siripura';
 export const REQUESTER = { uid: 'seed-requester', email: 'kumari@siripura.example.com', password: 'request-pass-1', name: 'D. Kumari', teacherId: T.kumari } as const;
 // No account yet; signing up with this email and opening the school link links them straight away.
 export const INVITEE = { email: 'bandara@siripura.example.com', teacherId: T.bandara } as const;
+// Registered with a census number that is not in the MOE list, so it waits for super admin review.
+export const PENDING_SCHOOL = { sid: 'seed-wattegama', nameEn: 'Wattegama M.V.', censusNo: '99001' } as const;
+export const PENDING_ADMIN = { uid: 'seed-wattegama-admin', email: 'admin@wattegama.example.com', password: 'wattegama-pass-1', name: 'Principal Wattegama' } as const;
 
 export const teacherLogin = (tid: string) => {
   const t = ctx.teachers.find((x) => x.id === tid);
@@ -85,6 +88,24 @@ async function writeSchool(db: Firestore): Promise<void> {
   batch.set(db.doc(paths.joinLink(SID)), { hash: sha256(JOIN_TOKEN), token: JOIN_TOKEN, createdAt: Date.now(), createdBy: ADMIN.uid });
   batch.set(db.doc(`${paths.years(SID)}/${YEAR_ID}`), { label: '2027', status: 'draft' });
   put(paths.entries(SID, YEAR_ID), entries as Entry[]);
+  const pending = {
+    nameEn: PENDING_SCHOOL.nameEn,
+    district: 'Kandy',
+    city: 'Wattegama',
+    type: 'government',
+    censusNo: PENDING_SCHOOL.censusNo,
+    grades: [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11],
+    medium: ['si'],
+    staffPrefix: 'WMV',
+    colors: { primary: '#1F4E79', second: '#D9A441' },
+    status: 'pending',
+    review: { moeMatched: false },
+    termsVersion: TERMS_VERSION,
+    createdAt: Date.now(),
+  };
+  batch.set(db.doc(paths.school(PENDING_SCHOOL.sid)), pending);
+  batch.set(db.doc(paths.censusIndex(PENDING_SCHOOL.censusNo)), { schoolId: PENDING_SCHOOL.sid });
+  batch.set(db.doc(`${paths.templates(PENDING_SCHOOL.sid)}/default`), { name: defaultTemplate.name, isDefault: true, mode: 'same', rows: defaultTemplate.rows });
   batch.set(db.doc(paths.platform.config), { currentTermsVersion: TERMS_VERSION });
   batch.set(db.doc(paths.platform.defaultSubjects), {
     subjects: subjects.map(({ nameEn, nameSi, short, color }) => ({ nameEn, nameSi: nameSi ?? nameEn, short, color })),
@@ -112,9 +133,11 @@ async function writeAccounts(db: Firestore, auth: ReturnType<typeof getAuth>): P
   await auth.createUser({ uid: ADMIN.uid, email: ADMIN.email, password: ADMIN.password, emailVerified: true, displayName: ADMIN.name });
   await auth.createUser({ uid: SUPER.uid, email: SUPER.email, password: SUPER.password, emailVerified: true });
   await auth.setCustomUserClaims(SUPER.uid, { super: true });
+  await auth.createUser({ uid: PENDING_ADMIN.uid, email: PENDING_ADMIN.email, password: PENDING_ADMIN.password, emailVerified: true, displayName: PENDING_ADMIN.name });
   await auth.createUser({ uid: REQUESTER.uid, email: REQUESTER.email, password: REQUESTER.password, emailVerified: true, displayName: REQUESTER.name });
   const batch = db.batch();
   batch.set(db.doc(`${paths.members(SID)}/${ADMIN.uid}`), { uid: ADMIN.uid, role: 'admin', email: ADMIN.email, name: ADMIN.name });
+  batch.set(db.doc(`${paths.members(PENDING_SCHOOL.sid)}/${PENDING_ADMIN.uid}`), { uid: PENDING_ADMIN.uid, role: 'admin', email: PENDING_ADMIN.email, name: PENDING_ADMIN.name });
   for (const tid of LINKED_TEACHERS) {
     const l = teacherLogin(tid);
     await auth.createUser({ uid: l.uid, email: l.email, password: l.password, emailVerified: true, displayName: l.name });
@@ -131,7 +154,7 @@ async function writeAccounts(db: Firestore, auth: ReturnType<typeof getAuth>): P
     status: 'pending',
   });
   await batch.commit();
-  for (const uid of [ADMIN.uid, ...LINKED_TEACHERS.map((tid) => teacherLogin(tid).uid)]) await syncClaims(db, auth, uid);
+  for (const uid of [ADMIN.uid, PENDING_ADMIN.uid, ...LINKED_TEACHERS.map((tid) => teacherLogin(tid).uid)]) await syncClaims(db, auth, uid);
 }
 
 export async function seed(): Promise<void> {
@@ -147,6 +170,7 @@ export function credentials(appUrl = 'http://localhost:5173'): string {
     `Seeded ${school.nameEn} (${SID}) into project ${PROJECT_ID}, draft year ${YEAR_ID}.`,
     `Admin:      ${ADMIN.email} / ${ADMIN.password}`,
     `Super:      ${SUPER.email} / ${SUPER.password}`,
+    `Pending:    ${PENDING_ADMIN.email} / ${PENDING_ADMIN.password}  (admin of ${PENDING_SCHOOL.nameEn}, waiting for review)`,
     `Teachers:`,
     ...rows,
     `Requester:  ${REQUESTER.email} / ${REQUESTER.password}  (pending request for ${requestedTeacher().staffId})`,

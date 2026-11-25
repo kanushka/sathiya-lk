@@ -1,17 +1,19 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
 // Copyright (C) 2026 Kanushka Gayan
-import { SCHOOL_TYPES, suggestStaffPrefix, type SchoolType } from '@sathiya/core';
+import { SCHOOL_TYPES, suggestStaffPrefix } from '@sathiya/core';
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
+import { Badge } from '../../ui/Badge';
+import { MultiSelect } from '../../ui/MultiSelect';
 import { NameFields } from '../../ui/NameFields';
 import { Button } from '../../ui/Button';
 import { Checkbox } from '../../ui/Checkbox';
 import { Field, inputClass } from '../../ui/Field';
 import { Select } from '../../ui/Select';
 import { Trans } from 'react-i18next';
-import { censusError, gradesOk, prefixOk, schoolOk, type SchoolDraft } from './model';
+import { censusError, DISTRICTS, gradesOk, MEDIA, prefixOk, schoolOk, siFirst, type SchoolDraft } from './model';
 
-
+const districtOptions = DISTRICTS.map((d) => ({ value: d, label: d }));
 const gradeOptions = Array.from({ length: 13 }, (_, i) => ({ value: String(i + 1), label: String(i + 1) }));
 
 export interface StepSchoolProps {
@@ -21,9 +23,11 @@ export interface StepSchoolProps {
   censusTaken?: boolean;
   checking?: boolean;
   onReport?(): void;
+  onBack?(): void;
+  notListedCensus?: string;
 }
 
-export function StepSchool({ value, onChange, onNext, censusTaken, checking, onReport }: StepSchoolProps) {
+export function StepSchool({ value, onChange, onNext, censusTaken, checking, onReport, onBack, notListedCensus }: StepSchoolProps) {
   const { t } = useTranslation('register');
   const set = <K extends keyof SchoolDraft>(k: K, v: SchoolDraft[K]) => onChange({ ...value, [k]: v });
   const [cityTouched, setCityTouched] = useState(false);
@@ -47,8 +51,14 @@ export function StepSchool({ value, onChange, onNext, censusTaken, checking, onR
 
   return (
     <section className="rounded-2xl border-2 border-teal bg-white p-5 sm:p-7">
-      <h2 className="mb-1 mt-0 text-lg font-bold">{t('school.title')}</h2>
+      <h2 tabIndex={-1} className="mb-1 mt-0 text-lg font-bold outline-none">{t('school.title')}</h2>
       <p className="mb-5 mt-0 text-sm text-ink-muted">{t('school.subtitle')}</p>
+      <div role="status" className="mb-5 flex flex-col items-start gap-1.5 rounded-xl border border-warning-line bg-warning-soft p-3.5 text-sm">
+        <Badge tone="warning">{t('school.reviewBadge')}</Badge>
+        <span>
+          <b>{notListedCensus ? t('school.reviewTitleCensus', { census: notListedCensus }) : t('school.reviewTitle')}</b> {t('school.reviewBody')}
+        </span>
+      </div>
       <div className="flex flex-col gap-3.5">
         <div className="flex gap-3">
           <Field label={t('school.type')} className="flex-1">
@@ -76,6 +86,14 @@ export function StepSchool({ value, onChange, onNext, censusTaken, checking, onR
           onChange={(checked) => onChange({ ...value, noCensus: checked, censusNo: checked ? '' : value.censusNo })}
           label={t('school.noCensus')}
         />
+        <Field label={t('school.medium')}>
+          <MultiSelect
+            value={value.medium}
+            onChange={(medium) => set('medium', medium)}
+            placeholder={t('school.mediumPlaceholder')}
+            options={MEDIA.map((m) => ({ value: m, label: t(`school.media.${m}`) }))}
+          />
+        </Field>
         <NameFields
           legend={t('school.name')}
           enLabel={t('school.nameEn')}
@@ -85,6 +103,7 @@ export function StepSchool({ value, onChange, onNext, censusTaken, checking, onR
           onEn={(v) => onChange({ ...value, nameEn: v, ...(prefixTouched ? {} : { staffPrefix: suggestStaffPrefix(v) }) })}
           onSi={(v) => set('nameSi', v)}
           hint={t('school.nameHint')}
+          siFirst={siFirst(value.medium)}
         />
         <div className="flex gap-3">
           <Field
@@ -102,8 +121,8 @@ export function StepSchool({ value, onChange, onNext, censusTaken, checking, onR
               }}
             />
           </Field>
-          <Field label={t('school.district')} className="flex-1">
-            <input className={inputClass} value={value.district} onChange={(e) => set('district', e.target.value)} />
+          <Field label={t('school.district')} required className="flex-1">
+            <Select searchable value={value.district} onChange={(d) => set('district', d)} options={districtOptions} />
           </Field>
         </div>
         <Field label={t('school.address')}>
@@ -152,7 +171,14 @@ export function StepSchool({ value, onChange, onNext, censusTaken, checking, onR
           />
         </Field>
       </div>
-      <div className="mt-7 flex justify-end border-t border-line-soft pt-5">
+      <div className="mt-7 flex justify-between border-t border-line-soft pt-5">
+        {onBack ? (
+          <Button size="lg" onClick={onBack}>
+            {t('back')}
+          </Button>
+        ) : (
+          <span />
+        )}
         <Button variant="primary" size="lg" disabled={!schoolOk(value)} loading={checking} onClick={onNext}>
           {t('school.next')}
         </Button>

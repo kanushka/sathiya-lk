@@ -2,7 +2,7 @@
 // Copyright (C) 2026 Kanushka Gayan
 import type { Claims } from '@sathiya/core';
 import { afterEach, describe, expect, it, vi } from 'vitest';
-import { LAST_SCHOOL_KEY, homePath, readLastSchool, rememberLastSchool, schoolHomePath } from './schoolHome';
+import { LAST_SCHOOL_KEY, forgetLastSchool, homePath, markSchoolRemoved, readLastSchool, rememberLastSchool, schoolHomePath, unmarkSchoolRemoved } from './schoolHome';
 
 const claims: Claims = { schools: { s1: { r: 't', t: 'T1' }, s2: { r: 'a' }, s3: { r: 't' } } };
 
@@ -59,6 +59,32 @@ describe('last school memory', () => {
       throw new Error('blocked');
     });
     expect(() => rememberLastSchool('s1')).not.toThrow();
+    expect(readLastSchool()).toBeNull();
+  });
+});
+
+describe('removed schools', () => {
+  afterEach(() => unmarkSchoolRemoved('s2'));
+
+  it('skips a removed school still in stale claims, even when remembered', () => {
+    rememberLastSchool('s2');
+    markSchoolRemoved('s2');
+    expect(readLastSchool()).toBeNull();
+    expect(schoolHomePath(claims, 's2')).toBeNull();
+    expect(homePath(claims, 's2')).toBe('/s/s1/me');
+    expect(homePath({ schools: { s2: { r: 'a' } } }, 's2')).toBe('/start');
+  });
+
+  it('skips a remembered school whose claim is gone', () => {
+    rememberLastSchool('gone');
+    expect(homePath(claims, readLastSchool())).toBe('/s/s1/me');
+  });
+
+  it('forgets only the matching last school', () => {
+    rememberLastSchool('s1');
+    forgetLastSchool('s2');
+    expect(readLastSchool()).toBe('s1');
+    forgetLastSchool('s1');
     expect(readLastSchool()).toBeNull();
   });
 });

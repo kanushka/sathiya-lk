@@ -176,3 +176,22 @@ describe('subjects page', () => {
     expect(screen.getByLabelText('Short name of Mathematics')).toHaveAttribute('readonly');
   });
 });
+
+describe('subject name order by school medium', () => {
+  it('asks for the Sinhala name first when the school teaches in Sinhala', async () => {
+    const user = userEvent.setup();
+    renderWithSchool(<SubjectsPage />, { ctx: { ...ctx, school: { ...ctx.school, medium: ['si'] } }, entries });
+    await user.click(screen.getByRole('button', { name: '+ Add subject' }));
+    const langs = within(screen.getByRole('dialog')).getAllByRole('textbox').filter((el) => el.getAttribute('lang')).map((el) => el.getAttribute('lang'));
+    expect(langs).toEqual(['si', 'en']);
+  });
+
+  it('keeps English first for a legacy school with no medium', async () => {
+    const user = userEvent.setup();
+    const { medium: _, ...school } = ctx.school;
+    renderWithSchool(<SubjectsPage />, { ctx: { ...ctx, school }, entries });
+    await user.click(screen.getByRole('button', { name: '+ Add subject' }));
+    const langs = within(screen.getByRole('dialog')).getAllByRole('textbox').filter((el) => el.getAttribute('lang')).map((el) => el.getAttribute('lang'));
+    expect(langs).toEqual(['en', 'si']);
+  });
+});

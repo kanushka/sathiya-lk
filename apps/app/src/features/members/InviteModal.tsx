@@ -4,6 +4,7 @@ import { EMAIL_RE, teacherDisplayName, type Teacher } from '@sathiya/core';
 import { useState, type FormEvent } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useLang } from '../../app/LangProvider';
+import { isSchoolPendingError } from '../../app/PendingReview';
 import { Button } from '../../ui/Button';
 import { Field, inputClass } from '../../ui/Field';
 import { Modal } from '../../ui/Modal';
@@ -34,8 +35,8 @@ export function InviteModal({ teachers, onInvite, onClose }: InviteModalProps) {
       await onInvite(email.trim(), teacherId || undefined);
       toast.show(t('invite.sent', { email: email.trim() }), 'success');
       onClose();
-    } catch {
-      toast.show(t('invite.failed'), 'error');
+    } catch (err) {
+      toast.show(isSchoolPendingError(err) ? t('shell:review.locked') : t('invite.failed'), 'error');
       setSaving(false);
     }
   }

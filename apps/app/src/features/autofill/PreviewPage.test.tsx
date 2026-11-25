@@ -99,6 +99,15 @@ describe('PreviewPage', () => {
     expect(screen.queryByRole('button', { name: 'Save' })).not.toBeInTheDocument();
   });
 
+  it('locks Save while the school is pending review', async () => {
+    const { api } = setup(makeApi(), result, { ...ctx, school: { ...ctx.school, status: 'pending' } });
+    const save = screen.getByRole('button', { name: 'Save' });
+    expect(save).toBeDisabled();
+    await userEvent.setup().click(save);
+    expect(api.applyAutoFill).not.toHaveBeenCalled();
+    expect(screen.getByText('Available after Sathiya approves your school.')).toBeInTheDocument();
+  });
+
   it('highlights new entries in the class grid', async () => {
     setup();
     await userEvent.click(screen.getByRole('tab', { name: 'Classes' }));

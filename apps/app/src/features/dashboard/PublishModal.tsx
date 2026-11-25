@@ -2,6 +2,7 @@
 // Copyright (C) 2026 Kanushka Gayan
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
+import { isSchoolPendingError } from '../../app/PendingReview';
 import { Button } from '../../ui/Button';
 import { Modal } from '../../ui/Modal';
 import { useToast } from '../../ui/Toast';
@@ -27,8 +28,8 @@ export function PublishModal({ yearLabel, problems, onPublish, onClose }: Publis
     try {
       toast.show(await onPublish(), 'success');
       onClose();
-    } catch {
-      toast.show(t('publish.failed'), 'error');
+    } catch (err) {
+      toast.show(isSchoolPendingError(err) ? t('shell:review.locked') : t('publish.failed'), 'error');
       setSaving(false);
     }
   }

@@ -105,7 +105,7 @@ export const en = {
     title: 'Up and running in an afternoon',
     step: 'Step',
     items: [
-      { title: 'Register your school', body: "Add your school's name, logo and colours." },
+      { title: 'Register your school', body: "Enter your school's census number, then add your logo and colours." },
       { title: 'Add teachers & subjects', body: 'Type them in or upload the Excel template: staff IDs, subjects and the grades each teacher takes.' },
       { title: 'Set up grades & periods', body: 'Classes, class teachers, period times and periods per subject for each grade.' },
       { title: 'Build, publish & print', body: 'Fill the grid without clashes, publish to teachers, and print class and teacher timetables.' },

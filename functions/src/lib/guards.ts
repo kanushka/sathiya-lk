@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
 // Copyright (C) 2026 Kanushka Gayan
-import { EMAIL_RE, isSchoolAdmin, paths, type ApiErrorCode, type Claims, type Member, type School } from '@sathiya/core';
+import { EMAIL_RE, isSchoolAdmin, paths, type ApiErrorCode, type Claims, type Member, type School, type SchoolStatus } from '@sathiya/core';
 import { HttpsError, type CallableRequest, type FunctionsErrorCode } from 'firebase-functions/v2/https';
 import { db } from './admin';
 
@@ -36,18 +36,40 @@ export function requireSuper(req: CallableRequest): Caller {
 
 export const isAdminOf = (claims: Claims, sid: string): boolean => isSchoolAdmin(claims, sid);
 
-// Admin of sid, school exists and is not disabled. Reuse for every school-scoped admin callable.
+const schoolRejected = (): never => fail('failed-precondition', 'school-rejected', 'This school was not approved');
+
+// Admin of sid, school exists and is neither disabled nor rejected. Reuse for every school-scoped admin callable.
 // The member doc is checked too: claims of a removed admin stay valid until their ID token expires.
-export async function requireSchoolAdmin(req: CallableRequest, sid: unknown): Promise<Caller & { sid: string; school: Omit<School, 'id'> }> {
+// allowRejected is for removeRegistration only.
+export async function requireSchoolAdmin(
+  req: CallableRequest,
+  sid: unknown,
+  opts: { allowRejected?: boolean } = {},
+): Promise<Caller & { sid: string; school: Omit<School, 'id'> }> {
   const caller = requireAuth(req);
   const schoolId = docId(sid, 'schoolId');
   if (!isAdminOf(caller.claims, schoolId)) notAllowed('Not an admin of this school');
   const [snap, member] = await Promise.all([db.doc(paths.school(schoolId)).get(), db.doc(`${paths.members(schoolId)}/${caller.uid}`).get()]);
-  if ((member.data() as Member | undefined)?.role !== 'admin') notAllowed('Not an admin of this school');
-  const school = snap.data() as Omit<School, 'id'> | undefined;
+  const school = snap.data() as (Omit<School, 'id'> & { removing?: { uids?: string[] } }) | undefined;
+  // A removeRegistration retry may find the member docs already deleted; the uids it recorded still prove admin access.
+  const removing = opts.allowRejected && !!school?.removing?.uids?.includes(caller.uid);
+  if ((member.data() as Member | undefined)?.role !== 'admin' && !removing) notAllowed('Not an admin of this school');
   if (!school) notAllowed('School is not active');
   if (school!.status === 'disabled') schoolDisabled();
+  if (school!.status === 'rejected' && !opts.allowRejected) schoolRejected();
   return { ...caller, sid: schoolId, school: school! };
+}
+
+export function assertApproved(status: SchoolStatus | undefined): void {
+  if (status === 'pending') fail('failed-precondition', 'school-pending', 'Available after Sathiya approves your school');
+  if (status === 'rejected') schoolRejected();
+}
+
+// requireSchoolAdmin, and the school is approved (not pending review or rejected).
+export async function requireApprovedSchool(req: CallableRequest, sid: unknown): ReturnType<typeof requireSchoolAdmin> {
+  const r = await requireSchoolAdmin(req, sid);
+  assertApproved(r.school.status);
+  return r;
 }
 
 export function obj(v: unknown, name: string): Record<string, unknown> {

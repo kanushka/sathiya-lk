@@ -3,6 +3,18 @@
 export { adminInvite, type AdminInviteInput } from './adminInvite';
 export { schoolRegistered, type SchoolRegisteredInput } from './schoolRegistered';
 export { reportReceived, type ReportReceivedInput } from './reportReceived';
+export {
+  schoolApproved,
+  schoolListed,
+  schoolPendingReview,
+  schoolRejected,
+  type DuplicateRow,
+  type NewSchoolDetails,
+  type SchoolApprovedInput,
+  type SchoolListedInput,
+  type SchoolPendingInput,
+  type SchoolRejectedInput,
+} from './schoolReview';
 export { schoolSuspended, schoolReactivated, type SchoolStatusInput } from './schoolStatus';
 export { verifyEmail, passwordReset, type LinkEmailInput } from './authLinks';
 export { reliefAssigned, reliefCancelled, type ReliefAssignedInput, type ReliefCancelledInput, type ReliefMailRow } from './relief';

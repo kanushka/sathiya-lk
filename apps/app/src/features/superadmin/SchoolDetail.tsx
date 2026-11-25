@@ -1,14 +1,16 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
 // Copyright (C) 2026 Kanushka Gayan
-import { paths, pickName, type School } from '@sathiya/core';
+import { paths, pickName, type Member, type School } from '@sathiya/core';
 import { useMemo, type ReactNode } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Link, useParams } from 'react-router-dom';
 import { useLang } from '../../app/LangProvider';
-import { useDoc, type DocState } from '../../lib/firestore';
+import { useCollection, useDoc, type CollectionState, type DocState } from '../../lib/firestore';
 import { EmptyState } from '../../ui/EmptyState';
 import { LoadingState } from '../../ui/LoadingState';
 import { defaultReleaseCensus, ReleaseCensusButton, type ReleaseCensusFn } from './ReleaseCensus';
+import { defaultReview, type ReviewFn } from './review';
+import { MoeBadge, ReviewSection } from './ReviewSection';
 import { StatusButton, StatusPill } from './StatusControl';
 import { formatActivity, formatDate } from './format';
 import { useUsageCounts } from './source';
@@ -18,6 +20,9 @@ export interface SchoolDetailProps {
   school?: DocState<School>;
   setStatus?: SetStatusFn;
   releaseCensus?: ReleaseCensusFn;
+  schools?: CollectionState<School>;
+  members?: CollectionState<Member>;
+  review?: ReviewFn;
 }
 
 function Row({ label, children }: { label: string; children: ReactNode }) {
@@ -29,7 +34,14 @@ function Row({ label, children }: { label: string; children: ReactNode }) {
   );
 }
 
-export function SchoolDetail({ school: injected, setStatus = defaultSetStatus, releaseCensus = defaultReleaseCensus }: SchoolDetailProps) {
+export function SchoolDetail({
+  school: injected,
+  setStatus = defaultSetStatus,
+  releaseCensus = defaultReleaseCensus,
+  schools: injectedSchools,
+  members: injectedMembers,
+  review = defaultReview,
+}: SchoolDetailProps) {
   const { t } = useTranslation('superadmin');
   const { lang } = useLang();
   const { sid } = useParams();
@@ -38,6 +50,11 @@ export function SchoolDetail({ school: injected, setStatus = defaultSetStatus, r
   const school = state.data;
   const list = useMemo(() => (school ? [school] : []), [school]);
   const counts = useUsageCounts(list);
+  const reviewing = school?.status === 'pending';
+  const liveSchools = useCollection<School>(injectedSchools || !reviewing ? null : 'schools');
+  const liveMembers = useCollection<Member>(injectedMembers || !reviewing || !school ? null : paths.members(school.id));
+  const schools = injectedSchools ?? liveSchools;
+  const members = injectedMembers ?? liveMembers;
 
   if (state.loading) return <LoadingState />;
   if (state.error) return <EmptyState icon="search" title={t('schools.loadError')} />;
@@ -64,12 +81,18 @@ export function SchoolDetail({ school: injected, setStatus = defaultSetStatus, r
           <ReleaseCensusButton school={school} release={releaseCensus} />
         </div>
       </div>
+      {(reviewing || school.review?.decidedAt) && <ReviewSection school={school} schools={schools} members={members} review={review} />}
       <dl className="m-0 rounded-[14px] border border-line bg-white px-5">
         <Row label={t('detail.name')}>{pickName(school, 'en')}</Row>
         <Row label={t('detail.nameSi')}>{school.nameSi || t('usage.noData')}</Row>
         <Row label={t('detail.city')}>{school.city || t('usage.noData')}</Row>
         <Row label={t('detail.type')}>{school.type ? t(`schoolTypes.${school.type}`) : t('usage.noData')}</Row>
         <Row label={t('detail.censusNo')}>{school.censusNo || t('usage.noData')}</Row>
+        {school.review && (
+          <Row label={t('review.moe')}>
+            <MoeBadge matched={school.review.moeMatched} />
+          </Row>
+        )}
         {school.releasedCensusNo && school.censusReleasedAt && (
           <Row label={t('detail.censusReleased')}>
             {t('detail.censusReleasedValue', { censusNo: school.releasedCensusNo, date: formatDate(school.censusReleasedAt, lang) })}

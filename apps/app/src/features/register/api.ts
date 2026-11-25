@@ -1,13 +1,13 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
 // Copyright (C) 2026 Kanushka Gayan
-import { paths, type RegisterSchoolReq } from '@sathiya/core';
+import { DEFAULT_TERMS_VERSION, paths, type LookupCensusRes, type RegisterSchoolReq } from '@sathiya/core';
 import { createUserWithEmailAndPassword, updateProfile } from 'firebase/auth';
 import { doc, getDoc, updateDoc } from 'firebase/firestore';
 import { getDownloadURL, ref, uploadBytes } from 'firebase/storage';
 import { call } from '../../lib/callable';
 import { auth, db, storage } from '../../lib/firebase';
 
-export const FALLBACK_TERMS_VERSION = '1';
+export const FALLBACK_TERMS_VERSION = DEFAULT_TERMS_VERSION;
 
 export async function createAccount(email: string, password: string, displayName: string): Promise<void> {
   const cred = await createUserWithEmailAndPassword(auth, email, password);
@@ -38,8 +38,8 @@ export async function registerSchool(req: RegisterSchoolReq): Promise<string> {
   return res.schoolId;
 }
 
-export async function censusAvailable(censusNo: string): Promise<boolean> {
-  return (await call('checkCensusNo', { censusNo })).available;
+export function lookupCensus(censusNo: string): Promise<LookupCensusRes> {
+  return call('lookupCensus', { censusNo });
 }
 
 const LOGO_EXT: Record<string, string> = { 'image/png': 'png', 'image/jpeg': 'jpg', 'image/webp': 'webp' };

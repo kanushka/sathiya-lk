@@ -20,7 +20,32 @@ export function rememberLastSchool(sid: string): void {
   }
 }
 
+const removedSchools = new Set<string>();
+
+// A removed school stays in the ID token until claims refresh; homePath and SchoolProvider must not route into it meanwhile.
+export function markSchoolRemoved(sid: string): void {
+  removedSchools.add(sid);
+  forgetLastSchool(sid);
+}
+
+export function unmarkSchoolRemoved(sid: string): void {
+  removedSchools.delete(sid);
+}
+
+export function isSchoolRemoved(sid: string): boolean {
+  return removedSchools.has(sid);
+}
+
+export function forgetLastSchool(sid: string): void {
+  try {
+    if (localStorage.getItem(LAST_SCHOOL_KEY) === sid) localStorage.removeItem(LAST_SCHOOL_KEY);
+  } catch {
+    return;
+  }
+}
+
 export function schoolHomePath(claims: Claims, sid: string): string | null {
+  if (removedSchools.has(sid)) return null;
   if (isSchoolAdmin(claims, sid)) return `/s/${sid}/admin`;
   if (teacherIdOf(claims, sid)) return `/s/${sid}/me`;
   return null;

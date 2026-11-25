@@ -113,7 +113,7 @@ export const saveReliefDay = onCall(callOpts, async (req): Promise<SaveReliefDay
   const candidates = new Set([...reliefs.flatMap((r) => (r.reliefTeacherId === null ? [] : [r.reliefTeacherId]))]);
   for (const r of ((await dayRef.get()).data() as ReliefDay | undefined)?.reliefs ?? []) if (r.reliefTeacherId !== null) candidates.add(r.reliefTeacherId);
   const hasEmail = new Set<string>();
-  for (const id of candidates) {
+  for (const id of school.status === 'active' ? candidates : []) {
     const t = teacherById.get(id);
     let to = t?.email?.trim();
     if (!to && t?.uid) {

@@ -5,6 +5,7 @@ import { useEffect, useMemo, useRef, useState } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { useAuth } from '../../app/AuthProvider';
+import { PendingNote, useSchoolPending } from '../../app/PendingReview';
 import { useSchool, useYear } from '../../app/SchoolProvider';
 import { useReadOnly } from '../../ui/AdminLayout';
 import { Button } from '../../ui/Button';
@@ -50,6 +51,7 @@ export function TeachersPage() {
   const latestYearId = [...years].sort((a, b) => b.label.localeCompare(a.label, 'en', { numeric: true }))[0]?.id;
   const slotUsage = (teacherId: string) => (yearId === latestYearId ? usageCount('teacher', teacherId, state, entries) : 0);
   const readOnly = useReadOnly();
+  const pending = useSchoolPending();
   const toast = useToast();
   const { user, signOut } = useAuth();
   const isSelf = (x: Teacher) => !!user && x.uid === user.uid;
@@ -183,6 +185,12 @@ export function TeachersPage() {
       <JoinRequests schoolId={school.id} requests={requests} teachers={teachers} readOnly={readOnly} />
       {!readOnly && <InviteLinkCard schoolId={school.id} />}
 
+      {!readOnly && pending && teachers.length > 0 && (
+        <div className="mb-2.5 flex justify-end">
+          <PendingNote id="personal-links-locked" text={t('shell:review.personalLinks')} />
+        </div>
+      )}
+
       {state.loading ? (
         <LoadingState />
       ) : teachers.length === 0 ? (
@@ -241,7 +249,15 @@ export function TeachersPage() {
                         <IconButton icon="unlink" size="sm" label={t('actions.unlink')} onClick={() => setDialog({ kind: 'unlink', teacher: x })} />
                       ) : (
                         <>
-                          <IconButton icon="link" size="sm" label={t('actions.personalLink')} loading={busy === `link:${x.id}`} disabled={busy !== null} onClick={() => void personalLink(x)} />
+                          <IconButton
+                            icon="link"
+                            size="sm"
+                            label={t('actions.personalLink')}
+                            loading={busy === `link:${x.id}`}
+                            disabled={busy !== null || pending}
+                            aria-describedby={pending ? 'personal-links-locked' : undefined}
+                            onClick={() => void personalLink(x)}
+                          />
                           {liveLink(x) && (
                             <IconButton icon="linkOff" size="sm" label={t('actions.cancelLink')} loading={busy === `cancel:${x.id}`} disabled={busy !== null} onClick={() => void cancelLink(x)} />
                           )}

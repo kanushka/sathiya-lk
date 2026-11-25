@@ -95,9 +95,9 @@ describe('SchoolsPage', () => {
     await user.type(screen.getByLabelText('Search schools'), 'සිරිපුර');
     expect(rowNames()).toEqual([expect.stringContaining('Siripura')]);
     await user.clear(screen.getByLabelText('Search schools'));
-    await pickOption(user, screen.getByRole('combobox', { name: /^Status/ }), 'Disabled');
+    await user.click(screen.getByRole('radio', { name: 'Disabled, 1' }));
     expect(rowNames()).toEqual([expect.stringContaining('Hill View')]);
-    await pickOption(user, screen.getByRole('combobox', { name: /^Status/ }), 'All statuses');
+    await user.click(screen.getByRole('radio', { name: 'All, 3' }));
     await pickOption(user, screen.getByRole('combobox', { name: /^District/ }), 'Kandy');
     expect(rowNames()).toHaveLength(2);
   });
@@ -115,7 +115,7 @@ describe('SchoolsPage', () => {
     await within(row).findByText('58');
     expect(counts).toHaveBeenCalledTimes(3);
     await user.type(screen.getByLabelText('Search schools'), 'si');
-    await pickOption(user, screen.getByRole('combobox', { name: /^Status/ }), 'Active');
+    await user.click(screen.getByRole('radio', { name: 'Active, 2' }));
     expect(counts).toHaveBeenCalledTimes(3);
     expect(within(row).getByText('58')).toBeInTheDocument();
   });

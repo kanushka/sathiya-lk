@@ -78,7 +78,8 @@ export interface Email {
   /** Language shown first, with the button. Default English. */
   lang?: 'en' | 'si';
   en: Content;
-  si: Content;
+  /** Omitted for English-only mail (super admin notices). */
+  si?: Content;
   footer: { en: string; si?: string; linkUrl?: string; linkLabel?: string };
 }
 
@@ -227,8 +228,8 @@ function headerHtml(h: Header, brand: Brand): string {
 export function render(e: Email): Rendered {
   const bg = hex(e.header.primary, SATHIYA_TEAL);
   const brand: Brand = { bg, fg: onColor(bg) };
-  const siFirst = e.lang === 'si';
-  const [first, second] = siFirst ? [e.si, e.en] : [e.en, e.si];
+  const siFirst = e.lang === 'si' && e.si !== undefined;
+  const [first, second] = siFirst ? [e.si!, e.en] : [e.en, e.si];
   const [firstFont, secondFont] = siFirst ? [SINHALA, SANS] : [SANS, SINHALA];
   const secondLabel = siFirst ? 'English' : 'සිංහල';
 
@@ -244,8 +245,7 @@ export function render(e: Email): Rendered {
 <tr><td style="background:${bg};color:${brand.fg};padding:20px 24px;font-family:${SANS}">${headerHtml(e.header, brand)}</td></tr>
 <tr><td style="padding:28px 24px 24px">
 ${block(first, { primary: true, font: firstFont, brand })}
-${divider(secondLabel, secondFont)}
-${block(second, { primary: false, font: secondFont, brand })}
+${second ? `${divider(secondLabel, secondFont)}\n${block(second, { primary: false, font: secondFont, brand })}` : ''}
 </td></tr>
 </table>
 <p style="margin:0;padding:18px 24px 0;text-align:center;font-family:${SANS};font-size:12px;line-height:1.6;color:${MUTED}">${footerLines.join('<br>')}</p>
@@ -254,9 +254,7 @@ ${block(second, { primary: false, font: secondFont, brand })}
 
   const text = [
     ...blockText(first, true),
-    '---',
-    '',
-    ...blockText(second, false),
+    ...(second ? ['---', '', ...blockText(second, false)] : []),
     '--',
     e.footer.en,
     ...(e.footer.si ? [e.footer.si] : []),

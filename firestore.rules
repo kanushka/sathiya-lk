@@ -23,8 +23,10 @@ service cloud.firestore {
     // Members of a disabled school can read only the school doc (to show the suspended screen); super keeps read access.
     function adminRead(sid) { return isSuper() || (isAdmin(sid) && active(sid)); }
     function teacherRead(sid) { return isTeacher(sid) && active(sid); }
-    // Super is read-only on school data; school data writes need an admin of an active school.
-    function adminWrite(sid) { return isAdmin(sid) && active(sid); }
+    // Super is read-only on school data; school data writes need an admin of a school that is neither disabled nor
+    // rejected. A rejected school stays readable so its admin sees the Not approved screen.
+    function writable(sid) { return !(get(/databases/$(database)/documents/schools/$(sid)).data.get('status', 'active') in ['disabled', 'rejected']); }
+    function adminWrite(sid) { return isAdmin(sid) && writable(sid); }
     function changed() { return request.resource.data.diff(resource.data).affectedKeys(); }
     function optText(k, max) {
       return !(k in request.resource.data)
@@ -61,8 +63,12 @@ service cloud.firestore {
     match /schools/{sid} {
       allow read: if isAdmin(sid) || isTeacher(sid) || isSuper();
       // New checks look only at changed keys, so docs that predate them stay editable in their other fields.
+      // A school with a review record keeps the name, district and census number it was reviewed or MOE-matched with.
+      // A Sinhala-only school may still add its English name once.
       allow update: if adminWrite(sid)
         && changed().hasOnly(['nameEn', 'nameSi', 'district', 'grades', 'staffPrefix', 'logoUrl', 'colors', 'city', 'address', 'phone'])
+        && (!('review' in resource.data)
+          || (!changed().hasAny(['district', 'censusNo']) && (!('nameEn' in changed()) || resource.data.get('nameEn', '') == '')))
         && (!('city' in changed())
           || ('city' in request.resource.data && request.resource.data.city is string
             && request.resource.data.city.size() <= 80 && request.resource.data.city.matches('.*\\S.*')))

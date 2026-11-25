@@ -3,7 +3,7 @@
 
 import { describe, expect, expectTypeOf, it } from 'vitest';
 import { callables, type ApiErrorCode, type CallableTypes, type RegisterSchoolReq, type ReportSchoolReq } from './api';
-import { CENSUS_NO_LENGTH, CENSUS_NO_RE, censusRequired, normalizeCensusNo } from './census';
+import { CENSUS_NO_LENGTH, CENSUS_NO_RE, censusRequired, normalizeCensusNo, padCensusNo } from './census';
 import { school } from './fixtures';
 import { paths } from './paths';
 import { AUTH_EMAIL_KINDS, REPORT_REASONS, SCHOOL_TYPES, type School, type SchoolReport } from './types';
@@ -91,5 +91,15 @@ describe('contract constants', () => {
     expect(SCHOOL_TYPES).toEqual(['government', 'private', 'international']);
     expect(REPORT_REASONS).toEqual(['fake', 'duplicate', 'abuse', 'other']);
     expect(AUTH_EMAIL_KINDS).toEqual(['verify', 'reset']);
+  });
+});
+
+describe('padCensusNo', () => {
+  it('left-pads digit strings to five digits and leaves others alone', () => {
+    expect(padCensusNo('1234')).toBe('01234');
+    expect(padCensusNo('01234')).toBe('01234');
+    expect(padCensusNo('12345')).toBe('12345');
+    expect(padCensusNo('123456')).toBe('123456');
+    expect(padCensusNo('12a')).toBe('12a');
   });
 });

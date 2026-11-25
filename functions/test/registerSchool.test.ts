@@ -5,10 +5,10 @@ import { defaultTemplate } from '@sathiya/core/fixtures';
 import { httpsCallable } from 'firebase/functions';
 import { describe, expect, it } from 'vitest';
 import type { RegisterSchoolReq as RegisterSchoolInput } from '@sathiya/core';
-import { adminDb, client, expectFnError, makeSuper, schoolReq, signUp } from './helpers';
+import { adminDb, approve, client, expectFnError, makeSuper, schoolReq, signUp } from './helpers';
 
 describe('unauthenticated', () => {
-  it.each(Object.keys(callables).filter((n) => !['saveEntry', 'deleteEntry', 'publishYear', 'deleteSetupItem', 'reportSchool', 'sendAuthEmail', 'checkCensusNo'].includes(n)))(
+  it.each(Object.keys(callables).filter((n) => !['saveEntry', 'deleteEntry', 'publishYear', 'deleteSetupItem', 'reportSchool', 'sendAuthEmail', 'checkCensusNo', 'lookupCensus'].includes(n)))(
     '%s refuses a signed-out caller',
     async (name) => {
       const c = client();
@@ -18,7 +18,7 @@ describe('unauthenticated', () => {
 });
 
 describe('registerSchool', () => {
-  it('creates school, directory, admin member, default template and sets claims', async () => {
+  it('creates a pending school, admin member, default template and sets claims; directory waits for approval', async () => {
     const c = await signUp();
     const before = Date.now();
     const { schoolId } = await c.call('registerSchool', schoolReq());
@@ -33,13 +33,16 @@ describe('registerSchool', () => {
       city: 'Siripura',
       staffPrefix: 'SCC',
       type: 'private',
-      status: 'active',
+      status: 'pending',
+      review: { moeMatched: false },
       termsVersion: '1',
       acceptedTerms: { version: '1' },
     });
     expect(school.createdAt).toBeGreaterThanOrEqual(before);
     expect(school.acceptedTerms.at).toBeGreaterThanOrEqual(before);
 
+    expect((await adminDb.doc(paths.directory(schoolId)).get()).exists).toBe(false);
+    await approve(schoolId);
     const dir = (await adminDb.doc(paths.directory(schoolId)).get()).data();
     expect(dir).toEqual({
       nameEn: 'Siripura Central College',
@@ -79,7 +82,7 @@ describe('registerSchool', () => {
     const doc = (await adminDb.doc(paths.school(schoolId)).get()).data()!;
     expect(doc.logoUrl).toBeUndefined();
     expect(doc.activeYearId).toBeUndefined();
-    expect(doc).toMatchObject({ termsVersion: '1', status: 'active', acceptedTerms: { version: '1' } });
+    expect(doc).toMatchObject({ termsVersion: '1', status: 'pending', acceptedTerms: { version: '1' } });
     expect(doc.createdAt).toBeGreaterThan(1);
   });
 
@@ -109,6 +112,12 @@ describe('registerSchool', () => {
     await expectFnError(c.call('registerSchool', { ...schoolReq(), acceptedTermsVersion: '' }), 'invalid-argument', 'invalid');
   });
 
+  it('rejects a district outside the list', async () => {
+    const c = await signUp();
+    await expectFnError(c.call('registerSchool', schoolReq({ district: 'Moneragala' })), 'invalid-argument', 'invalid');
+    await expectFnError(c.call('registerSchool', schoolReq({ district: 'kandy' })), 'invalid-argument', 'invalid');
+  });
+
   it('requires a city', async () => {
     const c = await signUp();
     const { city: _, ...noCity } = schoolReq().school;
@@ -125,6 +134,7 @@ describe('registerSchool', () => {
     );
     const doc = (await adminDb.doc(paths.school(schoolId)).get()).data()!;
     expect(doc).toMatchObject({ city: 'Siripura', address: '12 Temple Road, Siripura', phone: '037 222 3344' });
+    await approve(schoolId);
     const dir = (await adminDb.doc(paths.directory(schoolId)).get()).data()!;
     expect(dir.city).toBe('Siripura');
     expect(dir.address).toBeUndefined();
@@ -135,6 +145,7 @@ describe('registerSchool', () => {
     const c = await signUp();
     const { schoolId } = await c.call('registerSchool', schoolReq({ nameEn: '', nameSi: 'සිරිපුර විද්‍යාලය' }));
     expect((await adminDb.doc(paths.school(schoolId)).get()).data()).toMatchObject({ nameEn: '', nameSi: 'සිරිපුර විද්‍යාලය' });
+    await approve(schoolId);
     expect((await adminDb.doc(paths.directory(schoolId)).get()).data()).toMatchObject({ nameLower: 'සිරිපුර විද්‍යාලය' });
     const other = await signUp();
     await expectFnError(other.call('registerSchool', schoolReq({ nameEn: ' ', nameSi: '' })), 'invalid-argument', 'invalid');

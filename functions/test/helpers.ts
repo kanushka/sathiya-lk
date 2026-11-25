@@ -18,10 +18,12 @@ import {
 import { connectFunctionsEmulator, getFunctions, httpsCallable, type Functions } from 'firebase/functions';
 import { linkTeacher } from '../src/lib/linkTeacher';
 import { syncClaims } from '../src/lib/claims';
+import { syncSchoolDirectory } from '../src/syncDirectory';
 import { runTx } from '../src/lib/tx';
 import { afterAll, beforeEach, expect } from 'vitest';
 
 export const PROJECT_ID = 'sathiya-lk';
+export const TERMS_VERSION = '1';
 const HOST = '127.0.0.1';
 
 process.env.FIRESTORE_EMULATOR_HOST ??= `${HOST}:8080`;
@@ -39,6 +41,7 @@ afterAll(async () => {
 // Every SDK call comes from the same emulator IP; reset per-IP/per-uid counters so tests don't hit each other's limits.
 beforeEach(async () => {
   await adminDb.recursiveDelete(adminDb.collection('rateLimits'));
+  await adminDb.doc('platform/config').set({ currentTermsVersion: TERMS_VERSION }, { merge: true });
 });
 
 export interface Client {
@@ -130,11 +133,24 @@ export function schoolReq(over: Partial<RegisterSchoolInput['school']> = {}): Re
   };
 }
 
-export async function adminWithSchool(): Promise<{ admin: Client; sid: string }> {
+// Registers an unlisted school, which starts pending review.
+export async function pendingSchool(over: Partial<RegisterSchoolInput['school']> = {}): Promise<{ admin: Client; sid: string }> {
   const admin = await signUp();
-  const { schoolId } = await admin.call('registerSchool', schoolReq());
+  const { schoolId } = await admin.call('registerSchool', schoolReq(over));
   await admin.auth.currentUser!.getIdToken(true);
   return { admin, sid: schoolId };
+}
+
+// Approves directly, writing the directory entry now rather than waiting for the trigger.
+export async function approve(sid: string): Promise<void> {
+  await adminDb.doc(`schools/${sid}`).update({ status: 'active' });
+  await syncSchoolDirectory(sid);
+}
+
+export async function adminWithSchool(): Promise<{ admin: Client; sid: string }> {
+  const r = await pendingSchool();
+  await approve(r.sid);
+  return r;
 }
 
 export const teacherInput = (staffId: string) => ({

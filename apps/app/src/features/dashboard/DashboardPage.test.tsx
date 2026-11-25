@@ -142,3 +142,21 @@ describe('dashboard page', () => {
     expect(screen.getByText('placed / needed')).toBeInTheDocument();
   });
 });
+
+describe('dashboard while the school is pending review', () => {
+  it('disables Publish with the approval note', async () => {
+    const user = userEvent.setup();
+    renderWithSchool(<DashboardPage />, { ctx: { ...ctx, school: { ...ctx.school, status: 'pending' } }, entries });
+    const publish = screen.getByRole('button', { name: 'Publish to teachers' });
+    expect(publish).toBeDisabled();
+    expect(publish).toHaveAccessibleDescription('Available after Sathiya approves your school.');
+    await user.click(publish);
+    expect(screen.queryByRole('dialog')).not.toBeInTheDocument();
+  });
+
+  it('keeps Publish enabled for an active school', () => {
+    setup();
+    expect(screen.getByRole('button', { name: 'Publish to teachers' })).toBeEnabled();
+    expect(screen.queryByText('Available after Sathiya approves your school.')).not.toBeInTheDocument();
+  });
+});

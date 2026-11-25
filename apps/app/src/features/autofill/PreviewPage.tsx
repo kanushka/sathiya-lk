@@ -6,6 +6,7 @@ import { useContext, useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useNavigate } from 'react-router-dom';
 import { useLang } from '../../app/LangProvider';
+import { LockedButton, useSchoolPending } from '../../app/PendingReview';
 import { useSchool, useYear } from '../../app/SchoolProvider';
 import { ApiError, isSchoolDisabled } from '../../lib/callable';
 import { useReadOnly } from '../../ui/AdminLayout';
@@ -59,6 +60,7 @@ export function PreviewPage({
   const navigate = useNavigate();
   const base = useAdminBase();
   const readOnly = useReadOnly();
+  const pending = useSchoolPending();
   const [tab, setTab] = useState<Tab>('allocation');
   const [edits, setEdits] = useState<Map<string, string>>(new Map());
   const [saving, setSaving] = useState(false);
@@ -205,11 +207,14 @@ export function PreviewPage({
         <Button onClick={() => onTryAgain(edited())} disabled={saving}>
           {t('preview.tryAgain')}
         </Button>
-        {!readOnly && (
-          <Button variant="primary" onClick={save} disabled={stale || saving || error?.kind === 'partial'} loading={saving} loadingLabel={t('preview.saving')}>
-            {t('preview.save')}
-          </Button>
-        )}
+        {!readOnly &&
+          (pending ? (
+            <LockedButton>{t('preview.save')}</LockedButton>
+          ) : (
+            <Button variant="primary" onClick={save} disabled={stale || saving || error?.kind === 'partial'} loading={saving} loadingLabel={t('preview.saving')}>
+              {t('preview.save')}
+            </Button>
+          ))}
       </div>
     </div>
   );

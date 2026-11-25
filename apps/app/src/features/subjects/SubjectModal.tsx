@@ -92,6 +92,7 @@ export function SubjectModal({ onClose }: { onClose: () => void }) {
           siError={nameSiError}
           enPlaceholder={t('modal.nameEnPlaceholder')}
           siPlaceholder={t('modal.nameSiPlaceholder')}
+          siFirst={school.medium?.includes('si')}
         />
         <div className="flex flex-wrap gap-4">
           <Field label={t('modal.short')} hint={t('modal.shortHint')} error={shortError} className="w-40">

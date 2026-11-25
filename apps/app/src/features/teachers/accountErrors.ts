@@ -14,6 +14,8 @@ export function accountActionError(err: unknown, t: TFunction): string {
       return t('teachers:page.rateLimited');
     case 'school-disabled':
       return t('shell:suspended.writeBlocked');
+    case 'school-pending':
+      return t('shell:review.locked');
     default:
       return t('teachers:page.actionFailed');
   }

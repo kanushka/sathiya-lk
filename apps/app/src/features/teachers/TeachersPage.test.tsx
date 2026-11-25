@@ -660,3 +660,56 @@ describe('teacher accounts', () => {
     }
   });
 });
+
+describe('teacher name order by school medium', () => {
+  const nameInputs = (dialog: HTMLElement) => within(dialog).getAllByRole('textbox').filter((el) => el.getAttribute('lang')).map((el) => el.getAttribute('lang'));
+
+  it('asks for the Sinhala name first when the school teaches in Sinhala', async () => {
+    const user = userEvent.setup();
+    renderWithSchool(<TeachersPage />, { ctx: { ...ctx, school: { ...ctx.school, medium: ['si', 'en'] } }, entries });
+    expect(nameInputs(await openAdd(user))).toEqual(['si', 'en']);
+  });
+
+  it.each([['English', ['en']], ['legacy (no medium)', undefined]] as const)('keeps English first for %s', async (_, medium) => {
+    const user = userEvent.setup();
+    renderWithSchool(<TeachersPage />, { ctx: { ...ctx, school: { ...ctx.school, medium: medium && [...medium] } }, entries });
+    expect(nameInputs(await openAdd(user))).toEqual(['en', 'si']);
+  });
+});
+
+describe('teachers page while the school is pending review', () => {
+  const pending = { ...ctx, school: { ...ctx.school, status: 'pending' as const } };
+
+  it('locks the invite link card with the approval note', () => {
+    renderWithSchool(<TeachersPage />, { ctx: pending, entries });
+    const card = screen.getByRole('region', { name: 'Invite link' });
+    expect(within(card).getByText('After approval')).toBeInTheDocument();
+    const create = within(card).getByRole('button', { name: 'Create link' });
+    expect(create).toBeDisabled();
+    expect(create).toHaveAccessibleDescription("Available after Sathiya approves your school. Teachers can't join yet.");
+  });
+
+  it('disables personal link actions with a note', () => {
+    renderWithSchool(<TeachersPage />, { ctx: pending, entries });
+    const links = screen.getAllByRole('button', { name: 'Personal link' });
+    expect(links.length).toBeGreaterThan(0);
+    for (const b of links) {
+      expect(b).toBeDisabled();
+      expect(b).toHaveAccessibleDescription('Personal links are available after Sathiya approves your school.');
+    }
+  });
+
+  it('keeps editing teachers available', () => {
+    renderWithSchool(<TeachersPage />, { ctx: pending, entries });
+    expect(screen.getByRole('button', { name: '+ Add teacher' })).toBeEnabled();
+    expect(screen.getAllByRole('button', { name: 'Edit' })[0]).toBeEnabled();
+  });
+
+  it('maps a school-pending error from a personal link to the approval message', async () => {
+    vi.mocked(api.createTeacherLink).mockRejectedValue(new ApiError('school-pending', 'raw'));
+    const user = userEvent.setup();
+    render();
+    await user.click(screen.getAllByRole('button', { name: 'Personal link' })[0]!);
+    expect(await screen.findByText('Available after Sathiya approves your school.')).toBeInTheDocument();
+  });
+});

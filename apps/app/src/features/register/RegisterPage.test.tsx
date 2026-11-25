@@ -2,6 +2,7 @@
 // Copyright (C) 2026 Kanushka Gayan
 import { fireEvent, screen, waitFor, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
+import type { LookupCensusRes, MoeSchool } from '@sathiya/core';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { ApiError } from '../../lib/callable';
 import * as authApi from '../auth/api';
@@ -20,7 +21,7 @@ beforeEach(() => {
   vi.mocked(api.currentTermsVersion).mockResolvedValue('3');
   vi.mocked(api.createAccount).mockResolvedValue(undefined);
   vi.mocked(api.registerSchool).mockResolvedValue('siripura');
-  vi.mocked(api.censusAvailable).mockResolvedValue(true);
+  vi.mocked(api.lookupCensus).mockResolvedValue({ status: 'unlisted' });
   vi.mocked(api.uploadLogo).mockResolvedValue('https://x/logo.png');
   vi.mocked(api.confirmVerified).mockResolvedValue(true);
   vi.mocked(sendAuthEmail).mockResolvedValue(undefined);
@@ -28,10 +29,18 @@ beforeEach(() => {
   vi.mocked(authApi.searchSchools).mockResolvedValue([]);
 });
 
+async function renderForm(opts: Parameters<typeof renderAuth>[1]) {
+  const view = renderAuth(<RegisterPage />, opts);
+  if (screen.queryByRole('button', { name: "My school isn't listed / no census number" })) {
+    await userEvent.setup().click(screen.getByRole('button', { name: "My school isn't listed / no census number" }));
+  }
+  return view;
+}
+
 async function fillSchool(user: ReturnType<typeof userEvent.setup>) {
   await user.type(screen.getByLabelText('School name in English'), 'Siripura Central College');
   await user.type(screen.getByLabelText('City'), 'Kandy');
-  await user.type(screen.getByLabelText('District'), 'Kandy');
+  await pickOption(user, screen.getByRole('combobox', { name: /^District/ }), 'Kandy');
   await user.clear(screen.getByLabelText('Staff ID prefix'));
   await user.type(screen.getByLabelText('Staff ID prefix'), 'scc');
   await user.type(screen.getByLabelText('Census number'), '03214');
@@ -43,7 +52,7 @@ const DUPLICATE = /This school is already registered\. Ask the school admin for 
 describe('register', () => {
   it('suggests a staff ID prefix from the school name until the user types their own', async () => {
     const user = userEvent.setup();
-    renderAuth(<RegisterPage />, { route: '/register', at: '/register' });
+    await renderForm({ route: '/register', at: '/register' });
     const name = screen.getByLabelText('School name in English');
     const prefix = screen.getByLabelText('Staff ID prefix');
     await user.type(name, 'G/ P. D. S. Kularathne Collage');
@@ -59,11 +68,11 @@ describe('register', () => {
 
   it('blocks step 1 until the school details are valid', async () => {
     const user = userEvent.setup();
-    renderAuth(<RegisterPage />, { route: '/register', at: '/register' });
+    await renderForm({ route: '/register', at: '/register' });
     const next = screen.getByRole('button', { name: 'Next: logo & colours' });
     expect(next).toBeDisabled();
     await user.type(screen.getByLabelText('School name in English'), 'Siripura');
-    await user.type(screen.getByLabelText('District'), 'Kandy');
+    await pickOption(user, screen.getByRole('combobox', { name: /^District/ }), 'Kandy');
     expect(next).toBeDisabled();
     await user.type(screen.getByLabelText('City'), 'Kandy');
     await user.clear(screen.getByLabelText('Staff ID prefix'));
@@ -78,7 +87,7 @@ describe('register', () => {
 
   it('requires a city and shows a message once it is cleared', async () => {
     const user = userEvent.setup();
-    renderAuth(<RegisterPage />, { route: '/register', at: '/register' });
+    await renderForm({ route: '/register', at: '/register' });
     const city = screen.getByLabelText('City');
     expect(screen.getByText('City', { selector: 'label' })).toHaveAttribute('data-required', 'true');
     expect(screen.getByText('Census number', { selector: 'label' })).toHaveAttribute('data-required', 'true');
@@ -91,7 +100,7 @@ describe('register', () => {
 
   it('sends address and phone when filled', async () => {
     const user = userEvent.setup();
-    renderAuth(<RegisterPage />, {
+    await renderForm({
       route: '/register',
       at: '/register',
       claimsAfterRefresh: { schools: { siripura: { r: 'a' } } },
@@ -107,7 +116,7 @@ describe('register', () => {
 
   it('omits empty address and phone from the payload', async () => {
     const user = userEvent.setup();
-    renderAuth(<RegisterPage />, {
+    await renderForm({
       route: '/register',
       at: '/register',
       claimsAfterRefresh: { schools: { siripura: { r: 'a' } } },
@@ -122,7 +131,7 @@ describe('register', () => {
 
   it('offers 6 + 6 swatches, custom hex, and a preview with readable text colour', async () => {
     const user = userEvent.setup();
-    renderAuth(<RegisterPage />, { route: '/register', at: '/register' });
+    await renderForm({ route: '/register', at: '/register' });
     await fillSchool(user);
     const groups = screen.getAllByRole('group');
     expect(groups[0]!.querySelectorAll('button[aria-pressed]')).toHaveLength(6);
@@ -143,7 +152,7 @@ describe('register', () => {
 
   it('rejects an SVG logo', async () => {
     const user = userEvent.setup();
-    renderAuth(<RegisterPage />, { route: '/register', at: '/register' });
+    await renderForm({ route: '/register', at: '/register' });
     await fillSchool(user);
     const input = document.querySelector('input[type=file]') as HTMLInputElement;
     fireEvent.change(input, { target: { files: [new File(['<svg/>'], 'a.svg', { type: 'image/svg+xml' })] } });
@@ -161,7 +170,7 @@ describe('register', () => {
 
   it('keeps Create school disabled until terms are accepted', async () => {
     const user = userEvent.setup();
-    renderAuth(<RegisterPage />, { route: '/register', at: '/register' });
+    await renderForm({ route: '/register', at: '/register' });
     await toStep3(user);
     await user.type(screen.getByLabelText('Your name'), 'Nimal');
     await user.type(screen.getByLabelText('Email'), 'nimal@siripura.lk');
@@ -174,7 +183,7 @@ describe('register', () => {
 
   it('creates the account, registers, uploads the logo and goes to the school admin', async () => {
     const user = userEvent.setup();
-    renderAuth(<RegisterPage />, {
+    await renderForm({
       route: '/register',
       at: '/register',
       claimsAfterRefresh: { schools: { siripura: { r: 'a' } } },
@@ -210,7 +219,7 @@ describe('register', () => {
   it('still finishes when the logo upload fails', async () => {
     const user = userEvent.setup();
     vi.mocked(api.uploadLogo).mockRejectedValue(new Error('storage'));
-    renderAuth(<RegisterPage />, {
+    await renderForm({
       route: '/register',
       at: '/register',
       claimsAfterRefresh: { schools: { siripura: { r: 'a' } } },
@@ -228,7 +237,7 @@ describe('register', () => {
 
   it('skips account creation for an already signed-in user', async () => {
     const user = userEvent.setup();
-    renderAuth(<RegisterPage />, {
+    await renderForm({
       route: '/register',
       at: '/register',
       signedIn: true,
@@ -246,7 +255,7 @@ describe('register', () => {
   it('shows an email-in-use error on the email field', async () => {
     const user = userEvent.setup();
     vi.mocked(api.createAccount).mockRejectedValue(Object.assign(new Error('x'), { code: 'auth/email-already-in-use' }));
-    renderAuth(<RegisterPage />, { route: '/register', at: '/register' });
+    await renderForm({ route: '/register', at: '/register' });
     await toStep3(user);
     await user.type(screen.getByLabelText('Your name'), 'Nimal');
     await user.type(screen.getByLabelText('Email'), 'nimal@siripura.lk');
@@ -260,7 +269,7 @@ describe('register', () => {
   it('shows a policy rejection on the password field', async () => {
     const user = userEvent.setup();
     vi.mocked(api.createAccount).mockRejectedValue(Object.assign(new Error('x'), { code: 'auth/password-does-not-meet-requirements' }));
-    renderAuth(<RegisterPage />, { route: '/register', at: '/register' });
+    await renderForm({ route: '/register', at: '/register' });
     await toStep3(user);
     await user.type(screen.getByLabelText('Your name'), 'Nimal');
     await user.type(screen.getByLabelText('Email'), 'nimal@siripura.lk');
@@ -295,7 +304,7 @@ describe('register', () => {
       order.push('register');
       return 'siripura';
     });
-    renderAuth(<RegisterPage />, {
+    await renderForm({
       route: '/register',
       at: '/register',
       claimsAfterRefresh: { schools: { siripura: { r: 'a' } } },
@@ -310,7 +319,7 @@ describe('register', () => {
   it('retries after a registerSchool failure without creating a second account', async () => {
     const user = userEvent.setup();
     vi.mocked(api.registerSchool).mockRejectedValueOnce(new Error('down'));
-    renderAuth(<RegisterPage />, {
+    await renderForm({
       route: '/register',
       at: '/register',
       claimsAfterRefresh: { schools: { siripura: { r: 'a' } } },
@@ -326,7 +335,7 @@ describe('register', () => {
 
   it('goes to the new school admin even when refreshClaims fails after registering', async () => {
     const user = userEvent.setup();
-    renderAuth(<RegisterPage />, {
+    await renderForm({
       route: '/register',
       at: '/register',
       signedIn: true,
@@ -345,14 +354,14 @@ describe('register', () => {
   describe('census', () => {
     it('shows a census message for a bad format', async () => {
       const user = userEvent.setup();
-      renderAuth(<RegisterPage />, { route: '/register', at: '/register' });
+      await renderForm({ route: '/register', at: '/register' });
       await user.type(screen.getByLabelText('Census number'), '12a');
       expect(screen.getByText('Census number must be 4 to 6 digits')).toBeInTheDocument();
     });
 
     it('enables "No census number" only for private and international schools and clears the field', async () => {
       const user = userEvent.setup();
-      renderAuth(<RegisterPage />, { route: '/register', at: '/register' });
+      await renderForm({ route: '/register', at: '/register' });
       const box = screen.getByRole('checkbox', { name: /No census number/ });
       expect(box).toBeDisabled();
       await user.type(screen.getByLabelText('Census number'), '1234');
@@ -369,10 +378,10 @@ describe('register', () => {
 
     it('sends type and census, and omits census when none', async () => {
       const user = userEvent.setup();
-      renderAuth(<RegisterPage />, { route: '/register', at: '/register', signedIn: true, claimsAfterRefresh: { schools: { s: { r: 'a' } } } });
+      await renderForm({ route: '/register', at: '/register', signedIn: true, claimsAfterRefresh: { schools: { s: { r: 'a' } } } });
       await user.type(screen.getByLabelText('School name in English'), 'Lake School');
       await user.type(screen.getByLabelText('City'), 'Kandy');
-      await user.type(screen.getByLabelText('District'), 'Kandy');
+      await pickOption(user, screen.getByRole('combobox', { name: /^District/ }), 'Kandy');
       await user.type(screen.getByLabelText('Staff ID prefix'), 'lsc');
       await pickOption(user, screen.getByRole('combobox', { name: /^School type/ }), 'Private');
       await user.click(screen.getByRole('checkbox', { name: /No census number/ }));
@@ -389,7 +398,7 @@ describe('register', () => {
 
     it('includes censusNo for a government school', async () => {
       const user = userEvent.setup();
-      renderAuth(<RegisterPage />, { route: '/register', at: '/register', signedIn: true, claimsAfterRefresh: { schools: { s: { r: 'a' } } } });
+      await renderForm({ route: '/register', at: '/register', signedIn: true, claimsAfterRefresh: { schools: { s: { r: 'a' } } } });
       await toStep3(user);
       await user.type(screen.getByLabelText('Your name'), 'Nimal');
       await user.click(screen.getByRole('checkbox'));
@@ -410,10 +419,10 @@ describe('register', () => {
 
     it('checks the census number on Next and stays on step 1 when it is taken', async () => {
       const user = userEvent.setup();
-      vi.mocked(api.censusAvailable).mockResolvedValue(false);
-      renderAuth(<RegisterPage />, { route: '/register', at: '/register' });
+      vi.mocked(api.lookupCensus).mockResolvedValue({ status: 'registered' });
+      await renderForm({ route: '/register', at: '/register' });
       await fillSchool(user);
-      expect(api.censusAvailable).toHaveBeenCalledWith('03214');
+      expect(api.lookupCensus).toHaveBeenCalledWith('03214');
       expect(await screen.findByText(DUPLICATE)).toBeInTheDocument();
       expect(screen.getByLabelText('Census number')).toHaveAttribute('aria-invalid', 'true');
       expect(screen.queryByRole('button', { name: 'Next: your account' })).not.toBeInTheDocument();
@@ -423,8 +432,8 @@ describe('register', () => {
 
     it('moves on to step 2 when the census number is free, and when the check itself fails', async () => {
       const user = userEvent.setup();
-      vi.mocked(api.censusAvailable).mockRejectedValue(new Error('offline'));
-      renderAuth(<RegisterPage />, { route: '/register', at: '/register' });
+      vi.mocked(api.lookupCensus).mockRejectedValue(new Error('offline'));
+      await renderForm({ route: '/register', at: '/register' });
       await fillSchool(user);
       expect(await screen.findByRole('button', { name: 'Next: your account' })).toBeInTheDocument();
       expect(screen.queryByText(DUPLICATE)).not.toBeInTheDocument();
@@ -432,12 +441,12 @@ describe('register', () => {
 
     it('ignores a census result once the school details have changed', async () => {
       const user = userEvent.setup();
-      let answer: (v: boolean) => void = () => undefined;
-      vi.mocked(api.censusAvailable).mockImplementation(() => new Promise((r) => (answer = r)));
-      renderAuth(<RegisterPage />, { route: '/register', at: '/register' });
+      let answer: (v: LookupCensusRes) => void = () => undefined;
+      vi.mocked(api.lookupCensus).mockImplementation(() => new Promise((r) => (answer = r)));
+      await renderForm({ route: '/register', at: '/register' });
       await fillSchool(user);
       await user.type(screen.getByLabelText('Census number'), '5');
-      answer(false);
+      answer({ status: 'registered' });
       await new Promise((r) => setTimeout(r, 0));
       expect(screen.queryByText(DUPLICATE)).not.toBeInTheDocument();
       expect(screen.getByLabelText('Census number')).not.toHaveAttribute('aria-invalid', 'true');
@@ -446,34 +455,34 @@ describe('register', () => {
 
     it('does not move on when a census result arrives after a required field was cleared', async () => {
       const user = userEvent.setup();
-      let answer: (v: boolean) => void = () => undefined;
-      vi.mocked(api.censusAvailable).mockImplementation(() => new Promise((r) => (answer = r)));
-      renderAuth(<RegisterPage />, { route: '/register', at: '/register' });
+      let answer: (v: LookupCensusRes) => void = () => undefined;
+      vi.mocked(api.lookupCensus).mockImplementation(() => new Promise((r) => (answer = r)));
+      await renderForm({ route: '/register', at: '/register' });
       await fillSchool(user);
       await user.clear(screen.getByLabelText('City'));
-      answer(true);
+      answer({ status: 'unlisted' });
       await new Promise((r) => setTimeout(r, 0));
       expect(screen.queryByRole('button', { name: 'Next: your account' })).not.toBeInTheDocument();
     });
 
     it('skips the census check when the school has no census number', async () => {
       const user = userEvent.setup();
-      renderAuth(<RegisterPage />, { route: '/register', at: '/register' });
+      await renderForm({ route: '/register', at: '/register' });
       await pickOption(user, screen.getByRole('combobox', { name: /^School type/ }), 'Private');
       await user.click(screen.getByRole('checkbox', { name: /No census number/ }));
       await user.type(screen.getByLabelText('School name in English'), 'Siripura Central College');
       await user.type(screen.getByLabelText('City'), 'Kandy');
-      await user.type(screen.getByLabelText('District'), 'Kandy');
+      await pickOption(user, screen.getByRole('combobox', { name: /^District/ }), 'Kandy');
       await user.click(screen.getByRole('button', { name: 'Next: logo & colours' }));
       expect(await screen.findByRole('button', { name: 'Next: your account' })).toBeInTheDocument();
-      expect(api.censusAvailable).not.toHaveBeenCalled();
+      expect(api.lookupCensus).not.toHaveBeenCalled();
     });
 
     it('school-registered returns to step 1 with an alert and a report link preselecting the school', async () => {
       const user = userEvent.setup();
       vi.mocked(api.registerSchool).mockRejectedValue(new ApiError('invalid', 'x', { code: 'school-registered', schoolId: 'siripura' }));
       vi.mocked(authApi.getDirectorySchool).mockResolvedValue({ id: 'siripura', nameEn: 'Siripura Central College', district: 'Kandy', status: 'active' });
-      renderAuth(<RegisterPage />, opts);
+      await renderForm(opts);
       await submitSignedIn(user);
       const alert = await screen.findByText(DUPLICATE);
       expect(alert).toBeInTheDocument();
@@ -486,7 +495,7 @@ describe('register', () => {
     it('school-registered without a school id opens an empty report popup', async () => {
       const user = userEvent.setup();
       vi.mocked(api.registerSchool).mockRejectedValue(new ApiError('invalid', 'x', { code: 'school-registered' }));
-      renderAuth(<RegisterPage />, opts);
+      await renderForm(opts);
       await submitSignedIn(user);
       await screen.findByText(DUPLICATE);
       await user.click(screen.getByRole('button', { name: 'report it' }));
@@ -500,27 +509,15 @@ describe('register', () => {
     ])('shows a clear message for %s', async (code, text) => {
       const user = userEvent.setup();
       vi.mocked(api.registerSchool).mockRejectedValue(new ApiError('invalid', 'raw backend text', { code }));
-      renderAuth(<RegisterPage />, opts);
+      await renderForm(opts);
       await submitSignedIn(user);
       expect(await screen.findByRole('alert')).toHaveTextContent(text);
-    });
-
-    it('asks to review changed terms and sends the new version on retry', async () => {
-      const user = userEvent.setup();
-      vi.mocked(api.registerSchool).mockRejectedValueOnce(new ApiError('invalid', 'raw backend text', { code: 'terms-changed' })).mockResolvedValueOnce('siripura');
-      renderAuth(<RegisterPage />, opts);
-      await submitSignedIn(user);
-      expect(await screen.findByRole('alert')).toHaveTextContent(/terms were updated/);
-      vi.mocked(api.currentTermsVersion).mockResolvedValue('4');
-      await user.click(screen.getByRole('button', { name: 'Create school' }));
-      await waitFor(() => expect(api.registerSchool).toHaveBeenCalledTimes(2));
-      expect(vi.mocked(api.registerSchool).mock.calls[1]![0]).toMatchObject({ acceptedTermsVersion: '4', school: { termsVersion: '4' } });
     });
 
     it('shows the generic message rather than raw backend text for unmapped errors', async () => {
       const user = userEvent.setup();
       vi.mocked(api.registerSchool).mockRejectedValue(new ApiError('invalid', 'raw backend text', { code: 'something-else' }));
-      renderAuth(<RegisterPage />, opts);
+      await renderForm(opts);
       await submitSignedIn(user);
       const alert = await screen.findByRole('alert');
       expect(alert).not.toHaveTextContent('raw backend text');
@@ -530,7 +527,7 @@ describe('register', () => {
     it('email-unverified sends the user back to the verify gate', async () => {
       const user = userEvent.setup();
       vi.mocked(api.registerSchool).mockRejectedValue(new ApiError('invalid', 'x', { code: 'email-unverified' }));
-      renderAuth(<RegisterPage />, opts);
+      await renderForm(opts);
       await submitSignedIn(user);
       expect(await screen.findByRole('heading', { name: 'Check your email' })).toBeInTheDocument();
     });
@@ -539,19 +536,19 @@ describe('register', () => {
   describe('verify email gate', () => {
     it('gates an unverified password user before the wizard', async () => {
       const user = userEvent.setup();
-      renderAuth(<RegisterPage />, { route: '/register', at: '/register', signedIn: true, passwordUser: true, emailVerified: false });
+      await renderForm({ route: '/register', at: '/register', signedIn: true, passwordUser: true, emailVerified: false });
       expect(screen.getByRole('heading', { name: 'Check your email' })).toBeInTheDocument();
       expect(screen.getByText('a@b.lk', { selector: 'b' })).toBeInTheDocument();
       expect(screen.queryByLabelText('School name in English')).not.toBeInTheDocument();
       await user.click(screen.getByRole('button', { name: "I've confirmed it" }));
-      expect(await screen.findByLabelText('School name in English')).toBeInTheDocument();
+      expect(await screen.findByRole('button', { name: 'Find my school' })).toBeInTheDocument();
       expect(api.confirmVerified).toHaveBeenCalled();
     });
 
     it('says not verified yet and stays on the gate', async () => {
       const user = userEvent.setup();
       vi.mocked(api.confirmVerified).mockResolvedValue(false);
-      renderAuth(<RegisterPage />, { route: '/register', at: '/register', signedIn: true, passwordUser: true, emailVerified: false });
+      await renderForm({ route: '/register', at: '/register', signedIn: true, passwordUser: true, emailVerified: false });
       await user.click(screen.getByRole('button', { name: "I've confirmed it" }));
       expect(await screen.findByText(/Not verified yet/)).toBeInTheDocument();
       expect(screen.queryByLabelText('School name in English')).not.toBeInTheDocument();
@@ -559,7 +556,7 @@ describe('register', () => {
 
     it('sends the email again and confirms', async () => {
       const user = userEvent.setup();
-      renderAuth(<RegisterPage />, { route: '/register', at: '/register', signedIn: true, passwordUser: true, emailVerified: false });
+      await renderForm({ route: '/register', at: '/register', signedIn: true, passwordUser: true, emailVerified: false });
       await user.click(screen.getByRole('button', { name: 'Send again' }));
       expect(sendAuthEmail).toHaveBeenCalledWith({ kind: 'verify', lang: 'en' });
       expect(await screen.findByText('Verification email sent.')).toBeInTheDocument();
@@ -568,19 +565,19 @@ describe('register', () => {
     it('shows the rate-limit message when resending is rate-limited', async () => {
       const user = userEvent.setup();
       vi.mocked(sendAuthEmail).mockRejectedValue(new ApiError('invalid', 'x', { code: 'rate-limited' }));
-      renderAuth(<RegisterPage />, { route: '/register', at: '/register', signedIn: true, passwordUser: true, emailVerified: false });
+      await renderForm({ route: '/register', at: '/register', signedIn: true, passwordUser: true, emailVerified: false });
       await user.click(screen.getByRole('button', { name: 'Send again' }));
       expect(await screen.findByRole('alert')).toHaveTextContent(/Too many attempts/);
     });
 
     it('skips the gate for Google and verified users', () => {
       renderAuth(<RegisterPage />, { route: '/register', at: '/register', signedIn: true });
-      expect(screen.getByLabelText('School name in English')).toBeInTheDocument();
+      expect(screen.getByRole('button', { name: 'Find my school' })).toBeInTheDocument();
     });
 
     it('never calls registerSchool right after creating a new account', async () => {
       const user = userEvent.setup();
-      renderAuth(<RegisterPage />, { route: '/register', at: '/register' });
+      await renderForm({ route: '/register', at: '/register' });
       await toStep3(user);
       await user.type(screen.getByLabelText('Your name'), 'Nimal');
       await user.type(screen.getByLabelText('Email'), 'nimal@siripura.lk');
@@ -592,5 +589,277 @@ describe('register', () => {
       expect(sendAuthEmail).toHaveBeenCalledWith({ kind: 'verify', lang: 'en' });
       expect(api.registerSchool).not.toHaveBeenCalled();
     });
+  });
+});
+
+describe('census step', () => {
+  const kotahena: MoeSchool = {
+    censusNo: '00023',
+    name: 'KOTAHENA M.M.V.',
+    address: 'MAHA VIDYALA MW, COLOMBO 13',
+    level: 'National',
+    grades: [6, 7, 8, 9, 10, 11, 12, 13],
+    media: ['si', 'en'],
+    sex: 'Mixed',
+    district: 'Colombo',
+  };
+  const NOT_LISTED = "My school isn't listed / no census number";
+
+  async function find(user: ReturnType<typeof userEvent.setup>, census: string) {
+    await user.type(screen.getByLabelText('Census number'), census);
+    await user.click(screen.getByRole('button', { name: 'Find my school' }));
+  }
+
+  it('asks for a census number before looking anything up', async () => {
+    const user = userEvent.setup();
+    renderAuth(<RegisterPage />, { route: '/register', at: '/register' });
+    await user.click(screen.getByRole('button', { name: 'Find my school' }));
+    expect(screen.getByText(/Enter the census number, or choose/)).toBeInTheDocument();
+    expect(api.lookupCensus).not.toHaveBeenCalled();
+  });
+
+  it('pads the number and shows the official details of a listed school with the English name locked', async () => {
+    const user = userEvent.setup();
+    vi.mocked(api.lookupCensus).mockResolvedValue({ status: 'listed', school: kotahena });
+    renderAuth(<RegisterPage />, { route: '/register', at: '/register' });
+    await find(user, '0023');
+    expect(api.lookupCensus).toHaveBeenCalledWith('00023');
+    expect(await screen.findByRole('heading', { name: 'Is this your school?' })).toBeInTheDocument();
+    expect(screen.getByText('Kotahena M.M.V.', { selector: 'b' })).toBeInTheDocument();
+    expect(screen.getByText('Maha Vidyala Mw, Colombo 13')).toBeInTheDocument();
+    expect(screen.getByText('National school')).toBeInTheDocument();
+    expect(screen.getByText('Grades 6–13')).toBeInTheDocument();
+    expect(screen.getByText('Colombo')).toBeInTheDocument();
+    const en = screen.getByLabelText(/School name in English/);
+    expect(en).toBeDisabled();
+    expect(en).toHaveValue('Kotahena M.M.V.');
+    expect(screen.queryByRole('combobox', { name: /District/ })).not.toBeInTheDocument();
+  });
+
+  it('requires the Sinhala name first for a Sinhala-medium school, then registers with the official details', async () => {
+    const user = userEvent.setup();
+    vi.mocked(api.lookupCensus).mockResolvedValue({ status: 'listed', school: kotahena });
+    renderAuth(<RegisterPage />, { route: '/register', at: '/register', signedIn: true, claimsAfterRefresh: { schools: { siripura: { r: 'a' } } } });
+    await find(user, '00023');
+    const si = await screen.findByLabelText(/School name in Sinhala/);
+    const en = screen.getByLabelText(/School name in English/);
+    expect(si.compareDocumentPosition(en) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
+    expect(screen.getByText('Sinhala names first.')).toBeInTheDocument();
+    const next = screen.getByRole('button', { name: 'Yes, this is my school · Next: logo & colours' });
+    expect(next).toBeEnabled();
+    expect(screen.getByLabelText('City')).toHaveValue('Colombo 13');
+    await user.click(next);
+    expect(screen.getByText('Enter the school name in Sinhala')).toBeInTheDocument();
+    expect(screen.getByRole('heading', { name: 'Is this your school?' })).toBeInTheDocument();
+    await user.type(si, 'කොටහේන');
+    await user.clear(screen.getByLabelText('City'));
+    await user.click(next);
+    expect(screen.getByText('City is required')).toBeInTheDocument();
+    await user.type(screen.getByLabelText('City'), 'Kotahena');
+    await user.click(next);
+    await user.click(screen.getByRole('button', { name: 'Next: your account' }));
+    await user.type(screen.getByLabelText('Your name'), 'Nimal');
+    await user.click(screen.getByRole('checkbox'));
+    await user.click(screen.getByRole('button', { name: 'Create school' }));
+    await waitFor(() => expect(screen.getByTestId('where')).toHaveTextContent('/s/siripura/admin'));
+    expect(vi.mocked(api.registerSchool).mock.calls[0]![0].school).toMatchObject({
+      type: 'government',
+      censusNo: '00023',
+      nameEn: 'Kotahena M.M.V.',
+      nameSi: 'කොටහේන',
+      district: 'Colombo',
+      city: 'Kotahena',
+      grades: [6, 7, 8, 9, 10, 11, 12, 13],
+      medium: ['si', 'en'],
+      staffPrefix: 'KOT',
+    });
+  });
+
+  it('keeps English first and the Sinhala name optional for an English-medium school, and asks for a missing district', async () => {
+    const user = userEvent.setup();
+    const { district: _, ...noDistrict } = kotahena;
+    vi.mocked(api.lookupCensus).mockResolvedValue({ status: 'listed', school: { ...noDistrict, media: ['en'] } });
+    renderAuth(<RegisterPage />, { route: '/register', at: '/register' });
+    await find(user, '00023');
+    const en = await screen.findByLabelText(/School name in English/);
+    const si = screen.getByLabelText(/School name in Sinhala/);
+    expect(en.compareDocumentPosition(si) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
+    await user.click(screen.getByRole('button', { name: 'Yes, this is my school · Next: logo & colours' }));
+    expect(screen.getByText('Required')).toBeInTheDocument();
+    expect(screen.queryByText('Enter the school name in Sinhala')).not.toBeInTheDocument();
+    await pickOption(user, screen.getByRole('combobox', { name: /District/ }), 'Kandy');
+    await user.click(screen.getByRole('button', { name: 'Yes, this is my school · Next: logo & colours' }));
+    expect(await screen.findByRole('heading', { name: '2 · Logo & school colours' })).toBeInTheDocument();
+  });
+
+  it('pads a short census number before looking it up', async () => {
+    const user = userEvent.setup();
+    vi.mocked(api.lookupCensus).mockResolvedValue({ status: 'listed', school: kotahena });
+    renderAuth(<RegisterPage />, { route: '/register', at: '/register' });
+    await find(user, '23');
+    expect(api.lookupCensus).toHaveBeenCalledWith('00023');
+    expect(await screen.findByRole('heading', { name: 'Is this your school?' })).toBeInTheDocument();
+  });
+
+  it('moves focus to the heading of each new section', async () => {
+    const user = userEvent.setup();
+    vi.mocked(api.lookupCensus).mockResolvedValue({ status: 'listed', school: kotahena });
+    renderAuth(<RegisterPage />, { route: '/register', at: '/register' });
+    await find(user, '00023');
+    await waitFor(() => expect(screen.getByRole('heading', { name: 'Is this your school?' })).toHaveFocus());
+    await user.type(screen.getByLabelText(/School name in Sinhala/), 'කොටහේන');
+    await user.click(screen.getByRole('button', { name: 'Yes, this is my school · Next: logo & colours' }));
+    expect(screen.getByRole('heading', { name: '2 · Logo & school colours' })).toHaveFocus();
+    await user.click(screen.getByRole('button', { name: 'Next: your account' }));
+    expect(screen.getByRole('heading', { name: '3 · Your admin account' })).toHaveFocus();
+  });
+
+  it('cancels a lookup in flight when the user picks "My school isn\'t listed"', async () => {
+    const user = userEvent.setup();
+    let answer: (v: LookupCensusRes) => void = () => undefined;
+    vi.mocked(api.lookupCensus).mockImplementation(() => new Promise((r) => (answer = r)));
+    renderAuth(<RegisterPage />, { route: '/register', at: '/register' });
+    await find(user, '00023');
+    await user.click(screen.getByRole('button', { name: NOT_LISTED }));
+    answer({ status: 'listed', school: kotahena });
+    await new Promise((r) => setTimeout(r, 0));
+    expect(screen.getByRole('heading', { name: '1 · School details' })).toBeInTheDocument();
+    expect(screen.queryByRole('heading', { name: 'Is this your school?' })).not.toBeInTheDocument();
+    expect(screen.getByLabelText('Census number')).toHaveValue('');
+  });
+
+  it('shows the registered view when a listed submit finds the school already registered', async () => {
+    const user = userEvent.setup();
+    vi.mocked(api.lookupCensus).mockResolvedValue({ status: 'listed', school: kotahena });
+    vi.mocked(api.registerSchool).mockRejectedValue(new ApiError('invalid', 'x', { code: 'school-registered', schoolId: 'kotahena' }));
+    renderAuth(<RegisterPage />, { route: '/register', at: '/register', signedIn: true });
+    await find(user, '00023');
+    await user.type(await screen.findByLabelText(/School name in Sinhala/), 'කොටහේන');
+    await user.click(screen.getByRole('button', { name: 'Yes, this is my school · Next: logo & colours' }));
+    await user.click(screen.getByRole('button', { name: 'Next: your account' }));
+    await user.type(screen.getByLabelText('Your name'), 'Nimal');
+    await user.click(screen.getByRole('checkbox'));
+    await user.click(screen.getByRole('button', { name: 'Create school' }));
+    expect(await screen.findByText(DUPLICATE)).toBeInTheDocument();
+    expect(screen.getByLabelText('Census number')).toHaveValue('00023');
+    expect(screen.getByRole('button', { name: 'Report a problem' })).toBeInTheDocument();
+  });
+
+  it('keeps the confirm card and the Sinhala name when going back from step 2', async () => {
+    const user = userEvent.setup();
+    vi.mocked(api.lookupCensus).mockResolvedValue({ status: 'listed', school: kotahena });
+    renderAuth(<RegisterPage />, { route: '/register', at: '/register' });
+    await find(user, '00023');
+    await user.type(await screen.findByLabelText(/School name in Sinhala/), 'කොටහේන');
+    await user.click(screen.getByRole('button', { name: 'Yes, this is my school · Next: logo & colours' }));
+    await user.click(screen.getByRole('button', { name: 'Back' }));
+    expect(screen.getByRole('heading', { name: 'Is this your school?' })).toBeInTheDocument();
+    expect(screen.getByLabelText(/School name in Sinhala/)).toHaveValue('කොටහේන');
+  });
+
+  it('gives an empty form after "Not my school" then "My school isn\'t listed"', async () => {
+    const user = userEvent.setup();
+    vi.mocked(api.lookupCensus).mockResolvedValue({ status: 'listed', school: kotahena });
+    renderAuth(<RegisterPage />, { route: '/register', at: '/register' });
+    await find(user, '00023');
+    await user.type(await screen.findByLabelText(/School name in Sinhala/), 'කොටහේන');
+    await user.click(screen.getByRole('button', { name: 'Not my school' }));
+    await user.click(screen.getByRole('button', { name: NOT_LISTED }));
+    expect(screen.getByLabelText('School name in English')).toHaveValue('');
+    expect(screen.getByLabelText('School name in Sinhala')).toHaveValue('');
+    expect(screen.getByLabelText('City')).toHaveValue('');
+    expect(screen.getByRole('combobox', { name: /^District/ })).not.toHaveTextContent('Colombo');
+    expect(screen.getByLabelText('Census number')).toHaveValue('');
+  });
+
+  it('goes back to the census number from "Not my school"', async () => {
+    const user = userEvent.setup();
+    vi.mocked(api.lookupCensus).mockResolvedValue({ status: 'listed', school: kotahena });
+    renderAuth(<RegisterPage />, { route: '/register', at: '/register' });
+    await find(user, '00023');
+    await user.click(await screen.findByRole('button', { name: 'Not my school' }));
+    expect(screen.getByRole('button', { name: 'Find my school' })).toBeInTheDocument();
+  });
+
+  it('says an already-registered school needs an invite and offers Report a problem', async () => {
+    const user = userEvent.setup();
+    vi.mocked(api.lookupCensus).mockResolvedValue({ status: 'registered' });
+    renderAuth(<RegisterPage />, { route: '/register', at: '/register' });
+    await find(user, '03214');
+    expect(await screen.findByText(DUPLICATE)).toBeInTheDocument();
+    expect(screen.getByRole('link', { name: 'Sign in instead' })).toHaveAttribute('href', '/login');
+    await user.click(screen.getByRole('button', { name: 'Report a problem' }));
+    expect(screen.getByRole('dialog', { name: 'Report a school' })).toBeInTheDocument();
+    await user.click(screen.getByRole('button', { name: 'Try another number' }));
+    expect(screen.queryByText(DUPLICATE)).not.toBeInTheDocument();
+  });
+
+  it('opens the full form with the census number and a review note when the school is not listed', async () => {
+    const user = userEvent.setup();
+    renderAuth(<RegisterPage />, { route: '/register', at: '/register' });
+    await find(user, '1234');
+    expect(await screen.findByRole('heading', { name: '1 · School details' })).toBeInTheDocument();
+    expect(screen.getByLabelText('Census number')).toHaveValue('01234');
+    expect(screen.getByRole('status')).toHaveTextContent("Census number 01234 isn't in the Ministry of Education school list.");
+    expect(screen.getByRole('status')).toHaveTextContent('Sathiya reviews schools');
+  });
+
+  it('shows a lookup failure without leaving the census step', async () => {
+    const user = userEvent.setup();
+    vi.mocked(api.lookupCensus).mockRejectedValue(new Error('offline'));
+    renderAuth(<RegisterPage />, { route: '/register', at: '/register' });
+    await find(user, '00023');
+    expect(await screen.findByText(/Could not look up the census number/)).toBeInTheDocument();
+  });
+
+  it('asks for the Medium on the unlisted form, puts Sinhala first when chosen, and sends it', async () => {
+    const user = userEvent.setup();
+    renderAuth(<RegisterPage />, { route: '/register', at: '/register', signedIn: true, claimsAfterRefresh: { schools: { siripura: { r: 'a' } } } });
+    await user.click(screen.getByRole('button', { name: NOT_LISTED }));
+    expect(screen.getByRole('status')).toHaveTextContent("Registering a school that isn't in the MOE school list.");
+    const firstName = () => screen.getAllByRole('textbox').find((el) => el.getAttribute('lang'));
+    expect(firstName()).toHaveAttribute('lang', 'en');
+    await pickOption(user, screen.getByRole('combobox', { name: /Medium/ }), 'Sinhala');
+    expect(firstName()).toHaveAttribute('lang', 'si');
+    await user.keyboard('{Escape}');
+    await fillSchool(user);
+    await user.click(await screen.findByRole('button', { name: 'Next: your account' }));
+    await user.type(screen.getByLabelText('Your name'), 'Nimal');
+    await user.click(screen.getByRole('checkbox'));
+    await user.click(screen.getByRole('button', { name: 'Create school' }));
+    await waitFor(() => expect(api.registerSchool).toHaveBeenCalled());
+    expect(vi.mocked(api.registerSchool).mock.calls[0]![0].school).toMatchObject({ medium: ['si'], censusNo: '03214' });
+  });
+
+  it('switches to the confirm card when the unlisted form gets a listed census number', async () => {
+    const user = userEvent.setup();
+    renderAuth(<RegisterPage />, { route: '/register', at: '/register' });
+    await user.click(screen.getByRole('button', { name: NOT_LISTED }));
+    vi.mocked(api.lookupCensus).mockResolvedValue({ status: 'listed', school: kotahena });
+    await fillSchool(user);
+    expect(await screen.findByRole('heading', { name: 'Is this your school?' })).toBeInTheDocument();
+  });
+
+  it('asks to accept the current terms again when they changed', async () => {
+    const user = userEvent.setup();
+    vi.mocked(api.registerSchool).mockRejectedValue(new ApiError('invalid', 'x', { code: 'terms-changed' }));
+    renderAuth(<RegisterPage />, { route: '/register', at: '/register', signedIn: true });
+    await user.click(screen.getByRole('button', { name: NOT_LISTED }));
+    await fillSchool(user);
+    await user.click(await screen.findByRole('button', { name: 'Next: your account' }));
+    await user.type(screen.getByLabelText('Your name'), 'Nimal');
+    await user.click(screen.getByRole('checkbox'));
+    await user.click(screen.getByRole('button', { name: 'Create school' }));
+    expect(await screen.findByRole('alert')).toHaveTextContent('The Terms & Conditions have changed');
+    expect(screen.getByRole('checkbox')).not.toBeChecked();
+    expect(screen.getByRole('button', { name: 'Create school' })).toBeDisabled();
+    expect(api.currentTermsVersion).toHaveBeenCalledTimes(1);
+    vi.mocked(api.currentTermsVersion).mockResolvedValue('4');
+    vi.mocked(api.registerSchool).mockResolvedValue('siripura');
+    await user.click(screen.getByRole('checkbox'));
+    await user.click(screen.getByRole('button', { name: 'Create school' }));
+    await waitFor(() => expect(api.registerSchool).toHaveBeenCalledTimes(2));
+    expect(api.currentTermsVersion).toHaveBeenCalledTimes(2);
+    expect(vi.mocked(api.registerSchool).mock.calls[1]![0]).toMatchObject({ acceptedTermsVersion: '4', school: { termsVersion: '4' } });
   });
 });

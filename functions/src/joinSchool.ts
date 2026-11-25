@@ -5,7 +5,7 @@ import { onCall } from 'firebase-functions/v2/https';
 import { db } from './lib/admin';
 import { callOpts } from './lib/callOptions';
 import { assertSchoolRoom, syncClaims } from './lib/claims';
-import { fail, invalid, isVerified, notAllowed, obj, optDocId, optStr, requireAuth, str } from './lib/guards';
+import { assertApproved, fail, invalid, isVerified, notAllowed, obj, optDocId, optStr, requireAuth, str } from './lib/guards';
 import { fileJoinRequest, staffIdUnusable } from './lib/joinRequest';
 import { linkTeacher } from './lib/linkTeacher';
 import { consumeRateLimits, JOIN_PER_UID_PER_DAY, JOIN_REQUEST_PER_UID_PER_DAY } from './lib/rateLimit';
@@ -16,6 +16,7 @@ const linkInvalid = (): never => fail('failed-precondition', 'link-invalid', 'Th
 
 async function requireActive(sid: string): Promise<void> {
   const school = (await db.doc(paths.school(sid)).get()).data() as School | undefined;
+  if (school) assertApproved(school.status);
   if (school?.status !== 'active') linkInvalid();
 }
 

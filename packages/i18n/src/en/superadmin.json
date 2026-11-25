@@ -24,7 +24,6 @@
     "censusShort": "No. {{no}}",
     "statusLabel": "Status",
     "districtLabel": "District",
-    "allStatuses": "All statuses",
     "allDistricts": "All districts",
     "columns": {
       "school": "School",
@@ -40,7 +39,10 @@
     "open": "Open",
     "details": "Details",
     "disable": "Disable",
-    "enable": "Enable"
+    "enable": "Enable",
+    "all": "All",
+    "filterCount": "{{label}}, {{count}}",
+    "review": "Review"
   },
   "reports": {
     "title": "Reports",
@@ -71,7 +73,9 @@
   },
   "status": {
     "active": "Active",
-    "disabled": "Disabled"
+    "disabled": "Disabled",
+    "pending": "Pending review",
+    "rejected": "Not approved"
   },
   "confirmDisable": {
     "title": "Disable {{name}}?",
@@ -218,5 +222,35 @@
   "errors": {
     "denied": "You do not have permission to do this.",
     "generic": "Something went wrong. Try again."
+  },
+  "review": {
+    "title": "Review",
+    "approve": "Approve school",
+    "reject": "Reject…",
+    "registrant": "Registered by",
+    "moe": "MOE school list",
+    "moeMatched": "Matched MOE list",
+    "moeMissing": "Not in MOE list",
+    "duplicates": "Possible duplicates",
+    "duplicatesHint": "Same school under another name or census number? Reject, or ask the admin to join the existing school.",
+    "similar": "Similar name on Sathiya",
+    "sameArea": "Registered in the same area · {{district}}",
+    "none": "None found",
+    "moeNote": "Similar names in the MOE list are in the review email.",
+    "footer": "Approving turns on publishing, printing, auto-fill and invites, and emails the school admin. Rejecting emails them your reason.",
+    "approved": "Approved on {{date}}",
+    "rejected": "Rejected on {{date}}",
+    "reasonSent": "Reason sent to the school admin",
+    "rejectTitle": "Reject {{name}}?",
+    "rejectBody": "The school admin gets an email with your reason and sees a \"Not approved\" screen. They can contact Sathiya or remove the registration.",
+    "reason": "Reason",
+    "reasonPlaceholder": "For example: We couldn't confirm that you work at this school.",
+    "reasonHint": "Write it for the school admin. It goes in the email as you type it.",
+    "reasonRequired": "Enter a reason. The school admin will see it.",
+    "reasonTooLong": "Use 500 characters or fewer.",
+    "confirmReject": "Reject and email",
+    "toastApproved": "{{name}} approved. The school admin was emailed.",
+    "toastRejected": "Registration rejected. Email sent with your reason.",
+    "failed": "Could not save the review: {{message}}"
   }
 }

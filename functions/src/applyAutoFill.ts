@@ -7,13 +7,13 @@ import { db } from './lib/admin';
 import { PartialWrite, writeInChunks } from './lib/applyWrites';
 import { callOpts } from './lib/callOptions';
 import { parseDraft, validateDraft } from './lib/entryDraft';
-import { docId, docIdList, fail, invalid, obj, requireSchoolAdmin } from './lib/guards';
+import { docId, docIdList, fail, invalid, obj, requireApprovedSchool } from './lib/guards';
 import { loadContext, loadEntries } from './lib/loadContext';
 import { acquireLease, APPLY_TIMEOUT_S, releaseLease } from './lib/yearBusy';
 
 export const applyAutoFill = onCall({ ...callOpts, timeoutSeconds: APPLY_TIMEOUT_S }, async (req): Promise<ApplyAutoFillRes> => {
   const data = obj(req.data, 'request');
-  const { sid } = await requireSchoolAdmin(req, data.schoolId);
+  const { sid } = await requireApprovedSchool(req, data.schoolId);
   const yid = docId(data.yearId, 'yearId');
   if (!Array.isArray(data.drafts) || data.drafts.length > MAX_ITEMS) invalid(`drafts must be a list of up to ${MAX_ITEMS}`);
   const deleteIds = docIdList(data.deleteEntryIds, 'deleteEntryIds');

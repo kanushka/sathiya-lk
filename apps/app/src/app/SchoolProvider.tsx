@@ -22,6 +22,8 @@ import { applyBrand, applyDefaultBrand } from '../lib/theme';
 import { EmptyState } from '../ui/EmptyState';
 import { LoadingState } from '../ui/LoadingState';
 import { useAuth } from './AuthProvider';
+import { NotApprovedPage } from './NotApprovedPage';
+import { isSchoolRemoved } from './schoolHome';
 import { SuspendedSchool } from './SuspendedSchool';
 import { useMembershipWatch } from './useMembershipWatch';
 
@@ -65,8 +67,10 @@ export function SchoolProvider({ scope = 'full', children }: SchoolProviderProps
   const { claims } = useAuth();
   const school = useDoc<School>(sid ? paths.school(sid) : null);
   const suspended = school.data?.status === 'disabled' && claims.super !== true;
-  const full = scope === 'full' && school.data && !suspended ? sid : null;
-  useMembershipWatch(school.data && !suspended ? sid : null);
+  const rejected = school.data?.status === 'rejected' && claims.super !== true;
+  const blocked = suspended || rejected;
+  const full = scope === 'full' && school.data && !blocked ? sid : null;
+  useMembershipWatch(school.data && !blocked ? sid : null);
   const teachers = useCollection<Teacher>(full ? paths.teachers(full) : null);
   const subjects = useCollection<Subject>(full ? paths.subjects(full) : null);
   const templates = useCollection<PeriodTemplate>(full ? paths.templates(full) : null);
@@ -124,7 +128,9 @@ export function SchoolProvider({ scope = 'full', children }: SchoolProviderProps
 
   if (school.loading) return <LoadingState />;
   if (suspended && sid) return <SuspendedSchool sid={sid} school={school.data!} />;
+  if (rejected && sid) return <NotApprovedPage sid={sid} school={school.data!} />;
   if (!schoolValue) {
+    if (sid && isSchoolRemoved(sid)) return <LoadingState />;
     return <EmptyState icon="profile" title={t('school.missingTitle')} body={t('school.missingBody')} />;
   }
   return (

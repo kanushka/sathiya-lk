@@ -9,6 +9,7 @@ import { applyBrand } from '../../lib/theme';
 import { useReadOnly } from '../../ui/AdminLayout';
 import { Alert } from '../../ui/Alert';
 import { Button } from '../../ui/Button';
+import { cx } from '../../ui/cx';
 import { Field, inputClass } from '../../ui/Field';
 import { PageHeader } from '../../ui/PageHeader';
 import { useToast } from '../../ui/Toast';
@@ -20,6 +21,8 @@ import { prefixOk } from '../register/model';
 import * as api from './api';
 import { contrastWithWhite, isLowContrast } from './contrast';
 
+const lockedClass = 'bg-surface-2 text-ink-muted hover:border-line-strong';
+
 const blankToUndefined = (v: string) => (v.trim() === '' ? undefined : v.trim());
 
 export function ProfilePage() {
@@ -27,6 +30,8 @@ export function ProfilePage() {
   const { t: tr } = useTranslation('register');
   const { school } = useSchool();
   const readOnly = useReadOnly();
+  const locked = !!school.review;
+  const nameLocked = locked && school.nameEn !== '';
   const toast = useToast();
   const [draft, setDraft] = useState(() => ({
     nameEn: school.nameEn,
@@ -66,10 +71,10 @@ export function ProfilePage() {
     try {
       if (logo) await uploadLogo(school.id, logo);
       await api.updateSchool(school.id, {
-        nameEn: draft.nameEn,
+        ...(!nameLocked && { nameEn: draft.nameEn }),
+        ...(!locked && { district: draft.district }),
         nameSi: blankToUndefined(draft.nameSi),
         city: draft.city,
-        district: draft.district,
         address: blankToUndefined(draft.address),
         phone: blankToUndefined(draft.phone),
         staffPrefix: draft.staffPrefix,
@@ -95,24 +100,46 @@ export function ProfilePage() {
         }}
       >
         <fieldset disabled={readOnly} className="m-0 flex min-w-[300px] flex-[1_1_320px] flex-col gap-3.5 border-0 p-0">
-          <NameFields
-            legend={t('fields.name')}
-            enLabel={t('fields.nameEn')}
-            siLabel={t('fields.nameSi')}
-            en={draft.nameEn}
-            si={draft.nameSi}
-            onEn={(nameEn) => setDraft((d) => ({ ...d, nameEn, ...(prefixTouched ? {} : { staffPrefix: suggestStaffPrefix(nameEn) }) }))}
-            onSi={(v) => set('nameSi', v)}
-            missing={!nameOk}
-          />
+          {nameLocked ? (
+            <>
+              <Field label={t('fields.nameEn')} hint={t('fields.locked')}>
+                <input className={cx(inputClass, lockedClass)} lang="en" readOnly value={school.nameEn} />
+              </Field>
+              <Field label={t('fields.nameSi')}>
+                <input className={inputClass} lang="si" value={draft.nameSi} onChange={(e) => set('nameSi', e.target.value)} />
+              </Field>
+            </>
+          ) : (
+            <NameFields
+              legend={t('fields.name')}
+              enLabel={t('fields.nameEn')}
+              siLabel={t('fields.nameSi')}
+              en={draft.nameEn}
+              si={draft.nameSi}
+              onEn={(nameEn) => setDraft((d) => ({ ...d, nameEn, ...(prefixTouched ? {} : { staffPrefix: suggestStaffPrefix(nameEn) }) }))}
+              onSi={(v) => set('nameSi', v)}
+              missing={!nameOk}
+            />
+          )}
           <div className="flex gap-3">
             <Field label={t('fields.city')} className="flex-1" error={cityOk ? undefined : t('fields.cityError')}>
               <input className={inputClass} value={draft.city} onChange={(e) => set('city', e.target.value)} />
             </Field>
-            <Field label={t('fields.district')} className="flex-1" error={draft.district.trim() === '' ? t('fields.required') : undefined}>
-              <input className={inputClass} value={draft.district} onChange={(e) => set('district', e.target.value)} />
-            </Field>
+            {locked ? (
+              <Field label={t('fields.district')} className="flex-1" hint={t('fields.locked')}>
+                <input className={cx(inputClass, lockedClass)} readOnly value={school.district} />
+              </Field>
+            ) : (
+              <Field label={t('fields.district')} className="flex-1" error={draft.district.trim() === '' ? t('fields.required') : undefined}>
+                <input className={inputClass} value={draft.district} onChange={(e) => set('district', e.target.value)} />
+              </Field>
+            )}
           </div>
+          {locked && school.censusNo && (
+            <Field label={t('fields.censusNo')} hint={t('fields.locked')}>
+              <input className={cx(inputClass, lockedClass)} readOnly value={school.censusNo} />
+            </Field>
+          )}
           <Field label={t('fields.address')}>
             <input className={inputClass} value={draft.address} onChange={(e) => set('address', e.target.value)} />
           </Field>

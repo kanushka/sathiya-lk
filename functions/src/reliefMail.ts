@@ -31,7 +31,7 @@ export async function runReliefMail(args: ReliefMailArgs): Promise<'sent' | 'ski
   }
 
   let emailed = false;
-  if (plan && teacher && day && to) {
+  if (plan && teacher && day && to && ctx.school.status === 'active') {
     const names = day.names;
     const nameEn = names[teacherId]?.en ?? teacherDisplayName(teacher, 'en');
     const nameSi = names[teacherId]?.si;

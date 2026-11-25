@@ -6,6 +6,58 @@
     "account": "Your account"
   },
   "back": "Back",
+  "census": {
+    "title": "1 · Find your school",
+    "subtitle": "Enter your school's census number. We'll fill in the details from the Ministry of Education school list.",
+    "label": "Census number",
+    "placeholder": "e.g. 00023",
+    "hint": "Usually 5 digits. The school office has it on MOE letters and the school census form.",
+    "empty": "Enter the census number, or choose \"My school isn't listed\" below.",
+    "format": "Census numbers are up to 6 digits",
+    "find": "Find my school",
+    "notListed": "My school isn't listed / no census number",
+    "notListedHint": "For private and international schools, or a school missing from the list. You fill in the details yourself and Sathiya reviews the school before it goes live.",
+    "lookupFailed": "Could not look up the census number. Try again, or choose \"My school isn't listed\".",
+    "taken": "This school is already registered. Ask the school admin for an invite link. Each school can register once.",
+    "takenBadge": "Already on Sathiya",
+    "report": "Think someone registered it who shouldn't have? <report>Report a problem</report>",
+    "tryAnother": "Try another number",
+    "signIn": "Sign in instead"
+  },
+  "confirm": {
+    "title": "Is this your school?",
+    "subtitle": "Census number {{census}} is in the Ministry of Education school list.",
+    "badge": "Matched MOE list",
+    "officialName": "Official name",
+    "censusNo": "Census number",
+    "address": "Address",
+    "level": "Level",
+    "grades": "Grades",
+    "medium": "Medium",
+    "students": "Students",
+    "district": "District",
+    "levels": {
+      "National": "National school",
+      "Provincial": "Provincial school"
+    },
+    "sex": {
+      "Boys": "Boys",
+      "Girls": "Girls",
+      "Mixed": "Mixed"
+    },
+    "gradeSpan": "Grades {{from}}–{{to}}",
+    "nameLegend": "School name",
+    "nameSiHint": "Shown first on Sinhala timetables, print and the school list.",
+    "nameSiRequired": "Enter the school name in Sinhala",
+    "nameEnHint": "Official name from the MOE list.",
+    "locked": "Locked",
+    "districtHint": "The MOE list doesn't give a district for this school.",
+    "gradesNote": "<b>{{span}} are created for you</b> from the MOE grade span. Add classes and change grades later in Grade settings.",
+    "siNote": "<b>Sinhala names first.</b> The school teaches in Sinhala, so forms ask for the Sinhala name of teachers and subjects first, then English. The app stays in English.",
+    "liveNote": "<b>Live straight away.</b> Schools that match the MOE list don't need a Sathiya review. Publishing, invites and printing work from day one.",
+    "notMine": "Not my school",
+    "next": "Yes, this is my school · Next: logo & colours"
+  },
   "school": {
     "name": "School name",
     "nameHint": "Fill both if you can. When one is empty, the other is shown on timetables, print and the school list.",
@@ -36,7 +88,18 @@
     "censusHint": "From the Ministry of Education school census. Each school can register once.",
     "censusError": "Census number must be 4 to 6 digits",
     "noCensus": "No census number (private / international schools only)",
-    "censusTaken": "This school is already registered. Ask the school admin for an invite link. If you think the registration is fake, <report>report it</report>."
+    "censusTaken": "This school is already registered. Ask the school admin for an invite link. If you think the registration is fake, <report>report it</report>.",
+    "medium": "Medium",
+    "mediumPlaceholder": "Choose the teaching medium",
+    "media": {
+      "si": "Sinhala",
+      "en": "English",
+      "ta": "Tamil"
+    },
+    "reviewBadge": "Reviewed by Sathiya",
+    "reviewTitle": "Registering a school that isn't in the MOE school list.",
+    "reviewTitleCensus": "Census number {{census}} isn't in the Ministry of Education school list.",
+    "reviewBody": "You can still register. Sathiya reviews schools that aren't in the list before publishing, invites and printing are turned on. You can set everything up in the meantime."
   },
   "brand": {
     "title": "2 · Logo & school colours",
@@ -92,7 +155,7 @@
     "logoUpload": "School created, but the logo could not be uploaded. Add it later in school profile.",
     "tooManySchools": "This account already belongs to the most schools allowed (15).",
     "rateLimited": "Too many attempts. Please try again later.",
-    "termsChanged": "Our terms were updated while you were registering. Open the Terms & Conditions to review them, then press Create school again."
+    "termsChanged": "The Terms & Conditions have changed. Read the current terms, then tick the box again to accept them."
   },
   "verify": {
     "title": "Check your email",

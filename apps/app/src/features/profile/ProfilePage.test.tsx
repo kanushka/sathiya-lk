@@ -145,3 +145,52 @@ describe('profile page', () => {
     expect(screen.getByLabelText('School name in English')).toBeDisabled();
   });
 });
+
+describe('profile page for a reviewed school', () => {
+  const reviewed = { ...ctx, school: { ...ctx.school, censusNo: '01234', review: { moeMatched: true } } };
+
+  it('shows the English name, district and census number read-only with a hint', () => {
+    renderWithSchool(<ProfilePage />, { ctx: reviewed });
+    for (const label of ['School name in English', 'District', 'Census number']) {
+      const input = screen.getByLabelText(label);
+      expect(input).toHaveAttribute('readonly');
+      expect(input).toHaveAccessibleDescription('Locked after registration. Contact Sathiya to change it.');
+    }
+    expect(screen.getByLabelText('Census number')).toHaveValue('01234');
+    expect(screen.getByLabelText('School name in Sinhala')).not.toHaveAttribute('readonly');
+  });
+
+  it('saves without the locked fields', async () => {
+    vi.mocked(api.updateSchool).mockResolvedValue(undefined);
+    const user = userEvent.setup();
+    renderWithSchool(<ProfilePage />, { ctx: reviewed });
+    await user.type(screen.getByLabelText('School name in English'), 'X');
+    await user.type(screen.getByLabelText('City'), 'X');
+    await user.click(screen.getByRole('button', { name: 'Save changes' }));
+    const patch = vi.mocked(api.updateSchool).mock.calls[0]![1];
+    expect(patch).not.toHaveProperty('nameEn');
+    expect(patch).not.toHaveProperty('district');
+    expect(patch.city).toMatch(/X$/);
+  });
+
+  it('lets a Sinhala-only reviewed school add its English name', async () => {
+    vi.mocked(api.updateSchool).mockResolvedValue(undefined);
+    const user = userEvent.setup();
+    renderWithSchool(<ProfilePage />, { ctx: { ...reviewed, school: { ...reviewed.school, nameEn: '', nameSi: 'සිරිපුර' } } });
+    const nameEn = screen.getByLabelText('School name in English');
+    expect(nameEn).not.toHaveAttribute('readonly');
+    expect(screen.getByLabelText('District')).toHaveAttribute('readonly');
+    await user.type(nameEn, 'Siripura College');
+    await user.click(screen.getByRole('button', { name: 'Save changes' }));
+    const patch = vi.mocked(api.updateSchool).mock.calls[0]![1];
+    expect(patch.nameEn).toBe('Siripura College');
+    expect(patch).not.toHaveProperty('district');
+  });
+
+  it('keeps the fields editable without a review record', () => {
+    setup();
+    expect(screen.getByLabelText('School name in English')).not.toHaveAttribute('readonly');
+    expect(screen.getByLabelText('District')).not.toHaveAttribute('readonly');
+    expect(screen.queryByLabelText('Census number')).not.toBeInTheDocument();
+  });
+});

@@ -185,6 +185,7 @@ export function TeacherModal({ teacher, onClose }: TeacherModalProps) {
             enPlaceholder={t('modal.namePlaceholderEn')}
             siPlaceholder={t('modal.namePlaceholderSi')}
             hint={t('modal.nameHint')}
+            siFirst={school.medium?.includes('si')}
           />
           <div className="rounded-lg border border-line bg-surface p-3">
             <Checkbox

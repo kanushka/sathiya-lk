@@ -70,7 +70,7 @@ export async function callAs<T>(token: string, name: string, data: unknown): Pro
 }
 
 export async function freshSchoolAdmin(tag: string, over: Record<string, unknown> = {}): Promise<{ email: string; password: string; sid: string }> {
-  const { auth } = admin();
+  const { auth, db } = admin();
   const email = `${tag}-${Date.now()}@example.com`;
   const password = 'fresh-pass-1';
   await auth.createUser({ email, password, emailVerified: true });
@@ -89,5 +89,13 @@ export async function freshSchoolAdmin(tag: string, over: Record<string, unknown
     adminName: `${tag} admin`,
     acceptedTermsVersion: TERMS_VERSION,
   });
+  // Unlisted registrations wait for super admin review; these specs need a working school.
+  await db.doc(`schools/${schoolId}`).update({ status: 'active' });
   return { email, password, sid: schoolId };
+}
+
+// Registration is limited per IP per day and every spec registers from 127.0.0.1.
+export async function clearRateLimits(): Promise<void> {
+  const { db } = admin();
+  await db.recursiveDelete(db.collection('rateLimits'));
 }

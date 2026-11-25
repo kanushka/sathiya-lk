@@ -3,6 +3,7 @@
 
 import { createContext, useContext } from 'react';
 import { Outlet } from 'react-router-dom';
+import { PendingBanner } from '../app/PendingReview';
 import { SchoolProvider, useHasSchool } from '../app/SchoolProvider';
 import { AnnouncementBanner } from '../features/superadmin/AnnouncementBanner';
 import { PhoneTopBar } from './PhoneTopBar';
@@ -24,6 +25,7 @@ function Shell({ basePath, readOnly = false }: AdminLayoutProps) {
     <ReadOnlyCtx.Provider value={readOnly}>
       <div className="flex min-h-screen md:min-w-[1024px] flex-col bg-[#F6F6F4] font-sans text-ink">
         {!readOnly && <AnnouncementBanner />}
+        {!readOnly && <PendingBanner />}
         <PhoneTopBar basePath={basePath} readOnly={readOnly} />
         <div className="flex flex-1">
           <div className="hidden md:block">

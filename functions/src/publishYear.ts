@@ -5,7 +5,7 @@ import type { DocumentReference } from 'firebase-admin/firestore';
 import { onCall } from 'firebase-functions/v2/https';
 import { db } from './lib/admin';
 import { callOpts } from './lib/callOptions';
-import { docId, invalid, obj, requireSchoolAdmin } from './lib/guards';
+import { docId, invalid, obj, requireApprovedSchool } from './lib/guards';
 import { assertNotApplying } from './lib/yearBusy';
 import { loadContext, loadEntries } from './lib/loadContext';
 
@@ -23,7 +23,7 @@ async function commitAll(ops: Op[]): Promise<void> {
 
 export const publishYear = onCall(callOpts, async (req): Promise<PublishYearRes> => {
   const data = obj(req.data, 'request');
-  const { sid } = await requireSchoolAdmin(req, data.schoolId);
+  const { sid } = await requireApprovedSchool(req, data.schoolId);
   const yid = docId(data.yearId, 'yearId');
   const yearRef = db.doc(`${paths.years(sid)}/${yid}`);
   const yearSnap = await yearRef.get();

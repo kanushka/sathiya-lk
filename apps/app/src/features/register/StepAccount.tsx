@@ -41,7 +41,7 @@ export function StepAccount({ value, onChange, signedIn, signedInEmail, busy, er
       {mode === 'signUp' ? (
         <h1 className="mb-6 mt-0 text-[26px] font-bold">{t('signUp.title')}</h1>
       ) : (
-        <h2 className="mb-4 mt-0 text-lg font-bold">{t('account.title')}</h2>
+        <h2 tabIndex={-1} className="mb-4 mt-0 text-lg font-bold outline-none">{t('account.title')}</h2>
       )}
       {signedIn && signedInEmail && <p className="mb-3 mt-0 text-sm text-ink-muted">{t('account.signedInAs', { email: signedInEmail })}</p>}
       <div className="mb-4 flex flex-wrap gap-3">

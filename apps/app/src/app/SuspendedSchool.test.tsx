@@ -13,7 +13,7 @@ import { LangContextProvider } from './LangProvider';
 
 const state = vi.hoisted(() => ({
   claims: {} as Claims,
-  status: 'disabled' as 'active' | 'disabled',
+  status: 'disabled' as 'active' | 'disabled' | 'rejected',
   schoolLoading: false,
   collections: [] as (string | null)[],
   signOut: vi.fn(async () => undefined),
@@ -139,5 +139,28 @@ describe('suspended school gate', () => {
     state.claims = { super: true };
     renderProvider('full');
     expect(state.collections).toContain('schools/s1/teachers');
+  });
+});
+
+describe('rejected school gate', () => {
+  beforeEach(() => {
+    state.status = 'rejected';
+    state.schoolLoading = false;
+    state.collections.length = 0;
+  });
+
+  it('shows the Not approved screen to an admin on every admin route, without subscribing school data', () => {
+    state.claims = { schools: { s1: { r: 'a' } } };
+    renderProvider();
+    expect(screen.getByRole('heading', { level: 1, name: 'Siripura was not approved' })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'Remove registration…' })).toBeInTheDocument();
+    expect(screen.queryByText('dashboard')).not.toBeInTheDocument();
+    expect(state.collections.every((p) => p === null)).toBe(true);
+  });
+
+  it('lets a super admin through', () => {
+    state.claims = { super: true };
+    renderProvider('full');
+    expect(screen.getByText('dashboard')).toBeInTheDocument();
   });
 });

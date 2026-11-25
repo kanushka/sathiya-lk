@@ -4,7 +4,7 @@ import { paths } from '@sathiya/core';
 import { onDocumentWritten } from 'firebase-functions/v2/firestore';
 import { db } from './lib/admin';
 import { REGION } from './lib/callOptions';
-import { directoryFields, sameDirectory } from './lib/directory';
+import { directoryFields, listed, sameDirectory } from './lib/directory';
 
 // Triggers are at-least-once and unordered, so the event payload is ignored: the school doc is the source of truth.
 export async function syncSchoolDirectory(sid: string): Promise<void> {
@@ -12,7 +12,7 @@ export async function syncSchoolDirectory(sid: string): Promise<void> {
   const dirRef = db.doc(paths.directory(sid));
   await db.runTransaction(async (tx) => {
     const [school, dir] = await Promise.all([tx.get(schoolRef), tx.get(dirRef)]);
-    if (!school.exists) {
+    if (!school.exists || !listed(school.get('status'))) {
       if (dir.exists) tx.delete(dirRef);
       return;
     }

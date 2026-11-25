@@ -121,6 +121,43 @@ https://www.example.test/",
 }
 `;
 
+exports[`email templates > schoolApproved snapshot 1`] = `
+{
+  "html": "<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Siripura Central College is approved · Sathiya (සතිය)</title></head>
+<body style="margin:0;padding:0;background:#FBFAF7">
+<table role="presentation" width="100%" cellspacing="0" cellpadding="0" border="0" style="background:#FBFAF7"><tr><td align="center" style="padding:28px 12px">
+<table role="presentation" width="520" cellspacing="0" cellpadding="0" border="0" style="width:100%;max-width:520px;background:#FFFFFF;border:1px solid #E4E6EC;border-radius:12px;overflow:hidden">
+<tr><td style="background:#7A1F3D;color:#FFFFFF;padding:20px 24px;font-family:Inter,'Segoe UI',Helvetica,Arial,'Noto Sans Sinhala','Iskoola Pota','Nirmala UI',sans-serif"><table role="presentation" width="100%" cellspacing="0" cellpadding="0" border="0" style=""><tr><td style="vertical-align:middle"><span style="display:inline-block;vertical-align:middle;line-height:1.1"><span style="font-weight:800;font-size:18px;letter-spacing:-0.2px;line-height:1.1">Siripura Central College</span><br><span style="font-family:'Noto Sans Sinhala','Iskoola Pota','Nirmala UI',Inter,Arial,sans-serif;font-weight:600;font-size:14px;line-height:1.3;color:#FFFFFF">සිරිපුර මධ්‍ය මහා විද්‍යාලය</span></span></td></tr></table></td></tr>
+<tr><td style="padding:28px 24px 24px">
+<div style="font-family:Inter,'Segoe UI',Helvetica,Arial,'Noto Sans Sinhala','Iskoola Pota','Nirmala UI',sans-serif;font-size:15px;line-height:1.6;color:#14213D"><table role="presentation" width="100%" cellspacing="0" cellpadding="0" border="0" style="margin:0 0 16px;background:#E1F0EE;border-radius:8px"><tr><td style="padding:12px 14px;font-size:14px;line-height:1.5;color:#0B5756"><span style="display:inline-block;padding:3px 9px;border-radius:999px;background:#FFFFFF;color:#0B5756;font-size:12px;font-weight:600;line-height:16px;white-space:nowrap">&#9679;&nbsp;Approved</span>&nbsp;&nbsp;Your school is now live on Sathiya.</td></tr></table><h1 style="margin:0 0 12px;font-size:22px;line-height:1.3;font-weight:700;color:#14213D">Your school is approved</h1><p style="margin:0 0 12px;"><b>Siripura Central College</b> is approved. Publishing, admin invites and printing are now open, and the school is listed in the Sathiya directory.</p><table role="presentation" cellspacing="0" cellpadding="0" border="0" style="margin:6px 0 2px"><tr><td style="background:#7A1F3D;border-radius:8px"><a href="https://app.example.test/s/sid1/admin" style="display:inline-block;padding:12px 20px;color:#FFFFFF;text-decoration:none;font-weight:600;font-size:15px;line-height:20px">Open school admin</a></td></tr></table></div>
+<table role="presentation" width="100%" cellspacing="0" cellpadding="0" border="0" style="margin:24px 0 14px"><tr><td width="50%" style="vertical-align:middle"><div style="height:1px;background:#ECEDF1;line-height:1px;font-size:0">&nbsp;</div></td><td style="padding:0 10px;white-space:nowrap;font-family:'Noto Sans Sinhala','Iskoola Pota','Nirmala UI',Inter,Arial,sans-serif"><span style="display:inline-block;padding:3px 9px;border-radius:999px;background:#F1F2F5;color:#3B4560;font-size:12px;font-weight:600;line-height:16px;white-space:nowrap">සිංහල</span></td><td width="50%" style="vertical-align:middle"><div style="height:1px;background:#ECEDF1;line-height:1px;font-size:0">&nbsp;</div></td></tr></table>
+<div style="font-family:'Noto Sans Sinhala','Iskoola Pota','Nirmala UI',Inter,Arial,sans-serif;font-size:14px;line-height:1.75;color:#3B4560"><h2 style="margin:0 0 6px;font-size:17px;line-height:1.35;font-weight:700;color:#14213D">ඔබගේ පාසල අනුමත කර ඇත</h2><p style="margin:0 0 12px;">සිරිපුර මධ්‍ය මහා විද්‍යාලය අනුමත කර ඇත. දැන් කාලසටහන ප්‍රකාශයට පත් කිරීම, පරිපාලක ආරාධනා සහ මුද්‍රණය කළ හැක.</p></div>
+</td></tr>
+</table>
+<p style="margin:0;padding:18px 24px 0;text-align:center;font-family:Inter,'Segoe UI',Helvetica,Arial,'Noto Sans Sinhala','Iskoola Pota','Nirmala UI',sans-serif;font-size:12px;line-height:1.6;color:#5A6378">Sent by Sathiya (සතිය) for Siripura Central College.</p>
+</td></tr></table>
+</body></html>",
+  "subject": "Siripura Central College is approved · Sathiya (සතිය)",
+  "text": "[Approved] Your school is now live on Sathiya.
+
+Your school is approved
+
+Siripura Central College is approved. Publishing, admin invites and printing are now open, and the school is listed in the Sathiya directory.
+
+Open school admin: https://app.example.test/s/sid1/admin
+
+---
+
+ඔබගේ පාසල අනුමත කර ඇත
+
+සිරිපුර මධ්‍ය මහා විද්‍යාලය අනුමත කර ඇත. දැන් කාලසටහන ප්‍රකාශයට පත් කිරීම, පරිපාලක ආරාධනා සහ මුද්‍රණය කළ හැක.
+
+--
+Sent by Sathiya (සතිය) for Siripura Central College.",
+}
+`;
+
 exports[`email templates > schoolReactivated snapshot 1`] = `
 {
   "html": "<!doctype html>
@@ -201,6 +238,52 @@ Invite other admins from school settings when you're ready.
 --
 Sathiya (සතිය): free school timetables for Sri Lanka
 https://www.example.test/",
+}
+`;
+
+exports[`email templates > schoolRejected snapshot 1`] = `
+{
+  "html": "<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Siripura Central College was not approved · Sathiya (සතිය)</title></head>
+<body style="margin:0;padding:0;background:#FBFAF7">
+<table role="presentation" width="100%" cellspacing="0" cellpadding="0" border="0" style="background:#FBFAF7"><tr><td align="center" style="padding:28px 12px">
+<table role="presentation" width="520" cellspacing="0" cellpadding="0" border="0" style="width:100%;max-width:520px;background:#FFFFFF;border:1px solid #E4E6EC;border-radius:12px;overflow:hidden">
+<tr><td style="background:#7A1F3D;color:#FFFFFF;padding:20px 24px;font-family:Inter,'Segoe UI',Helvetica,Arial,'Noto Sans Sinhala','Iskoola Pota','Nirmala UI',sans-serif"><table role="presentation" width="100%" cellspacing="0" cellpadding="0" border="0" style=""><tr><td style="vertical-align:middle"><span style="display:inline-block;vertical-align:middle;line-height:1.1"><span style="font-weight:800;font-size:18px;letter-spacing:-0.2px;line-height:1.1">Siripura Central College</span><br><span style="font-family:'Noto Sans Sinhala','Iskoola Pota','Nirmala UI',Inter,Arial,sans-serif;font-weight:600;font-size:14px;line-height:1.3;color:#FFFFFF">සිරිපුර මධ්‍ය මහා විද්‍යාලය</span></span></td></tr></table></td></tr>
+<tr><td style="padding:28px 24px 24px">
+<div style="font-family:Inter,'Segoe UI',Helvetica,Arial,'Noto Sans Sinhala','Iskoola Pota','Nirmala UI',sans-serif;font-size:15px;line-height:1.6;color:#14213D"><table role="presentation" width="100%" cellspacing="0" cellpadding="0" border="0" style="margin:0 0 16px;background:#FBEAEA;border-radius:8px"><tr><td style="padding:12px 14px;font-size:14px;line-height:1.5;color:#A3262A"><span style="display:inline-block;padding:3px 9px;border-radius:999px;background:#FFFFFF;color:#A3262A;font-size:12px;font-weight:600;line-height:16px;white-space:nowrap">&#9679;&nbsp;Not approved</span>&nbsp;&nbsp;The school is not listed and cannot be published.</td></tr></table><h1 style="margin:0 0 12px;font-size:22px;line-height:1.3;font-weight:700;color:#14213D">Your school was not approved</h1><p style="margin:0 0 12px;"><b>Siripura Central College</b> was not approved on Sathiya.</p><p style="margin:0 0 12px;">You can remove the registration from the Not approved screen when you sign in.</p><p style="margin:0 0 12px;margin-bottom:6px;font-size:13px;font-weight:600;color:#5A6378">Reason</p><p style="margin:0 0 12px;margin-bottom:16px;padding:12px 14px;background:#F6F7F9;border:1px solid #E4E6EC;border-radius:8px;color:#3B4560;font-size:14px;white-space:pre-wrap">No such school.
+Call us.</p><p style="margin:14px 0 0;font-size:13px;color:#5A6378">Questions? Write to help@example.test or reply to this email.</p></div>
+<table role="presentation" width="100%" cellspacing="0" cellpadding="0" border="0" style="margin:24px 0 14px"><tr><td width="50%" style="vertical-align:middle"><div style="height:1px;background:#ECEDF1;line-height:1px;font-size:0">&nbsp;</div></td><td style="padding:0 10px;white-space:nowrap;font-family:'Noto Sans Sinhala','Iskoola Pota','Nirmala UI',Inter,Arial,sans-serif"><span style="display:inline-block;padding:3px 9px;border-radius:999px;background:#F1F2F5;color:#3B4560;font-size:12px;font-weight:600;line-height:16px;white-space:nowrap">සිංහල</span></td><td width="50%" style="vertical-align:middle"><div style="height:1px;background:#ECEDF1;line-height:1px;font-size:0">&nbsp;</div></td></tr></table>
+<div style="font-family:'Noto Sans Sinhala','Iskoola Pota','Nirmala UI',Inter,Arial,sans-serif;font-size:14px;line-height:1.75;color:#3B4560"><h2 style="margin:0 0 6px;font-size:17px;line-height:1.35;font-weight:700;color:#14213D">ඔබගේ පාසල අනුමත කර නැත</h2><p style="margin:0 0 12px;">සිරිපුර මධ්‍ය මහා විද්‍යාලය Sathiya හි අනුමත කර නැත. ඔබට පිවිසීමෙන් පසු ලියාපදිංචිය ඉවත් කළ හැක.</p><p style="margin:14px 0 0;font-size:13px;color:#5A6378">ප්‍රශ්න ඇත්නම් help@example.test වෙත ලියන්න හෝ මෙම ඊමේලයට පිළිතුරු දෙන්න.</p></div>
+</td></tr>
+</table>
+<p style="margin:0;padding:18px 24px 0;text-align:center;font-family:Inter,'Segoe UI',Helvetica,Arial,'Noto Sans Sinhala','Iskoola Pota','Nirmala UI',sans-serif;font-size:12px;line-height:1.6;color:#5A6378">Sent by Sathiya (සතිය) for Siripura Central College.</p>
+</td></tr></table>
+</body></html>",
+  "subject": "Siripura Central College was not approved · Sathiya (සතිය)",
+  "text": "[Not approved] The school is not listed and cannot be published.
+
+Your school was not approved
+
+Siripura Central College was not approved on Sathiya.
+
+You can remove the registration from the Not approved screen when you sign in.
+
+Reason:
+> No such school.
+> Call us.
+
+Questions? Write to help@example.test or reply to this email.
+
+---
+
+ඔබගේ පාසල අනුමත කර නැත
+
+සිරිපුර මධ්‍ය මහා විද්‍යාලය Sathiya හි අනුමත කර නැත. ඔබට පිවිසීමෙන් පසු ලියාපදිංචිය ඉවත් කළ හැක.
+
+ප්‍රශ්න ඇත්නම් help@example.test වෙත ලියන්න හෝ මෙම ඊමේලයට පිළිතුරු දෙන්න.
+
+--
+Sent by Sathiya (සතිය) for Siripura Central College.",
 }
 `;
 
