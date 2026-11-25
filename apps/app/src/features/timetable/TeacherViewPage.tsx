@@ -336,10 +336,13 @@ function TeacherView({ teacher, teachers, template }: { teacher: Teacher; teache
           />
           <span className="basis-full text-sm text-ink-muted md:ml-1.5 md:basis-auto">{summary}</span>
         </div>
-        <Button onClick={print}>
-          <Icon name="print" size={16} />
-          {t('teacherView.print')}
-        </Button>
+        <div className="flex gap-2">
+          {!readOnly && <LinkButton to={`${base}/timetable/auto-fill`}>{t('autoFill')}</LinkButton>}
+          <Button onClick={print}>
+            <Icon name="print" size={16} />
+            {t('teacherView.print')}
+          </Button>
+        </div>
       </div>
 
       <PinHeader pin={pin} hint={t('teacherView.pinHint')} readOnly={readOnly} />

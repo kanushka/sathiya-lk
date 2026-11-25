@@ -316,5 +316,6 @@
     "delete": "Delete {{slot}} {{subjects}}",
     "confirmTitle": "Delete this entry?",
     "confirmBody": "{{slot}} · {{classes}} · {{subjects}} will be removed from the timetable. This can't be undone."
-  }
+  },
+  "autoFill": "Auto-fill"
 }

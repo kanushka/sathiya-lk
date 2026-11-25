@@ -316,5 +316,6 @@
     "delete": "{{slot}} {{subjects}} මකන්න",
     "confirmTitle": "මෙම ඇතුළත් කිරීම මකන්නද?",
     "confirmBody": "{{slot}} · {{classes}} · {{subjects}} කාලසටහනෙන් ඉවත් කෙරේ. මෙය අහෝසි කළ නොහැක."
-  }
+  },
+  "autoFill": "ස්වයංක්‍රීයව පුරවන්න"
 }

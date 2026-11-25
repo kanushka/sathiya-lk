@@ -1,0 +1,53 @@
+{
+  "title": "Auto-fill",
+  "subtitle": "Check the setup before the timetable is generated.",
+  "blocking": {
+    "title": "Fix these before continuing",
+    "summary_one": "{{count}} problem is stopping auto-fill.",
+    "summary_other": "{{count}} problems are stopping auto-fill."
+  },
+  "ready": {
+    "title": "Ready to generate",
+    "body": "Your setup has everything auto-fill needs.",
+    "next": "Generating the timetable arrives in the next update."
+  },
+  "warnings": {
+    "title": "Warnings",
+    "hint": "These will not stop auto-fill, but the result may fall short."
+  },
+  "continue": "Continue",
+  "continueHelp": "Fix the problems above to continue.",
+  "groups": {
+    "grades": "Grades & classes",
+    "teachers": "Teachers",
+    "templates": "Templates"
+  },
+  "fix": {
+    "grades": "Open Grades",
+    "teachers": "Open Teachers",
+    "templates": "Open Templates"
+  },
+  "item": {
+    "unknown": "an item"
+  },
+  "periods_one": "{{count}} period",
+  "periods_other": "{{count}} periods",
+  "messages": {
+    "grade-no-classes": "Grade {{grade}} has no classes.",
+    "class-no-teacher": "{{class}} has no class teacher.",
+    "class-no-template": "{{class}} has no period template.",
+    "plan-empty": "{{class}} has no subjects in its plan.",
+    "plan-zero-target": "{{class}}: {{item}} is set to 0 per week.",
+    "teacher-no-subjects": "{{teacher}} has no subjects.",
+    "teacher-no-grades": "{{teacher}} has no grades.",
+    "teacher-no-max": "{{teacher}} has no daily lesson limit.",
+    "plan-exceeds-template": "{{class}} needs {{needed}} a week, but its template has only {{available}}.",
+    "per-day-unbuildable": "{{class}}: {{item}} needs {{minutes}} on {{day}}, which the periods that day cannot add up to.",
+    "no-qualified-teacher": "No teacher can teach {{subject}} in {{class}}.",
+    "no-specialist": "{{class}} needs a teacher other than its class teacher for {{subject}}.",
+    "class-teacher-no-daily-subject": "The class teacher of {{class}} teaches no subject that runs every day.",
+    "class-teacher-wrong-grade": "{{teacher}} is class teacher of {{class}} but is not assigned to grade {{grade}}.",
+    "capacity-short": "{{subject}} needs {{needed}} periods a week, but teachers can cover only {{capacity}}.",
+    "min-per-week-unreachable": "Teachers' minimum weekly lessons add up to {{needed}}, but only {{available}} lessons are planned."
+  }
+}

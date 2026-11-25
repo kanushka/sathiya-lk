@@ -262,6 +262,9 @@ function ClassView({ cls, classes }: { cls: SchoolClass; classes: SchoolClass[] 
               {t('classView.fill')}
             </Button>
           )}
+          {!readOnly && (
+            <LinkButton to={`${base}/timetable/auto-fill`}>{t('autoFill')}</LinkButton>
+          )}
           <Button onClick={print}>
             <Icon name="print" size={16} />
             {t('classView.print')}
