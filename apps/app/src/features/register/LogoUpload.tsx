@@ -6,7 +6,7 @@ import { Button } from '../../ui/Button';
 import { FormError } from '../../ui/FormError';
 
 export const MAX_LOGO_BYTES = 1024 * 1024;
-const ACCEPT = ['image/png', 'image/svg+xml'];
+const ACCEPT = ['image/png', 'image/jpeg', 'image/webp'];
 
 export interface LogoUploadProps {
   value: File | null;
@@ -64,7 +64,7 @@ export function LogoUpload({ value, currentUrl, onChange, onPreview }: LogoUploa
             ref={input}
             id={id}
             type="file"
-            accept=".png,.svg,image/png,image/svg+xml"
+            accept=".png,.jpg,.jpeg,.webp,image/png,image/jpeg,image/webp"
             aria-labelledby={`${id}-label`}
             className="sr-only"
             onChange={(e) => pick(e.target.files?.[0])}

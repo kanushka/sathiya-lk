@@ -4,6 +4,8 @@ export { registerSchool } from './registerSchool';
 export { createTeacher } from './createTeacher';
 export { importSetup } from './importSetup';
 export { inviteAdmin } from './inviteAdmin';
+export { cancelInvite } from './cancelInvite';
+export { removeAdmin } from './removeAdmin';
 export { claimInvites } from './claimInvites';
 export { setSchoolStatus } from './setSchoolStatus';
 export { releaseCensusNo } from './releaseCensusNo';

@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
 // Copyright (C) 2026 Kanushka Gayan
-import { EMAIL_RE, isSchoolAdmin, paths, type ApiErrorCode, type Claims, type School } from '@sathiya/core';
+import { EMAIL_RE, isSchoolAdmin, paths, type ApiErrorCode, type Claims, type Member, type School } from '@sathiya/core';
 import { HttpsError, type CallableRequest, type FunctionsErrorCode } from 'firebase-functions/v2/https';
 import { db } from './admin';
 
@@ -25,9 +25,8 @@ export function requireAuth(req: CallableRequest): Caller {
   return { uid, claims, token };
 }
 
-// Verified email, or a Google sign-in (Google vouches for the address even when email_verified is unset).
-export const isVerified = (token: Caller['token']): boolean =>
-  token.email_verified === true || token.firebase?.sign_in_provider === 'google.com';
+// The sign-in provider is no proof: a Google identity linked to an unverified password account carries its email unverified.
+export const isVerified = (token: Caller['token']): boolean => token.email_verified === true;
 
 export function requireSuper(req: CallableRequest): Caller {
   const caller = requireAuth(req);
@@ -38,11 +37,13 @@ export function requireSuper(req: CallableRequest): Caller {
 export const isAdminOf = (claims: Claims, sid: string): boolean => isSchoolAdmin(claims, sid);
 
 // Admin of sid, school exists and is not disabled. Reuse for every school-scoped admin callable.
+// The member doc is checked too: claims of a removed admin stay valid until their ID token expires.
 export async function requireSchoolAdmin(req: CallableRequest, sid: unknown): Promise<Caller & { sid: string; school: Omit<School, 'id'> }> {
   const caller = requireAuth(req);
   const schoolId = docId(sid, 'schoolId');
   if (!isAdminOf(caller.claims, schoolId)) notAllowed('Not an admin of this school');
-  const snap = await db.doc(paths.school(schoolId)).get();
+  const [snap, member] = await Promise.all([db.doc(paths.school(schoolId)).get(), db.doc(`${paths.members(schoolId)}/${caller.uid}`).get()]);
+  if ((member.data() as Member | undefined)?.role !== 'admin') notAllowed('Not an admin of this school');
   const school = snap.data() as Omit<School, 'id'> | undefined;
   if (!school) notAllowed('School is not active');
   if (school!.status === 'disabled') schoolDisabled();

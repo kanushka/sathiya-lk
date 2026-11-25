@@ -7,6 +7,8 @@ import { as, initEnv, type Role } from './setup';
 let env: RulesTestEnvironment;
 const MB = 1024 * 1024;
 const PNG = 'image/png';
+const JPEG = 'image/jpeg';
+const WEBP = 'image/webp';
 const SVG = 'image/svg+xml';
 
 beforeAll(async () => {
@@ -23,6 +25,7 @@ beforeEach(async () => {
     const s = ctx.storage();
     await s.ref('schools/s1/logo.png').put(new Uint8Array(10), { contentType: PNG });
     await s.ref('schools/s1/private.png').put(new Uint8Array(10), { contentType: PNG });
+    await s.ref('schools/s1/logo.svg').put(new Uint8Array(10), { contentType: SVG });
   });
 });
 
@@ -35,6 +38,9 @@ describe('logo read', () => {
   it.each<Role>(['anon', 'noClaims', 'teacher', 'otherAdmin'])('is public (%s)', async (r) => {
     await assertSucceeds(meta(r, 'schools/s1/logo.png'));
   });
+  it('an existing SVG logo stays public', async () => {
+    await assertSucceeds(meta('anon', 'schools/s1/logo.svg'));
+  });
   it('other files under the school are not readable', async () => {
     await assertFails(meta('anon', 'schools/s1/private.png'));
     await assertFails(meta('admin', 'schools/s1/private.png'));
@@ -42,23 +48,32 @@ describe('logo read', () => {
 });
 
 describe('logo write', () => {
-  it('allows admin of sid to upload png and svg up to 1 MB', async () => {
+  it('allows admin of sid to upload png, jpeg and webp up to 1 MB', async () => {
     await assertSucceeds(upload('admin', 'schools/s1/logo.png', 1000, PNG));
-    await assertSucceeds(upload('admin', 'schools/s1/logo.svg', 1000, SVG));
+    await assertSucceeds(upload('admin', 'schools/s1/logo.jpg', 1000, JPEG));
+    await assertSucceeds(upload('admin', 'schools/s1/logo.webp', 1000, WEBP));
     await assertSucceeds(upload('adminTid', 'schools/s1/logo.png', MB, PNG));
+  });
+  it('denies svg uploads, including over an existing svg logo', async () => {
+    await assertFails(upload('admin', 'schools/s1/logo.svg', 1000, SVG));
+    await assertFails(upload('admin', 'schools/s1/logo.png', 1000, SVG));
+    await assertFails(upload('admin', 'schools/s1/logo.svg', 1000, PNG));
   });
   it('denies files over 1 MB', async () => {
     await assertFails(upload('admin', 'schools/s1/logo.png', MB + 1, PNG));
   });
   it('denies other content types', async () => {
-    await assertFails(upload('admin', 'schools/s1/logo.png', 1000, 'image/jpeg'));
-    await assertFails(upload('admin', 'schools/s1/logo.svg', 1000, 'text/html'));
+    await assertFails(upload('admin', 'schools/s1/logo.png', 1000, 'image/gif'));
+    await assertFails(upload('admin', 'schools/s1/logo.png', 1000, 'text/html'));
+    await assertFails(upload('admin', 'schools/s1/logo.png', 1000, 'image/png; charset=utf-8'));
     await assertFails(upload('admin', 'schools/s1/logo.png', 1000, 'image/svg+xml; charset=utf-8'));
   });
   it('denies other file names', async () => {
     await assertFails(upload('admin', 'schools/s1/banner.png', 1000, PNG));
     await assertFails(upload('admin', 'schools/s1/sub/logo.png', 1000, PNG));
     await assertFails(upload('admin', 'schools/s1/logo', 1000, PNG));
+    await assertFails(upload('admin', 'schools/s1/logo.html', 1000, PNG));
+    await assertFails(upload('admin', 'schools/s1/logo.jpeg', 1000, JPEG));
     await assertFails(upload('admin', 'other/logo.png', 1000, PNG));
   });
   it.each<Role>(['teacher', 'super', 'otherAdmin', 'noClaims', 'anon'])('denies %s', async (r) => {
@@ -74,5 +89,9 @@ describe('logo write', () => {
     await assertFails(remove('otherAdmin', 'schools/s1/logo.png'));
     await assertFails(remove('super', 'schools/s1/logo.png'));
     await assertSucceeds(remove('admin', 'schools/s1/logo.png'));
+  });
+  it('allows admin of sid to delete an existing svg logo', async () => {
+    await assertFails(remove('otherAdmin', 'schools/s1/logo.svg'));
+    await assertSucceeds(remove('admin', 'schools/s1/logo.svg'));
   });
 });

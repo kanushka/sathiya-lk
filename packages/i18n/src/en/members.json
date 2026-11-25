@@ -18,12 +18,29 @@
     "admin": "Admin",
     "teacher": "Teacher",
     "empty": "No members yet",
-    "unknown": "Unknown member"
+    "unknown": "Unknown member",
+    "actions": "Actions",
+    "remove": "Remove admin"
   },
   "invites": {
     "title": "Pending invites",
     "none": "No pending invites.",
-    "linked": "Linked to {{name}}"
+    "linked": "Linked to {{name}}",
+    "expired": "Expired",
+    "cancel": "Cancel invite",
+    "cancelled": "Invite to {{email}} cancelled",
+    "cancelFailed": "Could not cancel the invite. Try again."
+  },
+  "remove": {
+    "title": "Remove {{name}} as admin?",
+    "body": "Their account loses admin access to this school the next time they open the app, and within an hour at the latest. You can invite them again later.",
+    "teacherBody": "They are also linked to a teacher, so they keep teacher access.",
+    "selfBody": "This is you. You will be signed out and must sign in again.",
+    "confirm": "Remove admin",
+    "cancel": "Cancel",
+    "removed": "{{name}} is no longer an admin",
+    "lastAdmin": "A school needs at least one admin. Invite another admin first.",
+    "failed": "Could not remove the admin. Try again."
   },
   "invite": {
     "title": "Invite an admin",

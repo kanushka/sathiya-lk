@@ -115,11 +115,11 @@ describe('JoinPage', () => {
     renderAuth(<JoinPage />, { ...SCHOOL, signedIn: true, emailVerified: true });
     await user.type(await screen.findByLabelText('Staff ID'), 'SCC999');
     await user.click(screen.getByRole('button', { name: 'Send request' }));
-    expect(await screen.findByText('No teacher has this staff ID. Check it and try again.')).toBeInTheDocument();
+    expect(await screen.findByText(/This staff ID cannot be used to join\. Check it and try again\./)).toBeInTheDocument();
     expect(screen.getByLabelText('Staff ID')).toBeInTheDocument();
   });
 
-  it('says a staff ID is already linked and to ask the admin', async () => {
+  it('says the account is already linked when filing a request', async () => {
     vi.mocked(api.joinSchool)
       .mockRejectedValueOnce(apiError('invalid'))
       .mockRejectedValueOnce(apiError('already-linked'));
@@ -127,7 +127,7 @@ describe('JoinPage', () => {
     renderAuth(<JoinPage />, { ...SCHOOL, signedIn: true, emailVerified: true });
     await user.type(await screen.findByLabelText('Staff ID'), 'SCC024');
     await user.click(screen.getByRole('button', { name: 'Send request' }));
-    expect(await screen.findByText(/already linked to an account\. Ask your school admin to unlink it/)).toBeInTheDocument();
+    expect(await screen.findByText('Your account is already linked to a teacher in this school.')).toBeInTheDocument();
   });
 
   it('explains an already-linked personal link', async () => {

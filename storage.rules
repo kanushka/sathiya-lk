@@ -10,9 +10,10 @@ service firebase.storage {
 
     match /schools/{sid}/{file} {
       allow read: if file.matches('logo[.][^/]+');
-      allow create, update: if file.matches('logo[.][^/]+') && isAdmin(sid)
+      // SVG is scriptable when opened directly, so new uploads are raster only; existing SVG logos stay readable.
+      allow create, update: if file.matches('logo[.](png|jpg|webp)') && isAdmin(sid)
         && request.resource.size <= 1024 * 1024
-        && request.resource.contentType.matches('image/png|image/svg[+]xml');
+        && request.resource.contentType.matches('image/(png|jpeg|webp)');
       allow delete: if file.matches('logo[.][^/]+') && isAdmin(sid);
     }
   }

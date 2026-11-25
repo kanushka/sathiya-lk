@@ -42,8 +42,11 @@ export async function censusAvailable(censusNo: string): Promise<boolean> {
   return (await call('checkCensusNo', { censusNo })).available;
 }
 
+const LOGO_EXT: Record<string, string> = { 'image/png': 'png', 'image/jpeg': 'jpg', 'image/webp': 'webp' };
+
 export async function uploadLogo(schoolId: string, file: File): Promise<string> {
-  const ext = file.type === 'image/svg+xml' ? 'svg' : 'png';
+  const ext = LOGO_EXT[file.type];
+  if (!ext) throw new Error(`Unsupported logo type ${file.type}`);
   const fileRef = ref(storage, `schools/${schoolId}/logo.${ext}`);
   await uploadBytes(fileRef, file, { contentType: file.type });
   const url = await getDownloadURL(fileRef);

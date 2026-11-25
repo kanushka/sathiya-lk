@@ -23,6 +23,9 @@ const school = (sid: string, status = 'active') => ({
   createdAt: 1,
 });
 
+const logo = (sid: string, ext = 'png', bucket = 'sathiya-lk.firebasestorage.app', host = 'https://firebasestorage.googleapis.com') =>
+  `${host}/v0/b/${bucket}/o/schools%2F${sid}%2Flogo.${ext}?alt=media&token=0b1c2d3e-4f50-6172-8394-a5b6c7d8e9f0`;
+
 const slotLock = (sid: string, yid: string, key: string) => `${paths.years(sid)}/${yid}/slotLocks/${key}`;
 
 const seed: Record<string, Record<string, unknown>> = {
@@ -137,7 +140,7 @@ describe('schools/{sid} doc', () => {
     it.each([
       ['nameEn', 'New name'],
       ['nameSi', 'නම'],
-      ['logoUrl', 'https://x/logo.png'],
+      ['logoUrl', logo('s1')],
       ['colors', { primary: '#000000', second: '#FFFFFF' }],
       ['city', 'Kurunegala'],
       ['address', '12 Temple Road'],
@@ -192,6 +195,110 @@ describe('schools/{sid} doc', () => {
       await assertFails(set('admin', s1, noCensus));
     });
 
+    it.each([
+      ['nameEn', 'x'.repeat(201)],
+      ['nameEn', 5],
+      ['nameSi', 'x'.repeat(201)],
+      ['nameSi', ['x']],
+      ['district', ''],
+      ['district', ' '],
+      ['district', 'x'.repeat(61)],
+      ['district', 3],
+      ['staffPrefix', 'sc'],
+      ['staffPrefix', 'S'],
+      ['staffPrefix', 'SCCABC'],
+      ['staffPrefix', 'S1'],
+      ['staffPrefix', 12],
+      ['grades', []],
+      ['grades', [0]],
+      ['grades', [14]],
+      ['grades', ['6']],
+      ['grades', [6.5]],
+      ['grades', Array.from({ length: 14 }, () => 6)],
+      ['grades', 6],
+      ['colors', { primary: 'red', second: '#FFFFFF' }],
+      ['colors', { primary: '#000000', second: 'url(https://evil.example/x)' }],
+      ['colors', { primary: '#000', second: '#FFFFFF' }],
+      ['colors', { primary: '#0000000', second: '#FFFFFF' }],
+      ['colors', { primary: '#000000' }],
+      ['colors', { primary: '#000000', second: '#FFFFFF', third: '#FFFFFF' }],
+      ['colors', '#000000'],
+    ])('denies admin setting invalid %s %j', async (k, v) => {
+      await assertFails(update('admin', s1, { [k]: v }));
+    });
+
+    it('allows valid names, district, staffPrefix, grades and colours', async () => {
+      await assertSucceeds(update('admin', s1, { nameEn: 'n'.repeat(200), nameSi: 'න'.repeat(200), district: 'd'.repeat(60) }));
+      await assertSucceeds(update('admin', s1, { staffPrefix: 'AB', grades: [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13] }));
+      await assertSucceeds(update('admin', s1, { colors: { primary: '#abcdef', second: '#ABCDEF' } }));
+    });
+
+    it('requires one non-blank name, in either language', async () => {
+      await assertSucceeds(update('admin', s1, { nameEn: '', nameSi: 'සිරිපුර' }));
+      await assertSucceeds(set('admin', s1, { ...school('s1'), nameEn: 'Siripura' }));
+      await assertFails(update('admin', s1, { nameEn: '  ' }));
+      await assertFails(update('admin', s1, { nameEn: '', nameSi: ' ' }));
+      const { nameEn: _, ...noName } = school('s1');
+      await assertFails(set('admin', s1, noName));
+    });
+
+    it('denies admin removing district', async () => {
+      const { district: _, ...noDistrict } = school('s1');
+      await assertFails(set('admin', s1, noDistrict));
+    });
+
+    it('keeps unchanged legacy fields editable', async () => {
+      await env.withSecurityRulesDisabled((ctx) => ctx.firestore().doc(s1).update({ colors: { primary: 'teal', second: 'gold' }, district: 'x'.repeat(100) }));
+      await assertSucceeds(update('admin', s1, { city: 'Kurunegala' }));
+      await assertFails(update('admin', s1, { colors: { primary: 'teal', second: '#FFFFFF' } }));
+    });
+
+    describe('logoUrl', () => {
+      it.each([
+        ['prod png', logo('s1')],
+        ['jpg', logo('s1', 'jpg')],
+        ['webp', logo('s1', 'webp')],
+        ['staging bucket', logo('s1', 'png', 'sathiya-lk-staging.firebasestorage.app')],
+        ['emulator 127.0.0.1', logo('s1', 'png', 'sathiya-lk.firebasestorage.app', 'http://127.0.0.1:9199')],
+        ['emulator localhost', logo('s1', 'webp', 'sathiya-lk.firebasestorage.app', 'http://localhost:9199')],
+        ['no token', 'https://firebasestorage.googleapis.com/v0/b/sathiya-lk.firebasestorage.app/o/schools%2Fs1%2Flogo.png?alt=media'],
+      ])('allows own logo download URL (%s)', async (_, url) => {
+        await assertSucceeds(update('admin', s1, { logoUrl: url }));
+      });
+
+      it('allows removing the logo', async () => {
+        await env.withSecurityRulesDisabled((ctx) => ctx.firestore().doc(s1).update({ logoUrl: logo('s1') }));
+        await assertSucceeds(set('admin', s1, school('s1')));
+      });
+
+      it.each([
+        ['other host', 'https://evil.example/logo.png'],
+        ['tracking pixel', 'https://evil.example/v0/b/sathiya-lk.firebasestorage.app/o/schools%2Fs1%2Flogo.png?alt=media'],
+        ['host suffix', logo('s1', 'png', 'sathiya-lk.firebasestorage.app', 'https://firebasestorage.googleapis.com.evil.example')],
+        ['http prod host', logo('s1', 'png', 'sathiya-lk.firebasestorage.app', 'http://firebasestorage.googleapis.com')],
+        ['emulator other port', logo('s1', 'png', 'sathiya-lk.firebasestorage.app', 'http://127.0.0.1:8080')],
+        ['emulator https', logo('s1', 'png', 'sathiya-lk.firebasestorage.app', 'https://127.0.0.1:9199')],
+        ['other bucket', logo('s1', 'png', 'evil.firebasestorage.app')],
+        ['appspot bucket', logo('s1', 'png', 'sathiya-lk.appspot.com')],
+        ['another school', logo('s2')],
+        ['sid prefix', logo('s10')],
+        ['svg', logo('s1', 'svg')],
+        ['other object', 'https://firebasestorage.googleapis.com/v0/b/sathiya-lk.firebasestorage.app/o/schools%2Fs1%2Fprivate.png?alt=media'],
+        ['extra query', `${logo('s1')}&x=https://evil.example`],
+        ['fragment', `${logo('s1')}#x`],
+        ['javascript', 'javascript:alert(1)'],
+        ['empty', ''],
+        ['number', 5],
+        ['too long', `${logo('s1')}${'a'.repeat(1000)}`],
+      ])('denies %s', async (_, url) => {
+        await assertFails(update('admin', s1, { logoUrl: url }));
+      });
+
+      it('the URL must name the school being updated', async () => {
+        await assertFails(update('adminS1TeacherS2', s1, { logoUrl: logo('s2') }));
+      });
+    });
+
     it('denies admin removing city', async () => {
       const { city: _, ...noCity } = school('s1');
       await assertFails(set('admin', s1, noCity));
@@ -239,6 +346,37 @@ describe('teachers', () => {
       await assertFails(update('admin', t1, { title: 'Thero' }));
     });
 
+    it('allows the fields the teacher form writes', async () => {
+      await assertSucceeds(
+        update('admin', t2, { name: '', nameSi: 'ටී දෙක', isPrimary: true, subjectIds: ['sub1'], grades: [1, 13], maxPerDay: 20, minPerWeek: 0, phone: '1'.repeat(30), email: 'a@x.lk' }),
+      );
+      await assertSucceeds(set('admin', t2, { staffId: 'SCC002', name: '', nameSi: 'ටී දෙක', subjectIds: [], grades: [], maxPerDay: 6, isPrimary: false }));
+    });
+    it.each([
+      ['name', 'x'.repeat(201)],
+      ['name', ' '],
+      ['name', 7],
+      ['nameSi', 'x'.repeat(201)],
+      ['isPrimary', 'yes'],
+      ['subjectIds', 'sub1'],
+      ['subjectIds', Array.from({ length: 201 }, (_, i) => `s${i}`)],
+      ['grades', [0]],
+      ['grades', [14]],
+      ['grades', '6'],
+      ['maxPerDay', 0],
+      ['maxPerDay', 21],
+      ['maxPerDay', 2.5],
+      ['maxPerDay', '5'],
+      ['minPerWeek', -1],
+      ['minPerWeek', 101],
+      ['phone', '1'.repeat(31)],
+      ['email', 'e'.repeat(255)],
+      ['email', 5],
+      ['somethingElse', 1],
+    ])('denies invalid %s %j', async (k, v) => {
+      await assertFails(update('admin', t1, { [k]: v }));
+    });
+
     it('leaves inviteExpiresAt to the link callables', async () => {
       await assertFails(update('admin', t1, { inviteExpiresAt: 1 }));
     });
@@ -258,9 +396,16 @@ describe('teachers', () => {
   });
 });
 
+const setupDocs = {
+  subjects: { existing: 'sub1', create: { nameEn: 'Drama', nameSi: 'නාට්‍ය', short: 'DRA', color: '#D4ECEA' }, change: { nameEn: 'Changed' } },
+  periodTemplates: { existing: 'p1', create: { name: 'x', isDefault: false, mode: 'same', rows: [] }, change: { name: 'changed' } },
+  classes: { existing: 'c1', create: { gradeId: 'g1', name: '6B', templateId: 'p1' }, change: { name: '6Z' } },
+  grades: { existing: 'g1', create: { number: 7, plan: [] }, change: { plan: [{ kind: 'subject', subjectId: 'sub1', perWeek: 5 }] } },
+};
+
 describe.each(['subjects', 'periodTemplates', 'classes', 'grades'] as const)('setup collection %s', (coll) => {
   const col = (sid: string) => `${paths.school(sid)}/${coll}`;
-  const existing = { subjects: 'sub1', periodTemplates: 'p1', classes: 'c1', grades: 'g1' }[coll];
+  const { existing, create, change } = setupDocs[coll];
   const d = `${col('s1')}/${existing}`;
   const fresh = `${col('s1')}/new1`;
 
@@ -270,13 +415,17 @@ describe.each(['subjects', 'periodTemplates', 'classes', 'grades'] as const)('se
   });
 
   describe('write', () => {
-    allow([['admin', fresh], ['adminTid', fresh]], (r, p) => set(r, p, { name: 'x' }));
-    allow([['admin', d]], (r, p) => update(r, p, { name: 'changed' }));
+    allow([['admin', fresh], ['adminTid', fresh]], (r, p) => set(r, p, create));
+    allow([['admin', d]], (r, p) => update(r, p, change));
     deny(
       [['teacher', fresh], ['super', fresh], ['otherAdmin', fresh], ['noClaims', fresh], ['anon', fresh], ['disabledAdmin', `${col('sd')}/new1`]],
-      (r, p) => set(r, p, { name: 'x' }),
+      (r, p) => set(r, p, create),
     );
-    deny([['teacher', d], ['super', d]], (r, p) => update(r, p, { name: 'changed' }));
+    deny([['teacher', d], ['super', d]], (r, p) => update(r, p, change));
+    it('denies unknown fields on create and update', async () => {
+      await assertFails(set('admin', fresh, { ...create, extra: 1 }));
+      await assertFails(update('admin', d, { extra: 1 }));
+    });
     deny([['admin', d], ['adminTid', d], ['super', d], ['teacher', d], ['otherAdmin', d]], del);
   });
 });

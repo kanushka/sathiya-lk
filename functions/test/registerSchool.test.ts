@@ -75,12 +75,31 @@ describe('registerSchool', () => {
     const c = await signUp();
     const req = schoolReq({ logoUrl: 'https://evil.example/x.png', termsVersion: '0' });
     const school = { ...req.school, status: 'disabled', activeYearId: 'y1', createdAt: 1 } as typeof req.school;
-    const { schoolId } = await c.call('registerSchool', { ...req, school, acceptedTermsVersion: '2' });
+    const { schoolId } = await c.call('registerSchool', { ...req, school });
     const doc = (await adminDb.doc(paths.school(schoolId)).get()).data()!;
     expect(doc.logoUrl).toBeUndefined();
     expect(doc.activeYearId).toBeUndefined();
-    expect(doc).toMatchObject({ termsVersion: '2', status: 'active', acceptedTerms: { version: '2' } });
+    expect(doc).toMatchObject({ termsVersion: '1', status: 'active', acceptedTerms: { version: '1' } });
     expect(doc.createdAt).toBeGreaterThan(1);
+  });
+
+  it('requires the current terms version from platform/config', async () => {
+    const c = await signUp();
+    const config = adminDb.doc(paths.platform.config);
+    await config.set({ currentTermsVersion: '2026-03' });
+    try {
+      await expectFnError(c.call('registerSchool', schoolReq()), 'failed-precondition', 'terms-changed');
+      const { schoolId } = await c.call('registerSchool', { ...schoolReq(), acceptedTermsVersion: '2026-03' });
+      expect((await adminDb.doc(paths.school(schoolId)).get()).data()).toMatchObject({ termsVersion: '2026-03', acceptedTerms: { version: '2026-03' } });
+    } finally {
+      await config.delete();
+    }
+  });
+
+  it('takes version 1 as current when platform/config has no terms version', async () => {
+    const c = await signUp();
+    await expectFnError(c.call('registerSchool', { ...schoolReq(), acceptedTermsVersion: '2' }), 'failed-precondition', 'terms-changed');
+    await expect(c.call('registerSchool', schoolReq())).resolves.toMatchObject({ schoolId: expect.any(String) });
   });
 
   it('rejects invalid input', async () => {

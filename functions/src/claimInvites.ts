@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
 // Copyright (C) 2026 Kanushka Gayan
-import { paths, type ClaimInvitesRes, type Member, type School } from '@sathiya/core';
+import { ADMIN_INVITE_TTL_MS, paths, type ClaimInvitesRes, type Member, type School } from '@sathiya/core';
 import { onCall } from 'firebase-functions/v2/https';
 import type { DocumentReference } from 'firebase-admin/firestore';
 import { db } from './lib/admin';
@@ -15,6 +15,7 @@ const INVITES = paths.invites('_').split('/').pop()!;
 interface Invite {
   email: string;
   teacherId?: string;
+  createdAt?: number;
 }
 
 // A teacher that is already linked, or gone, still lets the invitee become admin, just without the teacher link.
@@ -40,7 +41,14 @@ export const claimInvites = onCall(callOpts, async (req): Promise<ClaimInvitesRe
   // Members are written before claims are synced, and invites are consumed only after, so a failure leaves them for a retry.
   const invites = await db.collectionGroup(INVITES).where('email', '==', email).get();
   const claimed: { sid: string; ref: DocumentReference }[] = [];
+  const expired: DocumentReference[] = [];
+  const cutoff = Date.now() - ADMIN_INVITE_TTL_MS;
   for (const doc of invites.docs) {
+    const createdAt = (doc.data() as Invite).createdAt;
+    if (typeof createdAt !== 'number' || createdAt < cutoff) {
+      expired.push(doc.ref);
+      continue;
+    }
     const sid = doc.ref.parent.parent!.id;
     const memberRef = db.doc(`${paths.members(sid)}/${uid}`);
     const [school, member] = await Promise.all([db.doc(paths.school(sid)).get(), memberRef.get()]);
@@ -56,6 +64,6 @@ export const claimInvites = onCall(callOpts, async (req): Promise<ClaimInvitesRe
   }
   // Runs on every sign-in, so it also repairs claims a failed sync elsewhere (e.g. registerSchool) left behind.
   await syncClaims(uid);
-  await Promise.all(claimed.map((c) => c.ref.delete()));
+  await Promise.all([...claimed.map((c) => c.ref), ...expired].map((ref) => ref.delete()));
   return { schoolIds: claimed.map((c) => c.sid) };
 });

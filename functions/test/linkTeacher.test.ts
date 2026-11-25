@@ -126,14 +126,16 @@ describe('fileJoinRequest', () => {
   it('refuses a teacher deleted since the caller read it', async () => {
     const { sid, teacherId, user } = await setup();
     await adminDb.doc(`${paths.teachers(sid)}/${teacherId}`).delete();
-    await expect(file(sid, teacherId, user.uid)).rejects.toMatchObject({ code: 'failed-precondition', details: { code: 'staff-id-unknown' } });
+    await expect(file(sid, teacherId, user.uid)).rejects.toMatchObject({ code: 'failed-precondition', message: 'This staff ID cannot be used to join', details: { code: 'staff-id-unknown' } });
     expect(await requestOf(sid, user.uid)).toBeUndefined();
   });
 
   it('refuses a teacher linked since the caller read it', async () => {
     const { sid, teacherId, user } = await setup();
     await link(sid, teacherId, (await signUp()).uid);
-    await expect(file(sid, teacherId, user.uid)).rejects.toMatchObject({ code: 'failed-precondition', details: { code: 'already-linked', reason: 'teacher' } });
+    const err = await file(sid, teacherId, user.uid).catch((e: { code?: string; message?: string; details?: unknown }) => e);
+    expect(err).toMatchObject({ code: 'failed-precondition', message: 'This staff ID cannot be used to join' });
+    expect((err as { details?: unknown }).details).toEqual({ code: 'staff-id-unknown' });
     expect(await requestOf(sid, user.uid)).toBeUndefined();
   });
 

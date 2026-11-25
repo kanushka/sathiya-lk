@@ -10,7 +10,7 @@ describe('registerFailure', () => {
     expect(registerFailure(err)).toEqual({ code: 'school-registered', schoolId: 's1' });
   });
 
-  it.each(['email-unverified', 'too-many-schools', 'rate-limited'] as const)('recognises %s', (code) => {
+  it.each(['email-unverified', 'too-many-schools', 'rate-limited', 'terms-changed'] as const)('recognises %s', (code) => {
     expect(registerFailure(new ApiError('invalid', 'x', { code }))).toEqual({ code });
   });
 

@@ -1,9 +1,10 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
 // Copyright (C) 2026 Kanushka Gayan
 import { createHash } from 'node:crypto';
-import { MAX_SCHOOLS, paths } from '@sathiya/core';
+import { ADMIN_INVITE_TTL_MS, MAX_SCHOOLS, paths } from '@sathiya/core';
+import { GoogleAuthProvider, linkWithCredential, signInWithCredential } from 'firebase/auth';
 import { describe, expect, it } from 'vitest';
-import { adminAuth, adminDb, adminWithSchool, type Client, expectFnError, linkedTeacher, signInGoogle, signUp, teacherInput, uniq, unverifiedSignUp } from './helpers';
+import { adminAuth, adminDb, adminWithSchool, client, type Client, expectFnError, linkedTeacher, signInGoogle, signUp, teacherInput, uniq, unverifiedSignUp } from './helpers';
 
 describe('inviteAdmin', () => {
   it('stores the invite under the lowercased email', async () => {
@@ -111,13 +112,53 @@ describe('claimInvites', () => {
     expect(member).toMatchObject({ role: 'admin', teacherId, name: 'Principal' });
   });
 
-  it('accepts a Google sign-in even without a verified email flag', async () => {
+  it('refuses a Google sign-in without a verified email flag', async () => {
     const { admin, sid } = await adminWithSchool();
     const email = `google-${uniq()}@example.com`;
     await admin.call('inviteAdmin', { schoolId: sid, email });
     const c = await signInGoogle(email, false);
+    await expectFnError(c.call('claimInvites', {}), 'permission-denied', 'not-allowed');
+    expect((await adminDb.doc(`${paths.invites(sid)}/${email}`).get()).exists).toBe(true);
+  });
+
+  it('refuses an unverified password account that signs in through a linked Google identity', async () => {
+    const { admin, sid } = await adminWithSchool();
+    const victim = `victim-${uniq()}@example.com`;
+    await admin.call('inviteAdmin', { schoolId: sid, email: victim });
+    const attacker = await unverifiedSignUp(victim);
+    const idToken = JSON.stringify({ sub: `g-${uniq()}`, email: `attacker-${uniq()}@example.com`, email_verified: true });
+    await linkWithCredential(attacker.auth.currentUser!, GoogleAuthProvider.credential(idToken));
+    const c = client();
+    await signInWithCredential(c.auth, GoogleAuthProvider.credential(idToken));
+    expect(c.uid).toBe(attacker.uid);
+    const { claims } = await c.auth.currentUser!.getIdTokenResult();
+    expect(claims).toMatchObject({ email: victim, firebase: { sign_in_provider: 'google.com' } });
+    expect(claims.email_verified).not.toBe(true);
+    await expectFnError(c.call('claimInvites', {}), 'permission-denied', 'not-allowed');
+    expect((await adminDb.doc(`${paths.invites(sid)}/${victim}`).get()).exists).toBe(true);
+    expect((await adminDb.doc(`${paths.members(sid)}/${c.uid}`).get()).exists).toBe(false);
+  });
+
+  it('ignores and deletes an invite older than the expiry', async () => {
+    const { admin, sid } = await adminWithSchool();
+    const email = `old-${uniq()}@example.com`;
+    await admin.call('inviteAdmin', { schoolId: sid, email });
+    const ref = adminDb.doc(`${paths.invites(sid)}/${email}`);
+    await ref.update({ createdAt: Date.now() - ADMIN_INVITE_TTL_MS - 60_000 });
+    const c = await signInGoogle(email);
+    await expect(c.call('claimInvites', {})).resolves.toEqual({ schoolIds: [] });
+    expect(await c.claims()).toEqual({});
+    expect((await ref.get()).exists).toBe(false);
+    expect((await adminDb.doc(`${paths.members(sid)}/${c.uid}`).get()).exists).toBe(false);
+  });
+
+  it('still accepts an invite just inside the expiry', async () => {
+    const { admin, sid } = await adminWithSchool();
+    const email = `recent-${uniq()}@example.com`;
+    await admin.call('inviteAdmin', { schoolId: sid, email });
+    await adminDb.doc(`${paths.invites(sid)}/${email}`).update({ createdAt: Date.now() - ADMIN_INVITE_TTL_MS + 60_000 });
+    const c = await signInGoogle(email);
     await expect(c.call('claimInvites', {})).resolves.toEqual({ schoolIds: [sid] });
-    expect(await c.claims()).toEqual({ schools: { [sid]: { r: 'a' } } });
   });
 
   it('stores the invited admin’s name from their sign-in', async () => {
@@ -220,12 +261,21 @@ describe('joinSchool with a school link', () => {
     expect(await u.claims()).toEqual({});
   });
 
-  it('refuses an unknown staff ID and a linked teacher', async () => {
+  it('refuses an unknown staff ID and a linked teacher with the same error', async () => {
     const { admin, sid, token } = await school();
     const u = await signUp();
-    await expectFnError(u.call('joinSchool', { schoolId: sid, token, staffId: 'NOPE' }), 'failed-precondition', 'staff-id-unknown');
     await linkedTeacher(admin, sid, 'SCC009');
-    await expectFnError(u.call('joinSchool', { schoolId: sid, token, staffId: 'SCC009' }), 'failed-precondition', 'already-linked');
+    const errorOf = (staffId: string) =>
+      u.call('joinSchool', { schoolId: sid, token, staffId }).then(
+        () => {
+          throw new Error(`expected ${staffId} to fail`);
+        },
+        (e: { code?: string; message?: string; details?: unknown }) => ({ code: e.code, message: e.message, details: e.details }),
+      );
+    const unknown = await errorOf('NOPE');
+    expect(unknown).toMatchObject({ code: 'functions/failed-precondition', details: { code: 'staff-id-unknown' } });
+    expect(await errorOf('SCC009')).toEqual(unknown);
+    expect((await requestDoc(sid, u.uid)).exists).toBe(false);
   });
 
   it('refuses a staff ID request from an account already linked in the school', async () => {
@@ -499,9 +549,13 @@ describe('an admin opening a personal link for their own record', () => {
 });
 
 describe('admin-only invite callables', () => {
-  it.each(['setJoinLink', 'decideJoinRequest', 'createTeacherLink', 'cancelTeacherLink', 'unlinkTeacher'] as const)('%s refuses a non-admin', async (name) => {
+  it.each(['setJoinLink', 'decideJoinRequest', 'createTeacherLink', 'cancelTeacherLink', 'unlinkTeacher', 'cancelInvite', 'removeAdmin'] as const)('%s refuses a non-admin', async (name) => {
     const { sid } = await adminWithSchool();
     const stranger = await signUp();
-    await expectFnError(stranger.call(name, { schoolId: sid, teacherId: 't', uid: 'u', createdAt: 1, approve: true, action: 'create' } as never), 'permission-denied', 'not-allowed');
+    await expectFnError(
+      stranger.call(name, { schoolId: sid, teacherId: 't', uid: 'u', createdAt: 1, approve: true, action: 'create', email: 'x@example.com' } as never),
+      'permission-denied',
+      'not-allowed',
+    );
   });
 });

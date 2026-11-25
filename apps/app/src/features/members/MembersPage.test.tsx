@@ -1,11 +1,11 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
 // Copyright (C) 2026 Kanushka Gayan
 import { ctx } from '@sathiya/core/fixtures';
-import type { Member } from '@sathiya/core';
+import { ADMIN_INVITE_TTL_MS, type Member } from '@sathiya/core';
 import { screen, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
-import { call } from '../../lib/callable';
+import { ApiError, call } from '../../lib/callable';
 import { pickOption } from '../../test/pickOption';
 import { renderWithSchool } from '../../test/renderWithSchool';
 import { MembersPage } from './MembersPage';
@@ -32,8 +32,8 @@ beforeEach(() => {
   data.invites = [{ id: 'i1', email: 'new@siripura.lk', teacherId: 't-kumari' }];
 });
 
-function setup() {
-  renderWithSchool(<MembersPage />, { ctx });
+function setup(opts: { uid?: string; signOut?: () => Promise<void> } = {}) {
+  renderWithSchool(<MembersPage />, { ctx, ...(opts.uid && { user: { uid: opts.uid } }), ...(opts.signOut && { signOut: opts.signOut }) });
   return userEvent.setup();
 }
 
@@ -122,5 +122,72 @@ describe('members page', () => {
     data.members = [{ id: 'u9', uid: 'u9', role: 'admin', email: 'vp@siripura.lk' }];
     setup();
     expect(screen.getAllByText('vp@siripura.lk')).toHaveLength(2);
+  });
+  it('removes an admin after confirming', async () => {
+    vi.mocked(call).mockResolvedValue({ role: 'teacher' });
+    const user = setup();
+    const row = screen.getByText('Mrs. N. Perera').closest('tr')!;
+    await user.click(within(row).getByRole('button', { name: 'Remove admin' }));
+    const dialog = screen.getByRole('dialog');
+    expect(within(dialog).getByText('They are also linked to a teacher, so they keep teacher access.')).toBeInTheDocument();
+    expect(call).not.toHaveBeenCalled();
+    await user.click(within(dialog).getByRole('button', { name: 'Remove admin' }));
+    expect(call).toHaveBeenCalledWith('removeAdmin', { schoolId: 'siripura', uid: 'u2' });
+    expect(await screen.findByText('Mrs. N. Perera is no longer an admin')).toBeInTheDocument();
+    expect(screen.queryByRole('dialog')).not.toBeInTheDocument();
+  });
+
+  it('signs out after removing themselves', async () => {
+    vi.mocked(call).mockResolvedValue({ role: null });
+    const signOut = vi.fn().mockResolvedValue(undefined);
+    const user = setup({ uid: 'u1', signOut });
+    const row = screen.getByText('Principal Siripura').closest('tr')!;
+    await user.click(within(row).getByRole('button', { name: 'Remove admin' }));
+    const dialog = screen.getByRole('dialog');
+    expect(within(dialog).getByText('This is you. You will be signed out and must sign in again.')).toBeInTheDocument();
+    await user.click(within(dialog).getByRole('button', { name: 'Remove admin' }));
+    expect(call).toHaveBeenCalledWith('removeAdmin', { schoolId: 'siripura', uid: 'u1' });
+    expect(signOut).toHaveBeenCalled();
+  });
+
+  it('shows the last-admin error and keeps the dialog open', async () => {
+    vi.mocked(call).mockRejectedValue(new ApiError('last-admin', 'A school needs at least one admin'));
+    const user = setup();
+    const row = screen.getByText('Principal Siripura').closest('tr')!;
+    await user.click(within(row).getByRole('button', { name: 'Remove admin' }));
+    const dialog = screen.getByRole('dialog');
+    await user.click(within(dialog).getByRole('button', { name: 'Remove admin' }));
+    expect(await within(dialog).findByText('A school needs at least one admin. Invite another admin first.')).toBeInTheDocument();
+  });
+
+  it('offers no remove action for the last admin or for teachers', () => {
+    data.members = [members[0], members[2]];
+    setup();
+    expect(screen.queryByRole('button', { name: 'Remove admin' })).not.toBeInTheDocument();
+  });
+
+  it('hides remove and cancel when read-only', () => {
+    flags.readOnly = true;
+    setup();
+    expect(screen.queryByRole('button', { name: 'Remove admin' })).not.toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: 'Cancel invite' })).not.toBeInTheDocument();
+  });
+
+  it('cancels a pending invite', async () => {
+    vi.mocked(call).mockResolvedValue({ ok: true });
+    const user = setup();
+    await user.click(screen.getByRole('button', { name: 'Cancel invite' }));
+    expect(call).toHaveBeenCalledWith('cancelInvite', { schoolId: 'siripura', email: 'new@siripura.lk' });
+    expect(await screen.findByText('Invite to new@siripura.lk cancelled')).toBeInTheDocument();
+  });
+
+  it('marks an expired invite', () => {
+    data.invites = [
+      { id: 'old@siripura.lk', email: 'old@siripura.lk', createdAt: Date.now() - ADMIN_INVITE_TTL_MS - 1000 },
+      { id: 'new@siripura.lk', email: 'new@siripura.lk', createdAt: Date.now() },
+    ];
+    setup();
+    expect(within(screen.getByText('old@siripura.lk').closest('li')!).getByText('Expired')).toBeInTheDocument();
+    expect(within(screen.getByText('new@siripura.lk').closest('li')!).queryByText('Expired')).not.toBeInTheDocument();
   });
 });

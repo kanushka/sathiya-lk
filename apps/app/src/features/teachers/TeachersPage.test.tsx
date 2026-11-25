@@ -375,7 +375,7 @@ describe('teacher accounts', () => {
     const user = userEvent.setup();
     renderLinked();
     const section = screen.getByRole('region', { name: 'Join requests (1)' });
-    expect(within(section).getByText('A Rizan')).toBeInTheDocument();
+    expect(within(section).getByText('Name on their account (not checked): A Rizan')).toBeInTheDocument();
     expect(within(section).getByText('rizan@gmail.com')).toBeInTheDocument();
     expect(within(section).getByText(/Mr\. A\. Rizan · SCC031/)).toBeInTheDocument();
     await user.click(within(section).getByRole('button', { name: 'Approve' }));
