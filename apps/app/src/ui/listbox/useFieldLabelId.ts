@@ -4,7 +4,7 @@
 import { useLayoutEffect, useState, type RefObject } from 'react';
 
 export function useFieldLabelId(
-  triggerRef: RefObject<HTMLButtonElement>,
+  triggerRef: RefObject<HTMLButtonElement | null>,
   active: boolean,
   baseId: string,
 ): string | undefined {

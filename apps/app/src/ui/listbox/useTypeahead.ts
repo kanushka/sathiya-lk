@@ -12,7 +12,7 @@ const RESET_MS = 500;
 
 export function useTypeahead(items: TypeaheadItem[], onMatch: (index: number) => void) {
   const buffer = useRef('');
-  const timer = useRef<ReturnType<typeof setTimeout>>();
+  const timer = useRef<ReturnType<typeof setTimeout>>(undefined);
 
   useEffect(() => () => clearTimeout(timer.current), []);
 
