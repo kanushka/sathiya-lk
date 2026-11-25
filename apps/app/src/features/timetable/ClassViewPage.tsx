@@ -256,7 +256,7 @@ function ClassView({ cls, classes }: { cls: SchoolClass; classes: SchoolClass[] 
             · {template.name}
           </span>
         </div>
-        <div className="flex gap-2">
+        <div className="flex flex-wrap gap-2">
           {!readOnly && classTeacher && fillPlan.skip !== 'not-primary' && (
             <Button onClick={() => setFill({ plan: fillPlan, drafts: fillPlan.drafts, done: 0, running: false })}>
               {t('classView.fill')}

@@ -58,6 +58,11 @@ describe('ClassViewPage', () => {
     expect(screen.getByText(/^Class teacher:/)).toHaveClass('basis-full', 'md:basis-auto');
   });
 
+  it('wraps the header actions on phones', () => {
+    setup();
+    expect(screen.getByRole('link', { name: 'Auto-fill' }).parentElement).toHaveClass('flex-wrap');
+  });
+
   it('hint says choose, not click', () => {
     setup();
     expect(screen.getByText(/to add a lesson/)).toHaveTextContent(/^Choose \+ to add a lesson/);
