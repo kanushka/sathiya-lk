@@ -4,6 +4,8 @@
   "print": "Print",
   "printSaveFirst": "Save first to print",
   "today": "Today",
+  "prevDay": "Previous day",
+  "nextDay": "Next day",
   "viewOnly": "Past day · view only",
   "loadFailed": "Could not load relief. Check your connection and try again.",
   "leave": {
@@ -16,7 +18,11 @@
     "remove": "Remove {{name}}",
     "type": "Leave type",
     "noLessons": "No lessons on this day",
-    "lessons": "Lessons to cover"
+    "lessons": "Lessons to cover",
+    "hint": "Untick a period that doesn't need relief. Pick a teacher for the rest.",
+    "noRelief": "No relief needed",
+    "lessonCount_one": "{{count}} period to cover",
+    "lessonCount_other": "{{count}} periods to cover"
   },
   "types": {
     "full": "Full day",
@@ -26,10 +32,7 @@
     "early": "Early"
   },
   "reliefs": {
-    "title": "Relief",
     "suggest": "Suggest relief",
-    "none": "Tick lessons above to plan relief.",
-    "nonePast": "No relief was given.",
     "for": "for {{name}}",
     "pickFor": "Relief for {{lesson}}",
     "uncovered": "Uncovered",
@@ -94,5 +97,16 @@
     "republishBody": "This timetable was published before relief was available. Publish it again from the dashboard.",
     "noRecord": "No relief was recorded for this day.",
     "dashboard": "Go to dashboard"
+  },
+  "rail": {
+    "title": "Today's relief",
+    "titlePast": "Relief",
+    "covered_one": "/ {{count}} period covered",
+    "covered_other": "/ {{count}} periods covered",
+    "onLeave": "On leave",
+    "uncovered": "Uncovered",
+    "noEmail": "No email address",
+    "unsaved": "Not saved yet",
+    "print": "Print relief sheet"
   }
 }

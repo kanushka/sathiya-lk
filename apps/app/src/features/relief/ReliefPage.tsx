@@ -26,11 +26,11 @@ import { Button } from '../../ui/Button';
 import { EmptyState } from '../../ui/EmptyState';
 import { inputClass } from '../../ui/Field';
 import { Icon } from '../../ui/Icon';
+import { IconButton } from '../../ui/IconButton';
 import { LinkButton } from '../../ui/LinkButton';
 import { LoadingState } from '../../ui/LoadingState';
 import { PageHeader } from '../../ui/PageHeader';
 import { useAdminBase } from '../timetable/paths';
-import { LeaveList } from './LeaveList';
 import {
   colomboTime,
   countsExcludingSaved,
@@ -45,7 +45,7 @@ import {
   withLeaves,
   type DayDraft,
 } from './model';
-import { ReliefList } from './ReliefList';
+import { ReliefPlan } from './ReliefPlan';
 import { useReliefDay, type ReliefDayState } from './useReliefDay';
 
 type Problem = { kind: 'stale' } | { kind: 'republish' } | { kind: 'notToday' } | { kind: 'invalid'; errors: ReliefError[] } | { kind: 'failed'; message: string };
@@ -59,7 +59,6 @@ export function ReliefPage() {
   const base = useAdminBase();
   const [params, setParams] = useSearchParams();
   const [today, setToday] = useState(() => colomboToday(new Date()));
-  const [unsaved, setUnsaved] = useState(false);
 
   useEffect(() => {
     const check = () => setToday((prev) => {
@@ -89,12 +88,19 @@ export function ReliefPage() {
     setParams(next >= today.date ? {} : { date: next });
   };
 
+  const shift = (days: number) => {
+    const d = new Date(`${date}T00:00:00Z`);
+    d.setUTCDate(d.getUTCDate() + days);
+    pickDate(d.toISOString().slice(0, 10));
+  };
+
   const header = (
     <PageHeader
       title={t('title')}
       subtitle={isToday ? `${t('today')} · ${formatDate(date, lang)}` : `${formatDate(date, lang)} · ${t('viewOnly')}`}
       actions={
-        <>
+        <div className="flex items-center gap-1.5">
+          <IconButton icon="chevronLeft" variant="secondary" label={t('prevDay')} onClick={() => shift(-1)} />
           <input
             type="date"
             aria-label={t('date')}
@@ -103,23 +109,8 @@ export function ReliefPage() {
             onChange={(e) => pickDate(e.target.value)}
             className={`${inputClass} w-auto`}
           />
-          {day !== null && published && (unsaved ? (
-            <>
-              <span id="relief-print-hint" className="hidden text-[13px] text-ink-muted sm:inline">
-                {t('printSaveFirst')}
-              </span>
-              <Button disabled aria-label={t('print')} aria-describedby="relief-print-hint" title={t('printSaveFirst')}>
-                <Icon name="print" size={16} />
-                <span className="hidden sm:inline">{t('print')}</span>
-              </Button>
-            </>
-          ) : (
-            <LinkButton to={`${base}/print/relief/${date}`} aria-label={t('print')}>
-              <Icon name="print" size={16} />
-              <span className="hidden sm:inline">{t('print')}</span>
-            </LinkButton>
-          ))}
-        </>
+          <IconButton icon="chevronRight" variant="secondary" label={t('nextDay')} disabled={isToday} onClick={() => shift(1)} />
+        </div>
       }
     />
   );
@@ -130,11 +121,11 @@ export function ReliefPage() {
     if (!published || !yid) return <EmptyState icon="calendar" title={t('empty.unpublished')} body={t('empty.unpublishedBody')} action={<DashboardLink base={base} />} />;
     if (data.loading) return <LoadingState />;
     if (data.error) return <Alert tone="danger">{t('loadFailed')}</Alert>;
-    return <ReliefDayEditor key={date} sid={school.id} yid={yid} date={date} day={day} readOnly={viewOnly || !isToday} data={data} base={base} onDirty={setUnsaved} />;
+    return <ReliefDayEditor key={date} sid={school.id} yid={yid} date={date} day={day} readOnly={viewOnly || !isToday} data={data} base={base} />;
   })();
 
   return (
-    <div className="mx-auto max-w-4xl">
+    <div className="mx-auto max-w-6xl">
       {header}
       {body}
     </div>
@@ -158,10 +149,9 @@ interface EditorProps {
   readOnly: boolean;
   data: ReliefDayState;
   base: string;
-  onDirty(dirty: boolean): void;
 }
 
-function ReliefDayEditor({ sid, yid, date, day, readOnly, data, base, onDirty }: EditorProps) {
+function ReliefDayEditor({ sid, yid, date, day, readOnly, data, base }: EditorProps) {
   const { t, i18n } = useTranslation('relief');
   const { t: tc } = useTranslation('common');
   const lang = i18n.language === 'si' ? 'si' : 'en';
@@ -182,10 +172,6 @@ function ReliefDayEditor({ sid, yid, date, day, readOnly, data, base, onDirty }:
 
   const awaiting = lastSave !== null && doc?.updatedAt !== lastSave.updatedAt;
   const dirty = (!awaiting && gone.length > 0) || !sameDraft(current, awaiting ? lastSave.draft : saved);
-  useEffect(() => {
-    onDirty(!readOnly && dirty);
-  }, [onDirty, readOnly, dirty]);
-  useEffect(() => () => onDirty(false), [onDirty]);
   useEffect(() => {
     if (lastSave === null || doc?.updatedAt !== lastSave.updatedAt) return;
     if (draft && sameDraft(draft, lastSave.draft)) setDraft(null);
@@ -248,7 +234,16 @@ function ReliefDayEditor({ sid, yid, date, day, readOnly, data, base, onDirty }:
     return <Badge>{t('status.noEmail')}</Badge>;
   };
 
-  const uncovered = current.reliefs.filter((r) => r.reliefTeacherId === null).length;
+  const covered = current.reliefs.filter((r) => r.reliefTeacherId !== null);
+  const uncovered = current.reliefs.length - covered.length;
+  const noEmail = new Set(
+    covered.flatMap((r) => {
+      const x = teacherById.get(r.reliefTeacherId!);
+      return x && !x.email?.trim() && !x.uid ? [x.id] : [];
+    }),
+  ).size;
+  const needed = current.reliefs.length;
+  const unsaved = !readOnly && dirty;
 
   async function save() {
     setSaving(true);
@@ -295,79 +290,104 @@ function ReliefDayEditor({ sid, yid, date, day, readOnly, data, base, onDirty }:
   ].filter(Boolean).join(' · ');
 
   return (
-    <div className="flex flex-col gap-4">
-      <LeaveList
-        leaves={current.leaves}
-        reliefs={current.reliefs}
-        snaps={snaps}
-        day={day}
-        names={names}
-        readOnly={readOnly}
-        addable={addable}
-        onAdd={(id) => setLeaves((ls) => [...ls, { teacherId: id, type: 'full', entryIds: defaultTicks(id, 'full') }])}
-        onType={(id, type) => setLeaves((ls) => ls.map((l) => (l.teacherId === id ? { ...l, type, entryIds: defaultTicks(id, type) } : l)))}
-        onTick={(id, entryId, on) =>
-          setLeaves((ls) => ls.map((l) => (l.teacherId === id ? { ...l, entryIds: on ? [...l.entryIds, entryId] : l.entryIds.filter((x) => x !== entryId) } : l)))
-        }
-        onRemove={(id) => setLeaves((ls) => ls.filter((l) => l.teacherId !== id))}
-      />
+    <div className="grid items-start gap-5 lg:grid-cols-[minmax(0,1fr)_300px]">
+      <div className="flex min-w-0 flex-col gap-4">
+        <ReliefPlan
+          leaves={current.leaves}
+          reliefs={current.reliefs}
+          gone={gone}
+          snaps={snaps}
+          day={day}
+          names={names}
+          readOnly={readOnly}
+          addable={addable}
+          candidatesOf={(i) => candidates[i] ?? []}
+          errorsOf={errorsOf}
+          status={status}
+          onAdd={(id) => setLeaves((ls) => [...ls, { teacherId: id, type: 'full', entryIds: defaultTicks(id, 'full') }])}
+          onType={(id, type) => setLeaves((ls) => ls.map((l) => (l.teacherId === id ? { ...l, type, entryIds: defaultTicks(id, type) } : l)))}
+          onTick={(id, entryId, on) =>
+            setLeaves((ls) => ls.map((l) => (l.teacherId === id ? { ...l, entryIds: on ? [...l.entryIds, entryId] : l.entryIds.filter((x) => x !== entryId) } : l)))
+          }
+          onRemove={(id) => setLeaves((ls) => ls.filter((l) => l.teacherId !== id))}
+          onPick={(i, id) => edit((d) => ({ ...d, reliefs: d.reliefs.map((r, j) => (j === i ? { ...r, reliefTeacherId: id } : r)) }))}
+          onSuggest={() => edit((d) => {
+            const slots = withLeaves(d.leaves, d.reliefs, snaps, day);
+            return { ...slots, reliefs: suggestRelief(slots.reliefs, { ...reliefCtx, leaves: d.leaves }) };
+          })}
+        />
 
-      <ReliefList
-        reliefs={current.reliefs}
-        gone={gone}
-        names={names}
-        readOnly={readOnly}
-        candidatesOf={(i) => candidates[i] ?? []}
-        errorsOf={errorsOf}
-        status={status}
-        onPick={(i, id) => edit((d) => ({ ...d, reliefs: d.reliefs.map((r, j) => (j === i ? { ...r, reliefTeacherId: id } : r)) }))}
-        onSuggest={() => edit((d) => {
-          const slots = withLeaves(d.leaves, d.reliefs, snaps, day);
-          return { ...slots, reliefs: suggestRelief(slots.reliefs, { ...reliefCtx, leaves: d.leaves }) };
-        })}
-      />
+        {problem?.kind === 'stale' && (
+          <Alert tone="danger">
+            <span className="flex flex-wrap items-center justify-between gap-3">
+              <span>{t('errors.stale')}</span>
+              <Button size="sm" variant="secondary" onClick={reload}>
+                {t('errors.reload')}
+              </Button>
+            </span>
+          </Alert>
+        )}
+        {problem?.kind === 'invalid' && <Alert tone="danger">{t('errors.invalid')}</Alert>}
+        {problem?.kind === 'notToday' && <Alert tone="danger">{t('errors.notToday')}</Alert>}
+        {problem?.kind === 'failed' && <Alert tone="danger">{t('errors.failed', { message: problem.message })}</Alert>}
+      </div>
 
-      {uncovered > 0 && (
-        <Alert tone="warning">
-          <span className="flex items-center gap-2">
-            <Icon name="minus" size={16} />
-            {t('uncovered', { count: uncovered })}
-          </span>
-        </Alert>
-      )}
-
-      {problem?.kind === 'stale' && (
-        <Alert tone="danger">
-          <span className="flex flex-wrap items-center justify-between gap-3">
-            <span>{t('errors.stale')}</span>
-            <Button size="sm" variant="secondary" onClick={reload}>
-              {t('errors.reload')}
-            </Button>
-          </span>
-        </Alert>
-      )}
-      {problem?.kind === 'invalid' && <Alert tone="danger">{t('errors.invalid')}</Alert>}
-      {problem?.kind === 'notToday' && <Alert tone="danger">{t('errors.notToday')}</Alert>}
-      {problem?.kind === 'failed' && <Alert tone="danger">{t('errors.failed', { message: problem.message })}</Alert>}
-
-      {!readOnly && (
-        <div className="sticky bottom-0 z-10 -mx-4 -mb-5 flex flex-col gap-2 border-t border-line-soft bg-white px-4 py-3 pb-[max(0.75rem,env(safe-area-inset-bottom))] sm:flex-row sm:items-center sm:justify-between md:static md:mx-0 md:mb-0 md:border-0 md:bg-transparent md:p-0">
-          <p role="status" className="m-0 text-[13px] text-ink-soft">
-            {summary ?? (doc && !dirty ? t('savedAt', { time: colomboTime(doc.updatedAt) }) : '')}
+      <aside aria-labelledby="relief-summary-title" className="flex flex-col gap-3 lg:sticky lg:top-4">
+        <section className="rounded-[14px] border border-line-soft bg-white p-4 md:p-5">
+          <h2 id="relief-summary-title" className="m-0 text-xs font-bold uppercase tracking-[.06em] text-ink-muted">
+            {readOnly ? t('rail.titlePast') : t('rail.title')}
+          </h2>
+          <p className="mb-0 mt-2.5 flex items-baseline gap-1.5">
+            <strong className="text-[30px] leading-none tabular-nums text-ink">{covered.length}</strong>
+            <span className="text-[15px] text-ink-soft">{t('rail.covered', { count: needed })}</span>
           </p>
-          <Button
-            variant="primary"
-            size="lg"
-            onClick={() => void save()}
-            loading={saving}
-            loadingLabel={t('saving')}
-            disabled={!dirty}
-            className="w-full sm:w-auto"
-          >
-            {t('save')}
+          <div aria-hidden="true" className="mt-3 h-1.5 overflow-hidden rounded-full bg-surface-3">
+            <div
+              className={uncovered === 0 && needed > 0 ? 'h-full rounded-full bg-fill-success' : 'h-full rounded-full bg-fill-warning'}
+              style={{ width: needed ? `${Math.round((covered.length / needed) * 100)}%` : '0%' }}
+            />
+          </div>
+          {uncovered > 0 && (
+            <p className="mb-0 mt-2 flex items-center gap-1.5 text-[13px] font-semibold text-warning">
+              <Icon name="minus" size={14} />
+              {t('uncovered', { count: uncovered })}
+            </p>
+          )}
+          <dl className="m-0 mt-3 text-sm">
+            {[
+              [t('rail.onLeave'), current.leaves.length],
+              [t('rail.uncovered'), uncovered],
+              [t('rail.noEmail'), noEmail],
+            ].map(([label, n]) => (
+              <div key={label} className="flex items-center justify-between border-t border-line-soft py-2">
+                <dt className="text-ink-soft">{label}</dt>
+                <dd className="m-0 font-bold tabular-nums text-ink">{n}</dd>
+              </div>
+            ))}
+          </dl>
+          {!readOnly && (
+            <>
+              <Button variant="primary" onClick={() => void save()} loading={saving} loadingLabel={t('saving')} disabled={!dirty} className="mt-3 w-full">
+                {t('save')}
+              </Button>
+              <p role="status" className="mb-0 mt-2 text-center text-xs text-ink-muted">
+                {summary ?? (doc && !dirty ? t('savedAt', { time: colomboTime(doc.updatedAt) }) : dirty ? t('rail.unsaved') : '')}
+              </p>
+            </>
+          )}
+        </section>
+        {unsaved ? (
+          <Button disabled className="w-full" aria-label={t('print')} title={t('printSaveFirst')}>
+            <Icon name="print" size={16} />
+            {t('printSaveFirst')}
           </Button>
-        </div>
-      )}
+        ) : (
+          <LinkButton to={`${base}/print/relief/${date}`} aria-label={t('print')} className="w-full">
+            <Icon name="print" size={16} />
+            {t('rail.print')}
+          </LinkButton>
+        )}
+      </aside>
     </div>
   );
 }
