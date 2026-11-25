@@ -1,0 +1,4 @@
+# Accepted Trivy findings, each scoped to the reviewed file(s). See docs/security-tooling.md.
+vulnerabilities: []
+secrets: []
+misconfigurations: []
