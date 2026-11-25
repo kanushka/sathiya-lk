@@ -78,7 +78,13 @@ export function useSolver(): UseSolver {
         setError(e.message || 'worker error');
         setState('error');
       };
-      w.postMessage(input);
+      try {
+        w.postMessage(input);
+      } catch (err) {
+        stop();
+        setError(err instanceof Error ? err.message : String(err));
+        setState('error');
+      }
     },
     [factory, stop],
   );

@@ -83,6 +83,19 @@ describe('useSolver', () => {
     expect(hook.result.current.error).toBe('boom');
   });
 
+  it('a failed post reports an error and terminates', () => {
+    const broken = new FakeWorker();
+    broken.postMessage = () => {
+      throw new Error('could not clone');
+    };
+    const wrapper = ({ children }: { children: ReactNode }) => <SolverWorkerContext.Provider value={() => broken}>{children}</SolverWorkerContext.Provider>;
+    const hook = renderHook(() => useSolver(), { wrapper });
+    act(() => hook.result.current.run(input));
+    expect(hook.result.current.state).toBe('error');
+    expect(hook.result.current.error).toBe('could not clone');
+    expect(broken.terminated).toBe(true);
+  });
+
   it('a new run replaces the running worker', () => {
     const { hook, workers } = setup();
     act(() => hook.result.current.run(input));

@@ -4,6 +4,7 @@
 import { startOverDeletes, type Entry, type FillMode, type SchoolContext } from '@sathiya/core';
 import { useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
+import { useReadOnly } from '../../ui/AdminLayout';
 import { Alert } from '../../ui/Alert';
 import { Button } from '../../ui/Button';
 import { MultiSelect } from '../../ui/MultiSelect';
@@ -25,6 +26,7 @@ export function OptionsStep({
   onBack(): void;
 }) {
   const { t } = useTranslation('autofill');
+  const readOnly = useReadOnly();
   const grades = useMemo(() => [...ctx.grades].filter((g) => ctx.classes.some((c) => c.gradeId === g.id)).sort((a, b) => a.number - b.number), [ctx]);
   const gradeIds = mode.kind === 'startOver' ? mode.gradeIds : [];
   const replaced = useMemo(() => startOverDeletes(ctx, entries, gradeIds).length, [ctx, entries, gradeIds]);
@@ -67,9 +69,11 @@ export function OptionsStep({
       )}
       <div className="mt-6 flex flex-wrap gap-2">
         <Button onClick={onBack}>{t('options.back')}</Button>
-        <Button variant="primary" disabled={mode.kind === 'startOver' && mode.gradeIds.length === 0} onClick={onRun}>
-          {t('options.run')}
-        </Button>
+        {!readOnly && (
+          <Button variant="primary" disabled={mode.kind === 'startOver' && mode.gradeIds.length === 0} onClick={onRun}>
+            {t('options.run')}
+          </Button>
+        )}
       </div>
     </section>
   );

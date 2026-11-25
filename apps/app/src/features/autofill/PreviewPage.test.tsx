@@ -6,12 +6,19 @@ import { C, ctx, entries6B, S, T } from '@sathiya/core/fixtures';
 import { screen, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { Route, Routes } from 'react-router-dom';
-import { describe, expect, it, vi } from 'vitest';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { ApiError } from '../../lib/callable';
 import { pickOption } from '../../test/pickOption';
 import { renderWithSchool } from '../../test/renderWithSchool';
 import { TimetableApiContext, type TimetableApi } from '../timetable/useTimetable';
 import { PreviewPage } from './PreviewPage';
+
+const ro = vi.hoisted(() => ({ value: false }));
+vi.mock('../../ui/AdminLayout', () => ({ useReadOnly: () => ro.value }));
+
+beforeEach(() => {
+  ro.value = false;
+});
 
 const draft: EntryDraft = { day: 2, period: 4, classIds: [C.c6b], lessons: [{ subjectId: S.maths, teacherId: T.perera }] };
 
@@ -74,7 +81,21 @@ describe('PreviewPage', () => {
   it('Try again asks for a new seed', async () => {
     const { onTryAgain } = setup();
     await userEvent.click(screen.getByRole('button', { name: 'Try again' }));
-    expect(onTryAgain).toHaveBeenCalled();
+    expect(onTryAgain).toHaveBeenCalledWith([]);
+  });
+
+  it('Try again passes pending allocation edits', async () => {
+    const user = userEvent.setup();
+    const { onTryAgain } = setup();
+    await pickOption(user, screen.getByRole('combobox', { name: /^Teacher for Mathematics in 6B/ }), /Bandara/);
+    await user.click(screen.getByRole('button', { name: 'Try again' }));
+    expect(onTryAgain).toHaveBeenCalledWith([{ classId: C.c6b, planKey: `subject:${S.maths}`, subjectId: S.maths, teacherId: T.bandara }]);
+  });
+
+  it('hides Save when read-only', () => {
+    ro.value = true;
+    setup();
+    expect(screen.queryByRole('button', { name: 'Save' })).not.toBeInTheDocument();
   });
 
   it('highlights new entries in the class grid', async () => {

@@ -194,6 +194,43 @@ describe('AutoFillPage flow', () => {
     expect(third.overrides).toEqual(second.overrides);
   });
 
+  it('discarded allocation edits do not carry into the next Generate', async () => {
+    const user = userEvent.setup();
+    setup();
+    await user.click(screen.getByRole('button', { name: 'Continue' }));
+    await user.click(screen.getByRole('button', { name: 'Generate timetable' }));
+    workers[0]!.emit({ type: 'done', result: resultFor(workers[0]!.posted[0]!) });
+    await pickOption(user, screen.getByRole('combobox', { name: /^Teacher for Mathematics in 6B/ }), /Bandara/);
+    await user.click(screen.getByRole('button', { name: 'Re-run placement' }));
+    expect(workers[1]!.posted[0]!.overrides).toHaveLength(1);
+    workers[1]!.emit({ type: 'done', result: resultFor(workers[1]!.posted[0]!) });
+    await user.click(screen.getByRole('button', { name: 'Discard' }));
+    await user.click(screen.getByRole('button', { name: 'Generate timetable' }));
+    expect(workers[2]!.posted[0]!.overrides).toBeUndefined();
+  });
+
+  it('Try again keeps pending allocation edits', async () => {
+    const user = userEvent.setup();
+    setup();
+    await user.click(screen.getByRole('button', { name: 'Continue' }));
+    await user.click(screen.getByRole('button', { name: 'Generate timetable' }));
+    const first = workers[0]!.posted[0]!;
+    workers[0]!.emit({ type: 'done', result: resultFor(first) });
+    await pickOption(user, screen.getByRole('combobox', { name: /^Teacher for Mathematics in 6B/ }), /Bandara/);
+    await user.click(screen.getByRole('button', { name: 'Try again' }));
+    const second = workers[1]!.posted[0]!;
+    expect(second.seed).not.toBe(first.seed);
+    expect(second.overrides).toEqual([{ classId: C.c6b, planKey: `subject:${S.maths}`, subjectId: S.maths, teacherId: T.bandara }]);
+  });
+
+  it('hides Generate and Save when read-only', async () => {
+    ro.value = true;
+    const user = userEvent.setup();
+    setup();
+    await user.click(screen.getByRole('button', { name: 'Continue' }));
+    expect(screen.queryByRole('button', { name: 'Generate timetable' })).not.toBeInTheDocument();
+  });
+
   it('shows a solver error with a way back', async () => {
     const user = userEvent.setup();
     setup();

@@ -52,14 +52,15 @@ function Flow() {
     solver.run({ ctx: plainCtx(ctx), entries, mode, seed, ...(ov.length > 0 ? { overrides: ov } : {}) });
   }
 
-  function rerun(changed: Allocation[]) {
+  function rerun(changed: Allocation[], seed: number) {
     const merged = new Map(overrides.map((o) => [allocationKey(o), o]));
     for (const o of changed) merged.set(allocationKey(o), o);
-    run(solver.result?.seed ?? newSeed(), [...merged.values()]);
+    run(seed, [...merged.values()]);
   }
 
   function backToOptions() {
     solver.cancel();
+    setOverrides([]);
     setStep('options');
   }
 
@@ -68,12 +69,12 @@ function Flow() {
     return (
       <div className="max-w-3xl">
         <PageHeader title={t('title')} />
-        <OptionsStep ctx={ctx} entries={entries} mode={mode} onChange={setMode} onRun={() => run(newSeed())} onBack={() => setStep('readiness')} />
+        <OptionsStep ctx={ctx} entries={entries} mode={mode} onChange={setMode} onRun={() => run(newSeed(), [])} onBack={() => setStep('readiness')} />
       </div>
     );
   }
   if (solver.state === 'done' && solver.result) {
-    return <PreviewPage result={solver.result} entries={ranWith} onRerun={rerun} onTryAgain={() => run(newSeed())} onDiscard={backToOptions} />;
+    return <PreviewPage result={solver.result} entries={ranWith} onRerun={(changed) => rerun(changed, solver.result?.seed ?? newSeed())} onTryAgain={(changed) => rerun(changed, newSeed())} onDiscard={backToOptions} />;
   }
   if (solver.state === 'error') {
     return (

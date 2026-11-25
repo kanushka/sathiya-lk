@@ -25,11 +25,14 @@ function ClassGrid({ cls, ctx, kept, added, lang }: { cls: SchoolClass; ctx: Sch
     () => (template ? (Object.fromEntries(DAYS.map((d) => [d, rowsFor(template, d)])) as Record<DayIndex, TemplateRow[]>) : null),
     [template],
   );
-  const at = (list: Entry[], day: DayIndex, period: number) => list.find((e) => e.day === day && e.period === period && e.classIds.includes(cls.id));
+  const index = useMemo(() => {
+    const bySlot = (list: Entry[]) => new Map(list.filter((e) => e.classIds.includes(cls.id)).map((e) => [`${e.day}|${e.period}`, e]));
+    return { kept: bySlot(kept), added: bySlot(added) };
+  }, [kept, added, cls.id]);
   if (!template || !rows) return null;
 
   const overlay = (day: DayIndex, period: number): GridOverlay | null => {
-    const e = at(added, day, period);
+    const e = index.added.get(`${day}|${period}`);
     const time = periodsFor(template, day).find((p) => p.period === period);
     if (!e || !time) return null;
     const view = classCellView(e, ctx, lang, tt, plan);
@@ -44,7 +47,7 @@ function ClassGrid({ cls, ctx, kept, added, lang }: { cls: SchoolClass; ctx: Sch
     <TimetableGrid
       rows={rows}
       cellsFor={(d, p) => {
-        const e = at(kept, d, p);
+        const e = index.kept.get(`${d}|${p}`);
         return e ? classCellView(e, ctx, lang, tt, plan) : null;
       }}
       selected={selected}

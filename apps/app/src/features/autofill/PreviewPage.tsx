@@ -8,6 +8,7 @@ import { useNavigate } from 'react-router-dom';
 import { useLang } from '../../app/LangProvider';
 import { useSchool, useYear } from '../../app/SchoolProvider';
 import { ApiError, isSchoolDisabled } from '../../lib/callable';
+import { useReadOnly } from '../../ui/AdminLayout';
 import { Alert } from '../../ui/Alert';
 import { Button } from '../../ui/Button';
 import { PageHeader } from '../../ui/PageHeader';
@@ -43,7 +44,7 @@ export function PreviewPage({
   result: SolveResult;
   entries: Entry[];
   onRerun(overrides: Allocation[]): void;
-  onTryAgain(): void;
+  onTryAgain(overrides: Allocation[]): void;
   onDiscard(): void;
 }) {
   const { t } = useTranslation('autofill');
@@ -55,6 +56,7 @@ export function PreviewPage({
   const toast = useToast();
   const navigate = useNavigate();
   const base = useAdminBase();
+  const readOnly = useReadOnly();
   const [tab, setTab] = useState<Tab>('allocation');
   const [edits, setEdits] = useState<Map<string, string>>(new Map());
   const [saving, setSaving] = useState(false);
@@ -100,9 +102,7 @@ export function PreviewPage({
     });
   }
 
-  function rerunPlacement() {
-    onRerun(result.allocation.filter((a) => edits.has(allocationKey(a))).map((a) => ({ ...a, teacherId: edits.get(allocationKey(a))! })));
-  }
+  const edited = (): Allocation[] => result.allocation.filter((a) => edits.has(allocationKey(a))).map((a) => ({ ...a, teacherId: edits.get(allocationKey(a))! }));
 
   async function save() {
     setSaving(true);
@@ -147,7 +147,7 @@ export function PreviewPage({
       {stale && (
         <Alert tone="warning" className="mb-4">
           <p className="m-0">{t('preview.stale')}</p>
-          <Button variant="primary" size="sm" className="mt-2" onClick={rerunPlacement}>
+          <Button variant="primary" size="sm" className="mt-2" onClick={() => onRerun(edited())}>
             {t('preview.rerunPlacement')}
           </Button>
         </Alert>
@@ -183,12 +183,14 @@ export function PreviewPage({
         <Button onClick={onDiscard} disabled={saving}>
           {t('preview.discard')}
         </Button>
-        <Button onClick={onTryAgain} disabled={saving}>
+        <Button onClick={() => onTryAgain(edited())} disabled={saving}>
           {t('preview.tryAgain')}
         </Button>
-        <Button variant="primary" onClick={save} disabled={stale || saving} loading={saving} loadingLabel={t('preview.saving')}>
-          {t('preview.save')}
-        </Button>
+        {!readOnly && (
+          <Button variant="primary" onClick={save} disabled={stale || saving} loading={saving} loadingLabel={t('preview.saving')}>
+            {t('preview.save')}
+          </Button>
+        )}
       </div>
     </div>
   );
