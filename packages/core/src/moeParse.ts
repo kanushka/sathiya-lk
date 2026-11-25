@@ -75,8 +75,15 @@ function splitLine(body: string, addrCol: number): { name: string[]; address: st
 
 export function parseAllSchools(text: string): AllSchoolRow[] {
   const rows: AllSchoolRow[] = [];
+  let prevCol = -1;
   for (const page of pages(text)) {
+    if (!page.length) continue;
     let addrCol = mode(page.map((l) => addressStart(cells(l.replace(TAIL, '')), l)).filter((x) => x >= 0));
+    if (addrCol < 0) {
+      if (prevCol < 0) throw new Error(`Cannot find the address column on page starting: ${page[0]?.trim()}`);
+      addrCol = prevCol;
+    }
+    prevCol = addrCol;
     let buf: string[] = [];
     for (const line of page) {
       buf.push(line);

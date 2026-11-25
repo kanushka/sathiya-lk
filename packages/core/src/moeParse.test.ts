@@ -52,6 +52,26 @@ describe('parseAllSchools', () => {
     expect(by('09022')).toMatchObject({ name: 'PUNGUDUTIVU RAJARAJESWARY TAMIL MIXED VIDYALAYAM', address: 'WARD NO 10 PUNGUDUTIVU' });
   });
 
+  it('keeps the town in the name when the PDF leaves the address column empty', () => {
+    expect(by('03412')).toMatchObject({ name: 'ERIYAGAMA SRI PUSHPADANA MODEL SCHOOL PERADANIYA', address: '' });
+  });
+
+  it('currently misplaces address text on a wrapped row with the census number alone (13148)', () => {
+    const text = readFileSync(new URL('../../../scripts/moe-schools/fixtures/all-schools-13148.txt', import.meta.url), 'utf8');
+    const row = parseAllSchools(text).find((r) => r.censusNo === '13148');
+    expect(row).toMatchObject({
+      name: 'KATKARANKULAM, KANTHINAGAR, KATKARANKULAM ILANGO VIDYALAYAM',
+      address: 'CHEDDIKULAM.',
+    });
+  });
+
+  it('falls back to the previous page address column, and throws without one', () => {
+    const good = ' 00001      SCHOOL ONE                          MAIN RD, TOWN              Provincial   1.Grd 1-5    1.S       3.Mixed';
+    const bare = '00002\n        SCHOOL TWO              ROAD TWO                       Provincial   1.Grd 1-5    1.S       3.Mixed';
+    expect(parseAllSchools(`${good}\n\f${bare}`).map((r) => r.censusNo)).toEqual(['00001', '00002']);
+    expect(() => parseAllSchools(bare)).toThrow(/address column/);
+  });
+
   it('throws on a census number that is not 4-6 digits', () => {
     const bad = ' 1234567   SOME SCHOOL            SOME ROAD            Provincial   3.Grd 1-11   1.S       3.Mixed\n';
     expect(() => parseAllSchools(bad)).toThrow(/4-6 digits/);
