@@ -20,4 +20,11 @@ export function handleSolve(req: SolverRequest, post: (m: SolverMessage) => void
   }
 }
 
-self.onmessage = (e: MessageEvent<SolverRequest>) => handleSolve(e.data, (m) => self.postMessage(m));
+export function trustedOrigin(origin: string, own: string): boolean {
+  return origin === '' || origin === own;
+}
+
+self.onmessage = (e: MessageEvent<SolverRequest>) => {
+  if (!trustedOrigin(e.origin, self.location.origin)) return;
+  handleSolve(e.data, (m) => self.postMessage(m));
+};

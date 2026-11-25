@@ -6,7 +6,7 @@ import { mahasen } from '@sathiya/core/fixtures';
 import { act, renderHook } from '@testing-library/react';
 import type { ReactNode } from 'react';
 import { describe, expect, it } from 'vitest';
-import { handleSolve } from './solver.worker';
+import { handleSolve, trustedOrigin } from './solver.worker';
 import { SolverWorkerContext, useSolver, type SolverMessage, type SolverRequest, type SolverWorker } from './useSolver';
 
 class FakeWorker implements SolverWorker {
@@ -126,5 +126,13 @@ describe('handleSolve', () => {
     const posted: SolverMessage[] = [];
     handleSolve({ ...input, ctx: null as never }, (m) => posted.push(m));
     expect(posted).toEqual([{ type: 'error', message: expect.any(String) }]);
+  });
+});
+
+describe('trustedOrigin', () => {
+  it('accepts the owning page and rejects other origins', () => {
+    expect(trustedOrigin('', 'https://app.example')).toBe(true);
+    expect(trustedOrigin('https://app.example', 'https://app.example')).toBe(true);
+    expect(trustedOrigin('https://evil.example', 'https://app.example')).toBe(false);
   });
 });
