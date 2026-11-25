@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
 // Copyright (C) 2026 Kanushka Gayan
 
-import { effectivePlan, pickName, planKey, teacherDisplayName, teachesSubject, type Allocation, type Lang, type SchoolContext } from '@sathiya/core';
+import { effectivePlan, pickName, planKey, staffingFor, teacherDisplayName, teachesSubject, type Allocation, type Lang, type SchoolContext, type Teacher } from '@sathiya/core';
 import { useTranslation } from 'react-i18next';
 import { Select } from '../../ui/Select';
 import { sortedClasses } from '../timetable/ClassViewPage';
@@ -46,6 +46,17 @@ export function AllocationTab({
       {classes.map((cls) => {
         const grade = ctx.grades.find((g) => g.id === cls.gradeId);
         const rows = allocation.filter((a) => a.classId === cls.id);
+        const staffing = grade && staffingFor(grade, ctx);
+        const ct = cls.classTeacherId;
+        const current = (a: Allocation): string | null => edits.get(allocationKey(a)) ?? a.teacherId;
+        const allowed = (row: Allocation, x: Teacher): boolean => {
+          if (grade === undefined || !staffing) return false;
+          const qualified = teachesSubject(x, row.subjectId, grade.number);
+          if (row.planKey.startsWith('group:') || ct === undefined) return qualified;
+          if (staffing.mode === 'classTeacherAll') return x.id === ct;
+          if (staffing.mode === 'classTeacherPlusSpecialists') return staffing.specialistSubjectIds.includes(row.subjectId) ? qualified && x.id !== ct : x.id === ct;
+          return qualified;
+        };
         return (
           <section key={cls.id} className="mb-5">
             <h3 className="mb-1 text-sm font-bold text-ink">{tt('classView.classOption', { grade: grade?.number ?? '', name: cls.name })}</h3>
@@ -56,8 +67,9 @@ export function AllocationTab({
                 const subject = row.planKey.startsWith('group:')
                   ? t('allocation.groupOption', { group: itemLabel(ctx, cls.id, row.planKey, lang), subject: subjectName(row.subjectId) })
                   : subjectName(row.subjectId);
+                const taken = new Set(rows.filter((r) => r.planKey === row.planKey && r.subjectId !== row.subjectId).map(current));
                 const options = ctx.teachers
-                  .filter((x) => x.id === value || x.id === row.teacherId || (grade !== undefined && teachesSubject(x, row.subjectId, grade.number)))
+                  .filter((x) => x.id === value || (!taken.has(x.id) && (x.id === row.teacherId || allowed(row, x))))
                   .map((x) => ({ value: x.id, label: teacherDisplayName(x, lang) }))
                   .sort((a, b) => a.label.localeCompare(b.label));
                 return (

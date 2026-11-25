@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
 // Copyright (C) 2026 Kanushka Gayan
 
-import { classPlacement, formatSummary, placementSummary, withTeacherIds, type Allocation, type Entry, type SolveResult } from '@sathiya/core';
+import { APPLY_AUTOFILL_MAX_ITEMS, classPlacement, formatSummary, placementSummary, teacherDisplayName, withTeacherIds, type Allocation, type Entry, type SolveResult } from '@sathiya/core';
 import { useContext, useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useNavigate } from 'react-router-dom';
@@ -22,7 +22,7 @@ import { ClassesTab } from './ClassesTab';
 import { UnplacedTab } from './UnplacedTab';
 
 type Tab = 'allocation' | 'classes' | 'unplaced';
-type SaveError = { kind: 'clash' | 'busy' | 'failed' | 'suspended' } | { kind: 'partial'; written: number; deleted: number };
+type SaveError = { kind: 'clash' | 'busy' | 'failed' | 'suspended' | 'tooMany' } | { kind: 'partial'; written: number; deleted: number };
 
 const TAB_ID = 'autofill-preview';
 
@@ -40,12 +40,14 @@ export function PreviewPage({
   onRerun,
   onTryAgain,
   onDiscard,
+  onFillAround,
 }: {
   result: SolveResult;
   entries: Entry[];
   onRerun(overrides: Allocation[]): void;
   onTryAgain(overrides: Allocation[]): void;
   onDiscard(): void;
+  onFillAround(): void;
 }) {
   const { t } = useTranslation('autofill');
   const { t: ts } = useTranslation('shell');
@@ -105,6 +107,10 @@ export function PreviewPage({
   const edited = (): Allocation[] => result.allocation.filter((a) => edits.has(allocationKey(a))).map((a) => ({ ...a, teacherId: edits.get(allocationKey(a))! }));
 
   async function save() {
+    if (result.drafts.length > APPLY_AUTOFILL_MAX_ITEMS || result.deleteEntryIds.length > APPLY_AUTOFILL_MAX_ITEMS) {
+      setError({ kind: 'tooMany' });
+      return;
+    }
     setSaving(true);
     setError(null);
     try {
@@ -139,6 +145,14 @@ export function PreviewPage({
         <p className="m-0 mt-3 text-sm text-ink">
           <span>{t('preview.unplaced', { count: result.unplaced.length })}</span> · <span>{t('preview.samePattern', { percent: Math.round(result.soft.samePattern * 100) })}</span>
         </p>
+        {result.soft.minPerWeekShort.length > 0 && (
+          <ul className="m-0 mt-2 list-none p-0 text-sm text-ink">
+            {result.soft.minPerWeekShort.map((s) => {
+              const teacher = ctx.teachers.find((x) => x.id === s.teacherId);
+              return <li key={s.teacherId}>{t('preview.minShort', { teacher: teacher ? teacherDisplayName(teacher, lang) : s.teacherId, count: s.short })}</li>;
+            })}
+          </ul>
+        )}
         <p className="m-0 mt-1 text-xs text-ink-muted">
           {t('preview.changes', { added: result.drafts.length, removed: result.deleteEntryIds.length })} · {t('preview.seed', { seed: result.seed })}
         </p>
@@ -163,7 +177,12 @@ export function PreviewPage({
               </Button>
             </>
           ) : error.kind === 'partial' ? (
-            t('preview.partial', { written: error.written, deleted: error.deleted })
+            <>
+              <p className="m-0">{t('preview.partial', { written: error.written, deleted: error.deleted })}</p>
+              <Button variant="primary" size="sm" className="mt-2" onClick={onFillAround}>
+                {t('preview.backToOptions')}
+              </Button>
+            </>
           ) : error.kind === 'suspended' ? (
             ts('suspended.writeBlocked')
           ) : (
@@ -187,7 +206,7 @@ export function PreviewPage({
           {t('preview.tryAgain')}
         </Button>
         {!readOnly && (
-          <Button variant="primary" onClick={save} disabled={stale || saving} loading={saving} loadingLabel={t('preview.saving')}>
+          <Button variant="primary" onClick={save} disabled={stale || saving || error?.kind === 'partial'} loading={saving} loadingLabel={t('preview.saving')}>
             {t('preview.save')}
           </Button>
         )}

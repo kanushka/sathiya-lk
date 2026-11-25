@@ -75,13 +75,13 @@
     "cancel": "Cancel"
   },
   "error": {
-    "title": "Auto-fill stopped with an error: {{message}}",
+    "title": "Auto-fill stopped with an error.",
     "back": "Back to options"
   },
   "preview": {
     "title": "Preview",
     "subtitle": "Nothing is saved until you press Save.",
-    "seed": "Seed {{seed}}",
+    "seed": "Try {{seed}}",
     "summary": "Summary",
     "grade": "Grade {{grade}}",
     "unplaced_one": "{{count}} item not fully placed",
@@ -106,7 +106,11 @@
     "rerun": "Run again",
     "busy": "Someone else is saving to this timetable. Try again in a moment.",
     "partial": "Saving stopped part-way ({{written}} lessons written, {{deleted}} removed). Run auto-fill again with Fill around to finish.",
-    "failed": "Could not save the timetable. Please try again."
+    "failed": "Could not save the timetable. Please try again.",
+    "minShort_one": "{{teacher}}: {{count}} lesson short of their weekly minimum",
+    "minShort_other": "{{teacher}}: {{count}} lessons short of their weekly minimum",
+    "backToOptions": "Back to options",
+    "tooMany": "Too many lessons to save at once — start over fewer grades."
   },
   "allocation": {
     "hint": "Who teaches each subject. Change a teacher, then re-run placement.",
@@ -134,12 +138,16 @@
       "minutes-unbuildable": "{{minutes}} cannot be made from the free periods on {{day}}.",
       "minutes-unbuildable-week": "{{minutes}} cannot be made from the free periods.",
       "block-unavailable": "No period on {{day}} is free for every class and teacher in the block.",
-      "block-unavailable-week": "No period is free for every class and teacher in the block."
+      "block-unavailable-week": "No period is free for every class and teacher in the block.",
+      "subject-cap": "{{teacher}} would teach more than two subjects in this class.",
+      "subject-cap-any": "Every teacher who can take it already teaches two subjects in this class.",
+      "duplicate-option-teacher": "Two options of the block have the same teacher."
     },
     "fix": {
       "class": "Open class",
       "teachers": "Open Teachers",
       "templates": "Open Templates"
-    }
+    },
+    "classTeacher": "{{class}}: {{teacher}}, the class teacher, has no subject here with a lesson every day, so cannot take the first period."
   }
 }

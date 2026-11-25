@@ -7,6 +7,7 @@ import { act, screen, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { Route, Routes } from 'react-router-dom';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { ApiError } from '../../lib/callable';
 import { pickOption } from '../../test/pickOption';
 import { renderWithSchool } from '../../test/renderWithSchool';
 import { ClassViewPage } from '../timetable/ClassViewPage';
@@ -175,6 +176,20 @@ describe('AutoFillPage flow', () => {
     expect(screen.getByText('Auto-fill saved 2 lessons.')).toBeInTheDocument();
   });
 
+  it('goes back to fill-around options after a partial save', async () => {
+    api.applyAutoFill = vi.fn(async () => Promise.reject(new ApiError('invalid', 'part-way', { written: 1, deleted: 2 })));
+    const user = userEvent.setup();
+    setup();
+    await user.click(screen.getByRole('button', { name: 'Continue' }));
+    await user.click(screen.getByRole('radio', { name: /Start over/ }));
+    await pickOption(user, screen.getByRole('combobox', { name: 'Grades to start over' }), 'Grade 6');
+    await user.click(screen.getByRole('button', { name: 'Generate timetable' }));
+    workers[0]!.emit({ type: 'done', result: resultFor(workers[0]!.posted[0]!) });
+    await user.click(screen.getByRole('button', { name: 'Save' }));
+    await user.click(await screen.findByRole('button', { name: 'Back to options' }));
+    expect(screen.getByRole('radio', { name: /Fill around/ })).toBeChecked();
+  });
+
   it('re-runs placement with the edited allocation and tries again with a new seed', async () => {
     const user = userEvent.setup();
     setup();
@@ -237,7 +252,8 @@ describe('AutoFillPage flow', () => {
     await user.click(screen.getByRole('button', { name: 'Continue' }));
     await user.click(screen.getByRole('button', { name: 'Generate timetable' }));
     workers[0]!.emit({ type: 'error', message: 'boom' });
-    expect(screen.getByText(/boom/)).toBeInTheDocument();
+    expect(screen.getByRole('alert')).toHaveTextContent('Auto-fill stopped with an error.');
+    expect(screen.queryByText(/boom/)).not.toBeInTheDocument();
     await user.click(screen.getByRole('button', { name: 'Back to options' }));
     expect(screen.getByRole('button', { name: 'Generate timetable' })).toBeInTheDocument();
   });

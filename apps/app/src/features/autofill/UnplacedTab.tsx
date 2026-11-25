@@ -28,6 +28,12 @@ function reasonText(u: Unplaced, ctx: SchoolContext, lang: Lang, t: TFunction<'a
       return { text: day ? t('unplaced.reason.minutes-unbuildable', { minutes, day }) : t('unplaced.reason.minutes-unbuildable-week', { minutes }), fix: 'templates' };
     case 'block-unavailable':
       return { text: day ? t('unplaced.reason.block-unavailable', { day }) : t('unplaced.reason.block-unavailable-week'), fix: 'class' };
+    case 'subject-cap':
+      return { text: teacher ? t('unplaced.reason.subject-cap', { teacher }) : t('unplaced.reason.subject-cap-any'), fix: 'teachers' };
+    case 'duplicate-option-teacher':
+      return { text: t('unplaced.reason.duplicate-option-teacher'), fix: 'teachers' };
+    case 'class-teacher-no-daily-subject':
+      return { text: '', fix: 'teachers' };
   }
 }
 
@@ -43,12 +49,15 @@ export function UnplacedTab({ ctx, unplaced, lang }: { ctx: SchoolContext; unpla
         const { text, fix } = reasonText(u, ctx, lang, t, tc);
         const missing = u.unit === 'minutes' ? formatAmount(u.missing, 'minutes', lang) : t('periods', { count: u.missing });
         const to = fix === 'class' ? `${base}/timetable/class/${u.classId}` : `${base}/${fix}`;
+        const classTeacher = ctx.teachers.find((x) => x.id === u.params['teacherId']);
+        const line =
+          u.reason === 'class-teacher-no-daily-subject'
+            ? t('unplaced.classTeacher', { class: cls?.name ?? u.classId, teacher: classTeacher ? teacherDisplayName(classTeacher, lang) : '' })
+            : `${t('unplaced.line', { class: cls?.name ?? u.classId, item: itemLabel(ctx, u.classId, u.planKey, lang), missing })} ${text}`;
         return (
           <li key={`${u.classId}|${u.planKey}|${i}`} className="flex flex-wrap items-baseline justify-between gap-x-4 gap-y-1 py-2 text-sm text-ink">
-            <span className="min-w-0">
-              {t('unplaced.line', { class: cls?.name ?? u.classId, item: itemLabel(ctx, u.classId, u.planKey, lang), missing })} {text}
-            </span>
-            <Link to={to} className="shrink-0 font-semibold text-brand">
+            <span className="min-w-0">{line}</span>
+            <Link to={to} target="_blank" rel="noopener" className="shrink-0 font-semibold text-brand">
               {t(`unplaced.fix.${fix}`)}
             </Link>
           </li>

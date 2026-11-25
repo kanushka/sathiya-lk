@@ -64,6 +64,11 @@ function Flow() {
     setStep('options');
   }
 
+  function fillAroundOptions() {
+    setMode({ kind: 'fillAround' });
+    backToOptions();
+  }
+
   if (step === 'readiness') return <Readiness onContinue={() => setStep('options')} />;
   if (step === 'options') {
     return (
@@ -74,14 +79,14 @@ function Flow() {
     );
   }
   if (solver.state === 'done' && solver.result) {
-    return <PreviewPage result={solver.result} entries={ranWith} onRerun={(changed) => rerun(changed, solver.result?.seed ?? newSeed())} onTryAgain={(changed) => rerun(changed, newSeed())} onDiscard={backToOptions} />;
+    return <PreviewPage result={solver.result} entries={ranWith} onRerun={(changed) => rerun(changed, solver.result?.seed ?? newSeed())} onTryAgain={(changed) => rerun(changed, newSeed())} onDiscard={backToOptions} onFillAround={fillAroundOptions} />;
   }
   if (solver.state === 'error') {
     return (
       <div className="max-w-3xl">
         <PageHeader title={t('title')} />
         <Alert tone="danger" role="alert">
-          {t('error.title', { message: solver.error ?? '' })}
+          {t('error.title')}
         </Alert>
         <Button className="mt-4" onClick={backToOptions}>
           {t('error.back')}
