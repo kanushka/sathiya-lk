@@ -1,6 +1,7 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
 // Copyright (C) 2026 Kanushka Gayan
 
+import type { MoeSchool } from './moe';
 import type { ImportRow, SubjectColumn, TeacherColumn } from './importSheet';
 import type { TemplatePatch } from './templateValidate';
 import type { AuthEmailKind, EntryDraft, Lang, Leave, Relief, ReportReason, School, Teacher, TeacherTitle } from './types';
@@ -29,9 +30,12 @@ export const callables = {
   unlinkTeacher: 'unlinkTeacher',
   saveTemplate: 'saveTemplate',
   saveReliefDay: 'saveReliefDay',
+  lookupCensus: 'lookupCensus',
+  reviewSchool: 'reviewSchool',
+  removeRegistration: 'removeRegistration',
 } as const;
 
-export interface RegisterSchoolReq { school: Omit<School, 'id' | 'status' | 'createdAt' | 'activeYearId'>; adminName: string; acceptedTermsVersion: string }
+export interface RegisterSchoolReq { school: Omit<School, 'id' | 'status' | 'createdAt' | 'activeYearId'>; adminName: string; acceptedTermsVersion: string; medium?: ('si' | 'en' | 'ta')[] }
 export interface RegisterSchoolRes { schoolId: string }
 export interface CreateTeacherReq { schoolId: string; teacher: Omit<Teacher, 'id' | 'uid' | 'lastLoginAt'> }
 export interface CreateTeacherRes { teacherId: string }
@@ -77,6 +81,12 @@ export interface UnlinkTeacherReq { schoolId: string; teacherId: string }
 export interface UnlinkTeacherRes { ok: true }
 export interface SaveReliefDayReq { schoolId: string; yearId: string; date: string; leaves: Leave[]; reliefs: Relief[]; expectedUpdatedAt: number | null }
 export interface SaveReliefDayRes { updatedAt: number; queued: number; skippedNoEmail: number; uncovered: number }
+export interface LookupCensusReq { censusNo: string }
+export interface LookupCensusRes { status: 'listed' | 'registered' | 'unlisted'; school?: MoeSchool }
+export interface ReviewSchoolReq { schoolId: string; approve: boolean; reason?: string }
+export interface ReviewSchoolRes { ok: true }
+export interface RemoveRegistrationReq { schoolId: string }
+export interface RemoveRegistrationRes { ok: true }
 interface CallableMap {
   registerSchool: { req: RegisterSchoolReq; res: RegisterSchoolRes };
   createTeacher: { req: CreateTeacherReq; res: CreateTeacherRes };
@@ -101,7 +111,10 @@ interface CallableMap {
   unlinkTeacher: { req: UnlinkTeacherReq; res: UnlinkTeacherRes };
   saveTemplate: { req: SaveTemplateReq; res: SaveTemplateRes };
   saveReliefDay: { req: SaveReliefDayReq; res: SaveReliefDayRes };
+  lookupCensus: { req: LookupCensusReq; res: LookupCensusRes };
+  reviewSchool: { req: ReviewSchoolReq; res: ReviewSchoolRes };
+  removeRegistration: { req: RemoveRegistrationReq; res: RemoveRegistrationRes };
 }
 export type CallableName = keyof typeof callables;
 export type CallableTypes = { [K in CallableName]: CallableMap[K] };
-export type ApiErrorCode = 'clash' | 'in-use' | 'not-allowed' | 'invalid' | 'email-unverified' | 'rate-limited' | 'school-disabled' | 'already-linked' | 'staff-id-unknown' | 'link-invalid' | 'too-many-schools' | 'school-registered' | 'template-in-use' | 'template-too-many-moves' | 'stale' | 'republish' | 'invalid-relief' | 'not-today';
+export type ApiErrorCode = 'clash' | 'in-use' | 'not-allowed' | 'invalid' | 'email-unverified' | 'rate-limited' | 'school-disabled' | 'already-linked' | 'staff-id-unknown' | 'link-invalid' | 'too-many-schools' | 'school-registered' | 'template-in-use' | 'template-too-many-moves' | 'stale' | 'republish' | 'invalid-relief' | 'not-today' | 'school-pending' | 'school-rejected';
