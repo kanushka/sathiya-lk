@@ -13,6 +13,7 @@
     "placeholder": "e.g. 00023",
     "hint": "Usually 5 digits. The school office has it on MOE letters and the school census form.",
     "empty": "Enter the census number, or choose \"My school isn't listed\" below.",
+    "format": "Census numbers are up to 6 digits",
     "find": "Find my school",
     "notListed": "My school isn't listed / no census number",
     "notListedHint": "For private and international schools, or a school missing from the list. You fill in the details yourself and Sathiya reviews the school before it goes live.",

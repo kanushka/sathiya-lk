@@ -646,9 +646,16 @@ describe('census step', () => {
     expect(si.compareDocumentPosition(en) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
     expect(screen.getByText('Sinhala names first.')).toBeInTheDocument();
     const next = screen.getByRole('button', { name: 'Yes, this is my school · Next: logo & colours' });
-    expect(next).toBeDisabled();
-    await user.type(si, 'කොටහේන');
     expect(next).toBeEnabled();
+    expect(screen.getByLabelText('City')).toHaveValue('Colombo 13');
+    await user.click(next);
+    expect(screen.getByText('Enter the school name in Sinhala')).toBeInTheDocument();
+    expect(screen.getByRole('heading', { name: 'Is this your school?' })).toBeInTheDocument();
+    await user.type(si, 'කොටහේන');
+    await user.clear(screen.getByLabelText('City'));
+    await user.click(next);
+    expect(screen.getByText('City is required')).toBeInTheDocument();
+    await user.type(screen.getByLabelText('City'), 'Kotahena');
     await user.click(next);
     await user.click(screen.getByRole('button', { name: 'Next: your account' }));
     await user.type(screen.getByLabelText('Your name'), 'Nimal');
@@ -661,7 +668,7 @@ describe('census step', () => {
       nameEn: 'Kotahena M.M.V.',
       nameSi: 'කොටහේන',
       district: 'Colombo',
-      city: 'Colombo 13',
+      city: 'Kotahena',
       grades: [6, 7, 8, 9, 10, 11, 12, 13],
       medium: ['si', 'en'],
       staffPrefix: 'KOT',
@@ -677,10 +684,92 @@ describe('census step', () => {
     const en = await screen.findByLabelText(/School name in English/);
     const si = screen.getByLabelText(/School name in Sinhala/);
     expect(en.compareDocumentPosition(si) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
-    const next = screen.getByRole('button', { name: 'Yes, this is my school · Next: logo & colours' });
-    expect(next).toBeDisabled();
+    await user.click(screen.getByRole('button', { name: 'Yes, this is my school · Next: logo & colours' }));
+    expect(screen.getByText('Required')).toBeInTheDocument();
+    expect(screen.queryByText('Enter the school name in Sinhala')).not.toBeInTheDocument();
     await pickOption(user, screen.getByRole('combobox', { name: /District/ }), 'Kandy');
-    expect(next).toBeEnabled();
+    await user.click(screen.getByRole('button', { name: 'Yes, this is my school · Next: logo & colours' }));
+    expect(await screen.findByRole('heading', { name: '2 · Logo & school colours' })).toBeInTheDocument();
+  });
+
+  it('pads a short census number before looking it up', async () => {
+    const user = userEvent.setup();
+    vi.mocked(api.lookupCensus).mockResolvedValue({ status: 'listed', school: kotahena });
+    renderAuth(<RegisterPage />, { route: '/register', at: '/register' });
+    await find(user, '23');
+    expect(api.lookupCensus).toHaveBeenCalledWith('00023');
+    expect(await screen.findByRole('heading', { name: 'Is this your school?' })).toBeInTheDocument();
+  });
+
+  it('moves focus to the heading of each new section', async () => {
+    const user = userEvent.setup();
+    vi.mocked(api.lookupCensus).mockResolvedValue({ status: 'listed', school: kotahena });
+    renderAuth(<RegisterPage />, { route: '/register', at: '/register' });
+    await find(user, '00023');
+    await waitFor(() => expect(screen.getByRole('heading', { name: 'Is this your school?' })).toHaveFocus());
+    await user.type(screen.getByLabelText(/School name in Sinhala/), 'කොටහේන');
+    await user.click(screen.getByRole('button', { name: 'Yes, this is my school · Next: logo & colours' }));
+    expect(screen.getByRole('heading', { name: '2 · Logo & school colours' })).toHaveFocus();
+    await user.click(screen.getByRole('button', { name: 'Next: your account' }));
+    expect(screen.getByRole('heading', { name: '3 · Your admin account' })).toHaveFocus();
+  });
+
+  it('cancels a lookup in flight when the user picks "My school isn\'t listed"', async () => {
+    const user = userEvent.setup();
+    let answer: (v: LookupCensusRes) => void = () => undefined;
+    vi.mocked(api.lookupCensus).mockImplementation(() => new Promise((r) => (answer = r)));
+    renderAuth(<RegisterPage />, { route: '/register', at: '/register' });
+    await find(user, '00023');
+    await user.click(screen.getByRole('button', { name: NOT_LISTED }));
+    answer({ status: 'listed', school: kotahena });
+    await new Promise((r) => setTimeout(r, 0));
+    expect(screen.getByRole('heading', { name: '1 · School details' })).toBeInTheDocument();
+    expect(screen.queryByRole('heading', { name: 'Is this your school?' })).not.toBeInTheDocument();
+    expect(screen.getByLabelText('Census number')).toHaveValue('');
+  });
+
+  it('shows the registered view when a listed submit finds the school already registered', async () => {
+    const user = userEvent.setup();
+    vi.mocked(api.lookupCensus).mockResolvedValue({ status: 'listed', school: kotahena });
+    vi.mocked(api.registerSchool).mockRejectedValue(new ApiError('invalid', 'x', { code: 'school-registered', schoolId: 'kotahena' }));
+    renderAuth(<RegisterPage />, { route: '/register', at: '/register', signedIn: true });
+    await find(user, '00023');
+    await user.type(await screen.findByLabelText(/School name in Sinhala/), 'කොටහේන');
+    await user.click(screen.getByRole('button', { name: 'Yes, this is my school · Next: logo & colours' }));
+    await user.click(screen.getByRole('button', { name: 'Next: your account' }));
+    await user.type(screen.getByLabelText('Your name'), 'Nimal');
+    await user.click(screen.getByRole('checkbox'));
+    await user.click(screen.getByRole('button', { name: 'Create school' }));
+    expect(await screen.findByText(DUPLICATE)).toBeInTheDocument();
+    expect(screen.getByLabelText('Census number')).toHaveValue('00023');
+    expect(screen.getByRole('button', { name: 'Report a problem' })).toBeInTheDocument();
+  });
+
+  it('keeps the confirm card and the Sinhala name when going back from step 2', async () => {
+    const user = userEvent.setup();
+    vi.mocked(api.lookupCensus).mockResolvedValue({ status: 'listed', school: kotahena });
+    renderAuth(<RegisterPage />, { route: '/register', at: '/register' });
+    await find(user, '00023');
+    await user.type(await screen.findByLabelText(/School name in Sinhala/), 'කොටහේන');
+    await user.click(screen.getByRole('button', { name: 'Yes, this is my school · Next: logo & colours' }));
+    await user.click(screen.getByRole('button', { name: 'Back' }));
+    expect(screen.getByRole('heading', { name: 'Is this your school?' })).toBeInTheDocument();
+    expect(screen.getByLabelText(/School name in Sinhala/)).toHaveValue('කොටහේන');
+  });
+
+  it('gives an empty form after "Not my school" then "My school isn\'t listed"', async () => {
+    const user = userEvent.setup();
+    vi.mocked(api.lookupCensus).mockResolvedValue({ status: 'listed', school: kotahena });
+    renderAuth(<RegisterPage />, { route: '/register', at: '/register' });
+    await find(user, '00023');
+    await user.type(await screen.findByLabelText(/School name in Sinhala/), 'කොටහේන');
+    await user.click(screen.getByRole('button', { name: 'Not my school' }));
+    await user.click(screen.getByRole('button', { name: NOT_LISTED }));
+    expect(screen.getByLabelText('School name in English')).toHaveValue('');
+    expect(screen.getByLabelText('School name in Sinhala')).toHaveValue('');
+    expect(screen.getByLabelText('City')).toHaveValue('');
+    expect(screen.getByLabelText('District')).toHaveValue('');
+    expect(screen.getByLabelText('Census number')).toHaveValue('');
   });
 
   it('goes back to the census number from "Not my school"', async () => {
@@ -764,6 +853,13 @@ describe('census step', () => {
     expect(await screen.findByRole('alert')).toHaveTextContent('The Terms & Conditions have changed');
     expect(screen.getByRole('checkbox')).not.toBeChecked();
     expect(screen.getByRole('button', { name: 'Create school' })).toBeDisabled();
-    expect(api.currentTermsVersion).toHaveBeenCalled();
+    expect(api.currentTermsVersion).toHaveBeenCalledTimes(1);
+    vi.mocked(api.currentTermsVersion).mockResolvedValue('4');
+    vi.mocked(api.registerSchool).mockResolvedValue('siripura');
+    await user.click(screen.getByRole('checkbox'));
+    await user.click(screen.getByRole('button', { name: 'Create school' }));
+    await waitFor(() => expect(api.registerSchool).toHaveBeenCalledTimes(2));
+    expect(api.currentTermsVersion).toHaveBeenCalledTimes(2);
+    expect(vi.mocked(api.registerSchool).mock.calls[1]![0]).toMatchObject({ acceptedTermsVersion: '4', school: { termsVersion: '4' } });
   });
 });

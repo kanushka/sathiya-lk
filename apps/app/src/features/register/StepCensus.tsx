@@ -29,7 +29,7 @@ export function CensusEntry({ census, onCensus, onFind, onNotListed, looking, er
   const { t } = useTranslation('register');
   return (
     <section className={card}>
-      <h2 className="mb-1 mt-0 text-lg font-bold">{t('census.title')}</h2>
+      <h2 tabIndex={-1} className="mb-1 mt-0 text-lg font-bold outline-none">{t('census.title')}</h2>
       <p className="mb-5 mt-0 text-sm text-ink-muted">{t('census.subtitle')}</p>
       <form
         className="flex flex-wrap items-start gap-3"
@@ -95,10 +95,15 @@ export function ConfirmSchool({ moe, value, onChange, onNotMine, onNext }: Confi
   const mediaLabel = useMediaLabel();
   const id = useId();
   const [siTouched, setSiTouched] = useState(false);
+  const [submitted, setSubmitted] = useState(false);
+  const [cityTouched, setCityTouched] = useState(false);
   const sinhala = siFirst(moe.media);
   const span = t('confirm.gradeSpan', { from: value.gradeFrom, to: value.gradeTo });
   const example = prefixOk(value.staffPrefix) ? value.staffPrefix : suggestStaffPrefix(value.nameEn) || 'SCC';
-  const siMissing = sinhala && siTouched && value.nameSi.trim() === '';
+  const siMissing = sinhala && (siTouched || submitted) && value.nameSi.trim() === '';
+  const cityMissing = (cityTouched || submitted) && value.city.trim() === '';
+  const districtMissing = submitted && value.district.trim() === '';
+  const prefixBad = (value.staffPrefix !== '' || submitted) && !prefixOk(value.staffPrefix);
   const rows: [string, ReactNode][] = [
     [t('confirm.officialName'), <b key="n">{titleCase(moe.name)}</b>],
     [t('confirm.censusNo'), value.censusNo],
@@ -150,7 +155,7 @@ export function ConfirmSchool({ moe, value, onChange, onNotMine, onNext }: Confi
     <section className={card}>
       <div className="mb-4 flex flex-wrap items-start justify-between gap-3">
         <div>
-          <h2 className="mb-1 mt-0 text-lg font-bold">{t('confirm.title')}</h2>
+          <h2 tabIndex={-1} className="mb-1 mt-0 text-lg font-bold outline-none">{t('confirm.title')}</h2>
           <p className="m-0 text-sm text-ink-muted">{t('confirm.subtitle', { census: value.censusNo })}</p>
         </div>
         <Badge tone="success" dot>
@@ -171,7 +176,7 @@ export function ConfirmSchool({ moe, value, onChange, onNotMine, onNext }: Confi
           <div className="grid gap-3 sm:grid-cols-2">{sinhala ? [siField, enField] : [enField, siField]}</div>
         </fieldset>
         {!moe.district && (
-          <Field label={t('school.district')} required hint={t('confirm.districtHint')}>
+          <Field label={t('school.district')} required hint={t('confirm.districtHint')} error={districtMissing ? t('errors.required') : undefined}>
             <Select
               searchable
               value={value.district}
@@ -180,10 +185,20 @@ export function ConfirmSchool({ moe, value, onChange, onNotMine, onNext }: Confi
             />
           </Field>
         )}
+        <Field label={t('school.city')} required error={cityMissing ? t('school.cityError') : undefined}>
+          <input
+            className={inputClass}
+            value={value.city}
+            onChange={(e) => {
+              setCityTouched(true);
+              onChange({ ...value, city: e.target.value });
+            }}
+          />
+        </Field>
         <Field
           label={t('school.prefix')}
           hint={t('school.prefixHint', { example1: `${example}001`, example2: `${example}024` })}
-          error={value.staffPrefix !== '' && !prefixOk(value.staffPrefix) ? t('school.prefixError') : undefined}
+          error={prefixBad ? t('school.prefixError') : undefined}
         >
           <input
             className={`${inputClass} uppercase tracking-[.08em]`}
@@ -216,10 +231,9 @@ export function ConfirmSchool({ moe, value, onChange, onNotMine, onNext }: Confi
         <Button
           variant="primary"
           size="lg"
-          disabled={!listedOk(value)}
           onClick={() => {
-            setSiTouched(true);
-            onNext();
+            setSubmitted(true);
+            if (listedOk(value)) onNext();
           }}
         >
           {t('confirm.next')}

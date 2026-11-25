@@ -57,7 +57,7 @@ export function VerifyEmailGate({ email, purpose = 'register', continuePath, ini
       <span className="mx-auto mb-4 flex h-[52px] w-[52px] items-center justify-center rounded-[14px] bg-[#E3F1F0] text-teal">
         <Icon name="mail" size={26} strokeWidth={2} />
       </span>
-      <h2 className="mb-2 mt-0 text-xl font-bold">{t('verify.title')}</h2>
+      <h2 tabIndex={-1} className="mb-2 mt-0 text-xl font-bold outline-none">{t('verify.title')}</h2>
       <p className="mb-5 mt-0 text-sm leading-relaxed text-ink-muted">
         <Trans t={t} i18nKey={purpose === 'signUp' ? 'verify.bodySignUp' : 'verify.body'} values={{ email: email ?? '' }} components={{ b: <b className="text-ink" /> }} />
       </p>

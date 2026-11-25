@@ -83,4 +83,4 @@ export function listedDraft(moe: MoeSchool, prev: SchoolDraft): SchoolDraft {
 }
 
 export const listedOk = (s: SchoolDraft) =>
-  prefixOk(s.staffPrefix) && s.district.trim() !== '' && (!siFirst(s.medium) || s.nameSi.trim() !== '');
+  prefixOk(s.staffPrefix) && s.district.trim() !== '' && s.city.trim() !== '' && (!siFirst(s.medium) || s.nameSi.trim() !== '');

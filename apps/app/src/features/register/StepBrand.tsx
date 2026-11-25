@@ -23,7 +23,7 @@ export function StepBrand({ schoolName, schoolNameSi, value, onChange, onBack, o
 
   return (
     <section className="rounded-2xl border-2 border-teal bg-white p-5 sm:p-7">
-      <h2 className="mb-1 mt-0 text-lg font-bold">{t('brand.title')}</h2>
+      <h2 tabIndex={-1} className="mb-1 mt-0 text-lg font-bold outline-none">{t('brand.title')}</h2>
       <p className="mb-5 mt-0 text-sm text-ink-muted">{t('brand.subtitle')}</p>
       <div className="flex flex-wrap gap-6">
         <div className="flex flex-[1_1_220px] flex-col gap-5">

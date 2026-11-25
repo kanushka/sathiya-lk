@@ -50,7 +50,7 @@ export function StepSchool({ value, onChange, onNext, censusTaken, checking, onR
 
   return (
     <section className="rounded-2xl border-2 border-teal bg-white p-5 sm:p-7">
-      <h2 className="mb-1 mt-0 text-lg font-bold">{t('school.title')}</h2>
+      <h2 tabIndex={-1} className="mb-1 mt-0 text-lg font-bold outline-none">{t('school.title')}</h2>
       <p className="mb-5 mt-0 text-sm text-ink-muted">{t('school.subtitle')}</p>
       <div role="status" className="mb-5 flex flex-col items-start gap-1.5 rounded-xl border border-warning-line bg-warning-soft p-3.5 text-sm">
         <Badge tone="warning">{t('school.reviewBadge')}</Badge>

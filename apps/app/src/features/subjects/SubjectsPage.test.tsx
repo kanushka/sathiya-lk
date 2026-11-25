@@ -185,4 +185,13 @@ describe('subject name order by school medium', () => {
     const langs = within(screen.getByRole('dialog')).getAllByRole('textbox').filter((el) => el.getAttribute('lang')).map((el) => el.getAttribute('lang'));
     expect(langs).toEqual(['si', 'en']);
   });
+
+  it('keeps English first for a legacy school with no medium', async () => {
+    const user = userEvent.setup();
+    const { medium: _, ...school } = ctx.school;
+    renderWithSchool(<SubjectsPage />, { ctx: { ...ctx, school }, entries });
+    await user.click(screen.getByRole('button', { name: '+ Add subject' }));
+    const langs = within(screen.getByRole('dialog')).getAllByRole('textbox').filter((el) => el.getAttribute('lang')).map((el) => el.getAttribute('lang'));
+    expect(langs).toEqual(['en', 'si']);
+  });
 });

@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
 // Copyright (C) 2026 Kanushka Gayan
 import { padCensusNo, pickName, type MoeSchool } from '@sathiya/core';
-import { useRef, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../../app/AuthProvider';
@@ -19,7 +19,7 @@ import { StepSchool } from './StepSchool';
 import { VerifyEmailGate } from './VerifyEmailGate';
 import { accountCreateError, isUnverifiedPasswordUser, registerFailure } from './errors';
 import * as api from './api';
-import { censusValid, defaultBrand, emptyAccount, emptySchool, gradeList, listedDraft, type AccountDraft, type BrandDraft, type SchoolDraft } from './model';
+import { defaultBrand, emptyAccount, emptySchool, gradeList, listedDraft, type AccountDraft, type BrandDraft, type SchoolDraft } from './model';
 import { toApiError } from '../../lib/callable';
 
 type Step = 1 | 2 | 3;
@@ -55,6 +55,21 @@ export function RegisterPage() {
   const [lookupError, setLookupError] = useState<string | null>(null);
   const [notListedCensus, setNotListedCensus] = useState('');
   const lookupVersion = useRef(0);
+  const sectionRef = useRef<HTMLDivElement>(null);
+  const firstRender = useRef(true);
+  const keepFocus = useRef(false);
+
+  useEffect(() => {
+    if (firstRender.current) {
+      firstRender.current = false;
+      return;
+    }
+    if (keepFocus.current) {
+      keepFocus.current = false;
+      return;
+    }
+    sectionRef.current?.querySelector<HTMLElement>('h2')?.focus();
+  }, [step, mode, needsGate]);
 
   function showListed(found: MoeSchool) {
     draftVersion.current++;
@@ -73,6 +88,9 @@ export function RegisterPage() {
   }
 
   function toUnlisted(censusNo: string) {
+    lookupVersion.current++;
+    setLooking(false);
+    setLookupError(null);
     draftVersion.current++;
     setCensusTaken(null);
     setNotListedCensus(censusNo);
@@ -89,7 +107,7 @@ export function RegisterPage() {
   async function find() {
     const c = census.trim();
     if (c === '') return setLookupError(t('census.empty'));
-    if (!censusValid(c)) return setLookupError(t('school.censusError'));
+    if (!/^\d{1,6}$/.test(c)) return setLookupError(t('census.format'));
     const version = ++lookupVersion.current;
     setLookupError(null);
     setLooking(true);
@@ -167,7 +185,7 @@ export function RegisterPage() {
           nameEn: school.nameEn.trim(),
           ...(school.nameSi.trim() ? { nameSi: school.nameSi.trim() } : {}),
           district: school.district.trim(),
-          city: school.city.trim() || school.district.trim(),
+          city: school.city.trim(),
           ...(school.address.trim() ? { address: school.address.trim() } : {}),
           ...(school.phone.trim() ? { phone: school.phone.trim() } : {}),
           grades: gradeList(school),
@@ -242,71 +260,76 @@ export function RegisterPage() {
             })}
           </ol>
         </div>
-        {needsGate && (
-          <VerifyEmailGate
-            email={user?.email ?? account.email}
-            onConfirmed={() => {
-              setGate(false);
-              setConfirmed(true);
-            }}
-          />
-        )}
-        {!needsGate && step === 1 && (mode === 'entry' || mode === 'registered') && (
-          <CensusEntry
-            census={census}
-            onCensus={(v) => {
-              lookupVersion.current++;
-              setLooking(false);
-              setLookupError(null);
-              setCensus(v);
-              if (mode === 'registered') toEntry();
-            }}
-            onFind={() => void find()}
-            onNotListed={() => toUnlisted('')}
-            looking={looking}
-            error={lookupError}
-            taken={mode === 'registered'}
-            onReport={() => setReporting(true)}
-            onTryAnother={toEntry}
-          />
-        )}
-        {!needsGate && step === 1 && mode === 'listed' && moe && (
-          <ConfirmSchool moe={moe} value={school} onChange={editSchool} onNotMine={toEntry} onNext={() => setStep(2)} />
-        )}
-        {!needsGate && step === 1 && mode === 'unlisted' && (
-          <StepSchool
-            value={school}
-            onChange={editSchool}
-            onNext={() => void nextFromSchool()}
-            checking={checking}
-            censusTaken={!!censusTaken}
-            onReport={() => setReporting(true)}
-            onBack={toEntry}
-            notListedCensus={notListedCensus}
-          />
-        )}
-        {!needsGate && step === 2 && (
-          <StepBrand
-            schoolName={pickName(school, 'en')}
-            schoolNameSi={school.nameSi}
-            value={brand}
-            onChange={setBrand}
-            onBack={() => setStep(1)}
-            onNext={() => setStep(3)}
-          />
-        )}
-        {!needsGate && step === 3 && (
-          <StepAccount
-            value={account}
-            onChange={setAccount}
-            signedIn={!!user}
-            signedInEmail={user?.email}
-            busy={busy}
-            error={error}
-            onBack={() => setStep(2)}
-            onSubmit={() => void submit()}
-          />
-        )}
+        <div ref={sectionRef}>
+          {needsGate && (
+            <VerifyEmailGate
+              email={user?.email ?? account.email}
+              onConfirmed={() => {
+                setGate(false);
+                setConfirmed(true);
+              }}
+            />
+          )}
+          {!needsGate && step === 1 && (mode === 'entry' || mode === 'registered') && (
+            <CensusEntry
+              census={census}
+              onCensus={(v) => {
+                lookupVersion.current++;
+                setLooking(false);
+                setLookupError(null);
+                setCensus(v);
+                if (mode === 'registered') {
+                  keepFocus.current = true;
+                  toEntry();
+                }
+              }}
+              onFind={() => void find()}
+              onNotListed={() => toUnlisted('')}
+              looking={looking}
+              error={lookupError}
+              taken={mode === 'registered'}
+              onReport={() => setReporting(true)}
+              onTryAnother={toEntry}
+            />
+          )}
+          {!needsGate && step === 1 && mode === 'listed' && moe && (
+            <ConfirmSchool moe={moe} value={school} onChange={editSchool} onNotMine={toEntry} onNext={() => setStep(2)} />
+          )}
+          {!needsGate && step === 1 && mode === 'unlisted' && (
+            <StepSchool
+              value={school}
+              onChange={editSchool}
+              onNext={() => void nextFromSchool()}
+              checking={checking}
+              censusTaken={!!censusTaken}
+              onReport={() => setReporting(true)}
+              onBack={toEntry}
+              notListedCensus={notListedCensus}
+            />
+          )}
+          {!needsGate && step === 2 && (
+            <StepBrand
+              schoolName={pickName(school, 'en')}
+              schoolNameSi={school.nameSi}
+              value={brand}
+              onChange={setBrand}
+              onBack={() => setStep(1)}
+              onNext={() => setStep(3)}
+            />
+          )}
+          {!needsGate && step === 3 && (
+            <StepAccount
+              value={account}
+              onChange={setAccount}
+              signedIn={!!user}
+              signedInEmail={user?.email}
+              busy={busy}
+              error={error}
+              onBack={() => setStep(2)}
+              onSubmit={() => void submit()}
+            />
+          )}
+        </div>
         <ReportSchoolModal open={reporting} onClose={() => setReporting(false)} initialSchoolId={censusTaken?.schoolId} />
         <div className="mt-8 text-center">
           <LanguageToggle />
