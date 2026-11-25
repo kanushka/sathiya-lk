@@ -50,8 +50,10 @@ export async function requireSchoolAdmin(
   const schoolId = docId(sid, 'schoolId');
   if (!isAdminOf(caller.claims, schoolId)) notAllowed('Not an admin of this school');
   const [snap, member] = await Promise.all([db.doc(paths.school(schoolId)).get(), db.doc(`${paths.members(schoolId)}/${caller.uid}`).get()]);
-  if ((member.data() as Member | undefined)?.role !== 'admin') notAllowed('Not an admin of this school');
-  const school = snap.data() as Omit<School, 'id'> | undefined;
+  const school = snap.data() as (Omit<School, 'id'> & { removing?: { uids?: string[] } }) | undefined;
+  // A removeRegistration retry may find the member docs already deleted; the uids it recorded still prove admin access.
+  const removing = opts.allowRejected && !!school?.removing?.uids?.includes(caller.uid);
+  if ((member.data() as Member | undefined)?.role !== 'admin' && !removing) notAllowed('Not an admin of this school');
   if (!school) notAllowed('School is not active');
   if (school!.status === 'disabled') schoolDisabled();
   if (school!.status === 'rejected' && !opts.allowRejected) schoolRejected();

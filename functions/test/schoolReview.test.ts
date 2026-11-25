@@ -107,7 +107,7 @@ describe('registerSchool with a census number in the MOE list', () => {
 describe('registerSchool without a listed census number', () => {
   it('stays pending, off the directory, and mails supers a review with possible duplicates', async () => {
     const u = uniq();
-    const district = `Kilinochchi ${u}`;
+    const district = 'Mullaitivu';
     const elsewhere = await adminWithSchool();
     await adminDb.doc(paths.school(elsewhere.sid)).update({ nameEn: `Other ${u}`, district, city: 'Elsewhere' });
     const existing = await adminWithSchool();

@@ -55,6 +55,8 @@ const seed: Record<string, Record<string, unknown>> = {
   [`${paths.members('s1')}/u-admin-t`]: { uid: 'u-admin-t', role: 'admin', teacherId: 't2' },
   [`${paths.members('s1')}/u-mixed`]: { uid: 'u-mixed', role: 'admin' },
   [`${paths.members('s2')}/u-other`]: { uid: 'u-other', role: 'admin' },
+  [`${paths.members('sp')}/u-pend`]: { uid: 'u-pend', role: 'admin' },
+  [`${paths.members('sr')}/u-rej`]: { uid: 'u-rej', role: 'admin' },
   [`${paths.members('s1')}/u-teacher`]: { uid: 'u-teacher', role: 'teacher', teacherId: 't1' },
   [`${paths.invites('s1')}/b@x.lk`]: { email: 'b@x.lk', invitedBy: 'u-admin', createdAt: 1 },
   [`${paths.years('s1')}/y1`]: { label: '2026', status: 'published', publishedAt: 1 },
