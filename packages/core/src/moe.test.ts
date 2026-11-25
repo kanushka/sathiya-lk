@@ -13,6 +13,8 @@ describe('parseGradeSpan', () => {
   it('returns nothing for junk', () => {
     expect(parseGradeSpan('')).toEqual([]);
     expect(parseGradeSpan('Grd 9-3')).toEqual([]);
+    expect(parseGradeSpan('Grd -5')).toEqual([]);
+    expect(parseGradeSpan('9'.repeat(50000) + '-')).toEqual([]);
   });
 });
 

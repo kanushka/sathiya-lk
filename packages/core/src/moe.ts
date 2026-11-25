@@ -35,10 +35,15 @@ export type MoeFile = Record<string, MoeEntry>;
 const MEDIUM_LANG: Record<string, MoeLang> = { S: 'si', T: 'ta', E: 'en' };
 
 export function parseGradeSpan(span: string): number[] {
-  const m = /(\d+)\s*-\s*(\d+)\s*$/.exec(span);
-  if (!m) return [];
-  const from = Number(m[1]);
-  const to = Number(m[2]);
+  const dash = span.lastIndexOf('-');
+  if (dash < 0) return [];
+  const left = span.slice(0, dash).trimEnd();
+  const right = span.slice(dash + 1).trim();
+  let start = left.length;
+  while (start > 0 && left[start - 1]! >= '0' && left[start - 1]! <= '9') start--;
+  if (start === left.length || !/^\d+$/.test(right)) return [];
+  const from = Number(left.slice(start));
+  const to = Number(right);
   if (from > to) return [];
   return Array.from({ length: to - from + 1 }, (_, i) => from + i);
 }
