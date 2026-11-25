@@ -5,3 +5,5 @@ export * from './rng';
 export * from './slots';
 export * from './allocate';
 export * from './combos';
+export * from './check';
+export * from './score';
