@@ -86,6 +86,25 @@ describe('registerSchool', () => {
     expect(doc.createdAt).toBeGreaterThan(1);
   });
 
+  it('requires the current terms version from platform/config', async () => {
+    const c = await signUp();
+    const config = adminDb.doc(paths.platform.config);
+    await config.set({ currentTermsVersion: '2026-03' });
+    try {
+      await expectFnError(c.call('registerSchool', schoolReq()), 'failed-precondition', 'terms-changed');
+      const { schoolId } = await c.call('registerSchool', { ...schoolReq(), acceptedTermsVersion: '2026-03' });
+      expect((await adminDb.doc(paths.school(schoolId)).get()).data()).toMatchObject({ termsVersion: '2026-03', acceptedTerms: { version: '2026-03' } });
+    } finally {
+      await config.delete();
+    }
+  });
+
+  it('takes version 1 as current when platform/config has no terms version', async () => {
+    const c = await signUp();
+    await expectFnError(c.call('registerSchool', { ...schoolReq(), acceptedTermsVersion: '2' }), 'failed-precondition', 'terms-changed');
+    await expect(c.call('registerSchool', schoolReq())).resolves.toMatchObject({ schoolId: expect.any(String) });
+  });
+
   it('rejects invalid input', async () => {
     const c = await signUp();
     await expectFnError(c.call('registerSchool', schoolReq({ staffPrefix: 'scc1' })), 'invalid-argument', 'invalid');

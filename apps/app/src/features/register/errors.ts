@@ -2,13 +2,13 @@
 // Copyright (C) 2026 Kanushka Gayan
 import { detailCode } from '../auth/errors';
 
-export type RegisterFailureCode = 'school-registered' | 'email-unverified' | 'too-many-schools' | 'rate-limited' | 'terms-outdated';
+export type RegisterFailureCode = 'school-registered' | 'email-unverified' | 'too-many-schools' | 'rate-limited' | 'terms-changed';
 export interface RegisterFailure {
   code: RegisterFailureCode;
   schoolId?: string;
 }
 
-const codes: readonly string[] = ['school-registered', 'email-unverified', 'too-many-schools', 'rate-limited', 'terms-outdated'];
+const codes: readonly string[] = ['school-registered', 'email-unverified', 'too-many-schools', 'rate-limited', 'terms-changed'];
 
 export function registerFailure(err: unknown): RegisterFailure | null {
   const code = detailCode(err);

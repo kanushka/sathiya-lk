@@ -11,6 +11,8 @@ export const callables = {
   createTeacher: 'createTeacher',
   importSetup: 'importSetup',
   inviteAdmin: 'inviteAdmin',
+  cancelInvite: 'cancelInvite',
+  removeAdmin: 'removeAdmin',
   claimInvites: 'claimInvites',
   saveEntry: 'saveEntry',
   deleteEntry: 'deleteEntry',
@@ -33,6 +35,7 @@ export const callables = {
   lookupCensus: 'lookupCensus',
   reviewSchool: 'reviewSchool',
   removeRegistration: 'removeRegistration',
+  applyAutoFill: 'applyAutoFill',
 } as const;
 
 // Terms version assumed when platform/config has none.
@@ -46,6 +49,11 @@ export interface ImportSetupReq { schoolId: string; subjectsVersion: string; sub
 export interface ImportSetupRes { subjectIds: string[]; teachers: { teacherId: string; staffId: string; name: string; nameSi?: string; title?: TeacherTitle }[]; notCreated: string[] }
 export interface InviteAdminReq { schoolId: string; email: string; teacherId?: string }
 export interface InviteAdminRes { ok: true }
+export const ADMIN_INVITE_TTL_MS = 7 * 86_400_000;
+export interface CancelInviteReq { schoolId: string; email: string }
+export interface CancelInviteRes { ok: true }
+export interface RemoveAdminReq { schoolId: string; uid: string }
+export interface RemoveAdminRes { role: 'teacher' | null }
 export type ClaimInvitesReq = Record<string, never>;
 export interface ClaimInvitesRes { schoolIds: string[] }
 export type RecordSignInReq = Record<string, never>;
@@ -54,6 +62,9 @@ export interface SaveEntryReq { schoolId: string; yearId: string; entry: EntryDr
 export interface SaveEntryRes { entryId: string }
 export interface DeleteEntryReq { schoolId: string; yearId: string; entryId: string }
 export interface DeleteEntryRes { ok: true }
+export interface ApplyAutoFillReq { schoolId: string; yearId: string; deleteEntryIds: string[]; drafts: EntryDraft[] }
+export interface ApplyAutoFillRes { written: number; deleted: number }
+export const APPLY_AUTOFILL_MAX_ITEMS = 3000;
 export interface PublishYearReq { schoolId: string; yearId: string }
 export interface PublishYearRes { classes: number; teachers: number }
 export interface SetSchoolStatusReq { schoolId: string; status: 'active' | 'disabled' }
@@ -95,6 +106,8 @@ interface CallableMap {
   createTeacher: { req: CreateTeacherReq; res: CreateTeacherRes };
   importSetup: { req: ImportSetupReq; res: ImportSetupRes };
   inviteAdmin: { req: InviteAdminReq; res: InviteAdminRes };
+  cancelInvite: { req: CancelInviteReq; res: CancelInviteRes };
+  removeAdmin: { req: RemoveAdminReq; res: RemoveAdminRes };
   claimInvites: { req: ClaimInvitesReq; res: ClaimInvitesRes };
   saveEntry: { req: SaveEntryReq; res: SaveEntryRes };
   deleteEntry: { req: DeleteEntryReq; res: DeleteEntryRes };
@@ -117,7 +130,8 @@ interface CallableMap {
   lookupCensus: { req: LookupCensusReq; res: LookupCensusRes };
   reviewSchool: { req: ReviewSchoolReq; res: ReviewSchoolRes };
   removeRegistration: { req: RemoveRegistrationReq; res: RemoveRegistrationRes };
+  applyAutoFill: { req: ApplyAutoFillReq; res: ApplyAutoFillRes };
 }
 export type CallableName = keyof typeof callables;
 export type CallableTypes = { [K in CallableName]: CallableMap[K] };
-export type ApiErrorCode = 'clash' | 'in-use' | 'not-allowed' | 'invalid' | 'email-unverified' | 'rate-limited' | 'school-disabled' | 'already-linked' | 'staff-id-unknown' | 'link-invalid' | 'too-many-schools' | 'school-registered' | 'template-in-use' | 'template-too-many-moves' | 'stale' | 'republish' | 'invalid-relief' | 'not-today' | 'school-pending' | 'school-rejected' | 'terms-outdated';
+export type ApiErrorCode = 'clash' | 'in-use' | 'not-allowed' | 'invalid' | 'email-unverified' | 'rate-limited' | 'school-disabled' | 'already-linked' | 'staff-id-unknown' | 'link-invalid' | 'too-many-schools' | 'school-registered' | 'template-in-use' | 'template-too-many-moves' | 'stale' | 'republish' | 'invalid-relief' | 'not-today' | 'school-pending' | 'school-rejected' | 'terms-changed' | 'last-admin' | 'busy';

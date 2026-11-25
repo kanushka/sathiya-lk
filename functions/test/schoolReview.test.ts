@@ -151,9 +151,9 @@ describe('registerSchool without a listed census number', () => {
 });
 
 describe('registerSchool terms version', () => {
-  it('must equal platform/config currentTermsVersion, else terms-outdated', async () => {
+  it('must equal platform/config currentTermsVersion, else terms-changed', async () => {
     const c = await signUp();
-    const outdated = (p: Promise<unknown>) => expectFnError(p, 'failed-precondition', 'terms-outdated');
+    const outdated = (p: Promise<unknown>) => expectFnError(p, 'failed-precondition', 'terms-changed');
     await outdated(c.call('registerSchool', { ...schoolReq(), acceptedTermsVersion: '0' }));
     await adminDb.doc(paths.platform.config).set({ currentTermsVersion: '2' }, { merge: true });
     await outdated(c.call('registerSchool', schoolReq()));
@@ -164,14 +164,14 @@ describe('registerSchool terms version', () => {
   it('falls back to the app default when none is configured', async () => {
     await adminDb.doc(paths.platform.config).update({ currentTermsVersion: FieldValue.delete() });
     const c = await signUp();
-    await expectFnError(c.call('registerSchool', { ...schoolReq(), acceptedTermsVersion: '2' }), 'failed-precondition', 'terms-outdated');
+    await expectFnError(c.call('registerSchool', { ...schoolReq(), acceptedTermsVersion: '2' }), 'failed-precondition', 'terms-changed');
     await expect(c.call('registerSchool', { ...schoolReq(), acceptedTermsVersion: DEFAULT_TERMS_VERSION })).resolves.toMatchObject({ schoolId: expect.any(String) });
   });
 
   it('refuses stale terms before counting the attempt against the rate limit', async () => {
     const c = await signUp();
     for (let i = 0; i < REGISTER_PER_UID_PER_DAY + 2; i++) {
-      await expectFnError(c.call('registerSchool', { ...schoolReq(), acceptedTermsVersion: '0' }), 'failed-precondition', 'terms-outdated');
+      await expectFnError(c.call('registerSchool', { ...schoolReq(), acceptedTermsVersion: '0' }), 'failed-precondition', 'terms-changed');
     }
     await expect(c.call('registerSchool', schoolReq())).resolves.toMatchObject({ schoolId: expect.any(String) });
   });

@@ -23,6 +23,7 @@ function setup(api: Partial<TimetableApi> = {}, es: Entry[] = entries6B, view: P
   const full: TimetableApi = {
     saveEntry: vi.fn().mockResolvedValue({ entryId: 'new' }),
     deleteEntry: vi.fn().mockResolvedValue({ ok: true }),
+    applyAutoFill: vi.fn(),
     ...api,
   };
   renderWithSchool(

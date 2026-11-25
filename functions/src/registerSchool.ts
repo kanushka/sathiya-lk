@@ -93,7 +93,7 @@ async function assertCurrentTerms(accepted: unknown): Promise<void> {
   if (typeof accepted !== 'string' || !accepted.trim()) return;
   const configured = (await db.doc(paths.platform.config).get()).get('currentTermsVersion');
   const current = typeof configured === 'string' && configured ? configured : DEFAULT_TERMS_VERSION;
-  if (accepted.trim() !== current) fail('failed-precondition', 'terms-outdated', 'The terms have changed; review and accept the current terms');
+  if (accepted.trim() !== current) fail('failed-precondition', 'terms-changed', 'The terms have changed; review and accept the current terms');
 }
 
 const SAME_DISTRICT_MAX = 10;

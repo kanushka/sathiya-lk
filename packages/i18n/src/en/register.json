@@ -124,9 +124,9 @@
     "choose": "Choose logo",
     "change": "Change",
     "remove": "Remove",
-    "hint": "PNG or SVG, square, up to 1 MB",
+    "hint": "PNG, JPEG or WebP, square, up to 1 MB",
     "alt": "School logo",
-    "typeError": "Logo must be a PNG or SVG",
+    "typeError": "Logo must be a PNG, JPEG or WebP image",
     "sizeError": "Logo must be 1 MB or smaller"
   },
   "account": {
@@ -155,7 +155,7 @@
     "logoUpload": "School created, but the logo could not be uploaded. Add it later in school profile.",
     "tooManySchools": "This account already belongs to the most schools allowed (15).",
     "rateLimited": "Too many attempts. Please try again later.",
-    "termsOutdated": "The Terms & Conditions have changed. Read the current terms, then tick the box again to accept them."
+    "termsChanged": "The Terms & Conditions have changed. Read the current terms, then tick the box again to accept them."
   },
   "verify": {
     "title": "Check your email",

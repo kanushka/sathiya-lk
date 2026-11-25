@@ -18,6 +18,7 @@ function makeApi(): TimetableApi {
   return {
     saveEntry: vi.fn().mockResolvedValue({ entryId: 'new' }),
     deleteEntry: vi.fn().mockResolvedValue({ ok: true }),
+    applyAutoFill: vi.fn(),
   };
 }
 

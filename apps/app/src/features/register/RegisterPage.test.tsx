@@ -150,13 +150,13 @@ describe('register', () => {
     expect(screen.getByText('Use a hex colour like #7A1F3D')).toBeInTheDocument();
   });
 
-  it('rejects a logo that is not PNG or SVG', async () => {
+  it('rejects an SVG logo', async () => {
     const user = userEvent.setup();
     await renderForm({ route: '/register', at: '/register' });
     await fillSchool(user);
     const input = document.querySelector('input[type=file]') as HTMLInputElement;
-    fireEvent.change(input, { target: { files: [new File(['x'], 'a.jpg', { type: 'image/jpeg' })] } });
-    expect(await screen.findByText('Logo must be a PNG or SVG')).toBeInTheDocument();
+    fireEvent.change(input, { target: { files: [new File(['<svg/>'], 'a.svg', { type: 'image/svg+xml' })] } });
+    expect(await screen.findByText('Logo must be a PNG, JPEG or WebP image')).toBeInTheDocument();
   });
 
   async function toStep3(user: ReturnType<typeof userEvent.setup>, withLogo = false) {
@@ -842,7 +842,7 @@ describe('census step', () => {
 
   it('asks to accept the current terms again when they changed', async () => {
     const user = userEvent.setup();
-    vi.mocked(api.registerSchool).mockRejectedValue(new ApiError('invalid', 'x', { code: 'terms-outdated' }));
+    vi.mocked(api.registerSchool).mockRejectedValue(new ApiError('invalid', 'x', { code: 'terms-changed' }));
     renderAuth(<RegisterPage />, { route: '/register', at: '/register', signedIn: true });
     await user.click(screen.getByRole('button', { name: NOT_LISTED }));
     await fillSchool(user);

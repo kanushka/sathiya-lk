@@ -103,9 +103,14 @@ describe('registerSchool verified email', () => {
     await expectFnError(c.call('registerSchool', schoolReq()), 'permission-denied', 'email-unverified');
   });
 
-  it('accepts a Google account even if email_verified is false', async () => {
-    const c = await signInGoogle(`g-${uniq()}@example.com`, false);
+  it('accepts a Google account with a verified email', async () => {
+    const c = await signInGoogle(`g-${uniq()}@example.com`);
     await expect(c.call('registerSchool', schoolReq())).resolves.toMatchObject({ schoolId: expect.any(String) });
+  });
+
+  it('refuses a Google account whose email is not verified', async () => {
+    const c = await signInGoogle(`g-${uniq()}@example.com`, false);
+    await expectFnError(c.call('registerSchool', schoolReq()), 'permission-denied', 'email-unverified');
   });
 });
 

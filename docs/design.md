@@ -13,9 +13,9 @@ A free web app for Sri Lankan schools to build their yearly timetables. A school
 - It handles how Sri Lankan schools work: primary class teachers, religion/aesthetic groups running in parallel, combined classes, A/L streams.
 - Sinhala and English everywhere, for UI and data.
 - Admin screens work on a phone as well as a desktop (#59).
+- Auto-fill (#61): generate the timetable from the setup, preview it, then save. Best effort, not guaranteed optimal; see [ADR 0003](adr/0003-auto-fill-solver-in-browser.md).
 
 ### Non-goals
-- Automatic timetable generation.
 - Planned substitutions (relief is same-day only), rooms, students.
 
 ### Anti-goals

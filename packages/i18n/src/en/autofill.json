@@ -8,8 +8,7 @@
   },
   "ready": {
     "title": "Ready to generate",
-    "body": "Your setup has everything auto-fill needs.",
-    "next": "Generating the timetable arrives in the next update."
+    "body": "Your setup has everything auto-fill needs."
   },
   "warnings": {
     "title": "Warnings",
@@ -49,5 +48,106 @@
     "class-teacher-wrong-grade": "{{teacher}} is class teacher of {{class}} but is not assigned to grade {{grade}}.",
     "capacity-short": "{{subject}} needs {{needed}} periods a week, but teachers can cover only {{capacity}}.",
     "min-per-week-unreachable": "Teachers' minimum weekly lessons add up to {{needed}}, but only {{available}} lessons are planned."
+  },
+  "options": {
+    "title": "How should auto-fill treat the current timetable?",
+    "label": "Existing lessons",
+    "fillAround": "Fill around (recommended)",
+    "fillAroundHint": "Keep every lesson already placed and fill only what is missing.",
+    "startOver": "Start over for some grades",
+    "startOverHint": "Replace the lessons of the grades you pick. Other grades stay as they are.",
+    "grades": "Grades to start over",
+    "pickGrades": "Pick grades",
+    "gradeOption": "Grade {{grade}}",
+    "replace_one": "{{count}} hand-placed slot in these grades will be replaced.",
+    "replace_other": "{{count}} hand-placed slots in these grades will be replaced.",
+    "nothingToReplace": "These grades have no lessons yet.",
+    "run": "Generate timetable",
+    "back": "Back"
+  },
+  "running": {
+    "title": "Generating the timetable…",
+    "hint": "This takes up to about 10 seconds. Nothing is saved yet.",
+    "starting": "Starting…",
+    "attempt": "Attempt {{attempt}}",
+    "best_one": "Best so far: {{count}} period not placed",
+    "best_other": "Best so far: {{count}} periods not placed",
+    "cancel": "Cancel"
+  },
+  "error": {
+    "title": "Auto-fill stopped with an error.",
+    "back": "Back to options"
+  },
+  "preview": {
+    "title": "Preview",
+    "subtitle": "Nothing is saved until you press Save.",
+    "seed": "Try {{seed}}",
+    "summary": "Summary",
+    "grade": "Grade {{grade}}",
+    "unplaced_one": "{{count}} item not fully placed",
+    "unplaced_other": "{{count}} items not fully placed",
+    "samePattern": "{{percent}}% of subjects in the same slot all week",
+    "changes": "{{added}} new lessons, {{removed}} removed",
+    "tabs": "Preview sections",
+    "tab": {
+      "allocation": "Allocation",
+      "classes": "Classes",
+      "unplaced": "Unplaced ({{count}})"
+    },
+    "stale": "You changed the allocation. Re-run placement to see the new timetable.",
+    "rerunPlacement": "Re-run placement",
+    "tryAgain": "Try again",
+    "discard": "Discard",
+    "save": "Save",
+    "saving": "Saving…",
+    "saved_one": "Auto-fill saved {{count}} lesson.",
+    "saved_other": "Auto-fill saved {{count}} lessons.",
+    "clash": "The timetable changed since you generated this — run again.",
+    "rerun": "Run again",
+    "busy": "Someone else is saving to this timetable. Try again in a moment.",
+    "partial": "Saving stopped part-way ({{written}} lessons written, {{deleted}} removed). Run auto-fill again with Fill around to finish.",
+    "failed": "Could not save the timetable. Please try again.",
+    "minShort_one": "{{teacher}}: {{count}} lesson short of their weekly minimum",
+    "minShort_other": "{{teacher}}: {{count}} lessons short of their weekly minimum",
+    "backToOptions": "Back to options",
+    "tooMany": "Too many lessons to save at once — start over fewer grades."
+  },
+  "allocation": {
+    "hint": "Who teaches each subject. Change a teacher, then re-run placement.",
+    "empty": "Nothing to allocate: every class already has its lessons.",
+    "noTeacher": "No teacher",
+    "teacherFor": "Teacher for {{subject}} in {{class}}",
+    "groupOption": "{{group}} · {{subject}}"
+  },
+  "classes": {
+    "pick": "Class",
+    "legend": "Outlined lessons are new. The others are already in the timetable.",
+    "empty": "No class gets new lessons.",
+    "newCell": "New: {{title}} {{sub}} — {{day}}, period {{n}}, {{time}}"
+  },
+  "unplaced": {
+    "empty": "Everything was placed.",
+    "line": "{{class}} · {{item}}: {{missing}} not placed.",
+    "reason": {
+      "unallocated": "No teacher is allocated.",
+      "staffing": "The staffing rules leave no teacher for it.",
+      "no-free-teacher": "{{teacher}} is busy whenever the class is free on {{day}}.",
+      "no-free-teacher-any": "No teacher is free when the class is free.",
+      "teacher-at-limit": "{{teacher}} reaches the daily limit on {{day}}.",
+      "no-room": "The class has no free periods left for it.",
+      "minutes-unbuildable": "{{minutes}} cannot be made from the free periods on {{day}}.",
+      "minutes-unbuildable-week": "{{minutes}} cannot be made from the free periods.",
+      "block-unavailable": "No period on {{day}} is free for every class and teacher in the block.",
+      "block-unavailable-week": "No period is free for every class and teacher in the block.",
+      "subject-cap": "{{teacher}} would teach more than two subjects in this class.",
+      "subject-cap-any": "Every teacher who can take it already teaches two subjects in this class.",
+      "duplicate-option-teacher": "Two options of the block have the same teacher."
+    },
+    "fix": {
+      "class": "Open class",
+      "teachers": "Open Teachers",
+      "templates": "Open Templates"
+    },
+    "classTeacher": "{{class}}: {{teacher}}, the class teacher, has no subject here with a lesson every day, so cannot take the first period."
   }
 }

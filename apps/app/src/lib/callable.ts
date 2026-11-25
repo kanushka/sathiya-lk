@@ -26,7 +26,9 @@ const apiCodes: readonly ApiErrorCode[] = [
   'not-today',
   'school-pending',
   'school-rejected',
-  'terms-outdated',
+  'terms-changed',
+  'last-admin',
+  'busy',
 ];
 
 export class ApiError extends Error {

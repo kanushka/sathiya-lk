@@ -10,8 +10,8 @@
     "body": "Your email does not match a teacher record in this school. Enter your staff ID and your school admin will check the request.",
     "label": "Staff ID",
     "required": "Enter your staff ID",
-    "unknown": "No teacher has this staff ID. Check it and try again.",
-    "taken": "This staff ID is already linked to an account. Ask your school admin to unlink it if it should be yours.",
+    "unknown": "This staff ID cannot be used to join. Check it, or ask your school admin.",
+    "accountLinked": "Your account is already linked to a teacher in this school.",
     "submit": "Send request",
     "sending": "Sending…",
     "hint": "Already sent a request? Sending it again is fine. Your admin sees only the latest."

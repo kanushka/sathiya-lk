@@ -40,3 +40,4 @@ export * from './relief/mail';
 export * from './readiness';
 export * from './moe';
 export * from './similar';
+export * from './autofill';

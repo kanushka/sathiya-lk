@@ -250,7 +250,7 @@ function StaffIdForm({
     } catch (err) {
       const { code, fromServer } = readError(err);
       if (fromServer && code === 'staff-id-unknown') setError(t('staffId.unknown'));
-      else if (fromServer && code === 'already-linked') setError(t('staffId.taken'));
+      else if (fromServer && code === 'already-linked') setError(t('staffId.accountLinked'));
       else onError(errorCode(err));
     } finally {
       setBusy(false);

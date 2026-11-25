@@ -209,11 +209,12 @@ export function RegisterPage() {
       } else if (failure?.code === 'email-unverified') {
         setConfirmed(false);
         setGate(true);
-      } else if (failure?.code === 'terms-outdated') {
+      } else if (failure?.code === 'terms-changed') {
         setAccount((a) => ({ ...a, terms: false }));
-        setError({ field: null, message: t('errors.termsOutdated') });
+        setError({ field: null, message: t('errors.termsChanged') });
       } else if (failure) {
-        setError({ field: null, message: t(`errors.${failure.code === 'rate-limited' ? 'rateLimited' : 'tooManySchools'}`) });
+        const key = failure.code === 'rate-limited' ? 'rateLimited' : 'tooManySchools';
+        setError({ field: null, message: t(`errors.${key}`) });
       } else {
         setError({ field: null, message: t('errors.generic') });
       }

@@ -8,7 +8,11 @@ service cloud.firestore {
     function claim(k) { return request.auth.token.get(k, null); }
     function isSuper() { return signedIn() && claim('super') == true; }
     function membership(sid) { return claim('schools').get(sid, {}); }
-    function isAdmin(sid) { return signedIn() && claim('schools') != null && membership(sid).get('r', null) == 'a'; }
+    // The claim can outlive a removal by up to an hour, so an admin also needs the member doc.
+    function isAdmin(sid) {
+      return signedIn() && claim('schools') != null && membership(sid).get('r', null) == 'a'
+        && get(/databases/$(database)/documents/schools/$(sid)/members/$(request.auth.uid)).data.get('role', null) == 'admin';
+    }
     function isTeacher(sid) {
       return signedIn() && claim('schools') != null
         && (membership(sid).get('r', null) == 't'
@@ -28,6 +32,29 @@ service cloud.firestore {
       return !(k in request.resource.data)
         || (request.resource.data[k] is string && request.resource.data[k].size() <= max);
     }
+    function val(k) { return request.resource.data.get(k, null); }
+    function nonBlank(v) { return v is string && v.matches('.*\\S.*'); }
+    function text(v, max) { return nonBlank(v) && v.size() <= max; }
+    function idText(v) { return v is string && v.size() > 0 && v.size() <= 1500; }
+    function hexColor(v) { return v is string && v.matches('#[0-9A-Fa-f]{6}'); }
+    function boundedList(v, max) { return v is list && v.size() <= max; }
+    function gradeList(v, min) { return boundedList(v, 13) && v.size() >= min && v.hasOnly([1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13]); }
+    function intIn(v, min, max) { return v is int && v >= min && v <= max; }
+    // Either name may be blank or absent, but not both (mirrors twoNames in functions).
+    function names(keys, en, si) {
+      return (!(en in keys) && !(si in keys))
+        || (optText(en, 200) && optText(si, 200) && (nonBlank(val(en)) || nonBlank(val(si))));
+    }
+    function brandColors(c) {
+      return c is map && c.keys().hasOnly(['primary', 'second']) && c.keys().hasAll(['primary', 'second'])
+        && hexColor(c.primary) && hexColor(c.second);
+    }
+    // Only a getDownloadURL of this school's own logo object; the loopback form is the Storage emulator (local dev, e2e).
+    function schoolLogoUrl(sid, url) {
+      return url is string && url.size() <= 1000
+        && url.matches('(https://firebasestorage[.]googleapis[.]com|http://(127[.]0[.]0[.]1|localhost):9199)/v0/b/sathiya-lk(-staging)?[.]firebasestorage[.]app/o/schools%2F'
+          + sid + '%2Flogo[.](png|jpg|webp)[?]alt=media(&token=[0-9A-Za-z-]+)?');
+    }
 
     match /schoolDirectory/{sid} {
       allow read: if true;
@@ -35,6 +62,7 @@ service cloud.firestore {
 
     match /schools/{sid} {
       allow read: if isAdmin(sid) || isTeacher(sid) || isSuper();
+      // New checks look only at changed keys, so docs that predate them stay editable in their other fields.
       // A school with a review record keeps the name, district and census number it was reviewed or MOE-matched with.
       allow update: if adminWrite(sid)
         && changed().hasOnly(['nameEn', 'nameSi', 'district', 'grades', 'staffPrefix', 'logoUrl', 'colors', 'city', 'address', 'phone'])
@@ -43,36 +71,91 @@ service cloud.firestore {
           || ('city' in request.resource.data && request.resource.data.city is string
             && request.resource.data.city.size() <= 80 && request.resource.data.city.matches('.*\\S.*')))
         && optText('address', 200)
-        && optText('phone', 30);
+        && optText('phone', 30)
+        && names(changed(), 'nameEn', 'nameSi')
+        && (!('district' in changed()) || text(val('district'), 60))
+        && (!('staffPrefix' in changed()) || (val('staffPrefix') is string && val('staffPrefix').matches('[A-Z]{2,5}')))
+        && (!('grades' in changed()) || gradeList(val('grades'), 1))
+        && (!('colors' in changed()) || brandColors(val('colors')))
+        && (!('logoUrl' in changed()) || !('logoUrl' in request.resource.data) || schoolLogoUrl(sid, val('logoUrl')));
 
       match /teachers/{tid} {
         allow read: if adminRead(sid) || (active(sid) && ownTeacher(sid, tid));
-        allow update: if adminWrite(sid) && !changed().hasAny(['uid', 'staffId', 'lastLoginAt', 'inviteExpiresAt'])
+        // uid, staffId, lastLoginAt and inviteExpiresAt belong to the callables.
+        allow update: if adminWrite(sid)
+          && changed().hasOnly(['name', 'nameSi', 'title', 'isPrimary', 'subjectIds', 'grades', 'maxPerDay', 'minPerWeek', 'phone', 'email'])
           && (!('title' in request.resource.data) || !('title' in changed())
-            || request.resource.data.title in ['Mr', 'Mrs', 'Miss', 'Ms', 'Dr', 'Rev', 'Ven.']);
+            || request.resource.data.title in ['Mr', 'Mrs', 'Miss', 'Ms', 'Dr', 'Rev', 'Ven.'])
+          && names(changed(), 'name', 'nameSi')
+          && (!('isPrimary' in changed()) || val('isPrimary') is bool)
+          && (!('subjectIds' in changed()) || boundedList(val('subjectIds'), 200))
+          && (!('grades' in changed()) || gradeList(val('grades'), 0))
+          && (!('maxPerDay' in changed()) || intIn(val('maxPerDay'), 1, 20))
+          && (!('minPerWeek' in changed()) || !('minPerWeek' in request.resource.data) || intIn(val('minPerWeek'), 0, 100))
+          && (!('phone' in changed()) || optText('phone', 30))
+          && (!('email' in changed()) || optText('email', 254));
       }
 
+      function subjectOk(keys) {
+        return keys.hasOnly(['nameEn', 'nameSi', 'short', 'color'])
+          && names(keys, 'nameEn', 'nameSi')
+          && (!('short' in keys) || text(val('short'), 20))
+          && (!('color' in keys) || hexColor(val('color')));
+      }
       match /subjects/{id} {
         allow read: if adminRead(sid);
-        allow create, update: if adminWrite(sid);
+        allow create: if adminWrite(sid) && request.resource.data.keys().hasAll(['nameEn', 'short', 'color'])
+          && subjectOk(request.resource.data.keys());
+        allow update: if adminWrite(sid) && subjectOk(changed());
       }
       match /periodTemplates/{id} {
         allow read: if adminRead(sid);
-        allow create: if adminWrite(sid);
+        allow create: if adminWrite(sid)
+          && request.resource.data.keys().hasOnly(['name', 'isDefault', 'mode', 'rows', 'days'])
+          && request.resource.data.keys().hasAll(['name', 'isDefault', 'mode', 'rows'])
+          && text(val('name'), 200)
+          && val('isDefault') is bool
+          && val('mode') in ['same', 'perDay']
+          && boundedList(val('rows'), 100)
+          && (!('days' in request.resource.data) || val('days') is map);
         // The default template stays the default (deleteSetupItem also refuses to delete it).
         // rows, days and mode change only through the saveTemplate callable, which remaps entries and blocks used periods.
         allow update: if adminWrite(sid)
-          && !request.resource.data.diff(resource.data).affectedKeys().hasAny(['rows', 'days', 'mode'])
+          && changed().hasOnly(['name', 'isDefault'])
+          && (!('name' in changed()) || text(val('name'), 200))
+          && (!('isDefault' in changed()) || val('isDefault') is bool)
           && (resource.data.get('isDefault', false) != true || request.resource.data.get('isDefault', false) == true);
+      }
+      function classOk(keys) {
+        return keys.hasOnly(['gradeId', 'name', 'templateId', 'classTeacherId', 'planOverride'])
+          && (!('name' in keys) || text(val('name'), 200))
+          && (!('gradeId' in keys) || idText(val('gradeId')))
+          && (!('templateId' in keys) || idText(val('templateId')))
+          && (!('classTeacherId' in keys) || !('classTeacherId' in request.resource.data) || idText(val('classTeacherId')))
+          && (!('planOverride' in keys) || !('planOverride' in request.resource.data) || boundedList(val('planOverride'), 200));
       }
       match /classes/{id} {
         allow read: if adminRead(sid);
-        allow create, update: if adminWrite(sid);
+        allow create: if adminWrite(sid) && request.resource.data.keys().hasAll(['gradeId', 'name', 'templateId'])
+          && classOk(request.resource.data.keys());
+        allow update: if adminWrite(sid) && classOk(changed());
+      }
+      function gradeOk(keys) {
+        return keys.hasOnly(['number', 'plan', 'staffing'])
+          && (!('number' in keys) || intIn(val('number'), 1, 13))
+          && (!('plan' in keys) || boundedList(val('plan'), 200))
+          && (!('staffing' in keys) || !('staffing' in request.resource.data)
+            || (val('staffing') is map
+              && val('staffing').keys().hasOnly(['mode', 'specialistSubjectIds'])
+              && val('staffing').get('mode', null) in ['classTeacherAll', 'classTeacherPlusSpecialists', 'subjectTeachers']
+              && (!('specialistSubjectIds' in val('staffing')) || boundedList(val('staffing').specialistSubjectIds, 200))));
       }
       match /grades/{id} {
         allow read: if adminRead(sid);
         // Deletes go through deleteSetupItem, which checks timetable usage first.
-        allow create, update: if adminWrite(sid);
+        allow create: if adminWrite(sid) && request.resource.data.keys().hasAll(['number', 'plan'])
+          && gradeOk(request.resource.data.keys());
+        allow update: if adminWrite(sid) && gradeOk(changed());
       }
 
       match /members/{uid} {
@@ -95,8 +178,9 @@ service cloud.firestore {
           && request.resource.data.get('label', null) is string
           && request.resource.data.label.matches('^(20[0-9]{2}|2100)$')
           && request.resource.data.get('status', null) == 'draft'
-          && !('publishedAt' in request.resource.data);
-        allow update: if adminWrite(sid) && !changed().hasAny(['status', 'publishedAt'])
+          && !('publishedAt' in request.resource.data)
+          && !('applyingUntil' in request.resource.data);
+        allow update: if adminWrite(sid) && !changed().hasAny(['status', 'publishedAt', 'applyingUntil'])
           && (!('label' in changed())
             || (request.resource.data.get('label', null) is string && request.resource.data.label.matches('^(20[0-9]{2}|2100)$')));
 

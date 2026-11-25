@@ -69,7 +69,7 @@ One-time steps for the first deploy of invite links and multi-school claims, per
 
 ## Release: school review
 One-time checks for the first deploy of census-first registration and school review, per project (staging first, then production):
-- `platform/config` must have `currentTermsVersion` (Super admin → Terms, or the seed). `registerSchool` refuses an accepted version that differs from it with `terms-outdated`.
+- `platform/config` must have `currentTermsVersion` (Super admin → Terms, or the seed). `registerSchool` refuses an accepted version that differs from it with `terms-changed`.
 - Existing schools keep `status: active` and stay in the directory. Only new registrations that are not in the MOE list start as `pending`.
 
 ## School registration data

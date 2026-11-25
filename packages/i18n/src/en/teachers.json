@@ -121,6 +121,7 @@
   "requests": {
     "title": "Join requests ({{count}})",
     "body": "Check that each person is the teacher they chose before you approve.",
+    "givenName": "Name on their account (not checked): {{name}}",
     "claims": "says they are {{teacher}} · {{staffId}}",
     "unknownTeacher": "a teacher who was deleted",
     "approve": "Approve",
