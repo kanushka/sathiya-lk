@@ -147,7 +147,7 @@ export function readiness(ctx: SchoolContext, _entries: Entry[]): { blocking: Re
     if (!template) continue;
     const slotCount = DAYS.reduce<number>((n, d) => n + periodsFor(template, d).length, 0);
     const slotMins = DAYS.reduce<number>((n, d) => n + slotLengths(template, d).reduce((a, b) => a + b, 0), 0);
-    const periodsNeeded = plan.filter((i) => !isMinutes(i)).reduce((n, i) => n + i.perWeek, 0);
+    const periodsNeeded = plan.filter((i) => !isMinutes(i)).reduce((n, i) => n + Math.max(0, i.perWeek - activityCredit(template, i)), 0);
     const minutesNeeded = plan.filter(isMinutes).reduce((n, i) => n + Math.max(0, i.perWeek - activityCredit(template, i)), 0);
     if (periodsNeeded > slotCount) add('plan-exceeds-template', 'class', cls.id, { classId: cls.id, unit: 'periods', needed: periodsNeeded, available: slotCount });
     if (minutesNeeded > slotMins) add('plan-exceeds-template', 'class', cls.id, { classId: cls.id, unit: 'minutes', needed: minutesNeeded, available: slotMins });

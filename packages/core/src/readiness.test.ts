@@ -82,6 +82,15 @@ describe('readiness', () => {
     expect(find(withPlan6(plan), 'plan-exceeds-template')[0]?.params).toEqual({ classId: C.c6a, unit: 'periods', needed: 41, available: 40 });
   });
 
+  it('credits weekly activity rows to period targets', () => {
+    const plan = g6Plan.map((i) => (i.kind === 'subject' && i.subjectId === S.maths ? { ...i, perWeek: 7 } : i));
+    const base = ctx.templates.find((t) => t.id === TPL.default)!;
+    const template: PeriodTemplate = { ...base, rows: [{ type: 'activity', start: '07:00', end: '07:30', nameEn: 'Maths club', subjectId: S.maths }, ...base.rows] };
+    const c = withPlan6(plan);
+    expect(codes(c)).toContain('plan-exceeds-template');
+    expect(codes({ ...c, templates: c.templates.map((t) => (t.id === template.id ? template : t)) })).not.toContain('plan-exceeds-template');
+  });
+
   it('blocks a minutes plan that exceeds the template minutes', () => {
     const g = mahasen.ctx.grades[0]!;
     const plan = g.plan.map((i) => (i.kind === 'subject' && i.subjectId === mahasen.S.maths ? { ...i, perWeek: 2000 } : i));
