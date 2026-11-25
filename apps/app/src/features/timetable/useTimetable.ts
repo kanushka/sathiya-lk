@@ -104,7 +104,8 @@ export function useTimetable(): UseTimetable {
           return t('errors.conflict.class', { name: cls?.name ?? c.id });
         });
         toast.show(t('errors.clash', { items: items.join('; ') }), 'error');
-      } else toast.show(t(isSchoolDisabled(err) ? 'shell:suspended.writeBlocked' : 'errors.generic'), 'error');
+      } else if (e?.code === 'busy') toast.show(t('errors.busy'), 'error');
+      else toast.show(t(isSchoolDisabled(err) ? 'shell:suspended.writeBlocked' : 'errors.generic'), 'error');
     },
     [ctx.teachers, ctx.classes, t, toast],
   );

@@ -24,6 +24,7 @@ const apiCodes: readonly ApiErrorCode[] = [
   'republish',
   'invalid-relief',
   'not-today',
+  'busy',
 ];
 
 export class ApiError extends Error {

@@ -10,6 +10,7 @@ import { parseDraft, validateDraft } from './lib/entryDraft';
 import { loadContext } from './lib/loadContext';
 import { slotLock } from './lib/slotLocks';
 import { runTx } from './lib/tx';
+import { assertNotApplying } from './lib/yearBusy';
 
 // Firestore caps array-contains-any at 30 values.
 const chunks = <T>(xs: T[], n = 30): T[][] => Array.from({ length: Math.ceil(xs.length / n) }, (_, i) => xs.slice(i * n, i * n + n));
@@ -33,7 +34,9 @@ export const saveEntry = onCall(callOpts, async (req): Promise<SaveEntryRes> => 
   const ref = draft.id !== undefined ? entries.doc(draft.id) : entries.doc();
 
   await runTx(async (tx) => {
-    if (!(await tx.get(yearRef)).exists) invalid('Unknown year');
+    const year = await tx.get(yearRef);
+    if (!year.exists) invalid('Unknown year');
+    assertNotApplying(year);
     const keys = new Set(lockKeys(draft));
     if (draft.id !== undefined) {
       const old = await tx.get(ref);

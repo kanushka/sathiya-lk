@@ -12,6 +12,7 @@
       "teacher": "{{name}} is already teaching at this time",
       "class": "Class {{name}} already has a lesson at this time"
     },
+    "busy": "Auto-fill is saving to this timetable. Try again in a moment.",
     "generic": "Could not save the timetable. Please try again."
   },
   "block": {
