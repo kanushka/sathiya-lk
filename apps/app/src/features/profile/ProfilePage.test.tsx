@@ -173,6 +173,20 @@ describe('profile page for a reviewed school', () => {
     expect(patch.city).toMatch(/X$/);
   });
 
+  it('lets a Sinhala-only reviewed school add its English name', async () => {
+    vi.mocked(api.updateSchool).mockResolvedValue(undefined);
+    const user = userEvent.setup();
+    renderWithSchool(<ProfilePage />, { ctx: { ...reviewed, school: { ...reviewed.school, nameEn: '', nameSi: 'සිරිපුර' } } });
+    const nameEn = screen.getByLabelText('School name in English');
+    expect(nameEn).not.toHaveAttribute('readonly');
+    expect(screen.getByLabelText('District')).toHaveAttribute('readonly');
+    await user.type(nameEn, 'Siripura College');
+    await user.click(screen.getByRole('button', { name: 'Save changes' }));
+    const patch = vi.mocked(api.updateSchool).mock.calls[0]![1];
+    expect(patch.nameEn).toBe('Siripura College');
+    expect(patch).not.toHaveProperty('district');
+  });
+
   it('keeps the fields editable without a review record', () => {
     setup();
     expect(screen.getByLabelText('School name in English')).not.toHaveAttribute('readonly');

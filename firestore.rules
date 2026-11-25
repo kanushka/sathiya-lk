@@ -64,9 +64,11 @@ service cloud.firestore {
       allow read: if isAdmin(sid) || isTeacher(sid) || isSuper();
       // New checks look only at changed keys, so docs that predate them stay editable in their other fields.
       // A school with a review record keeps the name, district and census number it was reviewed or MOE-matched with.
+      // A Sinhala-only school may still add its English name once.
       allow update: if adminWrite(sid)
         && changed().hasOnly(['nameEn', 'nameSi', 'district', 'grades', 'staffPrefix', 'logoUrl', 'colors', 'city', 'address', 'phone'])
-        && (!('review' in resource.data) || !changed().hasAny(['nameEn', 'district', 'censusNo']))
+        && (!('review' in resource.data)
+          || (!changed().hasAny(['district', 'censusNo']) && (!('nameEn' in changed()) || resource.data.get('nameEn', '') == '')))
         && (!('city' in changed())
           || ('city' in request.resource.data && request.resource.data.city is string
             && request.resource.data.city.size() <= 80 && request.resource.data.city.matches('.*\\S.*')))

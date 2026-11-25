@@ -31,6 +31,7 @@ export function ProfilePage() {
   const { school } = useSchool();
   const readOnly = useReadOnly();
   const locked = !!school.review;
+  const nameLocked = locked && school.nameEn !== '';
   const toast = useToast();
   const [draft, setDraft] = useState(() => ({
     nameEn: school.nameEn,
@@ -70,7 +71,8 @@ export function ProfilePage() {
     try {
       if (logo) await uploadLogo(school.id, logo);
       await api.updateSchool(school.id, {
-        ...(!locked && { nameEn: draft.nameEn, district: draft.district }),
+        ...(!nameLocked && { nameEn: draft.nameEn }),
+        ...(!locked && { district: draft.district }),
         nameSi: blankToUndefined(draft.nameSi),
         city: draft.city,
         address: blankToUndefined(draft.address),
@@ -98,7 +100,7 @@ export function ProfilePage() {
         }}
       >
         <fieldset disabled={readOnly} className="m-0 flex min-w-[300px] flex-[1_1_320px] flex-col gap-3.5 border-0 p-0">
-          {locked ? (
+          {nameLocked ? (
             <>
               <Field label={t('fields.nameEn')} hint={t('fields.locked')}>
                 <input className={cx(inputClass, lockedClass)} lang="en" readOnly value={school.nameEn} />

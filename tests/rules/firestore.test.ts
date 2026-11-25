@@ -553,6 +553,17 @@ describe('reviewed school identity', () => {
     await assertFails(update('admin', paths.school('s1'), { district: 'Colombo' }));
     await assertSucceeds(update('admin', paths.school('s1'), { nameSi: 'නම' }));
   });
+  it('lets a Sinhala-only reviewed school add its English name once', async () => {
+    await env.withSecurityRulesDisabled((ctx) => ctx.firestore().doc(sp).update({ nameEn: '', nameSi: 'නම' }));
+    await assertFails(update('pendingAdmin', sp, { nameEn: 'English Name', district: 'Colombo' }));
+    await assertSucceeds(update('pendingAdmin', sp, { nameEn: 'English Name' }));
+    await assertFails(update('pendingAdmin', sp, { nameEn: 'Renamed College' }));
+    await assertFails(update('pendingAdmin', sp, { nameEn: '' }));
+  });
+  it('lets a reviewed school without a nameEn field add one', async () => {
+    await env.withSecurityRulesDisabled((ctx) => ctx.firestore().doc(sp).update({ nameEn: firebase.firestore.FieldValue.delete(), nameSi: 'නම' }));
+    await assertSucceeds(update('pendingAdmin', sp, { nameEn: 'English Name' }));
+  });
   it('still lets a school without a review record change nameEn and district', async () => {
     await assertSucceeds(update('admin', paths.school('s1'), { nameEn: 'x', district: 'Colombo' }));
   });
