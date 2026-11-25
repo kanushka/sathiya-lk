@@ -19,6 +19,8 @@ function comparePeriods(a: Slot[], b: Slot[]): number {
   return a.length - b.length;
 }
 
+const MAX_NODES = 20000;
+
 export function combos(slots: Slot[], target: number, limit = 20): Slot[][] {
   if (target <= 0 || limit <= 0) return [];
   const sorted = [...slots].sort((a, b) => a.start - b.start || a.period - b.period);
@@ -27,7 +29,9 @@ export function combos(slots: Slot[], target: number, limit = 20): Slot[][] {
 
   const found: Slot[][] = [];
   const chosen: Slot[] = [];
+  let nodes = 0;
   const walk = (i: number, sum: number) => {
+    if (++nodes > MAX_NODES) return;
     if (sum === target) {
       found.push([...chosen]);
       return;

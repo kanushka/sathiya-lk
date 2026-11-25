@@ -97,14 +97,20 @@ export function place(args: {
   classIds: string[];
   random: () => number;
   stepBudget: number;
+  deadline?: number;
+  now?: () => number;
 }): { drafts: EntryDraft[]; unplaced: Unplaced[] } {
   const { ctx, kept, random } = args;
   const unplaced: Unplaced[] = [];
   const maxPerDay = new Map(ctx.teachers.map((t) => [t.id, t.maxPerDay]));
   let steps = 0;
+  const clock = args.now ?? Date.now;
+  const expired = (): boolean => args.deadline !== undefined && clock() > args.deadline;
+  let stopped = false;
   const spend = (): boolean => {
     steps += 1;
-    return steps <= args.stepBudget;
+    if (!stopped && steps % 32 === 0 && expired()) stopped = true;
+    return !stopped && steps <= args.stepBudget;
   };
 
   const requested = new Set(args.classIds);
@@ -470,7 +476,7 @@ export function place(args: {
 
   const ejectRepair = (task: Task): void => {
     let progress = true;
-    while (task.need > 0 && progress && steps < args.stepBudget) {
+    while (task.need > 0 && progress && !stopped && steps < args.stepBudget) {
       progress = false;
       const info = homeInfo(task);
       const candidates = DAYS.flatMap((d) => info.byDay[d]!).sort((a, b) => {
@@ -702,6 +708,8 @@ export function place(args: {
 
   const run = (task: Task, allowRepair = true): void => {
     if (handled.has(task) || task.need <= 0) return;
+    if (!stopped && expired()) stopped = true;
+    if (stopped) return;
     handled.add(task);
     if (task.minutes) placeMinutes(task, allowRepair);
     else placePeriods(task);
@@ -712,7 +720,8 @@ export function place(args: {
   const opened = new Set<Task>();
 
   for (const info of infos) {
-    if (info.ct === undefined || info.freeFirst) continue;
+    if (!stopped && expired()) stopped = true;
+    if (stopped || info.ct === undefined || info.freeFirst) continue;
     const mine = subjectTasks.filter((t) => t.classIds[0] === info.cls.id && t.teachers.includes(info.ct!));
     const daily = (t: Task): boolean => (t.minutes ? t.dayNeed !== null : t.item.perWeek >= SPREAD_MAX_PER_WEEK);
     const firsts = DAYS.map((d) => info.byDay[d]!.find((s) => s.first)).filter((s): s is Slot => s !== undefined && !overlap(busy.get(`c:${info.cls.id}`)?.[s.day], s));

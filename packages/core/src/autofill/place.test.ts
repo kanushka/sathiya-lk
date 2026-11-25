@@ -175,4 +175,13 @@ describe('place', () => {
     expect(checkHard(ctx, [], drafts)).toEqual([]);
     expect(drafts).toHaveLength(ctx.classes.length * 40 - base.grades.length * 2 * 3 * 3);
   });
+
+  it('stops at the deadline and reports what is left', () => {
+    const ctx = secondary([6, 7], 3);
+    const classIds = ctx.classes.map((c) => c.id);
+    const allocation = allocate({ ctx, entries: [], classIds, random: rng(1) }).allocation;
+    const r = place({ ctx, kept: [], allocation, classIds, random: rng(1), stepBudget: 2000, deadline: 0, now: () => 1 });
+    expect(r.drafts).toEqual([]);
+    expect(r.unplaced.length).toBeGreaterThan(0);
+  });
 });

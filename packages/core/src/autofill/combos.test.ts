@@ -55,3 +55,14 @@ describe('combos', () => {
     expect(a[0]).toEqual([4, 5]);
   });
 });
+
+describe('combos performance', () => {
+  it('stays fast on a 32-slot uneven template', () => {
+    const slots = day(Array.from({ length: 32 }, (_, i) => 10 + (i % 2) * 5));
+    const started = Date.now();
+    const r = combos(slots, 200);
+    expect(Date.now() - started).toBeLessThan(1000);
+    expect(r.length).toBeGreaterThan(0);
+    expect(r.every((c) => c.reduce((a, s) => a + s.minutes, 0) === 200)).toBe(true);
+  });
+});
