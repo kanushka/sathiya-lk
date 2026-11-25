@@ -70,6 +70,11 @@ describe('TeacherViewPage', () => {
     expect(wrap.parentElement).toHaveClass('w-full', 'md:w-auto');
   });
 
+  it('wraps the header actions on phones', () => {
+    setup(T.perera);
+    expect(screen.getByRole('link', { name: 'Auto-fill' }).parentElement).toHaveClass('flex-wrap');
+  });
+
   it('reopens the last viewed teacher and honours ?teacher=', () => {
     sessionStorage.clear();
     setup(T.perera);
