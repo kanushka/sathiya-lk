@@ -52,7 +52,7 @@ export function ColorSwatches({ label, swatches, value, onChange, hint }: ColorS
               }}
               style={{ background: hex }}
               className={cx(
-                'h-9 w-9 cursor-pointer rounded-lg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand focus-visible:ring-offset-2',
+                'h-9 w-9 cursor-pointer rounded-lg focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-brand focus-visible:ring-offset-2',
                 selected ? 'shadow-[0_0_0_2px_#fff,0_0_0_4px_theme(colors.navy)]' : 'border border-black/10',
               )}
             />

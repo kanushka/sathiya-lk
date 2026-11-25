@@ -6,7 +6,7 @@ import { useTranslation } from 'react-i18next';
 import { cx } from './cx';
 
 export const focusRingClass =
-  'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand focus-visible:ring-offset-2';
+  'focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-brand focus-visible:ring-offset-2';
 
 export type ButtonVariant = 'primary' | 'secondary' | 'danger' | 'dangerSolid' | 'ghost' | 'onBrand' | 'subtle' | 'link';
 export type ButtonSize = 'sm' | 'md' | 'lg';
@@ -56,7 +56,7 @@ const variants: Record<ButtonVariant, string> = {
   ghost: 'border border-transparent bg-transparent text-ink-soft hover:bg-surface-3',
   onBrand: 'border border-on-brand/40 bg-on-brand/10 text-on-brand hover:bg-on-brand/20',
   subtle: 'border border-transparent bg-surface-3 text-ink-soft hover:bg-line',
-  link: 'rounded border-0 bg-transparent p-0 text-brand hover:underline',
+  link: 'rounded-sm border-0 bg-transparent p-0 text-brand hover:underline',
 };
 
 const squareSizes: Record<ButtonSize, string> = {

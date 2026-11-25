@@ -214,7 +214,7 @@ export function TimetableGrid({ rows, cellsFor, selected, onSelect, onActivate, 
                   onClick={() => onClick(d, r.n)}
                   onKeyDown={(e) => onKeyDown(e, d, r.n)}
                   className={cx(
-                    'box-border flex min-h-[58px] min-w-0 flex-col justify-center rounded-lg border p-1 text-left focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand',
+                    'box-border flex min-h-[58px] min-w-0 flex-col justify-center rounded-lg border p-1 text-left focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-brand',
                     ov
                       ? ov.className
                       : cells.length === 0

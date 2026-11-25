@@ -60,7 +60,7 @@ export function SegmentedControl<V extends string = string>({
             className={cx(
               'rounded-[7px] px-3.5 text-[13px] font-semibold transition-colors',
               size === 'sm' ? 'h-7' : 'h-8',
-              'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-0',
+              'focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-offset-0',
               'disabled:cursor-not-allowed disabled:opacity-[.45]',
               tone === 'onBrand' ? 'focus-visible:ring-white' : 'focus-visible:ring-brand',
               checked

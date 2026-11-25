@@ -388,7 +388,7 @@ function TeacherAssignPickerBody({ teacherId, slot, entries, onClose, onSave, on
             type="button"
             aria-label={t('assign.backLabel')}
             onClick={back}
-            className="flex h-10 w-full items-center gap-2.5 rounded-lg border border-line-strong bg-white px-3 text-left text-sm text-ink hover:bg-surface focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand focus-visible:ring-offset-2"
+            className="flex h-10 w-full items-center gap-2.5 rounded-lg border border-line-strong bg-white px-3 text-left text-sm text-ink hover:bg-surface focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-brand focus-visible:ring-offset-2"
           >
             <span className="h-3 w-3 rounded-[3px]" style={{ background: subject?.color ?? '#E9E9E9' }} />
             <b className="flex-1">{subjectName}</b>

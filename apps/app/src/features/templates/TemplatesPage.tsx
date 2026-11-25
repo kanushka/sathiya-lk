@@ -68,7 +68,7 @@ export function TemplatesPage() {
               type="button"
               aria-current={x.id === selected?.id ? 'true' : undefined}
               onClick={() => setSelectedId(x.id)}
-              className={cx('rounded-xl bg-white px-4 py-3.5 text-left focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand focus-visible:ring-offset-2', x.id === selected?.id ? 'border-2 border-brand' : 'border border-line-soft')}
+              className={cx('rounded-xl bg-white px-4 py-3.5 text-left focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-brand focus-visible:ring-offset-2', x.id === selected?.id ? 'border-2 border-brand' : 'border border-line-soft')}
             >
               <strong className="block text-[15px]">{x.name}</strong>
               <span className="text-[13px] text-ink-soft">
@@ -203,7 +203,7 @@ function TemplateDetail({ template, readOnly, dialog, setDialog }: DetailProps) 
               aria-label={t('editor.templateName')}
               aria-invalid={nameError || undefined}
               size={Math.max(draft.name.length, 4)}
-              className="h-9 rounded-lg border border-transparent bg-transparent px-1 text-lg font-bold [field-sizing:content] hover:border-line-hover focus:border-brand focus:outline-none focus:ring-[3px] focus:ring-brand/30 aria-[invalid=true]:border-danger"
+              className="h-9 rounded-lg border border-transparent bg-transparent px-1 text-lg font-bold [field-sizing:content] hover:border-line-hover focus:border-brand focus:outline-hidden focus:ring-[3px] focus:ring-brand/30 aria-[invalid=true]:border-danger"
               value={draft.name}
               onChange={(e) => setDraft({ ...draft, name: e.target.value })}
             />

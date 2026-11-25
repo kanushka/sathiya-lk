@@ -49,7 +49,7 @@ function TodayBody({ snap, now }: { snap: OverlaySnapshot; now: Date }) {
             onClick={() => setPicked(d)}
             className={cx(
               'h-11 flex-1 rounded-lg text-sm font-bold transition-colors',
-              'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand focus-visible:ring-offset-2',
+              'focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-brand focus-visible:ring-offset-2',
               d === day ? 'border border-transparent bg-brand text-on-brand' : 'border border-line-strong bg-white text-ink-soft',
             )}
           >

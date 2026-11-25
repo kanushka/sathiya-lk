@@ -141,7 +141,7 @@ function TeacherSlotPickerBody({ onClose, teacherId, day, period, entries, editi
           onClick={() => assign(o)}
           className={
             o.free
-              ? 'flex w-full items-center gap-2.5 rounded-lg border border-success-line bg-success-soft/50 px-3 py-2.5 text-left hover:bg-success-soft focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand focus-visible:ring-offset-2 disabled:opacity-60'
+              ? 'flex w-full items-center gap-2.5 rounded-lg border border-success-line bg-success-soft/50 px-3 py-2.5 text-left hover:bg-success-soft focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-brand focus-visible:ring-offset-2 disabled:opacity-60'
               : 'flex w-full cursor-not-allowed items-center gap-2.5 rounded-lg bg-surface-2 px-3 py-2 text-left text-ink-muted'
           }
         >

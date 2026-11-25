@@ -36,7 +36,7 @@ export function PinBar({ title, detail, color, progress, fullNote, suggestedCoun
       aria-labelledby={titleId}
       className="fixed inset-x-0 bottom-0 z-30 flex flex-wrap items-center gap-x-3 gap-y-2 bg-brand px-4 pb-[calc(12px+env(safe-area-inset-bottom))] pt-3 text-on-brand shadow-[0_14px_30px_-18px_rgba(20,33,61,.6)] md:sticky md:inset-x-auto md:bottom-auto md:top-0 md:z-20 md:mb-3.5 md:gap-3.5 md:rounded-[14px] md:py-3"
     >
-      <span aria-hidden="true" className="h-4 w-4 shrink-0 rounded border border-on-brand/40" style={{ background: color }} />
+      <span aria-hidden="true" className="h-4 w-4 shrink-0 rounded-sm border border-on-brand/40" style={{ background: color }} />
       <div className="min-w-0 flex-1 md:flex-[1_1_240px]">
         <p id={titleId} className="m-0 flex items-center gap-1.5 text-xs font-semibold">
           <Icon name="pin" size={13} strokeWidth={2} />
