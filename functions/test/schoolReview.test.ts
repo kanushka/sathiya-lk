@@ -232,11 +232,12 @@ describe('directory sync and review status', () => {
 });
 
 describe('a pending school is refused what needs approval', () => {
-  it('publishYear, inviteAdmin, setJoinLink create, createTeacherLink, setSchoolStatus', async () => {
+  it('publishYear, applyAutoFill, inviteAdmin, setJoinLink create, createTeacherLink, setSchoolStatus', async () => {
     const { admin, sid } = await pendingSchool();
     const { teacherId } = await admin.call('createTeacher', { schoolId: sid, teacher: teacherInput('SCC041') });
     const pending = (p: Promise<unknown>) => expectFnError(p, 'failed-precondition', 'school-pending');
     await pending(admin.call('publishYear', { schoolId: sid, yearId: 'y2027' }));
+    await pending(admin.call('applyAutoFill', { schoolId: sid, yearId: 'y2027', deleteEntryIds: [], drafts: [] }));
     await pending(admin.call('inviteAdmin', { schoolId: sid, email: `x-${uniq()}@example.com` }));
     await pending(admin.call('setJoinLink', { schoolId: sid, action: 'create' }));
     await expect(admin.call('setJoinLink', { schoolId: sid, action: 'off' })).resolves.toEqual({});
@@ -271,6 +272,7 @@ describe('a pending school is refused what needs approval', () => {
     const { admin, sid } = await pendingSchool();
     await adminDb.doc(paths.school(sid)).update({ status: 'rejected' });
     await expectFnError(admin.call('inviteAdmin', { schoolId: sid, email: `x-${uniq()}@example.com` }), 'failed-precondition', 'school-rejected');
+    await expectFnError(admin.call('applyAutoFill', { schoolId: sid, yearId: 'y2027', deleteEntryIds: [], drafts: [] }), 'failed-precondition', 'school-rejected');
   });
 
   it('joinSchool refuses both link kinds before writing', async () => {
