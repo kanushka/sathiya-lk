@@ -10,6 +10,7 @@ import { useSchool } from '../../app/SchoolProvider';
 import { toApiError } from '../../lib/callable';
 import { useCollection } from '../../lib/firestore';
 import { useReadOnly } from '../../ui/AdminLayout';
+import { Badge } from '../../ui/Badge';
 import { Button } from '../../ui/Button';
 import { CopyLink } from '../../ui/CopyLink';
 import { EmptyState } from '../../ui/EmptyState';
@@ -137,13 +138,13 @@ export function MembersPage() {
                 <li key={i.id} className="flex flex-wrap items-center gap-3 border-t border-line-soft py-2.5 text-sm first:border-t-0">
                   <strong>{i.email}</strong>
                   {linked && <span className="text-ink-muted">{t('invites.linked', { name: teacherDisplayName(linked, lang) })}</span>}
-                  {typeof i.createdAt === 'number' && i.createdAt < expiredBefore && <span className="text-ink-muted">{t('invites.expired')}</span>}
+                  {typeof i.createdAt === 'number' && i.createdAt < expiredBefore && <Badge tone="warning">{t('invites.expired')}</Badge>}
                   {!readOnly && (
                     <IconButton
-                      icon="close"
+                      icon="trash"
                       size="sm"
                       label={t('invites.cancel')}
-                      className="ml-auto"
+                      className="ml-auto hover:!bg-danger-soft hover:!text-danger"
                       loading={cancelling === i.email}
                       disabled={cancelling !== null}
                       onClick={() => void cancelInvite(i.email)}

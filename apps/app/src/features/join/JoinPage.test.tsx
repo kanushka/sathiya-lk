@@ -115,7 +115,7 @@ describe('JoinPage', () => {
     renderAuth(<JoinPage />, { ...SCHOOL, signedIn: true, emailVerified: true });
     await user.type(await screen.findByLabelText('Staff ID'), 'SCC999');
     await user.click(screen.getByRole('button', { name: 'Send request' }));
-    expect(await screen.findByText(/This staff ID cannot be used to join\. Check it and try again\./)).toBeInTheDocument();
+    expect(await screen.findByText(/This staff ID cannot be used to join\. Check it, or ask your school admin\./)).toBeInTheDocument();
     expect(screen.getByLabelText('Staff ID')).toBeInTheDocument();
   });
 
