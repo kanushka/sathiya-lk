@@ -27,3 +27,5 @@ export { decideJoinRequest } from './decideJoinRequest';
 export { createTeacherLink } from './createTeacherLink';
 export { cancelTeacherLink } from './cancelTeacherLink';
 export { unlinkTeacher } from './unlinkTeacher';
+export { reviewSchool } from './reviewSchool';
+export { removeRegistration } from './removeRegistration';

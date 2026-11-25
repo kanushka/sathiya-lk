@@ -9,8 +9,10 @@ import {
   reportReceived,
   schoolListed,
   schoolPendingReview,
+  schoolApproved,
   schoolReactivated,
   schoolRegistered,
+  schoolRejected,
   schoolSuspended,
   verifyEmail,
 } from '../src/email/templates';
@@ -26,6 +28,8 @@ const cases = {
     reportReceived({ schoolName: school.nameEn, schoolId: 'abc123', reason: 'fake', details: 'No such school.\nCalled them.', reporterEmail: 'parent@example.com', loginUrl, webUrl }),
   schoolSuspended: () => schoolSuspended({ school, loginUrl, webUrl }),
   schoolReactivated: () => schoolReactivated({ school, loginUrl, webUrl }),
+  schoolApproved: () => schoolApproved({ school, adminUrl: 'https://app.example.test/s/sid1/admin' }),
+  schoolRejected: () => schoolRejected({ school, reason: 'No such school.\nCall us.', contactEmail: 'help@example.test' }),
   verifyEmail: () => verifyEmail({ link: 'https://app.example.test/auth/action?mode=verifyEmail&oobCode=abc', lang: 'en', webUrl }),
   passwordReset: () => passwordReset({ link: 'https://app.example.test/auth/action?mode=resetPassword&oobCode=abc', lang: 'si', webUrl }),
 };
@@ -117,6 +121,8 @@ describe('email templates', () => {
       reportReceived({ schoolName: evil, schoolId: evil, reason: evil, details: evil, reporterEmail: evil, loginUrl: url, webUrl: url }),
       schoolSuspended({ school: { nameEn: evil, nameSi: evil }, loginUrl: url }),
       schoolReactivated({ school: { nameEn: evil, nameSi: evil }, loginUrl: url }),
+      schoolApproved({ school: { nameEn: evil, nameSi: evil }, adminUrl: url }),
+      schoolRejected({ school: { nameEn: evil, nameSi: evil }, reason: evil, contactEmail: evil }),
       verifyEmail({ link: url, webUrl: url }),
     ];
     for (const { html, subject } of out) {
@@ -233,6 +239,21 @@ describe('super admin school review templates', () => {
     expect(text).toContain('- Royal College · 17125');
     expect(text).toMatch(/Registered in Colombo:\n> - None/);
     expect(text).toContain('Census no: None');
+  });
+});
+
+describe('school review decision templates', () => {
+  it('approved links to the school admin page', () => {
+    const { subject, html } = schoolApproved({ school, adminUrl: 'https://app.example.test/s/sid1/admin' });
+    expect(subject).toBe('Siripura Central College is approved · Sathiya (සතිය)');
+    expect(html).toContain('href="https://app.example.test/s/sid1/admin"');
+  });
+
+  it('rejected quotes the reason and gives the contact address', () => {
+    const { subject, text } = schoolRejected({ school, reason: 'No such school.\nCall us.', contactEmail: 'help@example.test' });
+    expect(subject).toBe('Siripura Central College was not approved · Sathiya (සතිය)');
+    expect(text).toContain('Reason:\n> No such school.\n> Call us.');
+    expect(text).toContain('help@example.test');
   });
 });
 

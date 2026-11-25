@@ -1,6 +1,7 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
 // Copyright (C) 2026 Kanushka Gayan
-import { brandSubject, render, sathiyaHeader, type Fact, type Rendered } from './layout';
+import { pickName } from '@sathiya/core';
+import { brandSubject, render, sathiyaHeader, schoolFooter, schoolHeader, type Fact, type Rendered, type SchoolBrand } from './layout';
 import { siteFooter } from './footer';
 
 export interface NewSchoolDetails {
@@ -102,5 +103,62 @@ export function schoolPendingReview({ school, schoolUrl, webUrl, similarRegister
       cta: { label: 'Review school', url: schoolUrl },
     },
     footer: siteFooter(webUrl),
+  });
+}
+
+export interface SchoolApprovedInput {
+  school: SchoolBrand;
+  adminUrl: string;
+}
+
+export interface SchoolRejectedInput {
+  school: SchoolBrand;
+  reason: string;
+  contactEmail: string;
+}
+
+export function schoolApproved({ school, adminUrl }: SchoolApprovedInput): Rendered {
+  const name = pickName(school, 'en');
+  const si = pickName(school, 'si');
+  return render({
+    subject: brandSubject(`${name} is approved`),
+    header: schoolHeader(school),
+    en: {
+      title: 'Your school is approved',
+      status: { tone: 'ok', badge: 'Approved', text: 'Your school is now live on Sathiya.' },
+      paras: [[{ b: name }, ' is approved. Publishing, admin invites and printing are now open, and the school is listed in the Sathiya directory.']],
+      cta: { label: 'Open school admin', url: adminUrl },
+    },
+    si: {
+      title: 'ඔබගේ පාසල අනුමත කර ඇත',
+      paras: [`${si} අනුමත කර ඇත. දැන් කාලසටහන ප්‍රකාශයට පත් කිරීම, පරිපාලක ආරාධනා සහ මුද්‍රණය කළ හැක.`],
+    },
+    footer: schoolFooter(school),
+  });
+}
+
+export function schoolRejected({ school, reason, contactEmail }: SchoolRejectedInput): Rendered {
+  const name = pickName(school, 'en');
+  const si = pickName(school, 'si');
+  return render({
+    subject: brandSubject(`${name} was not approved`),
+    header: schoolHeader(school),
+    en: {
+      title: 'Your school was not approved',
+      status: { tone: 'bad', badge: 'Not approved', text: 'The school is not listed and cannot be published.' },
+      paras: [
+        [{ b: name }, ' was not approved on Sathiya.'],
+        'You can remove the registration from the Not approved screen when you sign in.',
+      ],
+      quoteLabel: 'Reason',
+      quote: reason,
+      note: `Questions? Write to ${contactEmail} or reply to this email.`,
+    },
+    si: {
+      title: 'ඔබගේ පාසල අනුමත කර නැත',
+      paras: [`${si} Sathiya හි අනුමත කර නැත. ඔබට පිවිසීමෙන් පසු ලියාපදිංචිය ඉවත් කළ හැක.`],
+      note: `ප්‍රශ්න ඇත්නම් ${contactEmail} වෙත ලියන්න හෝ මෙම ඊමේලයට පිළිතුරු දෙන්න.`,
+    },
+    footer: schoolFooter(school),
   });
 }
