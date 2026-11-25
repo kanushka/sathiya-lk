@@ -7,3 +7,4 @@ export * from './allocate';
 export * from './combos';
 export * from './check';
 export * from './score';
+export * from './place';
