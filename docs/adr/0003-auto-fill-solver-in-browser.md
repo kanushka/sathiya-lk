@@ -13,7 +13,7 @@ Building a full timetable by hand takes days. Auto-fill (#61) must allocate teac
 - A. The solver lives in `packages/core/src/autofill` with no new dependencies and runs in a Web Worker (`solver.worker.ts`) so the page stays responsive; the UI shows progress and Cancel terminates the worker.
 - Each run is deterministic for the same input and seed; "Try again" picks a new seed. Restarts stop at an 8 s budget and keep the best score (unplaced first, then soft rules).
 - Every unplaced item comes back with a concrete reason for the preview.
-- Nothing is written until Save. The `applyAutoFill` callable validates every draft, rechecks clashes against current entries (minus the deletes), and writes in chunks while holding a lease on the year doc (`applyingUntil`); `saveEntry`/`deleteEntry` refuse with `busy` while it is held. A clash returns `clash` and the client offers a re-run on fresh entries.
+- Nothing is written until Save. The `applyAutoFill` callable validates every draft, rechecks clashes against current entries (minus the deletes), and writes in chunks while holding a lease on the year doc (`applyingUntil`); `saveEntry`, `deleteEntry`, `saveTemplate` and `publishYear` refuse with `busy` while it is held. A clash, or a delete target that no longer exists, returns `clash` and the client offers a re-run on fresh entries.
 
 ## Consequences
 - No server cost per run, works with the existing callable-only write model, and the same core code is unit-tested.
