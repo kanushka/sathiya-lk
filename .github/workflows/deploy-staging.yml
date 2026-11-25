@@ -16,8 +16,24 @@ jobs:
       pull-requests: read
     uses: ./.github/workflows/ci.yml
 
+  trivy:
+    permissions:
+      contents: read
+      security-events: write
+    uses: ./.github/workflows/trivy.yml
+    with:
+      blocking: true
+
+  codeql:
+    permissions:
+      contents: read
+      security-events: write
+    uses: ./.github/workflows/codeql.yml
+    with:
+      blocking: true
+
   deploy:
-    needs: ci
+    needs: [ci, trivy, codeql]
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1

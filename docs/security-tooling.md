@@ -7,15 +7,15 @@ What runs on this repository, and the GitHub settings and app installs a maintai
 | Tool | Where | When | Blocks merge? |
 | --- | --- | --- | --- |
 | CodeRabbit | GitHub App, config in `.coderabbit.yaml` | every non-draft PR | no (comments only) |
-| Trivy (`trivy.yml`) | filesystem scan: `pnpm-lock.yaml` vulnerabilities, secrets, IaC misconfig | PRs, pushes to `main`, Mondays | no, report-only (results in **Security → Code scanning**) |
-| CodeQL (`codeql.yml`) | JavaScript/TypeScript and GitHub Actions, `security-extended` queries | PRs, pushes to `main`, Tuesdays | only if made a required check |
+| Trivy (`trivy.yml`) | filesystem scan: `pnpm-lock.yaml` vulnerabilities, secrets, IaC misconfig | PRs, pushes to `main`, Mondays, deploys | report-only on PRs and pushes (results in **Security → Code scanning**); blocking in the staging and production deploy workflows (fixable CRITICAL/HIGH) |
+| CodeQL (`codeql.yml`) | JavaScript/TypeScript and GitHub Actions, `security-extended` queries | PRs, pushes to `main`, Tuesdays, deploys | only if made a required check; blocking in the deploy workflows (open high/critical alerts) |
 | OpenSSF Scorecard (`scorecard.yml`) | repo supply-chain posture, badge in the README | pushes to `main`, Wednesdays, branch protection changes | no |
 | Dependabot (`.github/dependabot.yml`) | npm (pnpm workspace) and GitHub Actions | weekly, Mondays (Asia/Colombo), 7-day cooldown | n/a (opens PRs) |
 | GitHub secret scanning + push protection | GitHub-side | every push | push protection blocks pushes with known secrets |
 
 Trivy also scans for secrets as a second layer. There is no gitleaks job: GitHub secret scanning is free for public repos, scans the whole history, and push protection stops a leak before it lands, which gitleaks in CI can't.
 
-Trivy is report-only for now because the lockfile already has known HIGH/CRITICAL issues that need major upgrades (astro 4 → 5+, vite 5 → 6+). Once those are cleared, switch it to blocking by setting `exit-code: '1'` and `severity: CRITICAL,HIGH` in `trivy.yml` (keep `ignore-unfixed: true` and `limit-severities-for-sarif: true`). The SARIF upload already runs with `if: ${{ !cancelled() }}`, so findings still reach code scanning when the scan fails the job.
+Trivy and CodeQL stay report-only on PRs and pushes. The deploy workflows call both with `blocking: true`: Trivy adds a second scan (`severity: CRITICAL,HIGH`, `ignore-unfixed: true`, `exit-code: '1'`) after the SARIF upload, and CodeQL adds a `gate` job that fails while `main` (or the deployed ref) has open high or critical CodeQL alerts. Fix or dismiss (with a reason) the finding, then deploy again.
 
 Trivy has no checks for `firebase.json`, `*.rules` or GitHub workflows; the CodeQL `actions` language and the CodeRabbit path instructions cover the workflows, and `tests/rules` covers the security rules.
 

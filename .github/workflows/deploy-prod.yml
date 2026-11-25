@@ -32,8 +32,26 @@ jobs:
       pull-requests: read
     uses: ./.github/workflows/ci.yml
 
+  trivy:
+    needs: guard
+    permissions:
+      contents: read
+      security-events: write
+    uses: ./.github/workflows/trivy.yml
+    with:
+      blocking: true
+
+  codeql:
+    needs: guard
+    permissions:
+      contents: read
+      security-events: write
+    uses: ./.github/workflows/codeql.yml
+    with:
+      blocking: true
+
   deploy:
-    needs: [guard, ci]
+    needs: [guard, ci, trivy, codeql]
     if: github.ref == 'refs/heads/main'
     runs-on: ubuntu-latest
     environment: production
