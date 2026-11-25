@@ -37,6 +37,34 @@ describe('teachers page from an empty-state link', () => {
     renderWithSchool(<TeachersPage />, { ctx, entries, route: '/admin/teachers?new=1' });
     expect(screen.getByRole('dialog')).toBeInTheDocument();
   });
+
+  it('waits for the teachers to load before ?new=1 opens Add teacher', () => {
+    const { rerenderWithSchool } = renderWithSchool(<TeachersPage />, { ctx, entries, loading: true, route: '/admin/teachers?new=1' });
+    expect(screen.queryByRole('dialog')).not.toBeInTheDocument();
+    rerenderWithSchool({ loading: false });
+    expect(within(screen.getByRole('dialog')).getByLabelText('Staff ID')).toHaveValue('SCC059');
+  });
+
+  it('keeps an open Add teacher dialog and its input when the teachers later fail to load', async () => {
+    const user = userEvent.setup();
+    const { rerenderWithSchool } = renderWithSchool(<TeachersPage />, { ctx, entries });
+    await user.click(screen.getByRole('button', { name: '+ Add teacher' }));
+    await user.type(within(screen.getByRole('dialog')).getByLabelText('Name in English'), 'E. Tester');
+    rerenderWithSchool({ error: new Error('denied') });
+    expect(within(screen.getByRole('dialog')).getByLabelText('Name in English')).toHaveValue('E. Tester');
+  });
+
+  it('disables Add teacher and Import while the teachers load', () => {
+    renderWithSchool(<TeachersPage />, { ctx, entries, loading: true });
+    expect(screen.getByRole('button', { name: '+ Add teacher' })).toBeDisabled();
+    expect(screen.getByRole('button', { name: 'Import' })).toBeDisabled();
+  });
+
+  it('disables Add teacher and Import when the teachers fail to load', () => {
+    renderWithSchool(<TeachersPage />, { ctx: { ...ctx, teachers: [] }, entries, error: new Error('denied') });
+    for (const add of screen.getAllByRole('button', { name: '+ Add teacher' })) expect(add).toBeDisabled();
+    expect(screen.getByRole('button', { name: 'Import' })).toBeDisabled();
+  });
 });
 
 async function openAdd(user: ReturnType<typeof userEvent.setup>) {

@@ -61,13 +61,16 @@ export function TeachersPage() {
   const pendingFor = useMemo(() => new Set(requests.map((r) => r.teacherId)), [requests]);
   const [busy, setBusy] = useState<string | null>(null);
   const [search, setSearch] = useState('');
+  const teachersReady = !state.loading && !state.error;
   const [params, setParams] = useSearchParams();
-  const [dialog, setDialog] = useState<Dialog>(() => (params.get('new') === '1' && !readOnly ? { kind: 'edit' } : null));
+  const [dialog, setDialog] = useState<Dialog>(() => (params.get('new') === '1' && !readOnly && teachersReady ? { kind: 'edit' } : null));
   const dialogRef = useRef(dialog);
   dialogRef.current = dialog;
   useEffect(() => {
-    if (params.has('new')) setParams((p) => (p.delete('new'), p), { replace: true });
-  }, [params, setParams]);
+    if (!params.has('new') || !teachersReady) return;
+    if (params.get('new') === '1' && !readOnly) setDialog((d) => d ?? { kind: 'edit' });
+    setParams((p) => (p.delete('new'), p), { replace: true });
+  }, [params, setParams, teachersReady, readOnly]);
 
   const loads = useMemo(() => new Map(state.teachers.map((x) => [x.id, teacherLoad(x.id, entries, state)])), [state, entries]);
   const loadText = (x: Teacher) => {
@@ -154,7 +157,7 @@ export function TeachersPage() {
   }
 
   const add = (
-    <Button variant="primary" onClick={() => setDialog({ kind: 'edit' })}>
+    <Button variant="primary" disabled={!teachersReady} onClick={() => setDialog({ kind: 'edit' })}>
       {t('page.add')}
     </Button>
   );
@@ -176,7 +179,7 @@ export function TeachersPage() {
               onChange={(e) => setSearch(e.target.value)}
             />
           </div>
-          {!readOnly && <Button onClick={() => setDialog({ kind: 'import' })}>{t('import:open')}</Button>}
+          {!readOnly && <Button disabled={!teachersReady} onClick={() => setDialog({ kind: 'import' })}>{t('import:open')}</Button>}
           {!readOnly && add}
           </>
         }

@@ -16,6 +16,8 @@ import { testI18n } from './render';
 
 export interface RenderWithSchoolOptions {
   ctx: SchoolContext;
+  loading?: boolean;
+  error?: Error;
   entries?: Entry[];
   years?: Year[];
   yearId?: string;
@@ -50,7 +52,9 @@ function Providers({ options, children }: { options: RenderWithSchoolOptions; ch
     () => ({ user, claims, loading: false, refreshClaims: refreshClaims ?? (async () => claims), signOut }),
     [user, claims, signOut, refreshClaims],
   );
-  const school = useMemo<SchoolState>(() => ({ ...ctx, loading: false }), [ctx]);
+  const loading = options.loading ?? false;
+  const { error } = options;
+  const school = useMemo<SchoolState>(() => ({ ...ctx, loading, ...(error && { error }) }), [ctx, loading, error]);
   const year = useMemo<YearState>(() => ({ years, yearId, setYearId, entries, loading: false }), [years, yearId, entries]);
   const langState = useMemo(() => ({ lang, setLang: () => undefined }), [lang]);
 
@@ -69,9 +73,9 @@ function Providers({ options, children }: { options: RenderWithSchoolOptions; ch
   );
 }
 
-export function renderWithSchool(ui: ReactElement, options: RenderWithSchoolOptions) {
+function tree(ui: ReactElement, options: RenderWithSchoolOptions) {
   const route = options.route ?? '/';
-  return render(
+  return (
     <MemoryRouter initialEntries={[route]}>
       <Providers options={options}>
         {options.path ? (
@@ -82,7 +86,12 @@ export function renderWithSchool(ui: ReactElement, options: RenderWithSchoolOpti
           ui
         )}
       </Providers>
-    </MemoryRouter>,
-    options.renderOptions,
+    </MemoryRouter>
   );
+}
+
+export function renderWithSchool(ui: ReactElement, options: RenderWithSchoolOptions) {
+  const result = render(tree(ui, options), options.renderOptions);
+  const rerenderWithSchool = (patch: Pick<RenderWithSchoolOptions, 'loading' | 'error'>) => result.rerender(tree(ui, { ...options, ...patch }));
+  return { ...result, rerenderWithSchool };
 }
