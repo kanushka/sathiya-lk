@@ -888,6 +888,54 @@ h2:lang(si) {
   color: var(--teal);
 }
 
+[data-fs='6'] .fs-row {
+  gap: 8px;
+  align-items: flex-end;
+}
+
+[data-fs='6'] .fs-tag {
+  display: block;
+  width: fit-content;
+  margin-top: 2px;
+}
+
+.fs-duty {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  min-width: 56px;
+  height: 26px;
+  padding: 0 3px;
+  border: 1px dashed var(--line-2);
+  border-radius: 6px;
+}
+
+.fs-lesson {
+  background: #e6eefb;
+}
+
+.fs-gone {
+  opacity: 0;
+}
+
+.fs-tag {
+  display: inline-block;
+  padding: 1px 5px;
+  border-radius: 4px;
+  font-size: 10px;
+  font-weight: 700;
+}
+
+.fs-leave {
+  background: #fbe3e0;
+  color: #8a2a1e;
+}
+
+.fs-relief {
+  background: var(--saffron);
+  color: var(--navy);
+}
+
 .fs-run .fs-hit { animation: fs-hit 1.4s 0.3s both; }
 .fs-run .fs-busy { animation: fs-busy 2.6s both; }
 .fs-run .fs-free { animation: fs-free 2.6s both; }
@@ -901,6 +949,20 @@ h2:lang(si) {
 .fs-run .fs-slip { animation: fs-slip 0.6s 1.2s cubic-bezier(0.2, 0.8, 0.2, 1) both; }
 .fs-run .fs-a { animation: fs-a 3s var(--d) both; }
 .fs-run .fs-b { animation: fs-b 3s var(--d) both; }
+.fs-run .fs-leave { animation: fs-pop 0.35s 0.3s both; }
+.fs-run .fs-gone { animation: fs-handover 1.4s 0.5s both; }
+.fs-run .fs-taken { animation: fs-arrive 0.5s 1.4s cubic-bezier(0.2, 0.9, 0.25, 1.2) both; }
+.fs-run .fs-relief { animation: fs-pop 0.35s 2s both; }
+
+@keyframes fs-handover {
+  0%, 25% { opacity: 1; transform: none; }
+  45% { opacity: 1; transform: none; background: #fbe3e0; color: #8a2a1e; }
+  100% { opacity: 0; transform: translateX(60px); }
+}
+
+@keyframes fs-arrive {
+  from { opacity: 0; transform: translateX(-40px); }
+}
 
 @keyframes fs-hit {
   0% { background: #eef0f4; transform: none; }
