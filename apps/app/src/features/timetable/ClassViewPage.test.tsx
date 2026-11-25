@@ -165,20 +165,26 @@ describe('ClassViewPage', () => {
     vi.mocked(api.saveEntry).mockImplementation(
       () => new Promise((res) => resolvers.push(() => res({ entryId: `f${resolvers.length}` }))),
     );
-    setup(C.c6b, api);
-    const drafts = fillWithClassTeacher({ ctx, entries: entries6B, classId: C.c6b });
-    expect(drafts).toHaveLength(4);
+    setup(C.c1a, api);
+    const { drafts } = fillWithClassTeacher({ ctx, entries: entries6B, classId: C.c1a });
+    const n = drafts.length;
+    expect(n).toBeGreaterThan(1);
     await userEvent.click(screen.getByRole('button', { name: 'Fill empty with class teacher' }));
     const dialog = screen.getByRole('dialog', { name: 'Fill empty periods' });
-    expect(dialog).toHaveTextContent('4 empty periods will be filled with Mrs. N. Perera');
-    await userEvent.click(within(dialog).getByRole('button', { name: 'Fill 4 periods' }));
-    for (let i = 0; i < 4; i++) {
+    expect(dialog).toHaveTextContent(`${n} empty periods will be filled with Mrs. S. Wickramasinghe`);
+    await userEvent.click(within(dialog).getByRole('button', { name: `Fill ${n} periods` }));
+    for (let i = 0; i < n; i++) {
       await waitFor(() => expect(api.saveEntry).toHaveBeenCalledTimes(i + 1));
       expect(vi.mocked(api.saveEntry).mock.calls[i]![0].entry).toEqual(drafts[i]);
       resolvers[i]!();
     }
     await waitFor(() => expect(screen.queryByRole('dialog')).not.toBeInTheDocument());
-    expect(api.saveEntry).toHaveBeenCalledTimes(4);
+    expect(api.saveEntry).toHaveBeenCalledTimes(n);
+  });
+
+  it('hides fill with class teacher in subject-teacher grades', () => {
+    setup(C.c6b);
+    expect(screen.queryByRole('button', { name: 'Fill empty with class teacher' })).not.toBeInTheDocument();
   });
 
   it('opens the print view in a new tab', async () => {

@@ -6,6 +6,7 @@ import {
   fillWithClassTeacher,
   groupSpecIsCurrent,
   latestGroupSpec,
+  pickName,
   planKey,
   periodsFor,
   rowsFor,
@@ -14,6 +15,7 @@ import {
   type DayIndex,
   type Entry,
   type EntryDraft,
+  type FillPlan,
   type PlanItem,
   type SchoolClass,
   type SchoolContext,
@@ -113,7 +115,7 @@ function ClassView({ cls, classes }: { cls: SchoolClass; classes: SchoolClass[] 
   const { target: pinTarget, stop: stopPin } = pin;
   const pinOrigin = usePinExit(pinTarget, stopPin);
   const [block, setBlock] = useState<BlockState | null>(null);
-  const [fill, setFill] = useState<{ drafts: EntryDraft[]; done: number; running: boolean } | null>(null);
+  const [fill, setFill] = useState<{ plan: FillPlan; drafts: EntryDraft[]; done: number; running: boolean } | null>(null);
 
   const rows = useMemo(() => Object.fromEntries(DAYS.map((d) => [d, rowsFor(template, d)])) as Record<DayIndex, TemplateRow[]>, [template]);
   const bySlot = useMemo(() => {
@@ -130,7 +132,7 @@ function ClassView({ cls, classes }: { cls: SchoolClass; classes: SchoolClass[] 
   useEffect(() => {
     if (hash === `#${OUTSIDE_TEMPLATE_ID}`) document.getElementById(OUTSIDE_TEMPLATE_ID)?.scrollIntoView({ block: 'start' });
   }, [hash]);
-  const fillDrafts = useMemo(() => fillWithClassTeacher({ ctx, entries, classId: cls.id }), [ctx, entries, cls.id]);
+  const fillPlan = useMemo(() => fillWithClassTeacher({ ctx, entries, classId: cls.id }), [ctx, entries, cls.id]);
 
   const index = classes.findIndex((c) => c.id === cls.id);
   const go = (c: SchoolClass | undefined) => c && navigate(`${base}/timetable/class/${c.id}`, { replace: true });
@@ -209,6 +211,11 @@ function ClassView({ cls, classes }: { cls: SchoolClass; classes: SchoolClass[] 
     window.open(`${base}/print/class/${cls.id}?year=${encodeURIComponent(yearId)}&auto=1`, '_blank', 'noopener');
   }
 
+  function subjectName(id: string): string {
+    const s = ctx.subjects.find((x) => x.id === id);
+    return s ? pickName(s, lang) : id;
+  }
+
   async function runFill() {
     if (!fill) return;
     setFill({ ...fill, running: true });
@@ -250,8 +257,8 @@ function ClassView({ cls, classes }: { cls: SchoolClass; classes: SchoolClass[] 
           </span>
         </div>
         <div className="flex gap-2">
-          {!readOnly && classTeacher && (
-            <Button disabled={fillDrafts.length === 0} onClick={() => setFill({ drafts: fillDrafts, done: 0, running: false })}>
+          {!readOnly && classTeacher && fillPlan.skip !== 'not-primary' && (
+            <Button onClick={() => setFill({ plan: fillPlan, drafts: fillPlan.drafts, done: 0, running: false })}>
               {t('classView.fill')}
             </Button>
           )}
@@ -359,7 +366,10 @@ function ClassView({ cls, classes }: { cls: SchoolClass; classes: SchoolClass[] 
           <p className="text-sm text-ink-soft">
             {fill.drafts.length > 0
               ? t('fill.body', { count: fill.drafts.length, teacher: teacherDisplayName(classTeacher, lang) })
-              : t('fill.none', { teacher: teacherDisplayName(classTeacher, lang) })}
+              : t(`fill.skip.${fill.plan.skip ?? 'no-room'}`, {
+                  teacher: teacherDisplayName(classTeacher, lang),
+                  subjects: fill.plan.subjectIds.map(subjectName).join(', '),
+                })}
           </p>
         </Modal>
       )}

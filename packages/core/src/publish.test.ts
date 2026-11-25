@@ -3,7 +3,6 @@
 
 import { describe, expect, it } from 'vitest';
 import { withTeacherIds } from './clash';
-import { fillWithClassTeacher } from './fill';
 import { C, ctx, entries, entries6B, mahasen, S, T } from './fixtures';
 import { buildSnapshots } from './publish';
 import type { Entry, Year } from './types';
@@ -11,7 +10,12 @@ import type { Entry, Year } from './types';
 const year: Year = { id: 'y-2026', label: '2026', status: 'draft' };
 const filled6B: Entry[] = [
   ...entries6B,
-  ...fillWithClassTeacher({ ctx, entries: entries6B, classId: C.c6b }).map((d, i) => ({ ...withTeacherIds(d), id: `fill-${i}` })),
+  ...([
+    [2, 4, S.science],
+    [3, 7, S.science],
+    [4, 5, S.health],
+    [4, 6, S.pts],
+  ] as const).map(([day, period, subjectId], i) => ({ ...withTeacherIds({ day, period, classIds: [C.c6b], lessons: [{ subjectId, teacherId: T.perera }] }), id: `fill-${i}` })),
 ];
 
 describe('buildSnapshots', () => {
