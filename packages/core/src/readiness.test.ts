@@ -14,7 +14,7 @@ const ctx: SchoolContext = {
   school: { ...fixtureCtx.school, grades: [1, 6, 12] },
   teachers: [...fixtureCtx.teachers, senior],
   classes: fixtureCtx.classes.map((c) =>
-    c.id === C.c6c ? { ...c, classTeacherId: T.gunasekara, planOverride: g6Source.map((i) => (i.kind === 'subject' && i.subjectId === S.pts ? { ...i, perWeek: 1 } : i)) } : c,
+    c.id === C.c6c ? { ...c, planOverride: g6Source.map((i) => (i.kind === 'subject' && i.subjectId === S.pts ? { ...i, perWeek: 1 } : i)) } : c,
   ),
 };
 
@@ -112,7 +112,7 @@ describe('readiness', () => {
 
   it('blocks a subject-teacher subject with no qualified teacher', () => {
     const issue = find(withoutTeachersFor(S.geography), 'no-qualified-teacher').find((i) => i.params.classId === C.c6a);
-    expect(issue?.params).toEqual({ classId: C.c6a, subjectId: S.geography });
+    expect(issue?.params).toEqual({ classId: C.c6a, subjectId: S.geography, grade: 6 });
   });
 
   it('blocks a group option with no qualified teacher', () => {
@@ -131,7 +131,7 @@ describe('readiness', () => {
   });
 
   it('blocks a subject-teacher class whose class teacher has no daily subject', () => {
-    expect(find(withClass(C.c6a, { classTeacherId: T.rajan }), 'class-teacher-no-daily-subject')[0]?.ref).toEqual({ kind: 'class', id: C.c6a });
+    expect(find(withClass(C.c6a, { classTeacherId: T.rajan }), 'class-teacher-no-daily-subject')[0]).toMatchObject({ ref: { kind: 'class', id: C.c6a }, params: { classId: C.c6a, teacherId: T.rajan } });
   });
 
   it('warns when teacher capacity is below demand', () => {

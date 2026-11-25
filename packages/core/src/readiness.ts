@@ -100,7 +100,7 @@ export function readiness(ctx: SchoolContext, _entries: Entry[]): { blocking: Re
     const needsQualified = (subjectId: string): void => {
       if (checked.has(subjectId)) return;
       checked.add(subjectId);
-      if (qualified(subjectId).length === 0) add('no-qualified-teacher', 'class', cls.id, { classId: cls.id, subjectId });
+      if (qualified(subjectId).length === 0) add('no-qualified-teacher', 'class', cls.id, { classId: cls.id, subjectId, grade: grade.number });
     };
 
     for (const item of plan) {
@@ -140,7 +140,7 @@ export function readiness(ctx: SchoolContext, _entries: Entry[]): { blocking: Re
         !subjectItems.some((item) => item.kind === 'subject' && teachesSubject(teacher, item.subjectId, grade.number)) &&
         plan.some((item) => item.kind === 'group' && item.optionSubjectIds.some((id) => teachesSubject(teacher, id, grade.number)));
       if (!onlyGroups && !daily.some((item) => item.kind === 'subject' && teachesSubject(teacher, item.subjectId, grade.number))) {
-        add('class-teacher-no-daily-subject', 'class', cls.id, { classId: cls.id });
+        add('class-teacher-no-daily-subject', 'class', cls.id, { classId: cls.id, teacherId: teacher.id });
       }
     }
 
