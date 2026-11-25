@@ -16,3 +16,8 @@ e2e/playwright-report/
 
 # Agent working notes (plans, specs drafts); specs go to GitHub issues labelled spec
 docs/superpowers/
+
+# Claude Code local state
+.claude/worktrees/
+.claude/launch.json
+.claude/settings.local.json
