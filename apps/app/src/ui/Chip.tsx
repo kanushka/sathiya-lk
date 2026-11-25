@@ -40,7 +40,7 @@ export function Chip({ children, onRemove, removeLabel, removeTabIndex, color, d
             onRemove();
           }}
           className={cx(
-            'flex h-5 w-5 shrink-0 items-center justify-center rounded text-ink-muted transition-colors hover:bg-black/10 hover:text-ink',
+            'flex h-5 w-5 shrink-0 items-center justify-center rounded-sm text-ink-muted transition-colors hover:bg-black/10 hover:text-ink',
             focusRingClass,
             'disabled:cursor-not-allowed disabled:hover:bg-transparent',
           )}

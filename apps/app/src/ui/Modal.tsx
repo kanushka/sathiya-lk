@@ -82,7 +82,7 @@ function ModalPanel({ title, subtitle, onClose, footer, width = 560, zoom, busy 
         tabIndex={-1}
         style={fullScreen ? undefined : { maxWidth: width }}
         className={cx(
-          'flex w-full flex-col overflow-hidden bg-white outline-none',
+          'flex w-full flex-col overflow-hidden bg-white outline-hidden',
           fullScreen
             ? 'h-full pb-[env(safe-area-inset-bottom)]'
             : 'max-h-[90dvh] rounded-t-[18px] pb-[env(safe-area-inset-bottom)] shadow-[0_30px_80px_-30px_rgba(20,33,61,.6)] md:my-auto md:max-h-[calc(100vh-2rem)] md:rounded-[18px] md:pb-0',

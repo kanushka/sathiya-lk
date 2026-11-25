@@ -403,7 +403,7 @@ function AssignPickerBody({ classId, slot, subjectId: initialSubject, groupKey, 
             type="button"
             aria-label={t('assign.backLabel')}
             onClick={back}
-            className="flex h-10 w-full items-center gap-2.5 rounded-lg border border-line-strong bg-white px-3 text-left text-sm text-ink hover:bg-surface focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand focus-visible:ring-offset-2"
+            className="flex h-10 w-full items-center gap-2.5 rounded-lg border border-line-strong bg-white px-3 text-left text-sm text-ink hover:bg-surface focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-brand focus-visible:ring-offset-2"
           >
             <span className="h-3 w-3 rounded-[3px]" style={{ background: subjectColor }} />
             <b className="flex-1">{subjectName}</b>
@@ -444,7 +444,7 @@ function AssignPickerBody({ classId, slot, subjectId: initialSubject, groupKey, 
                   }}
                   onDoubleClick={() => void confirm(c.teacher.id)}
                   className={cx(
-                    'flex w-full cursor-pointer items-center gap-2.5 rounded-lg border px-3 py-2.5 text-left text-ink focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand focus-visible:ring-offset-2',
+                    'flex w-full cursor-pointer items-center gap-2.5 rounded-lg border px-3 py-2.5 text-left text-ink focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-brand focus-visible:ring-offset-2',
                     c.warn ? 'border-warning-line bg-warning-soft/50 hover:bg-warning-soft' : 'border-success-line bg-success-soft/50 hover:bg-success-soft',
                     on && 'shadow-[inset_0_0_0_2px_var(--brand)]',
                     busy && 'opacity-60',

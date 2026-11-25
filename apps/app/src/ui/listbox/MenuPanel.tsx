@@ -11,7 +11,7 @@ import type { Placement } from '../popoverPlacement';
 
 export interface MenuPanelProps extends HTMLAttributes<HTMLDivElement> {
   pos: Placement | null;
-  anchorRef: RefObject<HTMLElement>;
+  anchorRef: RefObject<HTMLElement | null>;
 }
 
 export const MenuPanel = forwardRef<HTMLDivElement, MenuPanelProps>(function MenuPanel(

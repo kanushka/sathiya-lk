@@ -266,7 +266,7 @@ export function MultiSelect<V extends string = string>({
           onKeyUp={(e) => {
             if (e.key === ' ') e.preventDefault();
           }}
-          className="flex h-8 min-w-8 flex-1 items-center gap-2 bg-transparent pl-1.5 text-left focus:outline-none disabled:cursor-not-allowed"
+          className="flex h-8 min-w-8 flex-1 items-center gap-2 bg-transparent pl-1.5 text-left focus:outline-hidden disabled:cursor-not-allowed"
         >
           {selectedOptions.length > 0 && (
             <span id={`${baseId}-value`} className="sr-only">

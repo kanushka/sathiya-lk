@@ -26,6 +26,7 @@ const apiCodes: readonly ApiErrorCode[] = [
   'not-today',
   'terms-changed',
   'last-admin',
+  'busy',
 ];
 
 export class ApiError extends Error {

@@ -42,7 +42,7 @@ const deferred = <T,>() => {
 describe('useTimetable', () => {
   it('shows an optimistic add immediately with teacherIds', async () => {
     const d = deferred<{ entryId: string }>();
-    const api: TimetableApi = { saveEntry: vi.fn(() => d.promise), deleteEntry: vi.fn() };
+    const api: TimetableApi = { saveEntry: vi.fn(() => d.promise), deleteEntry: vi.fn(), applyAutoFill: vi.fn() };
     setup(api);
     const before = entries6B.length;
     let p!: Promise<boolean>;
@@ -63,7 +63,7 @@ describe('useTimetable', () => {
   });
 
   it('keeps an edited entry visible when the save changes nothing on the server', async () => {
-    const api: TimetableApi = { saveEntry: vi.fn(async (req) => ({ entryId: req.entry.id! })), deleteEntry: vi.fn() };
+    const api: TimetableApi = { saveEntry: vi.fn(async (req) => ({ entryId: req.entry.id! })), deleteEntry: vi.fn(), applyAutoFill: vi.fn() };
     setup(api);
     const existing = entries6B[0]!;
     const same: EntryDraft = { id: existing.id, day: existing.day, period: existing.period, classIds: existing.classIds, lessons: existing.lessons };
@@ -76,7 +76,7 @@ describe('useTimetable', () => {
   });
 
   it('replacing the teacher saves the same entry id once', async () => {
-    const api: TimetableApi = { saveEntry: vi.fn(async (req) => ({ entryId: req.entry.id! })), deleteEntry: vi.fn() };
+    const api: TimetableApi = { saveEntry: vi.fn(async (req) => ({ entryId: req.entry.id! })), deleteEntry: vi.fn(), applyAutoFill: vi.fn() };
     setup(api);
     const existing = entries6B[0]!;
     const changed: EntryDraft = { id: existing.id, day: existing.day, period: existing.period, classIds: existing.classIds, lessons: [{ ...existing.lessons[0]!, teacherId: T.ananda }] };
@@ -97,7 +97,7 @@ describe('useTimetable', () => {
         { kind: 'class', id: C.c6b, entryId: 'e-y' },
       ],
     });
-    const api: TimetableApi = { saveEntry: vi.fn().mockRejectedValue(err), deleteEntry: vi.fn() };
+    const api: TimetableApi = { saveEntry: vi.fn().mockRejectedValue(err), deleteEntry: vi.fn(), applyAutoFill: vi.fn() };
     setup(api);
     const before = entries6B.length;
     let ok = true;
@@ -111,7 +111,7 @@ describe('useTimetable', () => {
   });
 
   it('shows generic toast on other errors', async () => {
-    const api: TimetableApi = { saveEntry: vi.fn().mockRejectedValue(new ApiError('invalid', 'bad')), deleteEntry: vi.fn() };
+    const api: TimetableApi = { saveEntry: vi.fn().mockRejectedValue(new ApiError('invalid', 'bad')), deleteEntry: vi.fn(), applyAutoFill: vi.fn() };
     setup(api);
     await act(async () => {
       await latest.save(draft);
@@ -120,7 +120,7 @@ describe('useTimetable', () => {
   });
 
   it('says the school is suspended when a save is refused for that reason', async () => {
-    const api: TimetableApi = { saveEntry: vi.fn().mockRejectedValue(new ApiError('school-disabled', 'School is suspended')), deleteEntry: vi.fn() };
+    const api: TimetableApi = { saveEntry: vi.fn().mockRejectedValue(new ApiError('school-disabled', 'School is suspended')), deleteEntry: vi.fn(), applyAutoFill: vi.fn() };
     setup(api);
     await act(async () => {
       await latest.save(draft);
@@ -131,7 +131,7 @@ describe('useTimetable', () => {
 
   it('optimistically removes and reverts on failure', async () => {
     const d = deferred<{ ok: true }>();
-    const api: TimetableApi = { saveEntry: vi.fn(), deleteEntry: vi.fn(() => d.promise) };
+    const api: TimetableApi = { saveEntry: vi.fn(), deleteEntry: vi.fn(() => d.promise), applyAutoFill: vi.fn() };
     setup(api);
     const id = entries6B[0]!.id;
     let p!: Promise<boolean>;
@@ -169,7 +169,7 @@ describe('useTimetable', () => {
 
     it('no duplicate when the server copy differs from the optimistic one', async () => {
       const d = deferred<{ entryId: string }>();
-      const api: TimetableApi = { saveEntry: vi.fn(() => d.promise), deleteEntry: vi.fn() };
+      const api: TimetableApi = { saveEntry: vi.fn(() => d.promise), deleteEntry: vi.fn(), applyAutoFill: vi.fn() };
       render(<Live api={api}><Probe /></Live>);
       let p!: Promise<boolean>;
       act(() => {
@@ -185,7 +185,7 @@ describe('useTimetable', () => {
 
     it('no duplicate when snapshot arrives before the callable resolves', async () => {
       const d = deferred<{ entryId: string }>();
-      const api: TimetableApi = { saveEntry: vi.fn(() => d.promise), deleteEntry: vi.fn() };
+      const api: TimetableApi = { saveEntry: vi.fn(() => d.promise), deleteEntry: vi.fn(), applyAutoFill: vi.fn() };
       render(<Live api={api}><Probe /></Live>);
       let p!: Promise<boolean>;
       act(() => {
@@ -202,7 +202,7 @@ describe('useTimetable', () => {
 
     it('no duplicate while the callable is still in flight after the snapshot', async () => {
       const d = deferred<{ entryId: string }>();
-      const api: TimetableApi = { saveEntry: vi.fn(() => d.promise), deleteEntry: vi.fn() };
+      const api: TimetableApi = { saveEntry: vi.fn(() => d.promise), deleteEntry: vi.fn(), applyAutoFill: vi.fn() };
       render(<Live api={api}><Probe /></Live>);
       let p!: Promise<boolean>;
       act(() => {
@@ -219,7 +219,7 @@ describe('useTimetable', () => {
     });
 
     it('no duplicate when callable resolves before the snapshot', async () => {
-      const api: TimetableApi = { saveEntry: vi.fn().mockResolvedValue({ entryId: 'srv-1' }), deleteEntry: vi.fn() };
+      const api: TimetableApi = { saveEntry: vi.fn().mockResolvedValue({ entryId: 'srv-1' }), deleteEntry: vi.fn(), applyAutoFill: vi.fn() };
       render(<Live api={api}><Probe /></Live>);
       await act(async () => {
         await latest.save(draft);
@@ -232,7 +232,7 @@ describe('useTimetable', () => {
 
     it('removing an unsettled temp entry cancels the save once it resolves', async () => {
       const d = deferred<{ entryId: string }>();
-      const api: TimetableApi = { saveEntry: vi.fn(() => d.promise), deleteEntry: vi.fn() };
+      const api: TimetableApi = { saveEntry: vi.fn(() => d.promise), deleteEntry: vi.fn(), applyAutoFill: vi.fn() };
       render(<Live api={api}><Probe /></Live>);
       act(() => {
         void latest.save(draft);
@@ -261,7 +261,7 @@ describe('useTimetable', () => {
     it('removing the server copy while the save is in flight does not bring the lesson back', async () => {
       const d = deferred<{ entryId: string }>();
       const del = deferred<{ ok: true }>();
-      const api: TimetableApi = { saveEntry: vi.fn(() => d.promise), deleteEntry: vi.fn(() => del.promise) };
+      const api: TimetableApi = { saveEntry: vi.fn(() => d.promise), deleteEntry: vi.fn(() => del.promise), applyAutoFill: vi.fn() };
       render(<Live api={api}><Probe /></Live>);
       let p!: Promise<boolean>;
       act(() => {
@@ -287,7 +287,7 @@ describe('useTimetable', () => {
 
     it('no ghost when the delete snapshot lands before the save callable returns', async () => {
       const d = deferred<{ entryId: string }>();
-      const api: TimetableApi = { saveEntry: vi.fn(() => d.promise), deleteEntry: vi.fn().mockResolvedValue({ ok: true }) };
+      const api: TimetableApi = { saveEntry: vi.fn(() => d.promise), deleteEntry: vi.fn().mockResolvedValue({ ok: true }), applyAutoFill: vi.fn() };
       render(<Live api={api}><Probe /></Live>);
       let p!: Promise<boolean>;
       act(() => {
@@ -310,7 +310,7 @@ describe('useTimetable', () => {
 
     it('no error toast when a save fails for an already removed temp entry', async () => {
       const d = deferred<{ entryId: string }>();
-      const api: TimetableApi = { saveEntry: vi.fn(() => d.promise), deleteEntry: vi.fn() };
+      const api: TimetableApi = { saveEntry: vi.fn(() => d.promise), deleteEntry: vi.fn(), applyAutoFill: vi.fn() };
       render(<Live api={api}><Probe /></Live>);
       let p!: Promise<boolean>;
       act(() => {

@@ -79,7 +79,7 @@ export function PlanEditor({ plan, capacity, subjects, readOnly, onChange }: Pla
               key={p.kind === 'group' ? `g:${p.key}` : `s:${p.subjectId}`}
               className={`flex flex-wrap items-center gap-x-3.5 gap-y-2 border-b border-line-soft px-3.5 py-2.5 ${p.kind === 'group' ? 'bg-warning-soft/40' : ''}`}
             >
-              <span className="h-3.5 w-3.5 shrink-0 rounded" style={{ background: subject?.color ?? '#FBEAC9' }} />
+              <span className="h-3.5 w-3.5 shrink-0 rounded-sm" style={{ background: subject?.color ?? '#FBEAC9' }} />
               <div className="min-w-0 flex-1 basis-[calc(100%-2rem)] md:basis-auto">
                 <strong className="text-sm">{name}</strong>
                 {p.kind === 'group' && (

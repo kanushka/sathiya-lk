@@ -654,6 +654,10 @@ describe('years', () => {
       await assertFails(update('admin', y1, { publishedAt: 2 }));
       await assertFails(update('admin', y2, { publishedAt: 2 }));
     });
+    it('denies admin writing applyingUntil', async () => {
+      await assertFails(update('admin', y2, { applyingUntil: 1 }));
+      await assertFails(set('admin', y3, { label: '2028', status: 'draft', applyingUntil: 1 }));
+    });
     it('denies admin blanking or removing the label', async () => {
       await assertFails(update('admin', y2, { label: ' ' }));
       await assertFails(update('admin', y2, { label: 7 }));

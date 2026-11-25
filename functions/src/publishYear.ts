@@ -6,6 +6,7 @@ import { onCall } from 'firebase-functions/v2/https';
 import { db } from './lib/admin';
 import { callOpts } from './lib/callOptions';
 import { docId, invalid, obj, requireSchoolAdmin } from './lib/guards';
+import { assertNotApplying } from './lib/yearBusy';
 import { loadContext, loadEntries } from './lib/loadContext';
 
 const BATCH_OPS = 450;
@@ -27,6 +28,7 @@ export const publishYear = onCall(callOpts, async (req): Promise<PublishYearRes>
   const yearRef = db.doc(`${paths.years(sid)}/${yid}`);
   const yearSnap = await yearRef.get();
   if (!yearSnap.exists) invalid('Unknown year');
+  assertNotApplying(yearSnap);
   const year = { ...(yearSnap.data() as Omit<Year, 'id'>), id: yid };
 
   const [ctx, entries, oldClasses, oldTeachers] = await Promise.all([

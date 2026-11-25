@@ -94,7 +94,7 @@ export function GradesPage() {
             type="button"
             aria-current={g.id === grade?.id ? 'page' : undefined}
             onClick={() => setSelectedId(g.id)}
-            className={`flex min-h-11 shrink-0 items-center justify-between gap-2 whitespace-nowrap rounded-lg px-2.5 py-2 text-left text-sm md:min-h-0 md:w-full md:gap-0 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand focus-visible:ring-offset-2 ${
+            className={`flex min-h-11 shrink-0 items-center justify-between gap-2 whitespace-nowrap rounded-lg px-2.5 py-2 text-left text-sm md:min-h-0 md:w-full md:gap-0 focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-brand focus-visible:ring-offset-2 ${
               g.id === grade?.id ? 'bg-brand/10 font-bold text-brand' : 'text-ink-soft hover:bg-surface'
             }`}
           >

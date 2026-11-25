@@ -70,7 +70,7 @@ export function TeacherFrame({ view, now: nowFn, snapshot, reliefDay, children }
       aria-current={active ? 'page' : undefined}
       className={cx(
         'flex h-9 flex-1 items-center justify-center rounded-lg text-sm font-bold transition-colors',
-        'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white',
+        'focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-white',
         active ? 'bg-white text-ink' : 'text-on-brand opacity-90',
       )}
     >

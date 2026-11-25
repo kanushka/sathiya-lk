@@ -446,7 +446,7 @@ function TeacherView({ teacher, teachers, template }: { teacher: Teacher; teache
                       setChooser(null);
                       openEntry({ entry: e, row: chooser.period });
                     }}
-                    className="flex w-full flex-col items-start gap-0.5 rounded-lg border border-line-strong px-3 py-2 text-left hover:bg-surface focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand focus-visible:ring-offset-2"
+                    className="flex w-full flex-col items-start gap-0.5 rounded-lg border border-line-strong px-3 py-2 text-left hover:bg-surface focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-brand focus-visible:ring-offset-2"
                     style={{ background: v.color }}
                   >
                     <strong className="text-sm">{v.title}</strong>

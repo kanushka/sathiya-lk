@@ -2,5 +2,5 @@
 // Copyright (C) 2026 Kanushka Gayan
 
 export default {
-  plugins: { tailwindcss: {}, autoprefixer: {} },
+  plugins: { '@tailwindcss/postcss': {} },
 };

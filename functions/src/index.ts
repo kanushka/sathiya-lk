@@ -14,6 +14,7 @@ export { saveEntry } from './saveEntry';
 export { saveReliefDay } from './saveReliefDay';
 export { reliefMail } from './reliefMail';
 export { deleteEntry } from './deleteEntry';
+export { applyAutoFill } from './applyAutoFill';
 export { deleteSetupItem } from './deleteSetupItem';
 export { saveTemplate } from './saveTemplate';
 export { publishYear } from './publishYear';
