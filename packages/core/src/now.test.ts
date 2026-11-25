@@ -49,7 +49,7 @@ describe('currentAndNext', () => {
   });
 
   describe('teacher with classes on another template', () => {
-    const filled1A = fillWithClassTeacher({ ctx, entries: [], classId: C.c1a }).map((d, i) => ({ ...withTeacherIds(d), id: `f-${i}` }));
+    const filled1A = fillWithClassTeacher({ ctx, entries: [], classId: C.c1a }).drafts.map((d, i) => ({ ...withTeacherIds(d), id: `f-${i}` }));
     const w = buildSnapshots(ctx, filled1A, { id: 'y', label: '2026', status: 'draft' }).teachers.find((t) => t.teacherId === T.wickramasinghe)!;
     const mon = (h: number, m: number) => new Date(2026, 10, 23, h, m);
 
