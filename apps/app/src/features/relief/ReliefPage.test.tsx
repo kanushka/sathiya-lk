@@ -59,7 +59,7 @@ function setup(route = '/s/siripura/admin/relief', c: SchoolContext = ctx) {
 async function markMorning(user: ReturnType<typeof userEvent.setup>) {
   await pickOption(user, screen.getByRole('button', { name: /Add teacher/ }), /N\. Perera/);
   const card = screen.getByRole('group', { name: /Mrs\. N\. Perera/ });
-  await user.click(within(card).getByRole('button', { name: 'Morning' }));
+  await user.click(within(card).getByRole('radio', { name: 'Morning' }));
   return card;
 }
 
@@ -77,7 +77,7 @@ describe('relief page', () => {
     const user = setup();
     expect(useReliefDay).toHaveBeenCalledWith('siripura', 'y-2026', '2026-11-24');
     const card = await markMorning(user);
-    expect(within(card).getByRole('button', { name: 'Morning' })).toHaveAttribute('aria-pressed', 'true');
+    expect(within(card).getByRole('radio', { name: 'Morning' })).toHaveAttribute('aria-checked', 'true');
     expect(within(card).getByRole('checkbox', { name: /P1.*6A Mathematics/ })).toBeChecked();
     expect(within(card).getByRole('checkbox', { name: /P3.*6B Mathematics/ })).toBeChecked();
     expect(within(card).getByRole('checkbox', { name: /P6.*6A Science/ })).not.toBeChecked();
@@ -265,6 +265,14 @@ describe('relief page', () => {
     });
     expect(useReliefDay).toHaveBeenLastCalledWith('siripura', 'y-2026', '2026-11-25');
     expect(screen.getByLabelText('Day')).toHaveValue('2026-11-25');
+  });
+
+  it('steps back a day and cannot step past today', async () => {
+    const user = setup();
+    expect(screen.getByRole('button', { name: 'Next day' })).toBeDisabled();
+    await user.click(screen.getByRole('button', { name: 'Previous day' }));
+    expect(useReliefDay).toHaveBeenLastCalledWith('siripura', 'y-2026', '2026-11-23');
+    expect(screen.getByRole('button', { name: 'Next day' })).toBeEnabled();
   });
 
   it('explains a save refused because the day has passed', async () => {
