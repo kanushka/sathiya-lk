@@ -13,12 +13,12 @@ export type ReadinessCode =
   | 'grade-no-classes' | 'class-no-teacher' | 'class-no-template' | 'plan-empty' | 'plan-zero-target'
   | 'teacher-no-subjects' | 'teacher-no-grades' | 'teacher-no-max'
   | 'plan-exceeds-template' | 'per-day-unbuildable' | 'no-qualified-teacher'
-  | 'no-specialist' | 'class-teacher-no-daily-subject'
+  | 'no-specialist' | 'class-teacher-no-daily-subject' | 'class-teacher-wrong-grade'
   | 'capacity-short' | 'min-per-week-unreachable';
 
 export interface ReadinessIssue {
   code: ReadinessCode;
-  ref: { kind: 'grade' | 'class' | 'teacher' | 'subject'; id: string };
+  ref: { kind: 'grade' | 'class' | 'teacher' | 'subject' | 'school'; id: string };
   params: Record<string, string | number>;
 }
 
@@ -26,7 +26,7 @@ const CODE_ORDER: ReadinessCode[] = [
   'grade-no-classes', 'class-no-teacher', 'class-no-template', 'plan-empty', 'plan-zero-target',
   'teacher-no-subjects', 'teacher-no-grades', 'teacher-no-max',
   'plan-exceeds-template', 'per-day-unbuildable', 'no-qualified-teacher',
-  'no-specialist', 'class-teacher-no-daily-subject',
+  'no-specialist', 'class-teacher-no-daily-subject', 'class-teacher-wrong-grade',
   'capacity-short', 'min-per-week-unreachable',
 ];
 const WARNING_CODES = new Set<ReadinessCode>(['capacity-short', 'min-per-week-unreachable']);
@@ -77,7 +77,8 @@ export function readiness(ctx: SchoolContext, _entries: Entry[]): { blocking: Re
     d.grades.add(gradeNumber);
     demand.set(subjectId, d);
   };
-  let weekSlots = 0;
+  let lessonDemand = 0;
+  const seenGroups = new Set<string>();
 
   const classes: SchoolClass[] = [...ctx.classes];
   for (const cls of classes) {
@@ -85,7 +86,6 @@ export function readiness(ctx: SchoolContext, _entries: Entry[]): { blocking: Re
     const template = templateOf(ctx, cls);
     if (!hasTeacher(cls.classTeacherId)) add('class-no-teacher', 'class', cls.id);
     if (!template) add('class-no-template', 'class', cls.id);
-    if (template) weekSlots += DAYS.reduce<number>((n, d) => n + periodsFor(template, d).length, 0);
     if (!grade) continue;
 
     const plan = effectivePlan(cls, grade);
@@ -106,11 +106,19 @@ export function readiness(ctx: SchoolContext, _entries: Entry[]): { blocking: Re
     for (const item of plan) {
       if (item.kind === 'group') {
         for (const id of item.optionSubjectIds) needsQualified(id);
-        if (!isMinutes(item)) for (const id of item.optionSubjectIds) addDemand(id, item.perWeek, grade.number);
+        const blockKey = `${grade.id}|${cls.templateId}|${item.key}`;
+        if (!isMinutes(item) && !seenGroups.has(blockKey)) {
+          seenGroups.add(blockKey);
+          lessonDemand += item.perWeek * item.optionSubjectIds.length;
+          for (const id of item.optionSubjectIds) addDemand(id, item.perWeek, grade.number);
+        }
         continue;
       }
       const specialist = mode === 'classTeacherPlusSpecialists' && specialistSubjectIds.includes(item.subjectId);
-      if (mode === 'subjectTeachers' || specialist) {
+      if (!isMinutes(item)) lessonDemand += item.perWeek;
+      if (specialist) {
+        if (!isMinutes(item)) addDemand(item.subjectId, item.perWeek, grade.number);
+      } else if (mode === 'subjectTeachers') {
         needsQualified(item.subjectId);
         if (!isMinutes(item)) addDemand(item.subjectId, item.perWeek, grade.number);
       }
@@ -119,10 +127,19 @@ export function readiness(ctx: SchoolContext, _entries: Entry[]): { blocking: Re
       }
     }
 
+    if (mode !== 'subjectTeachers' && cls.classTeacherId !== undefined && hasTeacher(cls.classTeacherId)) {
+      const ct = ctx.teachers.find((t) => t.id === cls.classTeacherId)!;
+      if (!ct.grades.includes(grade.number)) add('class-teacher-wrong-grade', 'class', cls.id, { classId: cls.id, teacherId: ct.id, grade: grade.number });
+    }
+
     if (mode === 'subjectTeachers' && hasTeacher(cls.classTeacherId)) {
       const teacher = ctx.teachers.find((t) => t.id === cls.classTeacherId)!;
       const daily = plan.filter((item) => item.kind === 'subject' && (isMinutes(item) ? item.perDay !== undefined : item.perWeek >= 5));
-      if (!daily.some((item) => item.kind === 'subject' && teachesSubject(teacher, item.subjectId, grade.number))) {
+      const subjectItems = plan.filter((item) => item.kind === 'subject');
+      const onlyGroups =
+        !subjectItems.some((item) => item.kind === 'subject' && teachesSubject(teacher, item.subjectId, grade.number)) &&
+        plan.some((item) => item.kind === 'group' && item.optionSubjectIds.some((id) => teachesSubject(teacher, id, grade.number)));
+      if (!onlyGroups && !daily.some((item) => item.kind === 'subject' && teachesSubject(teacher, item.subjectId, grade.number))) {
         add('class-teacher-no-daily-subject', 'class', cls.id, { classId: cls.id });
       }
     }
@@ -156,7 +173,7 @@ export function readiness(ctx: SchoolContext, _entries: Entry[]): { blocking: Re
   }
 
   const minNeeded = ctx.teachers.reduce((n, t) => n + (t.minPerWeek ?? 0), 0);
-  if (minNeeded > weekSlots) add('min-per-week-unreachable', 'teacher', '', { needed: minNeeded, available: weekSlots });
+  if (minNeeded > lessonDemand) add('min-per-week-unreachable', 'school', '', { needed: minNeeded, available: lessonDemand });
 
   const order = (i: ReadinessIssue): number => CODE_ORDER.indexOf(i.code);
   const sorted = issues

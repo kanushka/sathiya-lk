@@ -122,7 +122,7 @@ describe('readiness', () => {
   });
 
   it('blocks a subject-teacher class whose class teacher has no daily subject', () => {
-    expect(find(withClass(C.c6a, { classTeacherId: T.fernando }), 'class-teacher-no-daily-subject')[0]?.ref).toEqual({ kind: 'class', id: C.c6a });
+    expect(find(withClass(C.c6a, { classTeacherId: T.rajan }), 'class-teacher-no-daily-subject')[0]?.ref).toEqual({ kind: 'class', id: C.c6a });
   });
 
   it('warns when teacher capacity is below demand', () => {
@@ -137,6 +137,58 @@ describe('readiness', () => {
     const c = withTeacher(T.herath, { minPerWeek: 10_000 });
     expect(codes(c, 'warnings')).toEqual(['min-per-week-unreachable']);
     expect(find(c, 'min-per-week-unreachable')[0]?.params.needed).toBe(10_000);
+  });
+
+  it('counts a shared group block once for capacity', () => {
+    const base = withClass(C.c6c, { templateId: TPL.default });
+    const c = withTeacher(T.rizan, { maxPerDay: 0 }, { ...base, classes: base.classes.filter((k) => k.id !== C.c1a) });
+    const w = find(c, 'capacity-short').find((i) => i.params.subjectId === S.islam);
+    expect(w?.params).toEqual({ subjectId: S.islam, needed: 3, capacity: 0 });
+  });
+
+  it('raises only no-specialist when a specialist subject has no teacher at all', () => {
+    const c = withoutTeachersFor(S.english, withGrade(G.g1, { number: 3 }));
+    const forEnglish = (code: ReadinessCode) => find(c, code).filter((i) => i.params.classId === C.c1a && i.params.subjectId === S.english);
+    expect(forEnglish('no-specialist')).toHaveLength(1);
+    expect(forEnglish('no-qualified-teacher')).toHaveLength(0);
+  });
+
+  it('blocks a primary class teacher who does not teach the grade', () => {
+    const issue = find(withTeacher(T.wickramasinghe, { grades: [2] }), 'class-teacher-wrong-grade')[0];
+    expect(issue?.ref).toEqual({ kind: 'class', id: C.c1a });
+    expect(issue?.params).toEqual({ classId: C.c1a, teacherId: T.wickramasinghe, grade: 1 });
+  });
+
+  it('measures minimum weekly loads against lesson demand with shared groups counted once', () => {
+    const g = mahasen.ctx.grades[0]!;
+    const plan: PlanItem[] = [
+      { kind: 'group', key: 'rel', nameEn: 'Rel', optionSubjectIds: [mahasen.S.religion, mahasen.S.aesthetic], perWeek: 4 },
+      { kind: 'subject', subjectId: mahasen.S.maths, perWeek: 5 },
+    ];
+    const base = withGrade(g.id, { plan }, mahasen.ctx);
+    const short = withTeacher('mh-t-1a', { minPerWeek: 24 }, base);
+    const issue = find(short, 'min-per-week-unreachable')[0];
+    expect(issue?.ref).toEqual({ kind: 'school', id: '' });
+    expect(issue?.params).toEqual({ needed: 24, available: 23 });
+    expect(find(withTeacher('mh-t-1a', { minPerWeek: 23 }, base), 'min-per-week-unreachable')).toEqual([]);
+  });
+
+  it('lets a class teacher qualified only for a group option cover the first slot', () => {
+    expect(codes(withClass(C.c6a, { classTeacherId: T.fernando }))).not.toContain('class-teacher-no-daily-subject');
+  });
+
+  it('subtracts the day activity credit from per-day minutes', () => {
+    const t = mahasen.ctx.templates[0]!;
+    const rows = t.rows.map((r) => (r.subjectId === mahasen.S.health ? { ...r, end: '07:50' } : r));
+    const issue = find({ ...mahasen.ctx, templates: [{ ...t, rows }] }, 'per-day-unbuildable').find((i) => i.params.planKey === `subject:${mahasen.S.health}`);
+    expect(issue?.params).toMatchObject({ day: 0, minutes: 5 });
+  });
+
+  it('judges a class with a plan override by its own plan', () => {
+    const c = withClass(C.c6a, { planOverride: [{ kind: 'subject', subjectId: S.maths, perWeek: 6 }] }, withoutTeachersFor(S.geography));
+    const forGeography = find(c, 'no-qualified-teacher').filter((i) => i.params.subjectId === S.geography).map((i) => i.params.classId);
+    expect(forGeography).toContain(C.c6b);
+    expect(forGeography).not.toContain(C.c6a);
   });
 
   it('orders issues by code then ref id', () => {
