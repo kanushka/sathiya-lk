@@ -85,6 +85,21 @@ describe('checkHard', () => {
     expect(rules(readyCtx, three).filter(([r]) => r === 'staffing').map(([, i]) => i)).toEqual([0, 1, 2]);
   });
 
+  it('detects a draft that gives one teacher two lessons', () => {
+    const g: EntryDraft = {
+      day: 0,
+      period: 3,
+      classIds: [C.c6a, C.c6b],
+      lessons: [
+        { subjectId: S.buddhism, teacherId: T.ananda },
+        { subjectId: S.catholicism, teacherId: T.ananda },
+      ],
+      groupKey: 'religion',
+    };
+    expect(has(readyCtx, [g], 'duplicate-teacher', 0)).toBe(true);
+    expect(has(readyCtx, [{ ...g, lessons: [g.lessons[0]!, { subjectId: S.catholicism, teacherId: null }, { subjectId: S.islam, teacherId: null }] }], 'duplicate-teacher', 0)).toBe(false);
+  });
+
   it('detects periods outside the class template', () => {
     expect(has(readyCtx, [d(0, 9, C.c6a, S.maths, T.bandara)], 'off-template', 0)).toBe(true);
     expect(has(readyCtx, [d(4, 8, C.c6c, S.maths, T.bandara)], 'off-template', 0)).toBe(true);

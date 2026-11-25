@@ -78,6 +78,39 @@ describe('allocate', () => {
     expect(teacherFor(allocation, C.c6a, 'group:religion', S.buddhism)).toBe(T.rajan);
   });
 
+  it('rejects a group override that repeats another option\'s teacher in the block', () => {
+    const overrides: Allocation[] = [
+      { classId: C.c6a, planKey: 'group:religion', subjectId: S.buddhism, teacherId: T.rajan },
+      { classId: C.c6a, planKey: 'group:religion', subjectId: S.catholicism, teacherId: T.rajan },
+    ];
+    const { allocation, problems } = run(readyCtx, [C.c6a, C.c6b], { overrides });
+    expect(teacherFor(allocation, C.c6a, 'group:religion', S.buddhism)).toBe(T.rajan);
+    expect(teacherFor(allocation, C.c6a, 'group:religion', S.catholicism)).toBeNull();
+    expect(teacherFor(allocation, C.c6a, 'group:religion', S.islam)).not.toBe(T.rajan);
+    expect(problems).toContainEqual({ classId: C.c6a, planKey: 'group:religion', reason: 'duplicate-option-teacher' });
+    expect(problems).toContainEqual({ classId: C.c6b, planKey: 'group:religion', reason: 'duplicate-option-teacher' });
+  });
+
+  it('keeps an overridden option teacher out of the other options of the block', () => {
+    const base = run(readyCtx, [C.c6a, C.c6b]).allocation;
+    const first = teacherFor(base, C.c6a, 'group:religion', S.buddhism)!;
+    const overrides: Allocation[] = [{ classId: C.c6a, planKey: 'group:religion', subjectId: S.islam, teacherId: first }];
+    const { allocation, problems } = run(readyCtx, [C.c6a, C.c6b], { overrides });
+    expect(teacherFor(allocation, C.c6a, 'group:religion', S.islam)).toBe(first);
+    expect(teacherFor(allocation, C.c6a, 'group:religion', S.buddhism)).not.toBe(first);
+    expect(problems.filter((p) => p.reason === 'duplicate-option-teacher')).toEqual([]);
+  });
+
+  it('gives the class teacher another daily subject when kept entries hold the biggest one with someone else', () => {
+    const kept = [entry('k1', 0, 2, [C.c6b], [[S.maths, T.bandara]])];
+    for (const seed of [1, 2, 3]) {
+      const { allocation, problems } = run(readyCtx, [C.c6b], { entries: kept }, seed);
+      expect(teacherFor(allocation, C.c6b, `subject:${S.maths}`)).toBe(T.bandara);
+      expect(teacherFor(allocation, C.c6b, `subject:${S.science}`)).toBe(T.perera);
+      expect(problems.filter((p) => p.reason === 'class-teacher-no-daily-subject')).toEqual([]);
+    }
+  });
+
   it('group block gets one teacher per option across classes', () => {
     const { allocation } = run(readyCtx, [C.c6a, C.c6b]);
     const options = [S.buddhism, S.catholicism, S.islam];

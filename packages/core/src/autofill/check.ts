@@ -10,7 +10,7 @@ import { isMinutes, staffingFor } from '../staffing';
 import { rowsFor, slotMinutes, toMinutes, windowOf } from '../time';
 import type { DayIndex, Entry, EntryDraft, PlanItem, SchoolClass, SchoolContext } from '../types';
 
-export type HardRule = 'clash' | 'max-per-day' | 'over-target' | 'per-day' | 'first-slot' | 'group-first' | 'staffing' | 'off-template';
+export type HardRule = 'clash' | 'max-per-day' | 'over-target' | 'per-day' | 'first-slot' | 'group-first' | 'staffing' | 'off-template' | 'duplicate-teacher';
 export interface HardViolation { rule: HardRule; draftIndex: number }
 
 const MAX_SUBJECTS_PER_CLASS = 2;
@@ -46,6 +46,9 @@ export function checkHard(ctx: SchoolContext, kept: Entry[], drafts: EntryDraft[
     if (findConflicts(d, [...kept, ...draftEntries.slice(0, i)], ctx).length > 0) add('clash', i);
 
     if (d.groupKey !== undefined && d.period === 1) add('group-first', i);
+
+    const lessonTeachers = d.lessons.flatMap((l) => (l.teacherId === null ? [] : [l.teacherId]));
+    if (new Set(lessonTeachers).size < lessonTeachers.length) add('duplicate-teacher', i);
 
     for (const classId of d.classIds) {
       const cls = findClass(ctx, classId);
