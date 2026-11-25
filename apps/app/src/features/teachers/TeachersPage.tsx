@@ -152,7 +152,7 @@ export function TeachersPage() {
   }
 
   const add = (
-    <Button variant="primary" onClick={() => setDialog({ kind: 'edit' })}>
+    <Button variant="primary" disabled={state.loading} onClick={() => setDialog({ kind: 'edit' })}>
       {t('page.add')}
     </Button>
   );
@@ -174,7 +174,7 @@ export function TeachersPage() {
               onChange={(e) => setSearch(e.target.value)}
             />
           </div>
-          {!readOnly && <Button onClick={() => setDialog({ kind: 'import' })}>{t('import:open')}</Button>}
+          {!readOnly && <Button disabled={state.loading} onClick={() => setDialog({ kind: 'import' })}>{t('import:open')}</Button>}
           {!readOnly && add}
           </>
         }
@@ -257,8 +257,8 @@ export function TeachersPage() {
         </Table>
       )}
 
-      {dialog?.kind === 'edit' && <TeacherModal key={dialog.teacher?.id ?? 'new'} teacher={dialog.teacher} onClose={() => setDialog(null)} />}
-      {dialog?.kind === 'import' && <ImportModal onClose={() => setDialog(null)} />}
+      {dialog?.kind === 'edit' && !state.loading && <TeacherModal key={dialog.teacher?.id ?? 'new'} teacher={dialog.teacher} onClose={() => setDialog(null)} />}
+      {dialog?.kind === 'import' && !state.loading && <ImportModal onClose={() => setDialog(null)} />}
       {dialog?.kind === 'personalLink' && (
         <PersonalLinkModal
           name={teacherDisplayName(dialog.teacher, lang)}

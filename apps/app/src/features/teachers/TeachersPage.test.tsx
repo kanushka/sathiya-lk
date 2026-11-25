@@ -37,6 +37,17 @@ describe('teachers page from an empty-state link', () => {
     renderWithSchool(<TeachersPage />, { ctx, entries, route: '/admin/teachers?new=1' });
     expect(screen.getByRole('dialog')).toBeInTheDocument();
   });
+
+  it('waits for the teachers to load before ?new=1 opens Add teacher', () => {
+    renderWithSchool(<TeachersPage />, { ctx, entries, loading: true, route: '/admin/teachers?new=1' });
+    expect(screen.queryByRole('dialog')).not.toBeInTheDocument();
+  });
+
+  it('disables Add teacher and Import while the teachers load', () => {
+    renderWithSchool(<TeachersPage />, { ctx, entries, loading: true });
+    expect(screen.getByRole('button', { name: '+ Add teacher' })).toBeDisabled();
+    expect(screen.getByRole('button', { name: 'Import' })).toBeDisabled();
+  });
 });
 
 async function openAdd(user: ReturnType<typeof userEvent.setup>) {
