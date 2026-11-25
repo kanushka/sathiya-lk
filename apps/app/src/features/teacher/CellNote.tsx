@@ -1,10 +1,11 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
 // Copyright (C) 2026 Kanushka Gayan
+import type { TFunction } from 'i18next';
 import { useTranslation } from 'react-i18next';
 import { Badge } from '../../ui/Badge';
 import type { OverlayCell } from './reliefOverlay';
 
-export function leaveText(cell: OverlayCell, t: (key: string, opts?: Record<string, unknown>) => string): string | null {
+export function leaveText(cell: OverlayCell, t: TFunction<'teacher'>): string | null {
   if (!cell.onLeave) return null;
   return cell.onLeave.reliefBy ? t('teacher:leave.withRelief', { name: cell.onLeave.reliefBy }) : t('teacher:leave.noRelief');
 }
