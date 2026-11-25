@@ -27,6 +27,7 @@ function setup(props: Partial<Props> = {}, opts: { ctx?: SchoolContext; entries?
   const api: TimetableApi = {
     saveEntry: vi.fn().mockResolvedValue({ entryId: 'new' }),
     deleteEntry: vi.fn().mockResolvedValue({ ok: true }),
+    applyAutoFill: vi.fn(),
   };
   const onClose = vi.fn();
   renderWithSchool(

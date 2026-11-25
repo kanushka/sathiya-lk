@@ -7,7 +7,7 @@ import { mahasen, secondary } from '../fixtures';
 import { classPlacement } from '../progress';
 import type { Entry, EntryDraft, PeriodTemplate, SchoolContext, TemplateRow } from '../types';
 import { checkHard } from './check';
-import { solve, type FillMode } from './solve';
+import { solve, startOverDeletes, type FillMode } from './solve';
 
 const asEntries = (drafts: EntryDraft[], prefix = 'n'): Entry[] => drafts.map((d, i) => ({ ...withTeacherIds(d), id: `${prefix}${i}` }));
 const once = (): number => 0;
@@ -78,6 +78,7 @@ describe('solve', () => {
     const r = solve({ ctx, entries, mode: { kind: 'startOver', gradeIds: [g6.id] }, seed: 3, budgetMs: 0, now: once });
     const expectedDeleted = entries.filter((e) => e.classIds.some((c) => g6Classes.has(c))).map((e) => e.id);
     expect([...r.deleteEntryIds].sort()).toEqual([...expectedDeleted].sort());
+    expect(startOverDeletes(ctx, entries, [g6.id])).toEqual(r.deleteEntryIds);
     const kept = entries.filter((e) => !r.deleteEntryIds.includes(e.id));
     expect(kept.length).toBeGreaterThan(0);
     expect(r.drafts.every((d) => d.classIds.every((c) => g6Classes.has(c)))).toBe(true);

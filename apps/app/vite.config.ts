@@ -22,6 +22,7 @@ function buildEnvFile(): Plugin {
 
 export default defineConfig({
   plugins: [react(), buildEnvFile()],
+  worker: { format: 'es' },
   build: {
     rollupOptions: {
       output: {

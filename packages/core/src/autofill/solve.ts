@@ -42,6 +42,12 @@ function averagePeriodMinutes(ctx: SchoolContext, classId: string): number {
   return slots.length === 0 ? 1 : slots.reduce((n, s) => n + s.minutes, 0) / slots.length;
 }
 
+export function startOverDeletes(ctx: SchoolContext, entries: Entry[], gradeIds: string[]): string[] {
+  const grades = new Set(gradeIds);
+  const inScope = new Set(ctx.classes.filter((c) => grades.has(c.gradeId)).map((c) => c.id));
+  return entries.filter((e) => e.classIds.some((c) => inScope.has(c))).map((e) => e.id);
+}
+
 export function solve(input: SolveInput): SolveResult {
   const { ctx, entries, mode, seed } = input;
   const now = input.now ?? Date.now;
@@ -53,8 +59,7 @@ export function solve(input: SolveInput): SolveResult {
   if (mode.kind === 'startOver') {
     const gradeIds = new Set(mode.gradeIds);
     classIds = ctx.classes.filter((c) => gradeIds.has(c.gradeId)).map((c) => c.id);
-    const inScope = new Set(classIds);
-    deleteEntryIds = entries.filter((e) => e.classIds.some((c) => inScope.has(c))).map((e) => e.id);
+    deleteEntryIds = startOverDeletes(ctx, entries, mode.gradeIds);
   } else {
     classIds = ctx.classes.filter((c) => classPlacement(c, entries, ctx).rows.some((r) => r.placed < r.needed)).map((c) => c.id);
   }

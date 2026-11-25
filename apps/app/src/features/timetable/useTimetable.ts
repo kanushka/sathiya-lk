@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
 // Copyright (C) 2026 Kanushka Gayan
 
-import { teacherDisplayName, withTeacherIds, type Conflict, type Entry, type EntryDraft, type SchoolContext } from '@sathiya/core';
+import { teacherDisplayName, withTeacherIds, type ApplyAutoFillReq, type ApplyAutoFillRes, type Conflict, type Entry, type EntryDraft, type SchoolContext } from '@sathiya/core';
 import { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useSchool, useYear } from '../../app/SchoolProvider';
@@ -11,11 +11,16 @@ import { useToast } from '../../ui/Toast';
 export interface TimetableApi {
   saveEntry(req: { schoolId: string; yearId: string; entry: EntryDraft }): Promise<{ entryId: string }>;
   deleteEntry(req: { schoolId: string; yearId: string; entryId: string }): Promise<{ ok: true }>;
+  applyAutoFill(req: ApplyAutoFillReq): Promise<ApplyAutoFillRes>;
 }
+
+// Matches the applyAutoFill server timeout; the callable default (70 s) would give up while a big write is still running.
+const APPLY_TIMEOUT_MS = 300_000;
 
 const defaultApi: TimetableApi = {
   saveEntry: (req) => call('saveEntry', req),
   deleteEntry: (req) => call('deleteEntry', req),
+  applyAutoFill: (req) => call('applyAutoFill', req, { timeout: APPLY_TIMEOUT_MS }),
 };
 
 export const TimetableApiContext = createContext<TimetableApi>(defaultApi);
