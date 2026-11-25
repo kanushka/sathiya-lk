@@ -37,8 +37,15 @@ export function requireSuper(req: CallableRequest): Caller {
 
 export const isAdminOf = (claims: Claims, sid: string): boolean => isSchoolAdmin(claims, sid);
 
-// Admin of sid, school exists and is not disabled. Reuse for every school-scoped admin callable.
-export async function requireSchoolAdmin(req: CallableRequest, sid: unknown): Promise<Caller & { sid: string; school: Omit<School, 'id'> }> {
+const schoolRejected = (): never => fail('failed-precondition', 'school-rejected', 'This school was not approved');
+
+// Admin of sid, school exists and is neither disabled nor rejected. Reuse for every school-scoped admin callable.
+// allowRejected is for removeRegistration only.
+export async function requireSchoolAdmin(
+  req: CallableRequest,
+  sid: unknown,
+  opts: { allowRejected?: boolean } = {},
+): Promise<Caller & { sid: string; school: Omit<School, 'id'> }> {
   const caller = requireAuth(req);
   const schoolId = docId(sid, 'schoolId');
   if (!isAdminOf(caller.claims, schoolId)) notAllowed('Not an admin of this school');
@@ -46,12 +53,13 @@ export async function requireSchoolAdmin(req: CallableRequest, sid: unknown): Pr
   const school = snap.data() as Omit<School, 'id'> | undefined;
   if (!school) notAllowed('School is not active');
   if (school!.status === 'disabled') schoolDisabled();
+  if (school!.status === 'rejected' && !opts.allowRejected) schoolRejected();
   return { ...caller, sid: schoolId, school: school! };
 }
 
 export function assertApproved(status: SchoolStatus | undefined): void {
   if (status === 'pending') fail('failed-precondition', 'school-pending', 'Available after Sathiya approves your school');
-  if (status === 'rejected') fail('failed-precondition', 'school-rejected', 'This school was not approved');
+  if (status === 'rejected') schoolRejected();
 }
 
 // requireSchoolAdmin, and the school is approved (not pending review or rejected).

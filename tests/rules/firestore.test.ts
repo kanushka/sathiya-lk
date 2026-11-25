@@ -2,6 +2,8 @@
 // Copyright (C) 2026 Kanushka Gayan
 import { assertFails, assertSucceeds, type RulesTestEnvironment } from '@firebase/rules-unit-testing';
 import { paths, STANDARD_SUBJECTS } from '@sathiya/core';
+import firebase from 'firebase/compat/app';
+import 'firebase/compat/firestore';
 import { afterAll, beforeAll, beforeEach, describe, it } from 'vitest';
 import { as, initEnv, type Role } from './setup';
 
@@ -363,6 +365,16 @@ describe('reviewed school identity', () => {
     ['censusNo', '54321'],
   ])('denies the pending admin changing %s', async (k, v) => {
     await assertFails(update('pendingAdmin', sp, { [k]: v }));
+  });
+  it('denies a full set that changes nameEn and an update that deletes review', async () => {
+    const pending = { ...school('sp', 'pending'), review: { moeMatched: false } };
+    await assertSucceeds(set('pendingAdmin', sp, { ...pending, nameSi: 'නම' }));
+    await assertFails(set('pendingAdmin', sp, { ...pending, nameEn: 'Renamed College' }));
+    const { review: _r, ...noReview } = pending;
+    await assertFails(set('pendingAdmin', sp, noReview));
+    await assertFails(set('pendingAdmin', sp, { ...noReview, nameEn: 'Renamed College' }));
+    await assertFails(update('pendingAdmin', sp, { review: firebase.firestore.FieldValue.delete() }));
+    await assertFails(update('pendingAdmin', sp, { review: firebase.firestore.FieldValue.delete(), nameEn: 'Renamed College' }));
   });
   it('allows the pending admin to change nameSi and other details', async () => {
     await assertSucceeds(update('pendingAdmin', sp, { nameSi: 'නම' }));

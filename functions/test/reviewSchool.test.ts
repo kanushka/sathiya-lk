@@ -2,7 +2,7 @@
 // Copyright (C) 2026 Kanushka Gayan
 import { paths } from '@sathiya/core';
 import { describe, expect, it } from 'vitest';
-import { adminDb, adminWithSchool, expectFnError, linkedTeacher, makeSuper, pendingSchool, randomCensus, schoolReq, signUp, type Client } from './helpers';
+import { adminDb, adminWithSchool, expectFnError, linkedTeacher, makeSuper, pendingSchool, randomCensus, schoolReq, signUp, teacherInput, type Client } from './helpers';
 
 const APP_URL = 'https://app.sathiya.kanushka.com';
 const REPLY_TO = 'sathiya@kanushka.com';
@@ -111,6 +111,19 @@ describe('reviewSchool', () => {
   });
 });
 
+describe('a rejected school', () => {
+  it('refuses school-scoped admin callables with school-rejected', async () => {
+    const { admin, sid } = await rejected();
+    await expectFnError(
+      admin.call('saveEntry', { schoolId: sid, yearId: 'y1', entry: { day: 0, period: 1, classIds: ['c'], lessons: [] } } as never),
+      'failed-precondition',
+      'school-rejected',
+    );
+    await expectFnError(admin.call('decideJoinRequest', { schoolId: sid, uid: 'u', teacherId: 't', approve: true, createdAt: 1 }), 'failed-precondition', 'school-rejected');
+    await expectFnError(admin.call('createTeacher', { schoolId: sid, teacher: teacherInput('SCC044') }), 'failed-precondition', 'school-rejected');
+  });
+});
+
 describe('removeRegistration', () => {
   it('deletes a rejected school, its links and directory entry, and drops it from every member’s claims', async () => {
     const { admin, sid } = await pendingSchool();
@@ -133,6 +146,23 @@ describe('removeRegistration', () => {
     expect((await admin.claims()).schools?.[sid]).toBeUndefined();
     expect((await teacher.claims()).schools?.[sid]).toBeUndefined();
     expect(await exists(paths.school(otherSid))).toBe(true);
+  });
+
+  it('a retry after a partial run finishes the removal and clears every recorded member’s claims', async () => {
+    const { admin, sid } = await pendingSchool();
+    const { teacher } = await linkedTeacher(admin, sid, 'SCC043');
+    await (await superClient()).call('reviewSchool', { schoolId: sid, approve: false, reason: 'Not real' });
+    await adminDb.doc(paths.school(sid)).update({ removing: { uids: [admin.uid, teacher.uid], at: 1 } });
+    await adminDb.recursiveDelete(adminDb.collection(paths.members(sid)));
+    expect((await adminDb.collection(paths.templates(sid)).get()).empty).toBe(false);
+    expect((await admin.claims()).schools?.[sid]).toBeDefined();
+
+    await expect(admin.call('removeRegistration', { schoolId: sid })).resolves.toEqual({ ok: true });
+
+    expect(await exists(paths.school(sid))).toBe(false);
+    expect((await adminDb.doc(paths.school(sid)).listCollections()).length).toBe(0);
+    expect((await admin.claims()).schools?.[sid]).toBeUndefined();
+    expect((await teacher.claims()).schools?.[sid]).toBeUndefined();
   });
 
   it('works only on a rejected school', async () => {
