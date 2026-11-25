@@ -59,6 +59,16 @@ describe('fillWithClassTeacher', () => {
     expect(res.skip).toBe('specialists-only');
   });
 
+  it('reports specialists-only when the class teacher subjects are full but specialists still need periods', () => {
+    const plan: PlanItem[] = [
+      { kind: 'subject', subjectId: S.maths, perWeek: 1 },
+      { kind: 'subject', subjectId: S.english, perWeek: 3 },
+    ];
+    const res = fillWithClassTeacher({ ctx: withGrade1({ number: 4, plan }), entries, classId: C.c1a });
+    expect(res.drafts).toEqual([]);
+    expect(res.skip).toBe('specialists-only');
+  });
+
   it('skips with no-subjects for an empty or group-only plan', () => {
     const group = ctx.grades.find((g) => g.id === G.g1)!.plan.filter((p) => p.kind === 'group');
     expect(fillWithClassTeacher({ ctx: withGrade1({ plan: [] }), entries: [], classId: C.c1a }).skip).toBe('no-subjects');

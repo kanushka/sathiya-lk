@@ -26,12 +26,10 @@ export function fillWithClassTeacher(args: { ctx: SchoolContext; entries: Entry[
   const isSpecialist = (id: string) => staffing.specialistSubjectIds.includes(id);
   const eligible = rows.filter((r) => !isSpecialist(r.subjectId));
   const subjectIds = eligible.map((r) => r.subjectId);
-  if (eligible.length === 0) {
-    const specialistsLeft = rows.some((r) => isSpecialist(r.subjectId) && r.need > 0);
-    return { drafts: [], skip: specialistsLeft ? 'specialists-only' : 'no-subjects', subjectIds };
-  }
+  const specialistsLeft = rows.some((r) => isSpecialist(r.subjectId) && r.need > 0);
+  if (eligible.length === 0) return { drafts: [], skip: specialistsLeft ? 'specialists-only' : 'no-subjects', subjectIds };
   const remaining = eligible.filter((r) => r.need > 0).sort((a, b) => b.need - a.need);
-  if (remaining.length === 0) return { drafts: [], skip: 'all-placed', subjectIds };
+  if (remaining.length === 0) return { drafts: [], skip: specialistsLeft ? 'specialists-only' : 'all-placed', subjectIds };
   const all: Entry[] = [...args.entries];
   const drafts: EntryDraft[] = [];
   for (const r of remaining) {
