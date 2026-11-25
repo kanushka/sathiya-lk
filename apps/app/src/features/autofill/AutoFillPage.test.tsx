@@ -48,6 +48,25 @@ describe('AutoFillPage', () => {
     expect(screen.queryByText('Ready to generate')).not.toBeInTheDocument();
   });
 
+  it('groups the same missing teacher across classes into one line', () => {
+    const issue = (classId: string) => ({ code: 'no-qualified-teacher', ref: { kind: 'class', id: classId }, params: { classId, subjectId: S.geography, grade: 6 } });
+    mocked.result = { blocking: [issue(C.c6a), issue(C.c6b), issue(C.c6c)], warnings: [] };
+    setup();
+    const items = within(screen.getByRole('heading', { name: 'Teachers' }).closest('section')!).getAllByRole('listitem');
+    expect(items).toHaveLength(1);
+    expect(items[0]).toHaveTextContent('No teacher with Grade 6 in their grades teaches Geography (6A, 6B, 6C).');
+    expect(within(items[0]!).getByRole('link')).toHaveAttribute('href', '/s/siripura/admin/teachers');
+  });
+
+  it('groups the unbuildable days of one class item into one line', () => {
+    const issue = (day: number) => ({ code: 'per-day-unbuildable', ref: { kind: 'class', id: C.c6a }, params: { classId: C.c6a, planKey: `subject:${S.maths}`, day, minutes: 10 } });
+    mocked.result = { blocking: [issue(0), issue(1)], warnings: [] };
+    setup();
+    const items = within(screen.getByRole('heading', { name: 'Templates' }).closest('section')!).getAllByRole('listitem');
+    expect(items).toHaveLength(1);
+    expect(items[0]).toHaveTextContent(/Monday, Tuesday/);
+  });
+
   it('shows the ready state with warnings and no Continue button', () => {
     mocked.result = { blocking: [], warnings: [{ code: 'capacity-short', ref: { kind: 'subject', id: S.maths }, params: { subjectId: S.maths, needed: 30, capacity: 20 } }] };
     setup();

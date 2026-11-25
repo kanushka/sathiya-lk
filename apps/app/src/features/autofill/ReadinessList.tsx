@@ -17,7 +17,7 @@ const AREA: Record<ReadinessCode, Area> = {
   'class-no-template': 'grades',
   'plan-empty': 'grades',
   'plan-zero-target': 'grades',
-  'class-teacher-no-daily-subject': 'grades',
+  'class-teacher-no-daily-subject': 'teachers',
   'class-teacher-wrong-grade': 'grades',
   'teacher-no-subjects': 'teachers',
   'teacher-no-grades': 'teachers',
@@ -32,7 +32,47 @@ const AREA: Record<ReadinessCode, Area> = {
 
 const AREAS: Area[] = ['grades', 'teachers', 'templates'];
 
-function describe(issue: ReadinessIssue, ctx: SchoolContext, lang: Lang, t: TFunction<'autofill'>, tt: TFunction<'timetable'>, tc: TFunction<'common'>): string {
+interface Entry {
+  key: string;
+  issue: ReadinessIssue;
+  classIds: string[];
+  days: number[];
+}
+
+const str = (issue: ReadinessIssue, k: string): string => String(issue.params[k] ?? '');
+
+function groupKey(issue: ReadinessIssue): { key: string; by: 'class' | 'day' | null } {
+  const base = `${issue.code}|${issue.ref.id}`;
+  switch (issue.code) {
+    case 'no-qualified-teacher':
+      return { key: `${issue.code}|${str(issue, 'grade')}|${str(issue, 'subjectId')}`, by: 'class' };
+    case 'no-specialist':
+      return { key: `${issue.code}|${str(issue, 'subjectId')}`, by: 'class' };
+    case 'plan-zero-target':
+      return { key: `${issue.code}|${str(issue, 'planKey')}`, by: 'class' };
+    case 'per-day-unbuildable':
+      return { key: `${issue.code}|${str(issue, 'classId')}|${str(issue, 'planKey')}|${str(issue, 'minutes')}`, by: 'day' };
+    case 'plan-exceeds-template':
+      return { key: `${base}|${str(issue, 'unit')}`, by: null };
+    default:
+      return { key: base, by: null };
+  }
+}
+
+function groupIssues(issues: ReadinessIssue[]): Entry[] {
+  const out = new Map<string, Entry>();
+  for (const issue of issues) {
+    const { key, by } = groupKey(issue);
+    const entry = out.get(key) ?? { key, issue, classIds: [], days: [] };
+    if (by === 'class') entry.classIds.push(str(issue, 'classId'));
+    if (by === 'day') entry.days.push(Number(issue.params['day']));
+    out.set(key, entry);
+  }
+  return [...out.values()];
+}
+
+function describe(entry: Entry, ctx: SchoolContext, lang: Lang, t: TFunction<'autofill'>, tt: TFunction<'timetable'>, tc: TFunction<'common'>): string {
+  const { issue } = entry;
   const p = issue.params;
   const str = (k: string): string => String(p[k] ?? '');
   const className = (id: string): string => {
@@ -56,6 +96,11 @@ function describe(issue: ReadinessIssue, ctx: SchoolContext, lang: Lang, t: TFun
     return item.kind === 'group' ? pickName(item, lang) : subjectName(item.subjectId);
   };
 
+  const classList = (): string => {
+    const found = entry.classIds.map((id) => ctx.classes.find((c) => c.id === id));
+    const sameGrade = new Set(found.map((c) => c?.gradeId)).size <= 1;
+    return entry.classIds.map((id, i) => (sameGrade ? (found[i]?.name ?? id) : className(id))).join(', ');
+  };
   const cls = (): string => className(str('classId') || issue.ref.id);
   switch (issue.code) {
     case 'grade-no-classes':
@@ -63,10 +108,11 @@ function describe(issue: ReadinessIssue, ctx: SchoolContext, lang: Lang, t: TFun
     case 'class-no-teacher':
     case 'class-no-template':
     case 'plan-empty':
-    case 'class-teacher-no-daily-subject':
       return t(`messages.${issue.code}`, { class: cls() });
+    case 'class-teacher-no-daily-subject':
+      return t('messages.class-teacher-no-daily-subject', { class: cls(), teacher: teacherName(str('teacherId')) });
     case 'plan-zero-target':
-      return t('messages.plan-zero-target', { class: cls(), item: itemName(str('classId'), str('planKey')) });
+      return t('messages.plan-zero-target', { classes: classList(), item: itemName(str('classId'), str('planKey')) });
     case 'teacher-no-subjects':
     case 'teacher-no-grades':
     case 'teacher-no-max':
@@ -81,11 +127,12 @@ function describe(issue: ReadinessIssue, ctx: SchoolContext, lang: Lang, t: TFun
         class: cls(),
         item: itemName(str('classId'), str('planKey')),
         minutes: formatAmount(Number(p['minutes']), 'minutes', lang),
-        day: tc(`days.long.${str('day')}`),
+        days: entry.days.map((d) => tc(`days.long.${d}`)).join(', '),
       });
     case 'no-qualified-teacher':
+      return t('messages.no-qualified-teacher', { classes: classList(), grade: str('grade'), subject: subjectName(str('subjectId')) });
     case 'no-specialist':
-      return t(`messages.${issue.code}`, { class: cls(), subject: subjectName(str('subjectId')) });
+      return t('messages.no-specialist', { classes: classList(), subject: subjectName(str('subjectId')) });
     case 'class-teacher-wrong-grade':
       return t('messages.class-teacher-wrong-grade', { class: cls(), teacher: teacherName(str('teacherId')), grade: str('grade') });
     case 'capacity-short':
@@ -95,17 +142,17 @@ function describe(issue: ReadinessIssue, ctx: SchoolContext, lang: Lang, t: TFun
   }
 }
 
-function IssueItem({ issue }: { issue: ReadinessIssue }) {
+function IssueItem({ entry }: { entry: Entry }) {
   const { t } = useTranslation('autofill');
   const { t: tt } = useTranslation('timetable');
   const { t: tc } = useTranslation('common');
   const { lang } = useLang();
   const ctx = useSchool();
   const base = useAdminBase();
-  const area = AREA[issue.code];
+  const area = AREA[entry.issue.code];
   return (
     <li className="flex flex-wrap items-baseline justify-between gap-x-4 gap-y-1 py-2 text-sm text-ink">
-      <span className="min-w-0">{describe(issue, ctx, lang, t, tt, tc)}</span>
+      <span className="min-w-0">{describe(entry, ctx, lang, t, tt, tc)}</span>
       <Link to={`${base}/${area}`} className="shrink-0 font-semibold text-brand">
         {t(`fix.${area}`)}
       </Link>
@@ -118,8 +165,8 @@ export function ReadinessList({ issues, grouped }: { issues: ReadinessIssue[]; g
   if (!grouped) {
     return (
       <ul className="m-0 list-none divide-y divide-line p-0">
-        {issues.map((issue, i) => (
-          <IssueItem key={i} issue={issue} />
+        {groupIssues(issues).map((entry) => (
+          <IssueItem key={entry.key} entry={entry} />
         ))}
       </ul>
     );
@@ -127,14 +174,14 @@ export function ReadinessList({ issues, grouped }: { issues: ReadinessIssue[]; g
   return (
     <>
       {AREAS.map((area) => {
-        const items = issues.filter((i) => AREA[i.code] === area);
+        const items = groupIssues(issues.filter((i) => AREA[i.code] === area));
         if (items.length === 0) return null;
         return (
           <section key={area} className="mb-5">
             <h2 className="mb-1 text-base font-bold text-ink">{t(`groups.${area}`)}</h2>
             <ul className="m-0 list-none divide-y divide-line p-0">
-              {items.map((issue, i) => (
-                <IssueItem key={i} issue={issue} />
+              {items.map((entry) => (
+                <IssueItem key={entry.key} entry={entry} />
               ))}
             </ul>
           </section>
