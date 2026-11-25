@@ -87,6 +87,9 @@ export const en = {
       combo: '6A + 6B · P4',
       aesthetic: 'Aesthetic',
       options: ['Art', 'Music', 'Dance'],
+      leave: 'On leave',
+      missed: 'P2 · 7A',
+      relief: 'Relief',
     },
     items: [
       { title: 'Class + teacher views', body: 'Fill the week from a class grid or a teacher grid. Every change shows in both at once.' },
