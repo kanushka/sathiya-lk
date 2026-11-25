@@ -7,6 +7,7 @@ import { REGISTER_PER_IP_PER_DAY, REGISTER_PER_UID_PER_DAY } from '../src/lib/ra
 import {
   adminAuth,
   adminDb,
+  approve,
   expectFnError,
   randomCensus,
   rawCall,
@@ -46,6 +47,7 @@ describe('registerSchool school type and census number', () => {
     const { schoolId } = await c.call('registerSchool', schoolReq({ type: 'government', censusNo: ` ${n} ` }));
     expect((await census(n).get()).data()).toEqual({ schoolId });
     expect((await adminDb.doc(paths.school(schoolId)).get()).data()).toMatchObject({ type: 'government', censusNo: n });
+    await approve(schoolId);
     const dir = (await adminDb.doc(paths.directory(schoolId)).get()).data()!;
     expect(dir.type).toBe('government');
     expect(dir.censusNo).toBeUndefined();

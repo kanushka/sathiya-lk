@@ -7,7 +7,7 @@ import { mailConfig } from './email/params';
 import { sendMail } from './email/send';
 import { schoolReactivated, schoolSuspended } from './email/templates';
 import { callOpts } from './lib/callOptions';
-import { docId, fail, invalid, obj, requireSuper } from './lib/guards';
+import { assertApproved, docId, fail, invalid, obj, requireSuper } from './lib/guards';
 
 export const setSchoolStatus = onCall(callOpts, async (req): Promise<SetSchoolStatusRes> => {
   requireSuper(req);
@@ -20,6 +20,7 @@ export const setSchoolStatus = onCall(callOpts, async (req): Promise<SetSchoolSt
   await db.runTransaction(async (tx) => {
     before = await tx.get(schoolRef);
     if (!before.exists) fail('not-found', 'invalid', 'School not found');
+    assertApproved(before.get('status'));
     tx.update(schoolRef, { status });
     tx.set(db.doc(paths.directory(sid)), { status }, { merge: true });
   });

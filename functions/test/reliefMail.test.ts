@@ -98,6 +98,17 @@ describe.skipIf(day === null)('runReliefMail', () => {
     expect(await mails(c.email)).toHaveLength(0);
   });
 
+  it('sends nothing for a school that is not active', async () => {
+    const c = await setup();
+    const a1 = await save(c, [pick('e-a', T.kumara), pick('e-b', null)], null);
+    await adminDb.doc(paths.school(c.sid)).update({ status: 'pending' });
+    expect(await run(c, a1)).toBe('skipped');
+    const r = await c.admin.call('saveReliefDay', { schoolId: c.sid, yearId: YEAR, date: today.date, leaves, reliefs: [pick('e-a', T.kumara), pick('e-b', T.kumara)], expectedUpdatedAt: a1 });
+    expect(r.queued).toBe(0);
+    expect((await notified(c.sid)).pending?.[T.kumara]).toBeUndefined();
+    expect(await mails(c.email)).toHaveLength(0);
+  });
+
   it('skips when the teacher email vanishes before the task runs', async () => {
     const c = await setup();
     const a1 = await save(c, [pick('e-a', T.kumara), pick('e-b', null)], null);

@@ -7,6 +7,8 @@ import {
   reliefAssigned,
   reliefCancelled,
   reportReceived,
+  schoolListed,
+  schoolPendingReview,
   schoolReactivated,
   schoolRegistered,
   schoolSuspended,
@@ -189,5 +191,47 @@ describe('relief email templates', () => {
     const { text } = cases.many();
     expect(text).toContain('P3 · 09:15–10:00: 6B · Maths (for Mr P. Bandara)');
     expect(text).toContain('P5 · 11:00–11:45: 7A · Science (for Mr P. Bandara)');
+  });
+});
+
+describe('super admin school review templates', () => {
+  const details = {
+    schoolId: 'sid1',
+    nameEn: 'Royal <College>',
+    nameSi: 'රාජකීය',
+    type: 'private',
+    district: 'Colombo',
+    city: 'Colombo 07',
+    medium: ['si', 'en'],
+    grades: [1, 2, 3, 4, 5],
+    registrant: { name: 'W. Perera', email: 'w@example.com' },
+  };
+  const schoolUrl = 'https://app.example.test/super/schools/sid1';
+
+  it('listed FYI is English only and links to the super school page', () => {
+    const { subject, html, text } = schoolListed({ school: { ...details, censusNo: '10001' }, schoolUrl, webUrl });
+    expect(subject).toBe('New school (MOE listed): Royal <College> · Sathiya (සතිය)');
+    expect(html).toContain(`href="${schoolUrl}"`);
+    expect(html).toContain('Royal &lt;College&gt;');
+    expect(html).not.toMatch(/<h2 /);
+    expect(text).toContain('Grades: 1–5');
+    expect(text).toContain('Medium: Sinhala, English');
+    expect(text).not.toContain('---');
+  });
+
+  it('pending review lists duplicates in each section, or None', () => {
+    const { html, text } = schoolPendingReview({
+      school: details,
+      schoolUrl,
+      webUrl,
+      similarRegistered: [{ id: 'sid2', name: 'Royal College', district: 'Colombo', city: 'Colombo 07', status: 'pending' }],
+      similarMoe: [{ id: '17125', name: 'Royal College' }],
+      sameDistrict: [],
+    });
+    expect(html).toContain(`href="${schoolUrl}"`);
+    expect(text).toContain('- Royal College · sid2 (Colombo 07, Colombo) [pending]');
+    expect(text).toContain('- Royal College · 17125');
+    expect(text).toMatch(/Registered in Colombo:\n> - None/);
+    expect(text).toContain('Census no: None');
   });
 });

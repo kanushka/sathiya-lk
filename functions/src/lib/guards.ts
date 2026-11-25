@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
 // Copyright (C) 2026 Kanushka Gayan
-import { EMAIL_RE, isSchoolAdmin, paths, type ApiErrorCode, type Claims, type School } from '@sathiya/core';
+import { EMAIL_RE, isSchoolAdmin, paths, type ApiErrorCode, type Claims, type School, type SchoolStatus } from '@sathiya/core';
 import { HttpsError, type CallableRequest, type FunctionsErrorCode } from 'firebase-functions/v2/https';
 import { db } from './admin';
 
@@ -47,6 +47,18 @@ export async function requireSchoolAdmin(req: CallableRequest, sid: unknown): Pr
   if (!school) notAllowed('School is not active');
   if (school!.status === 'disabled') schoolDisabled();
   return { ...caller, sid: schoolId, school: school! };
+}
+
+export function assertApproved(status: SchoolStatus | undefined): void {
+  if (status === 'pending') fail('failed-precondition', 'school-pending', 'Available after Sathiya approves your school');
+  if (status === 'rejected') fail('failed-precondition', 'school-rejected', 'This school was not approved');
+}
+
+// requireSchoolAdmin, and the school is approved (not pending review or rejected).
+export async function requireApprovedSchool(req: CallableRequest, sid: unknown): ReturnType<typeof requireSchoolAdmin> {
+  const r = await requireSchoolAdmin(req, sid);
+  assertApproved(r.school.status);
+  return r;
 }
 
 export function obj(v: unknown, name: string): Record<string, unknown> {
