@@ -14,7 +14,7 @@ import type { SetStatusFn } from './status';
 export function StatusPill({ status }: { status: School['status'] }) {
   const { t } = useTranslation('superadmin');
   return (
-    <Badge tone={status === 'active' ? 'success' : 'danger'}>{t(`status.${status}`)}</Badge>
+    <Badge tone={status === 'active' ? 'success' : status === 'pending' ? 'warning' : 'danger'}>{t(`status.${status}`)}</Badge>
   );
 }
 
@@ -26,6 +26,7 @@ export function StatusButton({ school, setStatus }: { school: School; setStatus:
   const [busy, setBusy] = useState(false);
   const name = pickName(school, lang);
   const disabling = school.status === 'active';
+  if (school.status === 'pending' || school.status === 'rejected') return null;
 
   async function apply() {
     setBusy(true);

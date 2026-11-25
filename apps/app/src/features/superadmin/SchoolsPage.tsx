@@ -9,6 +9,8 @@ import { useCollection, type CollectionState } from '../../lib/firestore';
 import { buttonClass } from '../../ui/Button';
 import { EmptyState } from '../../ui/EmptyState';
 import { LoadingState } from '../../ui/LoadingState';
+import { cx } from '../../ui/cx';
+import { SegmentedControl } from '../../ui/SegmentedControl';
 import { Select } from '../../ui/Select';
 import { Table, TBody, Td, Th, THead, Tr } from '../../ui/Table';
 import { StatusButton, StatusPill } from './StatusControl';
@@ -33,15 +35,23 @@ export function countCell(state: CountState | undefined, pick: (c: Extract<Count
 
 const linkBtn = buttonClass({ variant: 'secondary', size: 'sm' });
 
+type StatusFilter = 'all' | School['status'];
+const statusFilters: StatusFilter[] = ['all', 'pending', 'active', 'disabled', 'rejected'];
+
 export function SchoolsPage({ schools: injected, setStatus = defaultSetStatus }: SchoolsPageProps) {
   const { t } = useTranslation('superadmin');
   const { lang } = useLang();
   const live = useCollection<School>(injected ? null : 'schools');
   const state = injected ?? live;
   const [search, setSearch] = useState('');
-  const [status, setStatusFilter] = useState<'all' | School['status']>('all');
+  const [status, setStatusFilter] = useState<StatusFilter>('all');
   const [district, setDistrict] = useState('all');
 
+  const statusCounts = useMemo(() => {
+    const c: Record<StatusFilter, number> = { all: state.data.length, pending: 0, active: 0, disabled: 0, rejected: 0 };
+    for (const s of state.data) if (s.status in c) c[s.status] += 1;
+    return c;
+  }, [state.data]);
   const districts = useMemo(() => [...new Set(state.data.map((s) => s.district))].filter(Boolean).sort(), [state.data]);
   const visible = useMemo(() => {
     const q = search.trim().toLowerCase();
@@ -59,24 +69,38 @@ export function SchoolsPage({ schools: injected, setStatus = defaultSetStatus }:
   return (
     <div>
       <h1 className="mb-5 text-[26px] font-bold">{t('schools.title')}</h1>
-      <div className="mb-3 flex flex-wrap gap-2.5">
+      <div className="mb-3 flex flex-wrap items-center gap-2.5">
+        <SegmentedControl
+          aria-label={t('schools.statusLabel')}
+          value={status}
+          onChange={setStatusFilter}
+          options={statusFilters.map((f) => {
+            const label = f === 'all' ? t('schools.all') : t(`status.${f}`);
+            return {
+              value: f,
+              ariaLabel: t('schools.filterCount', { label, count: statusCounts[f] }),
+              label: (
+                <span className="inline-flex items-center gap-1.5">
+                  {label}
+                  <span
+                    className={cx(
+                      'rounded-full px-1.5 text-[11px] font-bold',
+                      f === 'pending' && statusCounts.pending > 0 ? 'bg-warning-soft text-warning' : 'bg-white/70 text-ink-muted',
+                    )}
+                  >
+                    {statusCounts[f]}
+                  </span>
+                </span>
+              ),
+            };
+          })}
+        />
         <input
           aria-label={t('schools.searchLabel')}
           placeholder={t('schools.searchPlaceholder')}
           value={search}
           onChange={(e) => setSearch(e.target.value)}
           className="h-10 min-w-[280px] flex-1 rounded-lg border border-line-strong bg-white px-3 text-sm focus:border-brand focus:outline-hidden focus:ring-[3px] focus:ring-brand/30"
-        />
-        <Select
-          aria-label={t('schools.statusLabel')}
-          className="w-44"
-          value={status}
-          onChange={setStatusFilter}
-          options={[
-            { value: 'all', label: t('schools.allStatuses') },
-            { value: 'active', label: t('status.active') },
-            { value: 'disabled', label: t('status.disabled') },
-          ]}
         />
         <Select
           aria-label={t('schools.districtLabel')}
@@ -133,7 +157,7 @@ export function SchoolsPage({ schools: injected, setStatus = defaultSetStatus }:
                       {t('schools.open')}
                     </Link>
                     <Link to={`/super/schools/${s.id}`} className={linkBtn}>
-                      {t('schools.details')}
+                      {t(s.status === 'pending' ? 'schools.review' : 'schools.details')}
                     </Link>
                     <StatusButton school={s} setStatus={setStatus} />
                   </div>
