@@ -391,3 +391,59 @@ export const mahasen: { ctx: SchoolContext; S: typeof MS } = {
     })),
   },
 };
+
+const SECONDARY_LOAD = 22;
+const secondaryDaily: string[] = [S.maths, S.science, S.sinhala, S.english];
+const secondaryPlan: PlanItem[] = [
+  { kind: 'subject', subjectId: S.maths, perWeek: 6 },
+  { kind: 'subject', subjectId: S.science, perWeek: 5 },
+  { kind: 'subject', subjectId: S.sinhala, perWeek: 5 },
+  { kind: 'subject', subjectId: S.english, perWeek: 5 },
+  { kind: 'subject', subjectId: S.history, perWeek: 3 },
+  { kind: 'subject', subjectId: S.geography, perWeek: 2 },
+  { ...religion, optionSubjectIds: [...religion.optionSubjectIds], perWeek: 3 },
+  { ...aesthetic, optionSubjectIds: [...aesthetic.optionSubjectIds], perWeek: 3 },
+  { kind: 'subject', subjectId: S.health, perWeek: 2 },
+  { kind: 'subject', subjectId: S.tamil, perWeek: 2 },
+  { kind: 'subject', subjectId: S.pts, perWeek: 2 },
+];
+
+export function secondary(gradeNumbers: number[], classesPerGrade: number): SchoolContext {
+  const classCount = gradeNumbers.length * classesPerGrade;
+  const template: PeriodTemplate = { id: 'sx-tpl', name: 'School default', isDefault: true, mode: 'same', rows: defaultRows };
+  const staff: Teacher[] = [];
+  const hire = (subjectId: string, count: number): Teacher[] =>
+    Array.from({ length: count }, (_, i) => {
+      const t = teacher(`sx-t-${subjectId}-${i + 1}`, `SX${String(staff.length + 1).padStart(3, '0')}`, 'Mr', `${subjectId} ${i + 1}`, [subjectId], gradeNumbers, 7);
+      staff.push(t);
+      return t;
+    });
+  const daily: Teacher[][] = [];
+  for (const item of secondaryPlan) {
+    if (item.kind === 'group') {
+      for (const id of item.optionSubjectIds) hire(id, Math.max(1, Math.ceil((item.perWeek * gradeNumbers.length) / 12)));
+      continue;
+    }
+    const demand = Math.ceil((item.perWeek * classCount) / SECONDARY_LOAD);
+    const isDaily = secondaryDaily.includes(item.subjectId);
+    const hired = hire(item.subjectId, isDaily ? Math.max(demand, Math.ceil(classCount / secondaryDaily.length)) : demand);
+    if (isDaily) daily.push(hired);
+  }
+  const classTeachers = Array.from({ length: Math.max(...daily.map((d) => d.length)) }, (_, i) => daily.flatMap((d) => (d[i] ? [d[i]] : []))).flat();
+  const sxGrades: Grade[] = gradeNumbers.map((n) => ({ id: `sx-g-${n}`, number: n, plan: secondaryPlan }));
+  const sxClasses: SchoolClass[] = gradeNumbers.flatMap((n) =>
+    Array.from({ length: classesPerGrade }, (_, i) => {
+      const letter = String.fromCharCode(65 + i);
+      const index = gradeNumbers.indexOf(n) * classesPerGrade + i;
+      return { id: `sx-c-${n}${letter.toLowerCase()}`, gradeId: `sx-g-${n}`, name: `${n}${letter}`, classTeacherId: classTeachers[index]!.id, templateId: template.id };
+    }),
+  );
+  return {
+    school: { ...school, id: 'secondary', nameEn: 'Secondary College', grades: gradeNumbers },
+    teachers: staff,
+    subjects,
+    templates: [template],
+    grades: sxGrades,
+    classes: sxClasses,
+  };
+}

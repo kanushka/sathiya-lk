@@ -29,6 +29,7 @@ export const callables = {
   unlinkTeacher: 'unlinkTeacher',
   saveTemplate: 'saveTemplate',
   saveReliefDay: 'saveReliefDay',
+  applyAutoFill: 'applyAutoFill',
 } as const;
 
 export interface RegisterSchoolReq { school: Omit<School, 'id' | 'status' | 'createdAt' | 'activeYearId'>; adminName: string; acceptedTermsVersion: string }
@@ -47,6 +48,9 @@ export interface SaveEntryReq { schoolId: string; yearId: string; entry: EntryDr
 export interface SaveEntryRes { entryId: string }
 export interface DeleteEntryReq { schoolId: string; yearId: string; entryId: string }
 export interface DeleteEntryRes { ok: true }
+export interface ApplyAutoFillReq { schoolId: string; yearId: string; deleteEntryIds: string[]; drafts: EntryDraft[] }
+export interface ApplyAutoFillRes { written: number; deleted: number }
+export const APPLY_AUTOFILL_MAX_ITEMS = 3000;
 export interface PublishYearReq { schoolId: string; yearId: string }
 export interface PublishYearRes { classes: number; teachers: number }
 export interface SetSchoolStatusReq { schoolId: string; status: 'active' | 'disabled' }
@@ -101,7 +105,8 @@ interface CallableMap {
   unlinkTeacher: { req: UnlinkTeacherReq; res: UnlinkTeacherRes };
   saveTemplate: { req: SaveTemplateReq; res: SaveTemplateRes };
   saveReliefDay: { req: SaveReliefDayReq; res: SaveReliefDayRes };
+  applyAutoFill: { req: ApplyAutoFillReq; res: ApplyAutoFillRes };
 }
 export type CallableName = keyof typeof callables;
 export type CallableTypes = { [K in CallableName]: CallableMap[K] };
-export type ApiErrorCode = 'clash' | 'in-use' | 'not-allowed' | 'invalid' | 'email-unverified' | 'rate-limited' | 'school-disabled' | 'already-linked' | 'staff-id-unknown' | 'link-invalid' | 'too-many-schools' | 'school-registered' | 'template-in-use' | 'template-too-many-moves' | 'stale' | 'republish' | 'invalid-relief' | 'not-today';
+export type ApiErrorCode = 'clash' | 'in-use' | 'not-allowed' | 'invalid' | 'email-unverified' | 'rate-limited' | 'school-disabled' | 'already-linked' | 'staff-id-unknown' | 'link-invalid' | 'too-many-schools' | 'school-registered' | 'template-in-use' | 'template-too-many-moves' | 'stale' | 'republish' | 'invalid-relief' | 'not-today' | 'busy';

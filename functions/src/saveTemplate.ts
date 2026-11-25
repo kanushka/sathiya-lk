@@ -8,6 +8,7 @@ import { callOpts } from './lib/callOptions';
 import { docId, fail, invalid, obj, optDocId, optStr, requireSchoolAdmin, str } from './lib/guards';
 import { latestYearId } from './lib/yearEntries';
 import { runTx } from './lib/tx';
+import { assertNotApplying } from './lib/yearBusy';
 
 const BATCH_LIMIT = 450;
 const MAX_ROWS = 40;
@@ -64,7 +65,11 @@ export const saveTemplate = onCall(callOpts, async (req): Promise<SaveTemplateRe
       const found = await tx.getAll(...subjectIds.map((id) => db.doc(`${paths.subjects(sid)}/${id}`)));
       if (found.some((d) => !d.exists)) invalid('Unknown subject on an activity row');
     }
-    const [snap, classes] = await Promise.all([tx.get(ref), tx.get(db.collection(paths.classes(sid)).where('templateId', '==', templateId))]);
+    const [snap, classes, year] = await Promise.all([
+      tx.get(ref),
+      tx.get(db.collection(paths.classes(sid)).where('templateId', '==', templateId)),
+      yid ? tx.get(db.doc(`${paths.years(sid)}/${yid}`)) : undefined,
+    ]);
     const entrySnap = classes.size > 0 && yid ? await tx.get(db.collection(paths.entries(sid, yid))) : undefined;
     if (!snap.exists) fail('not-found', 'invalid', 'Unknown template');
     const before = { ...(snap.data() as Omit<PeriodTemplate, 'id'>), id: templateId };
@@ -76,6 +81,7 @@ export const saveTemplate = onCall(callOpts, async (req): Promise<SaveTemplateRe
     const { moves, blocked, orphaned } = remapEntries(before, after, entries, classes.docs.map((c) => c.id));
     const res: SaveTemplateRes = { moved: moves.length, blocked: blocked.length, orphaned: orphaned.length };
     if (dryRun) return res;
+    if (year) assertNotApplying(year);
     if (blocked.length > 0) fail('failed-precondition', 'template-in-use', 'Used periods cannot become activities or intervals', { count: blocked.length });
     if (moves.length + 1 > BATCH_LIMIT) fail('failed-precondition', 'template-too-many-moves', 'Too many timetable entries would move in one save', { count: moves.length });
 
