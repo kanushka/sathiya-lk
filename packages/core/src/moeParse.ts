@@ -53,15 +53,30 @@ function pages(text: string): string[][] {
   return text.split('\f').map((p) => p.split('\n').filter((l) => l.trim() && !HEADER.test(l)));
 }
 
+const grp = (m: RegExpExecArray, i: number) => m[i] ?? '';
+
+function addressStart(cs: { at: number; text: string }[], l: string): number {
+  return ALL_START.test(l) && cs.length >= 3 ? (cs[2]?.at ?? -1) : -1;
+}
+
+function splitLine(body: string, addrCol: number): { name: string[]; address: string[]; addrCol: number } {
+  const cs = cells(body);
+  const last = cs[cs.length - 1];
+  if (!last) return { name: [], address: [], addrCol };
+  if (cs.length >= 2) {
+    return { name: cs.slice(0, -1).map((c) => c.text), address: [last.text], addrCol: last.at };
+  }
+  const nearest = [...last.text.matchAll(/\S+/g)]
+    .filter((w) => w.index && Math.abs(last.at + w.index - addrCol) <= 3)
+    .sort((x, y) => Math.abs(last.at + (x.index ?? 0) - addrCol) - Math.abs(last.at + (y.index ?? 0) - addrCol))[0]?.index;
+  if (nearest !== undefined) return { name: [last.text.slice(0, nearest)], address: [last.text.slice(nearest)], addrCol };
+  return last.at >= addrCol - 3 ? { name: [], address: [last.text], addrCol } : { name: [last.text], address: [], addrCol };
+}
+
 export function parseAllSchools(text: string): AllSchoolRow[] {
   const rows: AllSchoolRow[] = [];
   for (const page of pages(text)) {
-    let addrCol = mode(
-      page.flatMap((l) => {
-        const cs = cells(l.replace(TAIL, ''));
-        return ALL_START.test(l) && cs.length >= 3 ? [cs[2].at] : [];
-      }),
-    );
+    let addrCol = mode(page.map((l) => addressStart(cells(l.replace(TAIL, '')), l)).filter((x) => x >= 0));
     let buf: string[] = [];
     for (const line of page) {
       buf.push(line);
@@ -74,35 +89,23 @@ export function parseAllSchools(text: string): AllSchoolRow[] {
         const m = ALL_START.exec(l);
         let body = l.replace(TAIL, '');
         if (m) {
-          censusNo = checkCensus(m[1], l);
-          body = body.replace(m[1], ' '.repeat(m[1].length));
+          censusNo = checkCensus(grp(m, 1), l);
+          body = body.replace(grp(m, 1), ' '.repeat(grp(m, 1).length));
         }
-        const cs = cells(body);
-        if (cs.length >= 2) {
-          addrCol = cs[cs.length - 1].at;
-          name.push(...cs.slice(0, -1).map((c) => c.text));
-          address.push(cs[cs.length - 1].text);
-        } else if (cs.length === 1) {
-          const words = [...cs[0].text.matchAll(/\S+/g)];
-          const cut = words
-            .filter((w) => w.index && Math.abs(cs[0].at + w.index - addrCol) <= 3)
-            .sort((x, y) => Math.abs(cs[0].at + (x.index ?? 0) - addrCol) - Math.abs(cs[0].at + (y.index ?? 0) - addrCol))[0]?.index;
-          if (cut !== undefined) {
-            name.push(cs[0].text.slice(0, cut));
-            address.push(cs[0].text.slice(cut));
-          } else if (cs[0].at >= addrCol - 3) address.push(cs[0].text);
-          else name.push(cs[0].text);
-        }
+        const part = splitLine(body, addrCol);
+        addrCol = part.addrCol;
+        name.push(...part.name);
+        address.push(...part.address);
       }
       if (!censusNo) throw new Error(`No census number in row: ${buf.join(' | ')}`);
       rows.push({
         censusNo,
         name: clean(name.join(' ')),
         address: clean(address.join(' ')),
-        level: t[1],
-        span: clean(t[2].replace(/^\d\./, '')),
-        medium: stripNum(t[3]),
-        sex: stripNum(t[4]),
+        level: grp(t, 1),
+        span: clean(grp(t, 2).replace(/^\d\./, '')),
+        medium: stripNum(grp(t, 3)),
+        sex: stripNum(grp(t, 4)),
       });
       buf = [];
     }
@@ -121,7 +124,7 @@ export function parseNationalSchools(text: string): NationalSchoolRow[] {
         pending.push(line.trim());
         continue;
       }
-      const censusNo = checkCensus(m[1], line);
+      const censusNo = checkCensus(grp(m, 1), line);
       const rest = line.slice(m[0].length - 1);
       const cols = NAT_COLS.exec(rest);
       if (!cols) throw new Error(`Cannot find province/district/zone: ${line.trim()}`);
@@ -129,11 +132,11 @@ export function parseNationalSchools(text: string): NationalSchoolRow[] {
       if (left.length < 2) throw new Error(`Cannot split name and address: ${line.trim()}`);
       rows.push({
         censusNo,
-        name: clean(left[0]),
+        name: clean(left[0] ?? ''),
         address: clean([...pending, ...left.slice(1)].join(' ')),
-        province: stripNum(cols[1] ?? ''),
-        district: stripNum(cols[2] ?? ''),
-        zone: clean(cols[3] ?? ''),
+        province: stripNum(grp(cols, 1)),
+        district: stripNum(grp(cols, 2)),
+        zone: clean(grp(cols, 3)),
       });
       pending = [];
     }

@@ -13,7 +13,7 @@ describe('parseAllSchools', () => {
 
   it('skips headers and parses every row', () => {
     expect(rows).toHaveLength(18);
-    expect(rows[0].name).toBe('MODARA DE LA SALLE COLLEGE');
+    expect(rows[0]?.name).toBe('MODARA DE LA SALLE COLLEGE');
     expect(rows.every((r) => /^\d{5}$/.test(r.censusNo))).toBe(true);
   });
 
