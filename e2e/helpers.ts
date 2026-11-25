@@ -93,3 +93,9 @@ export async function freshSchoolAdmin(tag: string, over: Record<string, unknown
   await db.doc(`schools/${schoolId}`).update({ status: 'active' });
   return { email, password, sid: schoolId };
 }
+
+// Registration is limited per IP per day and every spec registers from 127.0.0.1.
+export async function clearRateLimits(): Promise<void> {
+  const { db } = admin();
+  await db.recursiveDelete(db.collection('rateLimits'));
+}

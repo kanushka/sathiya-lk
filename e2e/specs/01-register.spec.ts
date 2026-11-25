@@ -18,19 +18,25 @@ async function verifyLinkFromMail(email: string): Promise<string> {
   return link!;
 }
 
-test('register a government school: census checks, email verification gate, lands on /admin', async ({ page, context }) => {
+test('register a government school: census lookup, email verification gate, lands on /admin', async ({ page, context }) => {
   const email = `principal-${Date.now()}@example.com`;
   await page.goto('/register');
   await shot(page, 'register-step1');
-  const next = page.getByRole('button', { name: 'Next: logo & colours' });
+  await page.getByRole('button', { name: 'Find my school' }).click();
+  await expect(page.getByText('Enter the census number, or choose "My school isn\'t listed" below.')).toBeVisible();
+  await page.getByLabel('Census number').fill('54321');
+  await page.getByRole('button', { name: 'Find my school' }).click();
 
+  await expect(page.getByRole('heading', { name: '1 · School details' })).toBeVisible();
+  await expect(page.getByText("Census number 54321 isn't in the Ministry of Education school list.")).toBeVisible();
+  await expect(page.getByLabel('Census number', { exact: true })).toHaveValue('54321');
+  await expect(page.getByRole('combobox', { name: 'School type' })).toContainText('Government');
+  await expect(page.getByRole('checkbox', { name: /No census number/ })).toBeDisabled();
+  const next = page.getByRole('button', { name: 'Next: logo & colours' });
   await page.getByLabel('School name in English').fill('Nugegoda Central College');
   await page.getByLabel('City', { exact: true }).fill('Nugegoda');
   await page.getByLabel('District').fill('Colombo');
   await expect(page.getByLabel('Staff ID prefix')).toHaveValue('NCC');
-  await expect(page.getByRole('combobox', { name: 'School type' })).toContainText('Government');
-  await expect(next).toBeDisabled();
-  await expect(page.getByRole('checkbox', { name: /No census number/ })).toBeDisabled();
   await page.getByLabel('Census number', { exact: true }).fill('12');
   await expect(page.getByText('Census number must be 4 to 6 digits')).toBeVisible();
   await expect(next).toBeDisabled();
