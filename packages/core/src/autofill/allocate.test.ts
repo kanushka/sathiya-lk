@@ -2,7 +2,7 @@
 // Copyright (C) 2026 Kanushka Gayan
 
 import { describe, expect, it } from 'vitest';
-import { C, entries as fixtureEntries, G, S, T } from '../fixtures';
+import { C, entries as fixtureEntries, entry, G, S, T } from '../fixtures';
 import type { PlanItem, SchoolContext, Teacher } from '../types';
 import { allocate, type Allocation } from './allocate';
 import { rng } from './rng';
@@ -103,6 +103,32 @@ describe('allocate', () => {
     const { allocation, problems } = run(ctx, [C.c6a]);
     expect(teacherFor(allocation, C.c6a, `subject:${S.science}`)).toBeNull();
     expect(problems).toContainEqual({ classId: C.c6a, planKey: `subject:${S.science}`, reason: 'no-qualified-teacher' });
+  });
+
+  it('returns null with subject-cap when every qualified teacher holds two subjects', () => {
+    const all = [S.maths, S.science, S.sinhala];
+    const ctx: SchoolContext = {
+      ...withGrade(readyCtx, G.g6, { plan: [subj(S.maths, 2), subj(S.science, 2), subj(S.sinhala, 2)] }),
+      teachers: [teacher('ta', all), teacher('tc', [S.history])],
+      classes: readyCtx.classes.map((c) => (c.id === C.c6a ? { ...c, classTeacherId: 'tc' } : c)),
+    };
+    const { allocation, problems } = run(ctx, [C.c6a]);
+    expect(allocation.filter((r) => r.teacherId === 'ta').length).toBe(2);
+    expect(allocation.filter((r) => r.teacherId === null).length).toBe(1);
+    expect(problems.filter((p) => p.reason === 'subject-cap').length).toBe(1);
+  });
+
+  it('kept-entry teacher keeps preference but not past the cap', () => {
+    const all = [S.maths, S.science, S.sinhala];
+    const ctx: SchoolContext = {
+      ...withGrade(readyCtx, G.g6, { plan: [subj(S.maths, 2), subj(S.science, 2), subj(S.sinhala, 2)] }),
+      teachers: [teacher('ta', all), teacher('tb', all), teacher('tc', [S.history])],
+      classes: readyCtx.classes.map((c) => (c.id === C.c6a ? { ...c, classTeacherId: 'tc' } : c)),
+    };
+    const kept = [entry('k1', 0, 1, [C.c6a], [[S.maths, 'ta']]), entry('k2', 0, 2, [C.c6a], [[S.science, 'ta']])];
+    const { allocation } = run(ctx, [C.c6a], { entries: kept });
+    expect(teacherFor(allocation, C.c6a, `subject:${S.maths}`)).toBe('ta');
+    expect(teacherFor(allocation, C.c6a, `subject:${S.sinhala}`)).toBe('tb');
   });
 
   it('is deterministic for the same seed', () => {

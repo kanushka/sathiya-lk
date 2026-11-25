@@ -107,18 +107,18 @@ export function allocate(args: {
     demand: Demand;
     preferred: string | null;
     capClassId?: string;
-  }): string | null => {
+  }): { teacherId: string | null; reason?: 'no-qualified-teacher' | 'subject-cap' } => {
     const pool = ctx.teachers.filter((t) => !p.exclude.has(t.id) && teachesSubject(t, p.subjectId, p.gradeNumber));
-    if (pool.length === 0) return null;
-    const preferred = p.preferred === null ? undefined : pool.find((t) => t.id === p.preferred);
-    if (preferred) return preferred.id;
+    if (pool.length === 0) return { teacherId: null, reason: 'no-qualified-teacher' };
 
     const subjectCount = (t: Teacher): number => {
       const set = p.capClassId === undefined ? undefined : subjectsTaught.get(p.capClassId)?.get(t.id);
       return set === undefined ? 0 : set.size - (set.has(p.subjectId) ? 1 : 0);
     };
     let cands = p.capClassId === undefined ? pool : pool.filter((t) => subjectCount(t) < MAX_SUBJECTS_PER_CLASS);
-    if (cands.length === 0) cands = pool;
+    if (cands.length === 0) return { teacherId: null, reason: 'subject-cap' };
+    const preferred = p.preferred === null ? undefined : cands.find((t) => t.id === p.preferred);
+    if (preferred) return { teacherId: preferred.id };
 
     const exempt = (t: Teacher): boolean => p.classIds.some((id) => isExemptPlacement(t.id, [id], ctx));
     const projPeriods = (t: Teacher): number => (load.get(t.id)?.periods ?? 0) + (exempt(t) ? 0 : p.demand.periods);
@@ -144,7 +144,7 @@ export function allocate(args: {
         bestKey = k;
       } else if (cmp(k, bestKey) === 0) best.push(t);
     }
-    return (best.length === 1 ? best[0]! : best[Math.floor(random() * best.length)]!).id;
+    return { teacherId: (best.length === 1 ? best[0]! : best[Math.floor(random() * best.length)]!).id };
   };
 
   const requested = new Set(args.classIds);
@@ -166,11 +166,12 @@ export function allocate(args: {
       const demand = demandOf(item, cls.id);
       const overridden = overrideMap.get(overrideKey(cls.id, key, item.subjectId));
       let teacherId: string | null;
+      let reason = 'no-qualified-teacher';
       if (overridden !== undefined) teacherId = overridden;
       else if (forced) teacherId = forced.id;
       else if (mode === 'classTeacherAll' || (mode === 'classTeacherPlusSpecialists' && !specialistSubjectIds.includes(item.subjectId))) teacherId = classTeacher?.id ?? null;
       else {
-        teacherId = pick({
+        const picked = pick({
           classIds: [cls.id],
           subjectId: item.subjectId,
           gradeNumber: grade.number,
@@ -179,9 +180,11 @@ export function allocate(args: {
           preferred: preferredTeacherFor({ entries, classId: cls.id, subjectId: item.subjectId }),
           ...(mode === 'subjectTeachers' ? { capClassId: cls.id } : {}),
         });
+        teacherId = picked.teacherId;
+        reason = picked.reason ?? reason;
       }
       allocation.push({ classId: cls.id, planKey: key, subjectId: item.subjectId, teacherId });
-      if (teacherId === null) problems.push({ classId: cls.id, planKey: key, reason: 'no-qualified-teacher' });
+      if (teacherId === null) problems.push({ classId: cls.id, planKey: key, reason });
       else commit(teacherId, [cls.id], item.subjectId, demand, mode === 'subjectTeachers');
     };
 
@@ -201,7 +204,7 @@ export function allocate(args: {
         if (overridden !== undefined) teacherId = overridden;
         else {
           const preferred = block.map((id) => preferredTeacherFor({ entries, classId: id, subjectId })).find((t) => t !== null) ?? null;
-          teacherId = pick({ classIds: block, subjectId, gradeNumber: grade.number, exclude: chosen, demand, preferred });
+          teacherId = pick({ classIds: block, subjectId, gradeNumber: grade.number, exclude: chosen, demand, preferred }).teacherId;
         }
         if (teacherId !== null) {
           chosen.add(teacherId);
@@ -214,6 +217,7 @@ export function allocate(args: {
       }
     };
 
+    const weekMinutes = (i: PlanItem): number => demandOf(i, cls.id).minutes;
     let daily: Extract<PlanItem, { kind: 'subject' }> | undefined;
     if (mode === 'subjectTeachers' && classTeacher) {
       for (const item of plan) {
@@ -221,12 +225,12 @@ export function allocate(args: {
         if (!teachesSubject(classTeacher, item.subjectId, grade.number)) continue;
         const overridden = overrideMap.get(overrideKey(cls.id, planKey(item), item.subjectId));
         if (overridden !== undefined && overridden !== classTeacher.id) continue;
-        if (!daily || item.perWeek > daily.perWeek) daily = item;
+        if (!daily || weekMinutes(item) > weekMinutes(daily)) daily = item;
       }
       if (daily) assignSubject(daily, classTeacher);
       else {
         const groupQualified = plan.some((i) => i.kind === 'group' && i.optionSubjectIds.some((id) => teachesSubject(classTeacher, id, grade.number)));
-        if (!groupQualified) problems.push({ classId: cls.id, planKey: '', reason: 'class-teacher-no-daily-subject' });
+        if (!groupQualified) problems.push({ classId: cls.id, planKey: 'class-teacher', reason: 'class-teacher-no-daily-subject' });
       }
     }
 
