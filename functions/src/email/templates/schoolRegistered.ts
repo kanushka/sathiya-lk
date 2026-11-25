@@ -9,15 +9,18 @@ export interface SchoolRegisteredInput {
   school: SchoolBrand;
   loginUrl: string;
   webUrl?: string;
+  /** Waiting for super admin review: setup works, publishing, invites and printing do not yet. */
+  pending?: boolean;
 }
 
-export function schoolRegistered({ adminName, school, loginUrl, webUrl }: SchoolRegisteredInput): Rendered {
+export function schoolRegistered({ adminName, school, loginUrl, webUrl, pending }: SchoolRegisteredInput): Rendered {
   const name = pickName(school, 'en');
   const si = pickName(school, 'si');
   return render({
     subject: brandSubject(`${name} is registered`),
     header: schoolHeader(school),
     en: {
+      ...(pending && { status: { tone: 'bad' as const, badge: 'Under review', text: 'Sathiya is reviewing your school before it goes live.' } }),
       title: `Welcome, ${adminName}`,
       paras: [[{ b: name }, ' is registered on Sathiya. Three steps to your first timetable:']],
       steps: [
@@ -26,7 +29,9 @@ export function schoolRegistered({ adminName, school, loginUrl, webUrl }: School
         'Build the timetable, then publish it.',
       ],
       cta: { label: 'Open Sathiya', url: loginUrl },
-      note: "Invite other admins from school settings when you're ready.",
+      note: pending
+        ? 'You can set up the school and draft the timetable now. Publishing, admin invites and printing open after approval.'
+        : "Invite other admins from school settings when you're ready.",
     },
     si: {
       title: `සාදරයෙන් පිළිගනිමු, ${adminName}`,
@@ -36,6 +41,9 @@ export function schoolRegistered({ adminName, school, loginUrl, webUrl }: School
         'ගුරුවරුන් එක් කරන්න. සෑම ගුරුවරයෙකුටම පිවිසුම් පත්‍රිකාවක් ලැබේ.',
         'කාලසටහන සාදා එය ප්‍රකාශයට පත් කරන්න.',
       ],
+      ...(pending && {
+        note: 'ඔබේ පාසල Sathiya විසින් සමාලෝචනය කරමින් පවතී. දැන් සැකසීම සහ කාලසටහන කෙටුම්පත් කිරීම කළ හැක; ප්‍රකාශයට පත් කිරීම, පරිපාලක ආරාධනා සහ මුද්‍රණය අනුමත කිරීමෙන් පසු ලැබේ.',
+      }),
     },
     footer: siteFooter(webUrl),
   });

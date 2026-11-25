@@ -1,8 +1,10 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
 // Copyright (C) 2026 Kanushka Gayan
-import { paths, type RegisterSchoolReq, type RegisterSchoolRes } from '@sathiya/core';
+import { DEFAULT_TERMS_VERSION, paths, subjectsFingerprint, type RegisterSchoolReq, type RegisterSchoolRes } from '@sathiya/core';
+import { defaultTemplate, TPL } from '@sathiya/core/fixtures';
+import { FieldValue } from 'firebase-admin/firestore';
 import { afterEach, describe, expect, it, vi } from 'vitest';
-import { CHECK_CENSUS_PER_IP_PER_DAY } from '../src/lib/rateLimit';
+import { CHECK_CENSUS_PER_IP_PER_DAY, REGISTER_PER_UID_PER_DAY } from '../src/lib/rateLimit';
 import { registerSchool } from '../src/registerSchool';
 import { syncSchoolDirectory } from '../src/syncDirectory';
 import {
@@ -22,6 +24,7 @@ import {
   uniq,
   type Client,
 } from './helpers';
+import { seedSchool } from './seed';
 
 const APP_URL = 'https://app.sathiya.kanushka.com';
 const SUPERS = 'sup-a@example.test, sup-b@example.test';
@@ -85,6 +88,11 @@ describe('registerSchool with a census number in the MOE list', () => {
     expect(mails[0]!.message.subject).toBe('New school (MOE listed): Kilinochchi Madhya Maha Vidyalayam · Sathiya (සතිය)');
     expect(mails[0]!.message.html).toContain(`href="${APP_URL}/super/schools/${sid}"`);
     expect(mails[0]!.message.text).toContain('Census no: 10001');
+
+    const welcome = (await adminDb.collection('mail').where('to', 'array-contains', c.auth.currentUser!.email!.toLowerCase()).get()).docs.map((d) => d.data().message.text as string);
+    expect(welcome).toHaveLength(1);
+    expect(welcome[0]).not.toContain('Under review');
+    expect(welcome[0]).toContain("Invite other admins from school settings when you're ready.");
   });
 
   it("takes the user's district when the list has none, and still enforces the official name", async () => {
@@ -100,6 +108,8 @@ describe('registerSchool without a listed census number', () => {
   it('stays pending, off the directory, and mails supers a review with possible duplicates', async () => {
     const u = uniq();
     const district = `Kilinochchi ${u}`;
+    const elsewhere = await adminWithSchool();
+    await adminDb.doc(paths.school(elsewhere.sid)).update({ nameEn: `Other ${u}`, district, city: 'Elsewhere' });
     const existing = await adminWithSchool();
     await adminDb.doc(paths.school(existing.sid)).update({ nameEn: `Kilinochchi Hindu College ${u}`, district });
 
@@ -123,7 +133,15 @@ describe('registerSchool without a listed census number', () => {
     expect(registered).toContain(existing.sid);
     expect(moe).toContain('Kilinochchi Hindu College · 10002');
     expect(sameDistrict).toContain(existing.sid);
-    expect(sameDistrict!.split('Review school:')[0]).not.toContain(sid);
+    const nearby = sameDistrict!.split('Review school:')[0]!;
+    expect(nearby).not.toContain(sid);
+    expect(nearby.indexOf(existing.sid)).toBeLessThan(nearby.indexOf(elsewhere.sid));
+    expect(nearby.indexOf(elsewhere.sid)).toBeGreaterThan(-1);
+
+    const welcome = (await adminDb.collection('mail').where('to', 'array-contains', c.auth.currentUser!.email!.toLowerCase()).get()).docs.map((d) => d.data().message.text as string);
+    expect(welcome).toHaveLength(1);
+    expect(welcome[0]).toContain('[Under review]');
+    expect(welcome[0]).toContain('Publishing, admin invites and printing open after approval.');
   });
 
   it('refuses a medium outside si, en, ta', async () => {
@@ -133,13 +151,63 @@ describe('registerSchool without a listed census number', () => {
 });
 
 describe('registerSchool terms version', () => {
-  it('must equal platform/config currentTermsVersion', async () => {
+  it('must equal platform/config currentTermsVersion, else terms-outdated', async () => {
     const c = await signUp();
-    await expectFnError(c.call('registerSchool', { ...schoolReq(), acceptedTermsVersion: '0' }), 'invalid-argument', 'invalid');
+    const outdated = (p: Promise<unknown>) => expectFnError(p, 'failed-precondition', 'terms-outdated');
+    await outdated(c.call('registerSchool', { ...schoolReq(), acceptedTermsVersion: '0' }));
     await adminDb.doc(paths.platform.config).set({ currentTermsVersion: '2' }, { merge: true });
-    await expectFnError(c.call('registerSchool', schoolReq()), 'invalid-argument', 'invalid');
+    await outdated(c.call('registerSchool', schoolReq()));
     await expect(c.call('registerSchool', { ...schoolReq(), acceptedTermsVersion: '2' })).resolves.toMatchObject({ schoolId: expect.any(String) });
     expect((await c.claims()).schools).toBeDefined();
+  });
+
+  it('falls back to the app default when none is configured', async () => {
+    await adminDb.doc(paths.platform.config).update({ currentTermsVersion: FieldValue.delete() });
+    const c = await signUp();
+    await expectFnError(c.call('registerSchool', { ...schoolReq(), acceptedTermsVersion: '2' }), 'failed-precondition', 'terms-outdated');
+    await expect(c.call('registerSchool', { ...schoolReq(), acceptedTermsVersion: DEFAULT_TERMS_VERSION })).resolves.toMatchObject({ schoolId: expect.any(String) });
+  });
+
+  it('refuses stale terms before counting the attempt against the rate limit', async () => {
+    const c = await signUp();
+    for (let i = 0; i < REGISTER_PER_UID_PER_DAY + 2; i++) {
+      await expectFnError(c.call('registerSchool', { ...schoolReq(), acceptedTermsVersion: '0' }), 'failed-precondition', 'terms-outdated');
+    }
+    await expect(c.call('registerSchool', schoolReq())).resolves.toMatchObject({ schoolId: expect.any(String) });
+  });
+});
+
+describe('census number normalisation', () => {
+  it('pads a 4-digit number to the 5-digit MOE form for lookup, registration, check and release', async () => {
+    await Promise.all(['00002', '0002', '00003', '0003'].map(freeCensus));
+    const anon = client();
+    await expect(anon.call('lookupCensus', { censusNo: '0002' })).resolves.toMatchObject({ status: 'listed', school: { censusNo: '00002' } });
+
+    const c = await signUp();
+    const { schoolId } = await c.call('registerSchool', schoolReq({ censusNo: '0003' }));
+    expect(await schoolDoc(schoolId)).toMatchObject({ censusNo: '00003', status: 'active', review: { moeMatched: true } });
+    expect((await adminDb.doc(paths.censusIndex('00003')).get()).data()).toEqual({ schoolId });
+    expect((await adminDb.doc(paths.censusIndex('0003')).get()).exists).toBe(false);
+    for (const n of ['0003', '00003']) {
+      await expect(anon.call('lookupCensus', { censusNo: n })).resolves.toEqual({ status: 'registered' });
+      await expect(anon.call('checkCensusNo', { censusNo: n })).resolves.toEqual({ available: false });
+    }
+    await expectFnError((await signUp()).call('registerSchool', schoolReq({ censusNo: '0003' })), 'already-exists', 'school-registered');
+
+    const sup = await signUp();
+    await makeSuper(sup);
+    await expect(sup.call('releaseCensusNo', { schoolId })).resolves.toEqual({ censusNo: '00003', freed: true });
+    await expect(anon.call('checkCensusNo', { censusNo: '0003' })).resolves.toEqual({ available: true });
+  });
+
+  it('treats an index doc written unpadded before normalisation as taken', async () => {
+    await freeCensus('00004');
+    await adminDb.doc(paths.censusIndex('0004')).set({ schoolId: 'legacy' });
+    const anon = client();
+    await expect(anon.call('lookupCensus', { censusNo: '00004' })).resolves.toEqual({ status: 'registered' });
+    await expect(anon.call('checkCensusNo', { censusNo: '0004' })).resolves.toEqual({ available: false });
+    await expectFnError((await signUp()).call('registerSchool', schoolReq({ censusNo: '00004' })), 'already-exists', 'school-registered');
+    await freeCensus('0004');
   });
 });
 
@@ -179,6 +247,23 @@ describe('a pending school is refused what needs approval', () => {
 
     expect((await adminDb.collection(paths.invites(sid)).get()).size).toBe(0);
     expect((await adminDb.doc(paths.joinLink(sid)).get()).exists).toBe(false);
+    expect((await schoolDoc(sid)).status).toBe('pending');
+  });
+
+  it('still allows setup: createTeacher, importSetup, saveTemplate', async () => {
+    const { admin, sid } = await pendingSchool();
+    await expect(admin.call('createTeacher', { schoolId: sid, teacher: teacherInput('SCC043') })).resolves.toMatchObject({ teacherId: expect.any(String) });
+    const imported = await admin.call('importSetup', {
+      schoolId: sid,
+      subjectsVersion: subjectsFingerprint([]),
+      subjects: [{ row: 2, cells: { nameEn: 'Robotics', short: 'ROB' } }],
+      teachers: [],
+    });
+    expect(imported.subjectIds).toHaveLength(1);
+    await seedSchool(sid);
+    await expect(
+      admin.call('saveTemplate', { schoolId: sid, templateId: TPL.default, patch: { name: defaultTemplate.name, mode: 'same', rows: defaultTemplate.rows } }),
+    ).resolves.toEqual({ moved: 0, blocked: 0, orphaned: 0 });
     expect((await schoolDoc(sid)).status).toBe('pending');
   });
 

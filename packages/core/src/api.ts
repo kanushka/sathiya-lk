@@ -35,6 +35,9 @@ export const callables = {
   removeRegistration: 'removeRegistration',
 } as const;
 
+// Terms version assumed when platform/config has none.
+export const DEFAULT_TERMS_VERSION = '1';
+
 export interface RegisterSchoolReq { school: Omit<School, 'id' | 'status' | 'createdAt' | 'activeYearId'>; adminName: string; acceptedTermsVersion: string }
 export interface RegisterSchoolRes { schoolId: string }
 export interface CreateTeacherReq { schoolId: string; teacher: Omit<Teacher, 'id' | 'uid' | 'lastLoginAt'> }
@@ -117,4 +120,4 @@ interface CallableMap {
 }
 export type CallableName = keyof typeof callables;
 export type CallableTypes = { [K in CallableName]: CallableMap[K] };
-export type ApiErrorCode = 'clash' | 'in-use' | 'not-allowed' | 'invalid' | 'email-unverified' | 'rate-limited' | 'school-disabled' | 'already-linked' | 'staff-id-unknown' | 'link-invalid' | 'too-many-schools' | 'school-registered' | 'template-in-use' | 'template-too-many-moves' | 'stale' | 'republish' | 'invalid-relief' | 'not-today' | 'school-pending' | 'school-rejected';
+export type ApiErrorCode = 'clash' | 'in-use' | 'not-allowed' | 'invalid' | 'email-unverified' | 'rate-limited' | 'school-disabled' | 'already-linked' | 'staff-id-unknown' | 'link-invalid' | 'too-many-schools' | 'school-registered' | 'template-in-use' | 'template-too-many-moves' | 'stale' | 'republish' | 'invalid-relief' | 'not-today' | 'school-pending' | 'school-rejected' | 'terms-outdated';

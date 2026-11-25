@@ -235,3 +235,13 @@ describe('super admin school review templates', () => {
     expect(text).toContain('Census no: None');
   });
 });
+
+describe('schoolRegistered while pending review', () => {
+  it('says the school is under review and what opens after approval, in both languages', () => {
+    const { html, text } = schoolRegistered({ adminName: 'W. Perera', school, loginUrl, webUrl, pending: true });
+    expect(text).toContain('[Under review] Sathiya is reviewing your school before it goes live.');
+    expect(text).toContain('Publishing, admin invites and printing open after approval.');
+    expect(html).toContain('සමාලෝචනය');
+    expect(text).not.toContain("Invite other admins from school settings when you're ready.");
+  });
+});

@@ -2,6 +2,8 @@
 // Copyright (C) 2026 Kanushka Gayan
 import {
   CENSUS_NO_RE,
+  DEFAULT_TERMS_VERSION,
+  padCensusNo,
   paths,
   SCHOOL_TYPES,
   similarSchools,
@@ -24,6 +26,7 @@ import { callOpts } from './lib/callOptions';
 import { assertSchoolRoom, syncClaims } from './lib/claims';
 import { directoryFields } from './lib/directory';
 import { fail, intList, invalid, isVerified, obj, optStr, requireAuth, str, twoNames } from './lib/guards';
+import { legacyCensusKeys } from './lib/census';
 import { moeNames, moeSchool } from './lib/moe';
 import { clientIp, consumeRateLimits, hashIp, REGISTER_PER_IP_PER_DAY, REGISTER_PER_UID_PER_DAY } from './lib/rateLimit';
 import { runTx } from './lib/tx';
@@ -86,9 +89,16 @@ function unlistedDetails(s: Record<string, unknown>, censusNo: string | undefine
   };
 }
 
+async function assertCurrentTerms(accepted: unknown): Promise<void> {
+  if (typeof accepted !== 'string' || !accepted.trim()) return;
+  const configured = (await db.doc(paths.platform.config).get()).get('currentTermsVersion');
+  const current = typeof configured === 'string' && configured ? configured : DEFAULT_TERMS_VERSION;
+  if (accepted.trim() !== current) fail('failed-precondition', 'terms-outdated', 'The terms have changed; review and accept the current terms');
+}
+
 const SAME_DISTRICT_MAX = 10;
 
-async function possibleDuplicates(sid: string, name: string, district: string): Promise<Pick<SchoolPendingInput, 'similarRegistered' | 'similarMoe' | 'sameDistrict'>> {
+async function possibleDuplicates(sid: string, name: string, district: string, city: string): Promise<Pick<SchoolPendingInput, 'similarRegistered' | 'similarMoe' | 'sameDistrict'>> {
   const snap = await db.doc(paths.school(sid)).parent.select('nameEn', 'nameSi', 'district', 'city', 'status').get();
   const registered: DuplicateRow[] = snap.docs
     .filter((d) => d.id !== sid)
@@ -100,17 +110,23 @@ async function possibleDuplicates(sid: string, name: string, district: string): 
       status: d.get('status') as string | undefined,
     }));
   const byId = new Map(registered.map((r) => [r.id, r]));
-  const key = district.trim().toLowerCase();
+  const norm = (v: string | undefined) => v?.trim().toLowerCase();
+  const key = norm(district);
+  const town = norm(city);
   return {
     similarRegistered: similarSchools(name, registered, 5).map((m) => byId.get(m.id)!),
     similarMoe: similarSchools(name, moeNames(), 5).map((m) => ({ id: m.id, name: m.name, district: moeSchool(m.id)?.district })),
-    sameDistrict: registered.filter((r) => r.district?.trim().toLowerCase() === key).slice(0, SAME_DISTRICT_MAX),
+    sameDistrict: registered
+      .filter((r) => norm(r.district) === key)
+      .sort((a, b) => Number(norm(b.city) === town) - Number(norm(a.city) === town))
+      .slice(0, SAME_DISTRICT_MAX),
   };
 }
 
 export const registerSchool = onCall(callOpts, async (req): Promise<RegisterSchoolRes> => {
   const { uid, token } = requireAuth(req);
   if (!isVerified(token)) fail('permission-denied', 'email-unverified', 'Verify your email address first');
+  await assertCurrentTerms((req.data as { acceptedTermsVersion?: unknown } | null)?.acceptedTermsVersion);
   await consumeRateLimits([
     { scope: 'register-uid', id: uid, max: REGISTER_PER_UID_PER_DAY },
     { scope: 'register-ip', id: hashIp(clientIp(req)), max: REGISTER_PER_IP_PER_DAY },
@@ -128,14 +144,12 @@ export const registerSchool = onCall(callOpts, async (req): Promise<RegisterScho
   if (!HEX.test(primary) || !HEX.test(second)) invalid('colors must be #RRGGBB');
   const city = str(s.city, 'city', 80);
   const phone = optStr(s.phone, 'phone', 30);
-  const censusNo = optStr(s.censusNo, 'censusNo', 10);
-  if (censusNo !== undefined && !CENSUS_NO_RE.test(censusNo)) invalid('censusNo must be 4–6 digits');
+  const rawCensus = optStr(s.censusNo, 'censusNo', 10);
+  if (rawCensus !== undefined && !CENSUS_NO_RE.test(rawCensus)) invalid('censusNo must be 4–6 digits');
+  const censusNo = rawCensus === undefined ? undefined : padCensusNo(rawCensus);
   const moe = censusNo ? moeSchool(censusNo) : undefined;
   const details = moe ? listedDetails(moe, s) : unlistedDetails(s, censusNo);
   const { nameEn, nameSi, district, address, type, grades, medium } = details;
-
-  const currentTerms = (await db.doc(paths.platform.config).get()).get('currentTermsVersion');
-  if (typeof currentTerms !== 'string' || termsVersion !== currentTerms) invalid('Accept the current terms first');
 
   const status: SchoolStatus = moe ? 'active' : 'pending';
   const now = Date.now();
@@ -144,11 +158,12 @@ export const registerSchool = onCall(callOpts, async (req): Promise<RegisterScho
   const template: Omit<PeriodTemplate, 'id'> = { name: defaultTemplate.name, isDefault: true, mode: 'same', rows: defaultTemplate.rows };
 
   const censusRef = censusNo ? db.collection(CENSUS_INDEX).doc(censusNo) : undefined;
+  const legacyRefs = censusNo ? legacyCensusKeys(censusNo).map((k) => db.collection(CENSUS_INDEX).doc(k)) : [];
 
   await assertSchoolRoom(uid, sid);
   try {
     await runTx(async (tx) => {
-      if (censusRef && (await tx.get(censusRef)).exists) censusTaken();
+      if (censusRef && (await tx.getAll(censusRef, ...legacyRefs)).some((d) => d.exists)) censusTaken();
       tx.create(schoolRef, {
         nameEn,
         nameSi,
@@ -186,7 +201,7 @@ export const registerSchool = onCall(callOpts, async (req): Promise<RegisterScho
     const to = token.email?.toLowerCase();
     if (!to) return undefined;
     const school = { nameEn, nameSi, colors: { primary } };
-    return { to: [to], message: schoolRegistered({ adminName, school, loginUrl: `${appUrl}/login`, webUrl }) };
+    return { to: [to], message: schoolRegistered({ adminName, school, loginUrl: `${appUrl}/login`, webUrl, pending: status === 'pending' }) };
   });
   await sendMail(moe ? 'schoolListed' : 'schoolPendingReview', async () => {
     const { appUrl, webUrl, superEmails } = mailConfig();
@@ -201,7 +216,7 @@ export const registerSchool = onCall(callOpts, async (req): Promise<RegisterScho
     const schoolUrl = `${appUrl}/super/schools/${sid}`;
     const message = moe
       ? schoolListed({ school, schoolUrl, webUrl })
-      : schoolPendingReview({ school, schoolUrl, webUrl, ...(await possibleDuplicates(sid, nameEn || nameSi || '', district)) });
+      : schoolPendingReview({ school, schoolUrl, webUrl, ...(await possibleDuplicates(sid, nameEn || nameSi || '', district, city)) });
     return { to: superEmails, message };
   });
   return { schoolId: sid };

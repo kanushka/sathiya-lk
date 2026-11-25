@@ -12,6 +12,11 @@ export function normalizeCensusNo(s: string): string | null {
   return cleaned.length >= CENSUS_NO_LENGTH.min && cleaned.length <= CENSUS_NO_LENGTH.max ? cleaned : null;
 }
 
+export const CENSUS_NO_PAD = 5;
+
+// MOE census numbers are five digits with leading zeros; a shorter number is the same school with the zeros dropped.
+export const padCensusNo = (n: string): string => (/^\d+$/.test(n) ? n.padStart(CENSUS_NO_PAD, '0') : n);
+
 export function censusRequired(type: SchoolType): boolean {
   return type === 'government';
 }
