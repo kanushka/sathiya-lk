@@ -24,6 +24,34 @@ export const en = {
       title: 'Contact · Sathiya (සතිය)',
       description: 'How to reach the people who run Sathiya (සතිය).',
     },
+    guide: {
+      title: 'Guides · Sathiya (සතිය)',
+      description: 'Step-by-step guides and videos for using Sathiya (සතිය), the free school timetable app.',
+    },
+    'guide/register-school': {
+      title: 'How to register your school · Sathiya (සතිය)',
+      description: 'Register your school on Sathiya (සතිය) in about 3 minutes: school details, logo and colours, and your admin account.',
+    },
+    'guide/subjects': {
+      title: 'How to add subjects · Sathiya (සතිය)',
+      description: 'Set up one subject list for the whole school in Sathiya (සතිය), in Sinhala and English.',
+    },
+    'guide/grades': {
+      title: 'How to set up grades and classes · Sathiya (සතිය)',
+      description: 'Add grades, classes and weekly periods per subject in Sathiya (සතිය).',
+    },
+    'guide/templates': {
+      title: 'How to set up period templates · Sathiya (සතිය)',
+      description: 'Set your school bell schedule, periods and intervals in Sathiya (සතිය).',
+    },
+    'guide/teachers': {
+      title: 'How to add and edit teachers · Sathiya (සතිය)',
+      description: 'Add teachers with staff IDs, subjects, grades and daily limits in Sathiya (සතිය).',
+    },
+    'guide/timetable-class': {
+      title: 'How to build the timetable by class · Sathiya (සතිය)',
+      description: 'Place lessons class by class in Sathiya (සතිය), with teacher clashes prevented.',
+    },
     '404': {
       title: 'Page not found · Sathiya (සතිය)',
       description: `This page does not exist on ${SITE_HOST}.`,
@@ -39,6 +67,7 @@ export const en = {
     features: 'Features',
     how: 'How it works',
     faq: 'FAQ',
+    guides: 'Guides',
     login: 'Log in',
     register: 'Register school',
     menu: 'Menu',
@@ -169,6 +198,7 @@ export const en = {
     terms: 'Terms & Conditions',
     privacy: 'Privacy Policy',
     contact: 'Contact',
+    guides: 'Guides',
     report: 'Report a school',
     analytics: 'Analytics settings',
   },
@@ -177,6 +207,15 @@ export const en = {
     text: 'May we use Google Analytics to count visits and improve this site? It stays off unless you allow it.',
     allow: 'Allow analytics',
     deny: 'No thanks',
+  },
+  guide: {
+    title: 'Guides',
+    intro: 'Short videos and step-by-step guides for school admins and teachers.',
+    all: 'All guides',
+    video: 'Watch the video',
+    videoSoon: 'The video for this guide is coming soon. Follow the steps below.',
+    steps: 'Step by step',
+    minutes: 'About {n} minutes',
   },
   legal: {
     version: 'Version',

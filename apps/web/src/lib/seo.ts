@@ -4,7 +4,7 @@
 import { PRODUCTION_SITE_URL } from '../site';
 import { pagePath, type Lang, type Page } from './links';
 
-export const PUBLIC_PAGES: Page[] = ['index', 'terms', 'privacy', 'contact'];
+export const PUBLIC_PAGES: Page[] = ['index', 'terms', 'privacy', 'contact', 'guide', 'guide/register-school', 'guide/subjects', 'guide/grades', 'guide/templates', 'guide/teachers', 'guide/timetable-class'];
 const LANGS: Lang[] = ['en', 'si'];
 
 const abs = (site: string, path: string) => new URL(path, `${site.replace(/\/+$/, '')}/`).href;

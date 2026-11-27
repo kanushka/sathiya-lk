@@ -5,6 +5,7 @@
   "type": "module",
   "scripts": {
     "test": "playwright test",
+    "tutorials": "playwright test -c tutorials/tutorials.config.ts",
     "typecheck": "tsc --noEmit"
   },
   "devDependencies": {

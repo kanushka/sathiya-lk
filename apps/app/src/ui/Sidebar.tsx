@@ -10,6 +10,7 @@ import { useMaybeLang } from '../app/LangProvider';
 import { useSchool, useYear } from '../app/SchoolProvider';
 import { SuperAdminLink } from '../features/superadmin/SuperAdminLink';
 import { useJoinRequests } from '../features/teachers/useJoinRequests';
+import { webUrl } from '../lib/urls';
 import { cx } from './cx';
 import { Icon, type IconName } from './Icon';
 import { PHONE_QUERY } from './PhoneNotice';
@@ -250,6 +251,17 @@ export function Sidebar({ basePath: baseProp, readOnly = false }: SidebarProps) 
             {!collapsed && t('nav.myTimetable')}
           </NavLink>
         )}
+        <a
+          href={webUrl(lang === 'si' ? '/si/guide/' : '/guide/')}
+          target="_blank"
+          rel="noopener noreferrer"
+          aria-label={`${t('sidebar.guides')} (${t('sidebar.newTab')})`}
+          title={collapsed ? t('sidebar.guides') : undefined}
+          className={cx(linkBase, collapsed ? 'h-11 w-11 justify-center' : 'gap-2.5 px-3 py-[9px]')}
+        >
+          <Icon name="help" size={collapsed ? 20 : 18} />
+          {!collapsed && t('sidebar.guides')}
+        </a>
         <SuperAdminLink
           compact={collapsed}
           className={cx(linkBase, collapsed ? 'h-11 w-11 justify-center' : 'gap-2.5 px-3 py-[9px]')}

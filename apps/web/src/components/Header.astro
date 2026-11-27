@@ -25,6 +25,7 @@ const app = appLinks();
       <a class="nav-link" href={sectionHref(lang, page, 'features')}>{t.nav.features}</a>
       <a class="nav-link" href={sectionHref(lang, page, 'how')}>{t.nav.how}</a>
       <a class="nav-link" href={sectionHref(lang, page, 'faq')}>{t.nav.faq}</a>
+      <a class="nav-link" href={pagePath(lang, 'guide')} aria-current={page.startsWith('guide') ? 'page' : undefined}>{t.nav.guides}</a>
       <LangSwitch lang={lang} page={page} class="desktop-only" />
       <a class="nav-login" href={app.login}>{t.nav.login}</a>
       <a class="btn btn-primary btn-sm" href={app.register}>{t.nav.register}</a>

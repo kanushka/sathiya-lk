@@ -74,7 +74,10 @@ describe('PhoneTopBar and PhoneMenu', () => {
     const dialog = menu()!;
     expect(dialog).toBeInTheDocument();
     expect(within(dialog).getByRole('navigation', { name: 'Menu' })).toBeInTheDocument();
-    expect(within(dialog).getAllByRole('link').map((a) => a.getAttribute('href'))).toEqual(navItems.map((i) => navHref(`/s/${ctx.school.id}/admin`, i.path)));
+    expect(within(dialog).getAllByRole('link').map((a) => a.getAttribute('href'))).toEqual([
+      ...navItems.map((i) => navHref(`/s/${ctx.school.id}/admin`, i.path)),
+      expect.stringMatching(/\/guide\/$/),
+    ]);
     expect(within(dialog).getByRole('link', { name: 'Dashboard' })).toHaveAttribute('aria-current', 'page');
     expect(within(dialog).getByLabelText('Timetable year')).toHaveTextContent('2027 · draft');
     expect(within(dialog).getByRole('button', { name: 'Sign out' })).toBeInTheDocument();

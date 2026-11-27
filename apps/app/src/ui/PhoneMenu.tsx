@@ -8,6 +8,7 @@ import { useAuth } from '../app/AuthProvider';
 import { useMaybeLang } from '../app/LangProvider';
 import { useSchool, useYear } from '../app/SchoolProvider';
 import { SuperAdminLink } from '../features/superadmin/SuperAdminLink';
+import { webUrl } from '../lib/urls';
 import { cx } from './cx';
 import { Icon } from './Icon';
 import { Modal } from './Modal';
@@ -100,6 +101,17 @@ export function PhoneMenu({ basePath: baseProp, readOnly, onClose }: PhoneMenuPr
             {t('nav.myTimetable')}
           </NavLink>
         )}
+        <a
+          href={webUrl(lang === 'si' ? '/si/guide/' : '/guide/')}
+          target="_blank"
+          rel="noopener noreferrer"
+          aria-label={`${t('sidebar.guides')} (${t('sidebar.newTab')})`}
+          onClick={onClose}
+          className={cx(linkBase, item)}
+        >
+          <Icon name="help" size={20} />
+          {t('sidebar.guides')}
+        </a>
         <SuperAdminLink className={cx(linkBase, item)} />
         {langCtl && (
           <button

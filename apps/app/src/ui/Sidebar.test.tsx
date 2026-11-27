@@ -51,6 +51,14 @@ describe('Sidebar', () => {
     expect(screen.getByTestId('school-logo')).toHaveAttribute('src', 'https://example.test/logo.png');
   });
 
+  it('links to the website guides in a new tab', () => {
+    renderSidebar();
+    const link = screen.getByRole('link', { name: 'Help & guides (opens in a new tab)' });
+    expect(link).toHaveAttribute('href', expect.stringMatching(/\/guide\/$/));
+    expect(link).toHaveAttribute('target', '_blank');
+    expect(link).toHaveAttribute('rel', 'noopener noreferrer');
+  });
+
   it('lists the admin nav paths', () => {
     expect(navItems.map((i) => i.path)).toEqual([
       '/admin',

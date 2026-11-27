@@ -1,0 +1,56 @@
+---
+// SPDX-License-Identifier: AGPL-3.0-or-later
+// Copyright (C) 2026 Kanushka Gayan
+import { appLinks, content, pagePath, type Lang } from '../lib/links';
+import { guide, type Guide } from '../content/guides';
+
+interface Props {
+  lang: Lang;
+  slug: Guide['slug'];
+}
+const { lang, slug } = Astro.props;
+const t = content(lang).guide;
+const g = guide(slug);
+const d = g.text[lang];
+const video = g.youtube[lang];
+---
+<article class="wrap prose guide">
+  <p class="meta-line"><a href={pagePath(lang, 'guide')}>← {t.all}</a></p>
+  <h1>{d.title}</h1>
+  <p class="guide-summary">{d.summary}</p>
+  <p class="meta-line">{t.minutes.replace('{n}', String(g.minutes))}</p>
+
+  <section aria-labelledby="video">
+    <h2 id="video">{t.video}</h2>
+    {video ? (
+      <div class="guide-video">
+        <iframe
+          src={`https://www.youtube-nocookie.com/embed/${video}?rel=0&cc_load_policy=1&cc_lang_pref=${lang}`}
+          title={d.title}
+          loading="lazy"
+          allow="encrypted-media; picture-in-picture; fullscreen"
+          allowfullscreen
+        ></iframe>
+      </div>
+    ) : (
+      <p class="note">{t.videoSoon}</p>
+    )}
+  </section>
+
+  <section aria-labelledby="steps">
+    <h2 id="steps">{t.steps}</h2>
+    <ol class="guide-steps">
+      {d.steps.map((s) => (
+        <li>
+          <h3>{s.title}</h3>
+          <p>{s.body}</p>
+          {s.image && (
+            <img src={`/guide/${slug}/${lang}/${s.image}.png`} alt={s.title} width="1440" height="810" loading="lazy" decoding="async" />
+          )}
+        </li>
+      ))}
+    </ol>
+  </section>
+
+  <p><a class="btn btn-primary" href={appLinks().register}>{content(lang).cta.button}</a></p>
+</article>
