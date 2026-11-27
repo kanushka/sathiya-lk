@@ -136,7 +136,10 @@ service cloud.firestore {
           && (!('planOverride' in keys) || !('planOverride' in request.resource.data) || boundedList(val('planOverride'), 200));
       }
       match /classes/{id} {
-        allow read: if adminRead(sid);
+        // A class teacher reads their own class (the teacher view's My class). A query must filter on classTeacherId.
+        allow read: if adminRead(sid)
+          || (teacherRead(sid) && membership(sid).get('t', null) != null
+            && resource.data.get('classTeacherId', null) == membership(sid).get('t', null));
         allow create: if adminWrite(sid) && request.resource.data.keys().hasAll(['gradeId', 'name', 'templateId'])
           && classOk(request.resource.data.keys());
         allow update: if adminWrite(sid) && classOk(changed());

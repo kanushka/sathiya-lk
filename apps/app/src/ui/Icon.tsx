@@ -160,6 +160,12 @@ const shapes = {
   ),
   logout: <path d="M15 4h3a2 2 0 0 1 2 2v12a2 2 0 0 1-2 2h-3M10 17l-5-5 5-5M5 12h11" />,
   school: <path d="M3 21h18M5 21V9l7-5 7 5v12M10 21v-5h4v5" />,
+  person: (
+    <>
+      <circle cx="12" cy="8" r="4" />
+      <path d="M4 20c1.5-4 4.5-6 8-6s6.5 2 8 6" />
+    </>
+  ),
   flag: <path d="M5 21V4M5 4h12l-2.5 4L17 12H5" />,
   chart: <path d="M3 20h18M6 20v-8M11 20V5M16 20v-11" />,
   document: <path d="M7 3h7l5 5v13H7zM14 3v5h5M10 13h6M10 17h6" />,

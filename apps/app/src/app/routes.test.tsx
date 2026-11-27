@@ -50,7 +50,7 @@ describe('registered routes', () => {
       expect(paths.has(p.replace('/admin', '/super/schools/:sid/admin'))).toBe(true);
     }
     expect(paths.has('/s/:sid/me')).toBe(true);
-    expect(paths.has('/s/:sid/me/week')).toBe(true);
+    for (const p of ['week', 'timetable', 'class', 'profile', 'print/timetable', 'print/class/:id']) expect(paths.has(`/s/:sid/me/${p}`)).toBe(true);
   });
 
   it('leaves the public routes unguarded', () => {

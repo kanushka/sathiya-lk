@@ -50,6 +50,8 @@ const seed: Record<string, Record<string, unknown>> = {
   [`${paths.templates('s1')}/p1`]: { name: 'Default', isDefault: true, mode: 'same', rows: [] },
   [`${paths.grades('s1')}/g1`]: { number: 6, plan: [] },
   [`${paths.classes('s1')}/c1`]: { gradeId: 'g1', name: '6A', templateId: 'p1' },
+  [`${paths.classes('s1')}/c2`]: { gradeId: 'g1', name: '6B', templateId: 'p1', classTeacherId: 't1' },
+  [`${paths.classes('s1')}/c3`]: { gradeId: 'g1', name: '6C', templateId: 'p1', classTeacherId: 't9' },
   [`${paths.subjects('s2')}/sub9`]: { nameEn: 'Art', short: 'ART', color: '#000000' },
   [`${paths.members('s1')}/u-admin`]: { uid: 'u-admin', role: 'admin', email: 'a@x.lk' },
   [`${paths.members('s1')}/u-admin-t`]: { uid: 'u-admin-t', role: 'admin', teacherId: 't2' },
@@ -69,6 +71,7 @@ const seed: Record<string, Record<string, unknown>> = {
   [`${paths.templates('sd')}/p1`]: { name: 'Default', isDefault: true, mode: 'same', rows: [] },
   [`${paths.grades('sd')}/g1`]: { number: 6, plan: [] },
   [`${paths.classes('sd')}/c1`]: { gradeId: 'g1', name: '6A', templateId: 'p1' },
+  [`${paths.classes('sd')}/c2`]: { gradeId: 'g1', name: '6B', templateId: 'p1', classTeacherId: 'td' },
   [`${paths.entries('sd', 'y1')}/e1`]: { day: 0, period: 1, classIds: ['c1'], lessons: [], teacherIds: ['td'] },
   [paths.publishedClass('sd', 'y1', 'c1')]: { cells: [] },
   [paths.publishedTeacher('sd', 'y1', 'td')]: { cells: [] },
@@ -455,6 +458,33 @@ describe.each(['subjects', 'periodTemplates', 'classes', 'grades'] as const)('se
       await assertFails(update('admin', d, { extra: 1 }));
     });
     deny([['admin', d], ['adminTid', d], ['super', d], ['teacher', d], ['otherAdmin', d]], del);
+  });
+});
+
+describe('class teacher reads their own class', () => {
+  const own = `${paths.classes('s1')}/c2`;
+  const notOwn = `${paths.classes('s1')}/c1`;
+  const byTeacher = (r: Role, sid: string, tid: string) => db(r).collection(paths.classes(sid)).where('classTeacherId', '==', tid).get();
+
+  allow([['teacher', own], ['multiTeacher', own], ['admin', own]], read);
+  deny([['teacher', notOwn], ['otherTeacher', `${paths.classes('s1')}/c3`], ['adminS1TeacherS2', `${paths.classes('s2')}/c3`], ['noClaims', own], ['anon', own]], read);
+
+  it('allows the query on their own teacher id', async () => {
+    await assertSucceeds(byTeacher('teacher', 's1', 't1'));
+  });
+  it('denies a query on another teacher id, and an unfiltered list', async () => {
+    await assertFails(byTeacher('teacher', 's1', 't9'));
+    await assertFails(byTeacher('otherTeacher', 's1', 't9'));
+    await assertFails(list('teacher', paths.classes('s1')));
+  });
+  it('denies the class teacher of a disabled school', async () => {
+    await assertFails(read('disabledTeacher', `${paths.classes('sd')}/c2`));
+    await assertFails(byTeacher('disabledTeacher', 'sd', 'td'));
+  });
+  it('stays read-only for the class teacher', async () => {
+    await assertFails(update('teacher', own, { name: '6Z' }));
+    await assertFails(update('teacher', own, { classTeacherId: 't2' }));
+    await assertFails(del('teacher', own));
   });
 });
 

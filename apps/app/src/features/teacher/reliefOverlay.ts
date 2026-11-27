@@ -4,7 +4,8 @@ import { toMinutes, type Lang, type ReliefDay, type SnapshotCell, type TeacherSn
 import { slotsOf } from './cells';
 
 export interface OverlayCell extends SnapshotCell {
-  relief?: { forTeacher: string };
+  /** note replaces the Relief tag in a grid cell, for example "Relief: Mrs. N. Perera" on a class timetable. */
+  relief?: { forTeacher: string; note?: string };
   onLeave?: { reliefBy: string | null };
 }
 export type OverlaySnapshot = Omit<TeacherSnapshot, 'cells'> & { cells: OverlayCell[] };

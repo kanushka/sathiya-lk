@@ -9,14 +9,9 @@
   "minLeft": "{{n}} min left",
   "noClassNow": "No class right now",
   "noClassesToday": "No classes today",
-  "noClassesTodayBody": "Showing Monday's timetable.",
+  "noClassesTodayBody": "Enjoy the weekend. Your week is under Timetable.",
   "freePeriod": "Free period",
   "interval": "INTERVAL",
-  "views": {
-    "label": "View",
-    "today": "Today",
-    "week": "Week"
-  },
   "days": "Day",
   "weekGrid": "Weekly timetable",
   "notPublished": {
@@ -28,10 +23,77 @@
   "adminLink": "School admin",
   "relief": {
     "tag": "Relief",
-    "for": "for {{name}}"
+    "for": "for {{name}}",
+    "covering": "Covering for {{name}}"
   },
   "leave": {
     "withRelief": "On leave · relief: {{name}}",
     "noRelief": "On leave · no relief"
-  }
+  },
+  "print": "Print",
+  "nav": {
+    "label": "Main",
+    "today": "Today",
+    "timetable": "Timetable",
+    "myClass": "My class",
+    "me": "Me"
+  },
+  "today": {
+    "reliefToday": "Relief today",
+    "rest": "Rest of today",
+    "nothingMore": "No more lessons today.",
+    "tomorrow": "Tomorrow",
+    "thisWeek": "This week",
+    "view": "View",
+    "noReliefPlanned": "No relief planned.",
+    "plannedNext_one": "{{when}}: <b>{{count}} relief period</b> planned",
+    "plannedNext_other": "{{when}}: <b>{{count}} relief periods</b> planned"
+  },
+  "timetable": {
+    "title": "My timetable",
+    "print": "Print my timetable",
+    "view": "View",
+    "day": "Day",
+    "threeDays": "3 days",
+    "week": "Week",
+    "today": "today",
+    "earlier": "Earlier",
+    "later": "Later",
+    "legendRelief": "covering",
+    "legendFree": "Dashed = free",
+    "dayList": "Periods"
+  },
+  "myClass": {
+    "none": "You are not a class teacher",
+    "noneBody": "Your school admin sets class teachers.",
+    "which": "Class",
+    "youAre": "You are the class teacher",
+    "print": "Print {{name}} timetable",
+    "notPublishedBody": "The class timetable will appear here once your school publishes it.",
+    "you": "You",
+    "away": "away",
+    "reliefBy": "Relief: {{name}}",
+    "noRelief": "No relief yet",
+    "together": "With {{classes}}",
+    "loadError": "Could not load your class. Please try again."
+  },
+  "me": {
+    "details": "My details",
+    "name": "Name",
+    "staffId": "Staff ID",
+    "email": "Email",
+    "askAdmin": "To change these, ask your school admin.",
+    "phone": "Phone number",
+    "save": "Save",
+    "phoneSaved": "Phone number saved",
+    "phoneCleared": "Phone number removed",
+    "phoneInvalid": "Enter a phone number, for example 071 234 5678.",
+    "phoneFailed": "Could not save. Please try again.",
+    "thisYear": "This year",
+    "reliefCovered": "Relief periods covered",
+    "periodsAWeek": "Periods a week",
+    "printTimetable": "Print timetable",
+    "grades": "Grades {{grades}}"
+  },
+  "tryAgain": "Try again"
 }

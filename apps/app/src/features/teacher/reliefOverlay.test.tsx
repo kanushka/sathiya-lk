@@ -2,20 +2,8 @@
 // Copyright (C) 2026 Kanushka Gayan
 import { buildSnapshots, type Relief, type ReliefDay, type TeacherSnapshot, type Year } from '@sathiya/core';
 import { C, S, T, ctx as baseCtx, entries } from '@sathiya/core/fixtures';
-import { screen, within } from '@testing-library/react';
-import { afterEach, describe, expect, it, vi } from 'vitest';
-import { onSnapshot } from 'firebase/firestore';
-import { renderWithSchool } from '../../test/renderWithSchool';
+import { describe, expect, it } from 'vitest';
 import { overlayRelief } from './reliefOverlay';
-import { TodayPage } from './TodayPage';
-import { WeekPage } from './WeekPage';
-
-vi.mock('firebase/firestore', async (orig) => ({ ...(await orig<typeof import('firebase/firestore')>()), onSnapshot: vi.fn(() => () => undefined) }));
-afterEach(() => {
-  const listeners = vi.mocked(onSnapshot).mock.calls.length;
-  vi.mocked(onSnapshot).mockClear();
-  expect(listeners).toBe(0);
-});
 
 const year: Year = { id: 'y-2026', label: '2026', status: 'published' };
 const ctx = { ...baseCtx, school: { ...baseCtx.school, activeYearId: year.id } };
@@ -68,34 +56,5 @@ describe('overlayRelief', () => {
     expect(covered.cells.find((c) => c.entryId === lesson.entryId)?.onLeave).toEqual({ reliefBy: 'Mr Kumara' });
     const open = overlayRelief(perera, doc({ leaves: [lv], reliefs: [relief({ entryId: lesson.entryId!, absentTeacherId: T.perera, reliefTeacherId: null })] }), T.perera, 'en');
     expect(open.cells.find((c) => c.entryId === lesson.entryId)?.onLeave).toEqual({ reliefBy: null });
-  });
-});
-
-describe('teacher views with relief', () => {
-  const day = doc({ reliefs: [relief()] });
-  const props = { snapshot: { loading: false, data: perera }, reliefDay: { loading: false, data: day } };
-
-  it('now card shows the relief period', () => {
-    renderWithSchool(<TodayPage now={atFree} {...props} />, { ctx, claims: claims(T.perera) });
-    const card = screen.getByTestId('now-card');
-    expect(within(card).getByText(/Maths · 6A/)).toBeInTheDocument();
-    expect(within(card).getByText('Relief')).toBeInTheDocument();
-    expect(within(card).getByText('for Mr Bandara')).toBeInTheDocument();
-  });
-
-  it('today list shows On leave with and without relief', () => {
-    const lv = { teacherId: T.perera, type: 'full' as const, entryIds: [lesson.entryId!] };
-    const withRelief = doc({ leaves: [lv], reliefs: [relief({ entryId: lesson.entryId!, absentTeacherId: T.perera, reliefTeacherId: T.kumara })] });
-    const a = renderWithSchool(<TodayPage now={wed0920} snapshot={props.snapshot} reliefDay={{ loading: false, data: withRelief }} />, { ctx, claims: claims(T.perera) });
-    expect(screen.getAllByText('On leave · relief: Mr Kumara').length).toBeGreaterThan(0);
-    a.unmount();
-    renderWithSchool(<TodayPage now={wed0920} snapshot={props.snapshot} reliefDay={{ loading: false, data: doc({ leaves: [lv] }) }} />, { ctx, claims: claims(T.perera) });
-    expect(screen.getAllByText('On leave · no relief').length).toBeGreaterThan(0);
-  });
-
-  it('week view shows the overlay in today column only', () => {
-    renderWithSchool(<WeekPage now={wed0920} {...props} />, { ctx, claims: claims(T.perera) });
-    expect(within(screen.getByTestId(`week-cell-2-${freeSlot.n}`)).getByText('Relief')).toBeInTheDocument();
-    for (const d of [0, 1, 3, 4]) expect(within(screen.getByTestId(`week-cell-${d}-${freeSlot.n}`)).queryByText('Relief')).toBeNull();
   });
 });

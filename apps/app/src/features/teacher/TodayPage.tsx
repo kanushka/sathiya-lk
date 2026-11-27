@@ -1,162 +1,148 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
 // Copyright (C) 2026 Kanushka Gayan
-import { activityName, currentAndNext, toMinutes, type DayIndex } from '@sathiya/core';
-import { useState } from 'react';
-import { useTranslation } from 'react-i18next';
+import { addDays, currentAndNext, toMinutes, type Lang } from '@sathiya/core';
+import { Trans, useTranslation } from 'react-i18next';
+import { Link } from 'react-router-dom';
 import { useLang } from '../../app/LangProvider';
 import { Badge } from '../../ui/Badge';
-import { cx } from '../../ui/cx';
-import { cellText, cellsAt, clock, slotsOf, weekdays } from './cells';
-import { CellNote } from './CellNote';
+import { LinkButton } from '../../ui/LinkButton';
+import { ListSection } from '../../ui/GroupedList';
+import { PHONE_QUERY, useMediaQuery } from '../../ui/PhoneNotice';
+import { cellText, clock } from './cells';
+import { leaveText } from './CellNote';
+import { greetingKey } from './colomboNow';
+import { PageTitle, SnapshotGate, printTimetablePath } from './parts';
 import type { OverlayCell, OverlaySnapshot } from './reliefOverlay';
-import { TeacherFrame, type TeacherViewProps } from './TeacherFrame';
+import { useTeacherData } from './teacherData';
+import { LessonRow, ModeSwitch, TimetableView, useDateLabels, useTimetableState } from './TimetableView';
 
-export function TodayPage(props: TeacherViewProps) {
-  return (
-    <TeacherFrame {...props} view="today">
-      {(snap, now) => <TodayBody snap={snap} now={now} />}
-    </TeacherFrame>
-  );
+export function TodayPage() {
+  return <SnapshotGate>{() => <TodayBody />}</SnapshotGate>;
 }
 
-function TodayBody({ snap, now }: { snap: OverlaySnapshot; now: Date }) {
+function TodayBody() {
   const { t } = useTranslation(['teacher', 'common']);
   const { lang } = useLang();
-  const weekday = now.getDay();
-  const todayIndex: DayIndex | null = weekday >= 1 && weekday <= 5 ? ((weekday - 1) as DayIndex) : null;
-  const [picked, setPicked] = useState<DayIndex | null>(null);
-  const day = picked ?? todayIndex ?? 0;
-  const isToday = day === todayIndex;
+  const isPhone = useMediaQuery(PHONE_QUERY);
+  const { now, today, next, snapFor, base, sid } = useTeacherData();
+  const snap = snapFor(today.date)!;
+  const nextSnap = snapFor(next.date)!;
   const minutes = now.getHours() * 60 + now.getMinutes();
-  const { current, next, minutesLeft } = currentAndNext(snap.cells, snap.rows, now);
+  const { current, next: nextCell, minutesLeft } = currentAndNext(snap.cells, snap.rows, now);
 
-  return (
-    <>
-      <NowCard
-        todayIndex={todayIndex}
-        current={current}
-        next={next}
-        minutesLeft={minutesLeft}
-        minutes={minutes}
-      />
+  const todays = today.day === null ? [] : snap.cells.filter((c) => c.day === today.day);
+  const reliefToday = todays.filter((c) => c.relief);
+  const rest = todays.filter((c) => !c.relief && c !== current && toMinutes(c.end) > minutes);
+  const reliefNext = nextSnap.cells.filter((c) => c.day === next.day && c.relief);
+  const nextIsTomorrow = next.date === addDays(today.date, 1);
+  const nextName = nextIsTomorrow ? t('today.tomorrow') : t(`common:days.long.${next.day}`);
 
-      <nav aria-label={t('teacher:days')} className="flex gap-1.5 pb-2 pt-4">
-        {weekdays.map((d) => (
-          <button
-            key={d}
-            type="button"
-            aria-pressed={d === day}
-            onClick={() => setPicked(d)}
-            className={cx(
-              'h-11 flex-1 rounded-lg text-sm font-bold transition-colors',
-              'focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-brand focus-visible:ring-offset-2',
-              d === day ? 'border border-transparent bg-brand text-on-brand' : 'border border-line-strong bg-white text-ink-soft',
-            )}
-          >
-            {t(`common:days.short.${d}`)}
-          </button>
-        ))}
-      </nav>
-
-      <div className="flex flex-col gap-1.5 pt-1">
-        {slotsOf(snap.rows[day] ?? []).map((slot, i) => {
-          if (slot.kind === 'interval') {
-            return (
-              <div key={i} className="py-1 text-center text-[11px] font-bold tracking-widest text-warning">
-                {activityName(slot.row, lang) || t('teacher:interval')} · {clock(slot.row.start)} – {clock(slot.row.end)}
-              </div>
-            );
-          }
-          const cells = cellsAt(snap, day, slot.n);
-          const past = (end: string) => isToday && toMinutes(end) <= minutes;
-          if (cells.length === 0) {
-            const isNow = isToday && !!current && 'free' in current && current.start === slot.row.start;
-            return (
-              <div
-                key={i}
-                data-testid={`period-${slot.n}`}
-                className={cx(
-                  'flex items-center gap-3 rounded-xl border border-dashed border-line-strong px-3.5 py-3',
-                  past(slot.row.end) && 'opacity-55',
-                )}
-              >
-                <PeriodLabel n={slot.n} start={slot.row.start} />
-                <span className="flex-1 text-[15px] text-ink-muted">{t('teacher:freePeriod')}</span>
-                {isNow && <NowTag>{t('teacher:now')}</NowTag>}
-              </div>
-            );
-          }
-          return (
-            <div key={i} data-testid={`period-${slot.n}`} className="flex flex-col gap-1.5">
-              {cells.map((cell, k) => {
-                const isNow = isToday && cell === current;
-                const text = cellText(cell, lang);
-                return (
-                  <div
-                    key={k}
-                    className={cx(
-                      'flex items-center gap-3 rounded-xl px-3.5 py-3',
-                      isNow ? 'border-2 border-fill-warning bg-warning-soft' : 'border border-line bg-white',
-                      (past(cell.end) || cell.onLeave) && 'opacity-55',
-                    )}
-                  >
-                    <PeriodLabel n={slot.n} start={cell.start} />
-                    <div className="min-w-0 flex-1">
-                      <b className="block text-[15px]">{text.title}</b>
-                      <span className="text-[13px] text-ink-muted">{text.sub}</span>
-                      <CellNote cell={cell} />
-                    </div>
-                    {isNow && <NowTag>{t('teacher:now')}</NowTag>}
-                  </div>
-                );
-              })}
-            </div>
-          );
-        })}
-      </div>
-    </>
+  const fullName = base ? (lang === 'si' && base.nameSi) || base.name : '';
+  const heading = (
+    <PageTitle
+      title={`${t(`greeting.${greetingKey(now.getHours())}`)}${fullName ? `, ${fullName}` : ''}`}
+      sub={`${t(`common:weekdays.${now.getDay()}`)} ${now.getDate()} ${t(`common:months.${now.getMonth()}`)}`}
+    />
   );
-}
+  const nowCard = <NowCard isSchoolDay={today.day !== null} current={current} next={nextCell} minutesLeft={minutesLeft} lang={lang} />;
+  const reliefSection = reliefToday.length > 0 && (
+    <ListSection title={t('today.reliefToday')} count={reliefToday.length} tone="brand">
+      {reliefToday.map((c, i) => (
+        <LessonRow key={i} cell={c} lang={lang} />
+      ))}
+    </ListSection>
+  );
 
-function PeriodLabel({ n, start }: { n: number; start: string }) {
-  const { t } = useTranslation('common');
+  if (isPhone) {
+    return (
+      <div className="flex flex-col gap-3 [&>section]:mb-0">
+        {heading}
+        {nowCard}
+        {reliefSection}
+        {today.day !== null && (
+          <ListSection title={t('today.rest')} bare={rest.length === 0}>
+            {rest.length === 0 ? (
+              <p className="m-0 text-[13px] text-ink-muted">{t('today.nothingMore')}</p>
+            ) : (
+              rest.map((c, i) => <LessonRow key={i} cell={c} lang={lang} />)
+            )}
+          </ListSection>
+        )}
+        {reliefNext.length > 0 && (
+          <div className="flex items-center gap-2.5 rounded-[14px] border border-line bg-white px-3.5 py-2.5">
+            <span className="flex-1 text-[13px] text-ink-soft">
+              <Trans t={t} i18nKey="today.plannedNext" count={reliefNext.length} values={{ when: nextName }} components={{ b: <b className="text-ink" /> }} />
+            </span>
+            <Link to={`/s/${sid}/me/timetable`} className="inline-flex min-h-11 items-center px-1 text-[13px] font-bold text-brand no-underline hover:underline">
+              {t('today.view')}
+            </Link>
+          </div>
+        )}
+      </div>
+    );
+  }
+
   return (
-    <div className="w-12 shrink-0">
-      <b className="block text-sm">{t('periods.periodN', { n })}</b>
-      <span className="text-[11px] text-ink-muted">{clock(start)}</span>
+    <div className="grid grid-cols-[340px_minmax(0,1fr)] items-start gap-6">
+      <div className="flex flex-col gap-3 [&>section]:mb-0">
+        {heading}
+        {nowCard}
+        {reliefSection}
+        <ListSection title={nextName} count={reliefNext.length} tone="brand" bare={reliefNext.length === 0}>
+          {reliefNext.length === 0 ? (
+            <p className="m-0 text-[13px] text-ink-muted">{t('today.noReliefPlanned')}</p>
+          ) : (
+            reliefNext.map((c, i) => <LessonRow key={i} cell={c} lang={lang} />)
+          )}
+        </ListSection>
+      </div>
+      <WeekPanel printTo={printTimetablePath(sid)} />
     </div>
   );
 }
 
-function NowTag({ children }: { children: string }) {
-  return <span className="text-[11px] font-extrabold text-warning">{children}</span>;
+function WeekPanel({ printTo }: { printTo: string }) {
+  const { t } = useTranslation('teacher');
+  const state = useTimetableState('week');
+  const labels = useDateLabels();
+  return (
+    <section aria-label={t('today.thisWeek')} className="flex flex-col gap-3 rounded-[14px] border border-line bg-white px-[18px] py-4">
+      <div className="flex items-center gap-2.5">
+        <b className="flex-1 text-[17px]">{state.mode === 'week' ? t('today.thisWeek') : labels.long(state.start)}</b>
+        <ModeSwitch value={state.mode} onChange={state.setMode} className="w-[300px]" />
+        <LinkButton to={printTo} size="sm">
+          {t('print')}
+        </LinkButton>
+      </div>
+      <TimetableView mode={state.mode} start={state.start} onStart={state.setStart} compactWeek={false} />
+    </section>
+  );
 }
 
 interface NowCardProps {
-  todayIndex: DayIndex | null;
+  isSchoolDay: boolean;
   current: ReturnType<typeof currentAndNext>['current'];
   next: OverlayCell | undefined;
   minutesLeft: number | undefined;
-  minutes: number;
+  lang: Lang;
 }
 
-function NowCard({ todayIndex, current, next, minutesLeft, minutes }: NowCardProps) {
+function NowCard({ isSchoolDay, current, next, minutesLeft, lang }: NowCardProps) {
   const { t } = useTranslation(['teacher', 'common']);
-  const { lang } = useLang();
-  const box = 'rounded-2xl border-2 border-fill-warning bg-white px-4 py-3.5 shadow-[0_14px_30px_-18px_rgba(20,33,61,.45)]';
+  const box = 'rounded-[14px] border-2 border-fill-warning bg-white px-3.5 py-3';
 
-  if (todayIndex === null) {
+  if (!isSchoolDay) {
     return (
-      <section data-testid="now-card" className={box}>
-        <p className="text-lg font-extrabold">{t('teacher:noClassesToday')}</p>
-        <p className="mt-1 text-[13px] text-ink-muted">{t('teacher:noClassesTodayBody')}</p>
+      <section data-testid="now-card" aria-label={t('now')} className={box}>
+        <p className="m-0 text-lg font-extrabold">{t('noClassesToday')}</p>
+        <p className="m-0 mt-1 text-[13px] text-ink-muted">{t('noClassesTodayBody')}</p>
       </section>
     );
   }
 
   const nextLine = next && (
-    <p className="mt-2.5 text-[13px] text-ink-muted">
-      {t('teacher:next')}:{' '}
+    <p className="m-0 mt-1.5 text-[13px] text-ink-muted">
+      {t('next')}:{' '}
       <b className="text-ink">
         {t('common:periods.periodN', { n: next.period })} · {cellText(next, lang).sub} · {cellText(next, lang).title}
       </b>{' '}
@@ -166,40 +152,30 @@ function NowCard({ todayIndex, current, next, minutesLeft, minutes }: NowCardPro
 
   if (!current || 'free' in current) {
     return (
-      <section data-testid="now-card" className={box}>
-        <p className="text-lg font-extrabold">{current ? t('teacher:freePeriod') : t('teacher:noClassNow')}</p>
+      <section data-testid="now-card" aria-label={t('now')} className={box}>
+        <p className="m-0 text-lg font-extrabold">{current ? t('freePeriod') : t('noClassNow')}</p>
         {nextLine}
       </section>
     );
   }
 
-  const text = cellText(current, lang);
-  const start = toMinutes(current.start);
-  const end = toMinutes(current.end);
-  const pct = Math.min(100, Math.max(0, Math.round(((minutes - start) / (end - start)) * 100)));
+  const cell = current as OverlayCell;
+  const text = cellText(cell, lang);
   return (
-    <section data-testid="now-card" className={box}>
-      <div className="flex items-center justify-between">
+    <section data-testid="now-card" aria-label={t('now')} className={box}>
+      <div className="flex items-center justify-between gap-2">
         <Badge tone="warning" className="tracking-wider">
-          {t('teacher:now')} · {t('common:periods.periodN', { n: current.period })}
+          {t('now')} · {t('common:periods.periodN', { n: cell.period })}
         </Badge>
         <span className="text-[13px] text-ink-muted">
-          {clock(current.start)} – {clock(current.end)} · {t('teacher:minLeft', { n: minutesLeft ?? 0 })}
+          {clock(cell.start)}–{clock(cell.end)} · {t('minLeft', { n: minutesLeft ?? 0 })}
         </span>
       </div>
-      <p className="mt-2.5 text-[22px] font-extrabold leading-tight">
+      <p className="m-0 mt-2 text-xl font-extrabold leading-tight">
         {text.sub} · {text.title}
       </p>
-      <CellNote cell={current as OverlayCell} />
-      <div
-        role="progressbar"
-        aria-valuemin={0}
-        aria-valuemax={100}
-        aria-valuenow={pct}
-        className="mt-2.5 h-1.5 overflow-hidden rounded-full bg-surface-3"
-      >
-        <span className="block h-1.5 bg-fill-warning" style={{ width: `${pct}%` }} />
-      </div>
+      {cell.relief && <p className="m-0 mt-1 text-[13px] text-ink-muted">{t('relief.covering', { name: cell.relief.forTeacher })}</p>}
+      {cell.onLeave && <p className="m-0 mt-1 text-[13px] font-semibold text-warning">{leaveText(cell, t)}</p>}
       {nextLine}
     </section>
   );

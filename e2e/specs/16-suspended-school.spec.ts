@@ -3,7 +3,7 @@
 import { expect, test } from '@playwright/test';
 import { school, T } from '@sathiya/core/fixtures';
 import { ADMIN, SID, SUPER, teacherLogin } from '../../scripts/seed';
-import { callAs, idToken, loginAdmin, loginTeacher, shot, signIn } from '../helpers';
+import { callAs, expectTeacherSignedIn, idToken, loginAdmin, loginTeacher, shot, signIn } from '../helpers';
 
 const suspendedHeading = { name: 'This school is suspended' } as const;
 
@@ -41,5 +41,5 @@ test('a suspended school locks out its admin and teachers until re-enabled', asy
   await teacher.reload();
   await expect(teacher).toHaveURL(new RegExp(`/s/${SID}/me$`));
   await expect(teacher.getByRole('heading', suspendedHeading)).toHaveCount(0);
-  await expect(teacher.getByRole('banner')).toContainText('SCC024');
+  await expectTeacherSignedIn(teacher, 'SCC024');
 });

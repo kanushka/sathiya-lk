@@ -34,3 +34,5 @@ export { reviewSchool } from './reviewSchool';
 export { removeRegistration } from './removeRegistration';
 export { requestNameChange } from './requestNameChange';
 export { decideNameChange } from './decideNameChange';
+export { setMyPhone } from './setMyPhone';
+export { myReliefCount } from './myReliefCount';

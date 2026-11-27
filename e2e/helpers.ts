@@ -99,3 +99,9 @@ export async function clearRateLimits(): Promise<void> {
   const { db } = admin();
   await db.recursiveDelete(db.collection('rateLimits'));
 }
+
+/** Opens Me in the teacher view and checks whose record it is. The top bar shows only the school. */
+export async function expectTeacherSignedIn(page: Page, staffId: string): Promise<void> {
+  await page.getByRole('navigation', { name: 'Main' }).getByRole('link', { name: 'Me', exact: true }).click();
+  await expect(page.getByRole('region', { name: 'My details' })).toContainText(staffId);
+}

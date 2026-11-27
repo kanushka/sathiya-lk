@@ -34,6 +34,7 @@ export * from './importSheet';
 export * from './importValidate';
 export * from './importFingerprint';
 export * from './relief/date';
+export * from './phone';
 export * from './relief/window';
 export * from './relief/suggest';
 export * from './relief/mail';

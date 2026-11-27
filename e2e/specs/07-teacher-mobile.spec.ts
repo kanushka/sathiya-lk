@@ -16,12 +16,12 @@ test('teacher signs in on a phone and sees the current lesson', async ({ page })
   await page.goto('/login');
   await shot(page, 'login-mobile');
   await loginTeacher(page, perera.email, perera.password);
-  await expect(page.getByRole('banner')).toContainText('Mrs. N. Perera · SCC024');
-  await expect(page.getByRole('banner')).toContainText('Monday 23 November');
   const main = page.getByRole('main');
-  await expect(main).toContainText(/NOW · P1\s*7:45 – 8:30 · 30 min left/);
+  await expect(main.getByRole('heading', { name: 'Good morning, Mrs. N. Perera' })).toBeVisible();
+  await expect(main).toContainText('Monday 23 November');
+  await expect(main).toContainText(/NOW · P1\s*7:45–8:30 · 30 min left/);
   await expect(main.getByText('Mathematics · 6B')).toBeVisible();
-  await expect(main.getByRole('button', { name: 'Mon' })).toHaveAttribute('aria-pressed', 'true');
+  await expect(page.getByRole('navigation', { name: 'Main' }).getByRole('link', { name: 'Today' })).toHaveAttribute('aria-current', 'page');
   expect(await page.evaluate(() => document.documentElement.scrollWidth)).toBeLessThanOrEqual(390);
   await shot(page, 'teacher-me-mobile');
 });
