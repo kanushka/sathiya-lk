@@ -5,10 +5,13 @@ import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useSchool, useYear } from '../../app/SchoolProvider';
 import { useReadOnly } from '../../ui/AdminLayout';
+import { Badge } from '../../ui/Badge';
 import { Button } from '../../ui/Button';
 import { EmptyState } from '../../ui/EmptyState';
+import { ListRow, ListSection, ListTile } from '../../ui/GroupedList';
 import { LoadingState } from '../../ui/LoadingState';
 import { PageHeader } from '../../ui/PageHeader';
+import { PHONE_QUERY, useMediaQuery } from '../../ui/PhoneNotice';
 import { Table, TBody, Td, Th, THead, Tr } from '../../ui/Table';
 import { useToast } from '../../ui/Toast';
 import { ImportModal } from '../import/ImportModal';
@@ -19,7 +22,7 @@ import { SHORT_MAX } from './palette';
 import { missingDefaults } from './standard';
 import { SubjectModal } from './SubjectModal';
 
-type Dialog = { kind: 'add' } | { kind: 'import' } | { kind: 'delete'; subject: Subject } | null;
+type Dialog = { kind: 'add' } | { kind: 'edit'; subject: Subject } | { kind: 'import' } | { kind: 'delete'; subject: Subject } | null;
 
 export function SubjectsPage() {
   const { t, i18n } = useTranslation('subjects');
@@ -27,6 +30,7 @@ export function SubjectsPage() {
   const school = useSchool();
   const { entries } = useYear();
   const readOnly = useReadOnly();
+  const isPhone = useMediaQuery(PHONE_QUERY);
   const toast = useToast();
   const [dialog, setDialog] = useState<Dialog>(null);
   const [loading, setLoading] = useState(false);
@@ -75,11 +79,44 @@ export function SubjectsPage() {
     </Button>
   );
 
+  const other: Lang = lang === 'si' ? 'en' : 'si';
+  const usage = new Map(subjects.map((s) => [s.id, usageCount('subject', s.id, school, entries)]));
+  const phoneRow = (s: Subject) => {
+    const name = pickName(s, lang);
+    const missing = !(other === 'si' ? s.nameSi : s.nameEn)?.trim();
+    const used = usage.get(s.id) ?? 0;
+    return (
+      <ListRow
+        key={s.id}
+        lead={<ListTile label={s.short} color={s.color} />}
+        title={name}
+        detail={
+          missing ? (
+            <Badge tone="warning">{t('page.showsOther', { name })}</Badge>
+          ) : (
+            pickName(s, other)
+          )
+        }
+        onOpen={readOnly ? undefined : () => setDialog({ kind: 'edit', subject: s })}
+        openLabel={t('phone.editFor', { name })}
+        meta={used > 0 ? t('page.slots', { count: used }) : undefined}
+        action={
+          !readOnly && used === 0
+            ? { label: t('page.delete'), ariaLabel: t('phone.deleteFor', { name }), tone: 'danger', onClick: () => setDialog({ kind: 'delete', subject: s }) }
+            : undefined
+        }
+      />
+    );
+  };
+  const unused = subjects.filter((s) => usage.get(s.id) === 0);
+  const inUse = subjects.filter((s) => (usage.get(s.id) ?? 0) > 0);
+
   return (
     <div>
       <PageHeader
         title={t('page.title')}
         subtitle={t('page.intro')}
+        phoneActions={readOnly ? null : add}
         actions={
           !readOnly && (
             <>
@@ -93,10 +130,34 @@ export function SubjectsPage() {
         }
       />
 
+      {isPhone && !readOnly && (
+        <div className="mb-4 grid grid-cols-2 gap-2.5">
+          <Button size="lg" className="h-auto min-h-11 py-1.5 leading-tight" onClick={() => void loadStandard()} loading={loading}>
+            {t('page.loadStandard')}
+          </Button>
+          <Button size="lg" onClick={() => setDialog({ kind: 'import' })}>
+            {t('import:open')}
+          </Button>
+        </div>
+      )}
+
       {school.loading ? (
         <LoadingState />
       ) : subjects.length === 0 ? (
         <EmptyState icon="subjects" title={t('page.empty')} body={t('page.emptyBody')} action={readOnly ? undefined : add} />
+      ) : isPhone ? (
+        <>
+          {unused.length > 0 && (
+            <ListSection title={t('phone.unused')} count={unused.length} tone="warning">
+              {unused.map(phoneRow)}
+            </ListSection>
+          )}
+          {inUse.length > 0 && (
+            <ListSection title={t('phone.used')} count={inUse.length}>
+              {inUse.map(phoneRow)}
+            </ListSection>
+          )}
+        </>
       ) : (
         <Table className="md:min-w-[720px]">
           <THead>
@@ -149,7 +210,7 @@ export function SubjectsPage() {
                     onCommit={(v) => void edit(s, { short: v })}
                   />
                 </Td>
-                <Td className="text-[13px] text-ink-soft">{t('page.slots', { count: usageCount('subject', s.id, school, entries) })}</Td>
+                <Td className="text-[13px] text-ink-soft">{t('page.slots', { count: usage.get(s.id) ?? 0 })}</Td>
                 {!readOnly && (
                   <Td>
                     <Button size="sm" variant="ghost" onClick={() => setDialog({ kind: 'delete', subject: s })}>
@@ -165,6 +226,7 @@ export function SubjectsPage() {
       <p className="mt-3 text-[13px] text-ink-soft">{t('page.footnote')}</p>
 
       {dialog?.kind === 'add' && <SubjectModal onClose={() => setDialog(null)} />}
+      {dialog?.kind === 'edit' && <SubjectModal subject={dialog.subject} onClose={() => setDialog(null)} />}
       {dialog?.kind === 'import' && <ImportModal onClose={() => setDialog(null)} />}
       {dialog?.kind === 'delete' && (
         <DeleteSetupModal

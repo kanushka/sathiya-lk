@@ -8,6 +8,7 @@ import { useAuth } from '../../app/AuthProvider';
 import { PendingNote, useSchoolPending } from '../../app/PendingReview';
 import { useSchool, useYear } from '../../app/SchoolProvider';
 import { useReadOnly } from '../../ui/AdminLayout';
+import { ActionMenu, type ActionMenuItem } from '../../ui/ActionMenu';
 import { Button } from '../../ui/Button';
 import { IconButton } from '../../ui/IconButton';
 import { Icon, type IconName } from '../../ui/Icon';
@@ -18,6 +19,7 @@ import { LoadingState } from '../../ui/LoadingState';
 import { Table, TBody, Td, Th, THead, Tr } from '../../ui/Table';
 import { Badge } from '../../ui/Badge';
 import { PageHeader } from '../../ui/PageHeader';
+import { PHONE_QUERY, useMediaQuery } from '../../ui/PhoneNotice';
 import { useToast } from '../../ui/Toast';
 import { ImportModal } from '../import/ImportModal';
 import { PersonalLinkModal, UnlinkModal } from './AccountDialogs';
@@ -29,6 +31,7 @@ import { JoinRequests } from './JoinRequestsSection';
 import { useJoinRequests } from './useJoinRequests';
 import { personalJoinUrl } from './links';
 import { TeacherModal } from './TeacherModal';
+import { TeachersPhoneList } from './TeachersPhoneList';
 
 type Dialog =
   | { kind: 'edit'; teacher?: Teacher }
@@ -51,6 +54,7 @@ export function TeachersPage() {
   const latestYearId = [...years].sort((a, b) => b.label.localeCompare(a.label, 'en', { numeric: true }))[0]?.id;
   const slotUsage = (teacherId: string) => (yearId === latestYearId ? usageCount('teacher', teacherId, state, entries) : 0);
   const readOnly = useReadOnly();
+  const isPhone = useMediaQuery(PHONE_QUERY);
   const pending = useSchoolPending();
   const toast = useToast();
   const { user, signOut } = useAuth();
@@ -162,31 +166,61 @@ export function TeachersPage() {
     </Button>
   );
 
+  const searchBox = (
+    <input
+      type="search"
+      aria-label={t('page.search')}
+      placeholder={t('page.search')}
+      className={inputClass}
+      value={search}
+      onChange={(e) => setSearch(e.target.value)}
+    />
+  );
+
+  // On phones the edit dialog carries the row actions that the desktop table shows inline.
+  const editMenu = (x: Teacher) => {
+    const items: ActionMenuItem[] = [];
+    if (x.uid) items.push({ key: 'unlink', label: t('actions.unlink'), icon: 'unlink', onSelect: () => setDialog({ kind: 'unlink', teacher: x }) });
+    if (liveLink(x))
+      items.push({
+        key: 'cancel', label: t('actions.cancelLink'), icon: 'linkOff', disabled: busy !== null, onSelect: () => {
+          setDialog(null);
+          void cancelLink(x);
+        },
+      });
+    items.push({ key: 'delete', label: t('phone.deleteTeacher'), icon: 'trash', tone: 'danger', onSelect: () => setDialog({ kind: 'delete', teacher: x }) });
+    return <ActionMenu variant="ghost" label={t('phone.moreTeacher')} items={items} />;
+  };
+
   return (
     <div>
       <PageHeader
         title={t('page.title')}
         count={teachers.length}
+        phoneActions={readOnly ? null : add}
         actions={
           <>
-          <div className="w-[220px]">
-            <input
-              type="search"
-              aria-label={t('page.search')}
-              placeholder={t('page.search')}
-              className={inputClass}
-              value={search}
-              onChange={(e) => setSearch(e.target.value)}
-            />
-          </div>
+          <div className="w-[220px]">{searchBox}</div>
           {!readOnly && <Button disabled={!teachersReady} onClick={() => setDialog({ kind: 'import' })}>{t('import:open')}</Button>}
           {!readOnly && add}
           </>
         }
       />
 
-      <JoinRequests schoolId={school.id} requests={requests} teachers={teachers} readOnly={readOnly} />
-      {!readOnly && <InviteLinkCard schoolId={school.id} />}
+      {isPhone && (
+        <div className="mb-4 flex items-center gap-2">
+          <div className="min-w-0 flex-1 [&_input]:h-11">{searchBox}</div>
+          {!readOnly && (
+            <ActionMenu
+              label={t('phone.moreList')}
+              items={[{ key: 'import', label: t('import:open'), disabled: !teachersReady, onSelect: () => setDialog({ kind: 'import' }) }]}
+            />
+          )}
+        </div>
+      )}
+
+      <JoinRequests schoolId={school.id} requests={requests} teachers={teachers} readOnly={readOnly} phone={isPhone} />
+      {!readOnly && !isPhone && <InviteLinkCard schoolId={school.id} />}
 
       {!readOnly && pending && teachers.length > 0 && (
         <div className="mb-2.5 flex justify-end">
@@ -200,6 +234,18 @@ export function TeachersPage() {
         <EmptyState icon="teachers" title={t('page.empty')} body={t('page.emptyBody')} action={readOnly ? undefined : add} />
       ) : rows.length === 0 ? (
         <EmptyState icon="search" title={t('page.noMatch')} />
+      ) : isPhone ? (
+        <TeachersPhoneList
+          rows={rows}
+          classes={classes}
+          subjectName={subjectName}
+          loadText={loadText}
+          readOnly={readOnly}
+          linkLocked={pending}
+          busy={busy}
+          onOpen={(x) => setDialog({ kind: 'edit', teacher: x })}
+          onLink={(x) => void personalLink(x)}
+        />
       ) : (
         <Table>
           <THead>
@@ -276,7 +322,16 @@ export function TeachersPage() {
         </Table>
       )}
 
-      {dialog?.kind === 'edit' && <TeacherModal key={dialog.teacher?.id ?? 'new'} teacher={dialog.teacher} onClose={() => setDialog(null)} />}
+      {isPhone && !readOnly && <InviteLinkCard schoolId={school.id} compact />}
+
+      {dialog?.kind === 'edit' && (
+        <TeacherModal
+          key={dialog.teacher?.id ?? 'new'}
+          teacher={dialog.teacher}
+          onClose={() => setDialog(null)}
+          footerStart={isPhone && !readOnly && dialog.teacher ? editMenu(dialog.teacher) : undefined}
+        />
+      )}
       {dialog?.kind === 'import' && <ImportModal onClose={() => setDialog(null)} />}
       {dialog?.kind === 'personalLink' && (
         <PersonalLinkModal

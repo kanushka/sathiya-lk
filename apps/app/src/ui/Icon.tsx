@@ -74,6 +74,7 @@ const shapes = {
     </>
   ),
   plus: <path d="M12 5v14M5 12h14" />,
+  more: <path d="M5 12h.01M12 12h.01M19 12h.01" strokeWidth={3} />,
   sparkle: (
     <>
       <path d="M12 3l1.8 4.7L18.5 9.5l-4.7 1.8L12 16l-1.8-4.7L5.5 9.5l4.7-1.8z" />

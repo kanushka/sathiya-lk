@@ -117,5 +117,8 @@
     "removed": "Registration removed",
     "failed": "Could not remove the registration. Try again.",
     "teacherBody": "This school isn't active on Sathiya yet. Ask your school admin."
+  },
+  "actionMenu": {
+    "more": "More actions"
   }
 }
