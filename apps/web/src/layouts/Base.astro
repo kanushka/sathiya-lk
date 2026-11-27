@@ -26,8 +26,8 @@ const jsonLd = JSON.stringify({
     {
       '@type': 'WebSite',
       '@id': `${home}#website`,
-      name: SITE_NAME,
-      alternateName: ['Sathiya', 'සතිය'],
+      name: 'Sathiya',
+      alternateName: [SITE_NAME, 'සතිය'],
       url: home,
       inLanguage: ['en', 'si'],
       publisher: { '@id': `${home}#org` },
@@ -72,7 +72,8 @@ const jsonLd = JSON.stringify({
         <link rel="alternate" hreflang="x-default" href={url('en')} />
       </>
     )}
-    <link rel="icon" href="/favicon.ico" sizes="32x32" />
+    <link rel="icon" href="/favicon.ico" sizes="16x16 32x32 48x48" />
+    <link rel="icon" type="image/png" sizes="192x192" href="/icon-192.png" />
     <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
     <link rel="apple-touch-icon" href="/apple-touch-icon.png" />
     <link rel="manifest" href="/site.webmanifest" />

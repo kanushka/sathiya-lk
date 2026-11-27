@@ -125,7 +125,7 @@ describe('built site', () => {
     expect(html).toContain(`<meta property="og:site_name" content="${SITE_NAME}"`);
     const ld = JSON.parse(html.match(/<script type="application\/ld\+json">([\s\S]*?)<\/script>/)?.[1] ?? '{}');
     const site = ld['@graph']?.find((n: { '@type': string }) => n['@type'] === 'WebSite');
-    expect(site).toMatchObject({ name: SITE_NAME, alternateName: ['Sathiya', 'සතිය'] });
+    expect(site).toMatchObject({ name: 'Sathiya', alternateName: [SITE_NAME, 'සතිය'] });
   });
 
   it.each(allPaths)('%s uses the configured site URL for og:url and og:image', (p) => {
@@ -184,6 +184,9 @@ describe('built site', () => {
   it('ships og image and favicon', () => {
     expect(existsSync(join(dist, 'og.png'))).toBe(true);
     expect(existsSync(join(dist, 'favicon.svg'))).toBe(true);
+    const ico = readFileSync(join(dist, 'favicon.ico'));
+    const sizes = Array.from({ length: ico.readUInt16LE(4) }, (_, i) => ico[6 + i * 16] || 256);
+    expect(sizes).toContain(48);
     const png = readFileSync(join(dist, 'og.png'));
     expect(png.readUInt32BE(16)).toBe(1200);
     expect(png.readUInt32BE(20)).toBe(630);
