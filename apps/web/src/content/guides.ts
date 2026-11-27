@@ -42,7 +42,8 @@ export const guides: Guide[] = [
           },
           {
             title: 'Find your school',
-            body: 'Enter your census number and click "Find my school". The school office has it on Ministry of Education letters. Private and international schools, or schools missing from the list, choose "My school isn\'t listed" and fill in the details; Sathiya reviews those schools before they go live.',
+            body: 'Enter your census number and click "Find my school". The school office has it on Ministry of Education letters. Private and international schools, or schools missing from the list, choose "My school isn\'t listed" and fill in the details. Sathiya reviews those schools before they go live.',
+            image: 'find-school',
           },
           {
             title: 'Check the school details',
@@ -77,7 +78,8 @@ export const guides: Guide[] = [
           },
           {
             title: 'ඔබේ පාසල සොයන්න',
-            body: 'සංගණන අංකය ඇතුළත් කර "මගේ පාසල සොයන්න" ක්ලික් කරන්න. අධ්‍යාපන අමාත්‍යාංශ ලිපිවල එය පාසල් කාර්යාලයේ ඇත. පෞද්ගලික සහ ජාත්‍යන්තර පාසල්, හෝ ලැයිස්තුවේ නැති පාසල්, "මගේ පාසල ලැයිස්තුවේ නැත" තෝරා විස්තර පුරවන්න; එවැනි පාසල් සජීවී වීමට පෙර සතිය පරීක්ෂා කරයි.',
+            body: 'සංගණන අංකය ඇතුළත් කර "මගේ පාසල සොයන්න" ක්ලික් කරන්න. අධ්‍යාපන අමාත්‍යාංශ ලිපිවල එය පාසල් කාර්යාලයේ ඇත. පෞද්ගලික සහ ජාත්‍යන්තර පාසල්, හෝ ලැයිස්තුවේ නැති පාසල්, "මගේ පාසල ලැයිස්තුවේ නැත" තෝරා විස්තර පුරවන්න. එවැනි පාසල් සජීවී වීමට පෙර සතිය පරීක්ෂා කරයි.',
+            image: 'find-school',
           },
           {
             title: 'පාසලේ විස්තර පරීක්ෂා කරන්න',
@@ -113,7 +115,7 @@ export const guides: Guide[] = [
         summary: 'Set up one subject list for the whole school, in Sinhala and English.',
         steps: [
           { title: 'Open Subjects', body: 'Sign in as the school admin and open "Subjects" in the menu.', image: 'empty' },
-          { title: 'Load the standard list', body: 'Click "Load standard Sri Lankan list". The usual subjects are added with Sinhala and English names. Change any name or short name right in the list; the short name is what fits in a timetable cell.', image: 'standard-list' },
+          { title: 'Load the standard list', body: 'Click "Load standard Sri Lankan list". The usual subjects are added with Sinhala and English names. Change any name or short name right in the list. The short name is what fits in a timetable cell.', image: 'standard-list' },
           { title: 'Add a missing subject', body: 'Click "+ Add subject", type the name in English and Sinhala, and click "Add subject". The short name and colour are filled in for you.', image: 'add-subject' },
           { title: 'Next', body: 'Each grade picks its subjects from this list in Grade settings.' },
         ],
@@ -123,7 +125,7 @@ export const guides: Guide[] = [
         summary: 'සිංහලෙන් සහ ඉංග්‍රීසියෙන්, මුළු පාසලටම එක් විෂය ලැයිස්තුවක් සකසන්න.',
         steps: [
           { title: 'විෂයයන් විවෘත කරන්න', body: 'පාසල් පරිපාලක ලෙස පිවිස මෙනුවේ "විෂයයන්" විවෘත කරන්න.', image: 'empty' },
-          { title: 'සම්මත ලැයිස්තුව පූරණය කරන්න', body: '"ශ්‍රී ලංකාවේ සම්මත ලැයිස්තුව පූරණය කරන්න" ක්ලික් කරන්න. සුපුරුදු විෂයයන් සිංහල සහ ඉංග්‍රීසි නම් සමඟ එක් වේ. ඕනෑම නමක් හෝ කෙටි නමක් ලැයිස්තුවේම වෙනස් කළ හැක; කාලසටහන් කොටුවක දිස්වන්නේ කෙටි නමයි.', image: 'standard-list' },
+          { title: 'සම්මත ලැයිස්තුව පූරණය කරන්න', body: '"ශ්‍රී ලංකාවේ සම්මත ලැයිස්තුව පූරණය කරන්න" ක්ලික් කරන්න. සුපුරුදු විෂයයන් සිංහල සහ ඉංග්‍රීසි නම් සමඟ එක් වේ. ඕනෑම නමක් හෝ කෙටි නමක් ලැයිස්තුවේම වෙනස් කළ හැක. කාලසටහන් කොටුවක දිස්වන්නේ කෙටි නමයි.', image: 'standard-list' },
           { title: 'අඩු විෂයක් එක් කරන්න', body: '"+ විෂයක් එක් කරන්න" ක්ලික් කර, නම ඉංග්‍රීසියෙන් සහ සිංහලෙන් ලියා "විෂය එක් කරන්න" ක්ලික් කරන්න. කෙටි නම සහ වර්ණය ස්වයංක්‍රීයව පිරේ.', image: 'add-subject' },
           { title: 'ඊළඟට', body: 'සෑම ශ්‍රේණියක්ම ශ්‍රේණි සැකසුම්වලදී මෙම ලැයිස්තුවෙන් විෂයයන් තෝරා ගනී.' },
         ],
@@ -164,8 +166,9 @@ export const guides: Guide[] = [
         title: 'Set your school day with period templates',
         summary: 'Period templates hold the bell schedule: periods, times and intervals.',
         steps: [
-          { title: 'Open the default template', body: 'Open "Period templates". Your school starts with a default template, and every class uses it unless you pick another one. Each row is a period or an interval; change the times to match your school bell.', image: 'default-template' },
-          { title: 'Add a period', body: 'Click "+ Period" for one more period, then "Save template".' },
+          { title: 'Open the default template', body: 'Open "Period templates". Your school starts with a default template, and every class uses it unless you pick another one. Set "Day starts at" to your first bell. Each row is a period, an interval or an activity.', image: 'default-template' },
+          { title: 'Set how long each row is', body: 'Change a row\'s minutes with − and +, or type a number. Sathiya works out every start and end time, so the rows after it move too. Then click "Save template".' },
+          { title: 'Move or add rows', body: 'Drag a row by its ⋮⋮ handle to move it. Click "+ Insert" between two rows to add a period, interval or activity there. "+ Period" adds one at the end.' },
           { title: 'Make a template for a different day', body: 'For a short Friday or primary classes, click "+ New template", give it a name and click "Create template". Choose "Different per day" to give a day its own periods, then save. Pick which template a class uses in Grade settings.', image: 'per-day' },
         ],
       },
@@ -173,8 +176,9 @@ export const guides: Guide[] = [
         title: 'කාලච්ඡේද ආකෘති සමඟ පාසල් දිනය සකසන්න',
         summary: 'කාලච්ඡේද ආකෘතිවල සීනු කාලසටහන ඇත: කාලච්ඡේද, වේලාවන් සහ විවේක.',
         steps: [
-          { title: 'පෙරනිමි ආකෘතිය විවෘත කරන්න', body: '"කාලච්ඡේද සැකිලි" විවෘත කරන්න. ඔබේ පාසල පෙරනිමි ආකෘතියකින් ආරම්භ වන අතර, වෙනත් එකක් තෝරා නොගන්නේ නම් සෑම පන්තියක්ම එය භාවිත කරයි. සෑම පේළියක්ම කාලච්ඡේදයක් හෝ විවේකයකි; ඔබේ පාසල් සීනුවට ගැලපෙන ලෙස වේලාවන් වෙනස් කරන්න.', image: 'default-template' },
-          { title: 'කාලච්ඡේදයක් එක් කරන්න', body: 'තවත් කාලච්ඡේදයකට "+ කාලච්ඡේදය" ක්ලික් කර, "ආකෘතිය සුරකින්න" ක්ලික් කරන්න.' },
+          { title: 'පෙරනිමි ආකෘතිය විවෘත කරන්න', body: '"කාලච්ඡේද ආකෘති" විවෘත කරන්න. ඔබේ පාසල පෙරනිමි ආකෘතියකින් ආරම්භ වන අතර, වෙනත් එකක් තෝරා නොගන්නේ නම් සෑම පන්තියක්ම එය භාවිත කරයි. "දිනය ආරම්භ වන්නේ" ඔබේ පළමු සීනුවට සකසන්න. සෑම පේළියක්ම කාලච්ඡේදයක්, විවේකයක් හෝ ක්‍රියාකාරකමකි.', image: 'default-template' },
+          { title: 'සෑම පේළියකම දිග සකසන්න', body: 'පේළියක මිනිත්තු − සහ + මඟින් වෙනස් කරන්න, නැතහොත් අංකයක් ලියන්න. සතිය සෑම ආරම්භක සහ අවසන් වේලාවක්ම ගණනය කරයි, එබැවින් පසුව ඇති පේළිද ඒ සමඟ ගමන් කරයි. ඉන්පසු "ආකෘතිය සුරකින්න" ක්ලික් කරන්න.' },
+          { title: 'පේළි ගෙන යන්න හෝ එක් කරන්න', body: 'පේළියක් එහි ⋮⋮ හසුරුවෙන් අදිමින් ගෙන යන්න. පේළි දෙකක් අතර කාලච්ඡේදයක්, විවේකයක් හෝ ක්‍රියාකාරකමක් එක් කිරීමට "+ ඇතුළු කරන්න" ක්ලික් කරන්න. "+ කාලච්ඡේදය" අවසානයට එකක් එක් කරයි.' },
           { title: 'වෙනස් දිනයකට ආකෘතියක් සාදන්න', body: 'කෙටි සිකුරාදාවකට හෝ ප්‍රාථමික පන්තිවලට, "+ නව ආකෘතිය" ක්ලික් කර, නමක් දී "ආකෘතිය සාදන්න" ක්ලික් කරන්න. දිනයකට වෙනම කාලච්ඡේද දීමට "දිනපතා වෙනස්" තෝරා සුරකින්න. පන්තියක් භාවිත කරන ආකෘතිය ශ්‍රේණි සැකසුම්වලදී තෝරන්න.', image: 'per-day' },
         ],
       },
@@ -215,7 +219,7 @@ export const guides: Guide[] = [
         summary: 'Place lessons period by period. Sathiya stops teacher clashes for you.',
         steps: [
           { title: 'Choose a class', body: 'Open "By class" and choose a class. Empty periods have a "+", and the counter shows how much of the weekly plan is placed.', image: 'empty-class' },
-          { title: 'Add a lesson', body: 'Click an empty period and choose the subject; each subject shows how many periods it still needs. Then pick a teacher and click "Assign". Only teachers who are free in that period can be chosen.', image: 'teacher-picker' },
+          { title: 'Add a lesson', body: 'Click an empty period and choose the subject. Each subject shows how many periods it still needs. Then pick a teacher and click "Assign". Only teachers who are free in that period can be chosen.', image: 'teacher-picker' },
           { title: 'No clashes', body: 'A teacher who is teaching another class at that time is listed as not available, with the class they are in.', image: 'clash' },
           { title: 'Pin mode', body: 'After Assign, pin mode stays on so you can click more free periods for the same lesson. Click "Done" when finished. Changes save as you go.', image: 'placed' },
         ],
@@ -225,7 +229,7 @@ export const guides: Guide[] = [
         summary: 'කාලච්ඡේදයෙන් කාලච්ඡේදයට පාඩම් තබන්න. ගුරු ගැටුම් සතිය වළක්වයි.',
         steps: [
           { title: 'පන්තියක් තෝරන්න', body: '"පන්ති අනුව" විවෘත කර පන්තියක් තෝරන්න. හිස් කාලච්ඡේදවල "+" ඇති අතර, සතියේ සැලැස්මෙන් කොපමණ ප්‍රමාණයක් තබා ඇත්දැයි ගණකයෙන් පෙනේ.', image: 'empty-class' },
-          { title: 'පාඩමක් එක් කරන්න', body: 'හිස් කාලච්ඡේදයක් ක්ලික් කර විෂය තෝරන්න; සෑම විෂයකටම තව කාලච්ඡේද කීයක් අවශ්‍යදැයි පෙන්වයි. ඉන්පසු ගුරුවරයෙකු තෝරා "පවරන්න" ක්ලික් කරන්න. එම කාලච්ඡේදයේ නිදහස් ගුරුවරුන් පමණක් තෝරාගත හැක.', image: 'teacher-picker' },
+          { title: 'පාඩමක් එක් කරන්න', body: 'හිස් කාලච්ඡේදයක් ක්ලික් කර විෂය තෝරන්න. සෑම විෂයකටම තව කාලච්ඡේද කීයක් අවශ්‍යදැයි පෙන්වයි. ඉන්පසු ගුරුවරයෙකු තෝරා "පවරන්න" ක්ලික් කරන්න. එම කාලච්ඡේදයේ නිදහස් ගුරුවරුන් පමණක් තෝරාගත හැක.', image: 'teacher-picker' },
           { title: 'ගැටුම් නැත', body: 'එම වේලාවේ වෙනත් පන්තියකට උගන්වන ගුරුවරයෙකු, ඔවුන් සිටින පන්තිය සමඟ නොමැති ලෙස පෙන්වයි.', image: 'clash' },
           { title: 'ඇමිණීමේ ක්‍රමය', body: 'පැවරීමෙන් පසු ඇමිණීමේ ක්‍රමය සක්‍රියව පවතින බැවින්, එම පාඩමටම තවත් නිදහස් කාලච්ඡේද ක්ලික් කළ හැක. අවසන් වූ විට "අවසන්" ක්ලික් කරන්න. වෙනස්කම් ඔබ වැඩ කරන විට සුරැකේ.', image: 'placed' },
         ],

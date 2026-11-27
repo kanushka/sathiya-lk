@@ -16,7 +16,7 @@ test('period templates', async ({ page, lang, tutorial }) => {
     { en: 'Period templates hold the bell schedule: periods, times and intervals.', si: 'කාලච්ඡේද ආකෘතිවල සීනු කාලසටහන ඇත: කාලච්ඡේද, වේලාවන් සහ විවේක.' },
   );
 
-  await tut.say({ en: 'Open "Period templates" in the menu.', si: 'මෙනුවේ "කාලච්ඡේද සැකිලි" විවෘත කරන්න.' }, 1800);
+  await tut.say({ en: 'Open "Period templates" in the menu.', si: 'මෙනුවේ "කාලච්ඡේද ආකෘති" විවෘත කරන්න.' }, 1800);
   await tut.click(page.getByRole('link', { name: tut.t('shell', 'nav.templates'), exact: true }));
   await tut.say({
     en: 'Your school starts with a default template. Every class uses it unless you choose another one.',

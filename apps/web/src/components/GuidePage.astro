@@ -1,8 +1,10 @@
 ---
 // SPDX-License-Identifier: AGPL-3.0-or-later
 // Copyright (C) 2026 Kanushka Gayan
+import { readFileSync } from 'node:fs';
+import { join } from 'node:path';
 import { appLinks, content, pagePath, type Lang } from '../lib/links';
-import { guide, type Guide } from '../content/guides';
+import { guide, guides, type Guide } from '../content/guides';
 
 interface Props {
   lang: Lang;
@@ -13,6 +15,18 @@ const t = content(lang).guide;
 const g = guide(slug);
 const d = g.text[lang];
 const video = g.youtube[lang];
+const next = guides[guides.findIndex((x) => x.slug === slug) + 1];
+
+// Stills can be cropped, so read each PNG's size from its header for width/height.
+const still = (image: string) => {
+  const src = `/guide/${slug}/${lang}/${image}.png`;
+  try {
+    const png = readFileSync(join(process.cwd(), 'public', src));
+    return { src, width: png.readUInt32BE(16), height: png.readUInt32BE(20) };
+  } catch {
+    return null;
+  }
+};
 ---
 <article class="wrap prose guide">
   <p class="meta-line"><a href={pagePath(lang, 'guide')}>← {t.all}</a></p>
@@ -20,9 +34,9 @@ const video = g.youtube[lang];
   <p class="guide-summary">{d.summary}</p>
   <p class="meta-line">{t.minutes.replace('{n}', String(g.minutes))}</p>
 
-  <section aria-labelledby="video">
-    <h2 id="video">{t.video}</h2>
-    {video ? (
+  {video ? (
+    <section aria-labelledby="video">
+      <h2 id="video">{t.video}</h2>
       <div class="guide-video">
         <iframe
           src={`https://www.youtube-nocookie.com/embed/${video}?rel=0&cc_load_policy=1&cc_lang_pref=${lang}`}
@@ -32,25 +46,39 @@ const video = g.youtube[lang];
           allowfullscreen
         ></iframe>
       </div>
-    ) : (
-      <p class="note">{t.videoSoon}</p>
-    )}
-  </section>
+    </section>
+  ) : (
+    <p class="note">{t.videoSoon}</p>
+  )}
 
   <section aria-labelledby="steps">
     <h2 id="steps">{t.steps}</h2>
     <ol class="guide-steps">
-      {d.steps.map((s) => (
-        <li>
-          <h3>{s.title}</h3>
-          <p>{s.body}</p>
-          {s.image && (
-            <img src={`/guide/${slug}/${lang}/${s.image}.png`} alt={s.title} width="1440" height="810" loading="lazy" decoding="async" />
-          )}
-        </li>
-      ))}
+      {d.steps.map((s) => {
+        const img = s.image ? still(s.image) : null;
+        return (
+          <li>
+            <h3>{s.title}</h3>
+            <p>{s.body}</p>
+            {img && (
+              <a class="guide-still" href={img.src} target="_blank" rel="noopener" aria-label={t.enlarge.replace('{title}', s.title)}>
+                <img src={img.src} alt={s.title} width={img.width} height={img.height} loading="lazy" decoding="async" />
+              </a>
+            )}
+          </li>
+        );
+      })}
     </ol>
   </section>
 
-  <p><a class="btn btn-primary" href={appLinks().register}>{content(lang).cta.button}</a></p>
+  {next ? (
+    <nav class="guide-next" aria-label={t.next}>
+      <a href={pagePath(lang, `guide/${next.slug}`)}>
+        <span>{t.next}</span>
+        <strong>{next.text[lang].title} →</strong>
+      </a>
+    </nav>
+  ) : (
+    <p><a class="btn btn-primary" href={appLinks().register}>{content(lang).cta.button}</a></p>
+  )}
 </article>
