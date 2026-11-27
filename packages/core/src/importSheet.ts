@@ -43,8 +43,6 @@ export type ImportErrorCode =
   | 'primaryValue'
   | 'phone'
   | 'email'
-  | 'subjectsRequired'
-  | 'gradesRequired'
   | 'tooLong'
   | 'excelDate'
   | 'excelNumber'

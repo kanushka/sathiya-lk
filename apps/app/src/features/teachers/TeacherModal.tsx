@@ -86,8 +86,6 @@ export function TeacherModal({ teacher, onClose, footerStart }: TeacherModalProp
         : teachers.some((x) => x.staffId === form.staffId)
           ? t('modal.errors.staffIdTaken')
           : null,
-    subjects: form.isPrimary || form.subjectIds.length > 0 ? null : t('modal.errors.subjects'),
-    grades: form.grades.length > 0 ? null : t('modal.errors.grades'),
     maxPerDay: Number.isInteger(maxPerDay) && maxPerDay >= 1 && maxPerDay <= 10 ? null : t('modal.errors.maxPerDay'),
     minPerWeek:
       minPerWeek === undefined || (Number.isInteger(minPerWeek) && minPerWeek >= 0 && minPerWeek <= minPerWeekCap)
@@ -200,7 +198,7 @@ export function TeacherModal({ teacher, onClose, footerStart }: TeacherModalProp
             />
           </div>
           {!form.isPrimary && (
-            <Field label={t('modal.subjects')} error={show('subjects')}>
+            <Field label={t('modal.subjects')}>
               <MultiSelect
                 value={form.subjectIds}
                 onChange={(v) => set('subjectIds', v)}
@@ -228,7 +226,6 @@ export function TeacherModal({ teacher, onClose, footerStart }: TeacherModalProp
                 </ToggleChip>
               ))}
             </div>
-            <FormError size="field" className="mt-1">{show('grades')}</FormError>
           </div>
           <div className="grid grid-cols-2 gap-3">
             <Field label={t('modal.maxPerDay')} error={show('maxPerDay')}>

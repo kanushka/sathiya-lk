@@ -29,7 +29,8 @@ const CODE_ORDER: ReadinessCode[] = [
   'no-specialist', 'class-teacher-no-daily-subject', 'class-teacher-wrong-grade',
   'capacity-short', 'min-per-week-unreachable',
 ];
-const WARNING_CODES = new Set<ReadinessCode>(['capacity-short', 'min-per-week-unreachable']);
+// A teacher may hold no lessons (principal, librarian), so these only flag possibly forgotten setup.
+const WARNING_CODES = new Set<ReadinessCode>(['teacher-no-subjects', 'teacher-no-grades', 'capacity-short', 'min-per-week-unreachable']);
 
 const slotLengths = (t: PeriodTemplate, day: DayIndex): number[] =>
   periodsFor(t, day).map((p) => toMinutes(p.end) - toMinutes(p.start));

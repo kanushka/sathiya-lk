@@ -74,8 +74,6 @@
     "primaryValue": "Use Yes or No (got \"{{value}}\")",
     "phone": "Not a valid phone number: {{value}}",
     "email": "Not a valid email: {{value}}",
-    "subjectsRequired": "Add at least one subject, or mark as a primary teacher",
-    "gradesRequired": "Add at least one grade",
     "tooLong": "Too long (max {{max}} characters)",
     "excelDate": "Excel changed this to a date. Format the column as Plain text and type it again.",
     "excelNumber": "Excel changed this to a number and may have dropped a leading 0. Format the column as Plain text and type it again.",
