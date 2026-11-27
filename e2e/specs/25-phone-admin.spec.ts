@@ -1,11 +1,25 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
 // Copyright (C) 2026 Kanushka Gayan
 import { expect, test, type Locator, type Page } from '@playwright/test';
-import { ADMIN, SID } from '../../scripts/seed';
+import { paths } from '@sathiya/core';
+import { T } from '@sathiya/core/fixtures';
+import { admin, ADMIN, SID } from '../../scripts/seed';
 import { loginAdmin, shot } from '../helpers';
 
 const W = 390;
 test.use({ viewport: { width: W, height: 844 }, isMobile: true, hasTouch: true });
+
+// The seeded join request is approved by an earlier spec, so this file adds its own pending one.
+const PHONE_REQUEST = { uid: 'e2e-phone-requester', email: 'phone.request@siripura.example.com', name: 'P. Request' } as const;
+const requestDoc = () => admin().db.doc(`${paths.joinRequests(SID)}/${PHONE_REQUEST.uid}`);
+
+test.beforeAll(async () => {
+  await requestDoc().set({ ...PHONE_REQUEST, staffId: 'SCC007', teacherId: T.kumari, createdAt: Date.now(), status: 'pending' });
+});
+
+test.afterAll(async () => {
+  await requestDoc().delete();
+});
 
 async function box(l: Locator) {
   const b = await l.boundingBox();
@@ -42,8 +56,8 @@ test('teachers are grouped into join requests, not linked and linked', async ({ 
   const add = await box(header.getByRole('button', { name: '+ Add teacher' }));
   expect(Math.abs(title.y + title.height / 2 - (add.y + add.height / 2))).toBeLessThan(4);
 
-  const request = page.getByRole('region', { name: /^Join requests/ }).getByRole('listitem').first();
-  await expect(request).toContainText('kumari@siripura.example.com');
+  const request = page.getByRole('region', { name: /^Join requests/ }).getByRole('listitem').filter({ hasText: PHONE_REQUEST.email });
+  await expect(request).toBeVisible();
   const approve = await box(request.getByRole('button', { name: 'Approve' }));
   const reject = await box(request.getByRole('button', { name: 'Reject' }));
   expect(Math.abs(approve.y - reject.y)).toBeLessThan(1);
