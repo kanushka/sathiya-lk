@@ -47,11 +47,11 @@ export const en = {
     english: 'English',
   },
   hero: {
-    pill: 'Free for every Sri Lankan school',
+    pill: 'Free for every Sri Lankan school. No limits.',
     title: "Your whole school's week, planned in one place.",
     sub: 'මුළු පාසලේම සතියේ කාලසටහන, එකම තැනකින් පහසුවෙන්.',
     subLang: 'si',
-    body: "Build class and teacher timetables side by side, with clash prevention, live period counts and every teacher's timetable on their phone.",
+    body: "Auto-fill the week in seconds, then fine-tune class and teacher timetables side by side, with clash prevention, live period counts and every teacher's timetable on their phone.",
     register: 'Register your school',
     teacherLogin: 'Teacher login',
   },
@@ -108,7 +108,7 @@ export const en = {
       { title: 'Register your school', body: "Enter your school's census number, then add your logo and colours." },
       { title: 'Add teachers & subjects', body: 'Type them in or upload the Excel template: staff IDs, subjects and the grades each teacher takes.' },
       { title: 'Set up grades & periods', body: 'Classes, class teachers, period times and periods per subject for each grade.' },
-      { title: 'Build, publish & print', body: 'Fill the grid without clashes, publish to teachers, and print class and teacher timetables.' },
+      { title: 'Build, publish & print', body: 'Auto-fill the grid or fill it by hand, without clashes. Publish to teachers, and print class and teacher timetables.' },
     ],
   },
   faq: {
@@ -116,7 +116,11 @@ export const en = {
     items: [
       {
         q: 'Is Sathiya really free?',
-        a: 'Yes. Sathiya is a free service for Sri Lankan schools. There are no fees, no paid plans and no advertising.',
+        a: 'Yes, completely. There are no fees, no paid plans and no advertising, and no limits on teachers, classes, subjects or years. Sathiya is also open source: anyone can read the code on GitHub.',
+      },
+      {
+        q: 'Can it build the timetable for us?',
+        a: 'Yes. Auto-fill generates the timetable from your periods per subject, the subjects and grades each teacher takes, and their daily limits, without clashes. It can keep the lessons you already placed and fill only what is missing. You see the result before anything is saved, then change any period by hand.',
       },
       {
         q: 'Can it handle religion groups, aesthetic subjects and combined classes?',
