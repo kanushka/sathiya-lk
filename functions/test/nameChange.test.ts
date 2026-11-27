@@ -52,6 +52,7 @@ describe('requestNameChange', () => {
     expect(school.nameChange).toMatchObject({
       nameEn: 'G/ Sri Kalyanathissa K.V.',
       nameSi: 'ගා/ ශ්‍රී කල්‍යාණතිස්ස ක.වි.',
+      moeName: 'Kilinochchi Madhya Maha Vidyalayam',
       status: 'pending',
       requestedBy: admin.uid,
     });

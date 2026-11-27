@@ -50,7 +50,15 @@ function DuplicateList({ title, schools }: { title: string; schools: School[] })
   );
 }
 
-function RejectModal({ name, onClose, onReject }: { name: string; onClose: () => void; onReject: (reason: string) => Promise<boolean> }) {
+export interface RejectModalProps {
+  title: string;
+  body: string;
+  confirmLabel: string;
+  onClose: () => void;
+  onReject: (reason: string) => Promise<boolean>;
+}
+
+export function RejectModal({ title, body, confirmLabel, onClose, onReject }: RejectModalProps) {
   const { t } = useTranslation('superadmin');
   const [reason, setReason] = useState('');
   const [tried, setTried] = useState(false);
@@ -69,7 +77,7 @@ function RejectModal({ name, onClose, onReject }: { name: string; onClose: () =>
     <Modal
       open
       width={520}
-      title={t('review.rejectTitle', { name })}
+      title={title}
       onClose={onClose}
       busy={busy}
       footer={
@@ -78,12 +86,12 @@ function RejectModal({ name, onClose, onReject }: { name: string; onClose: () =>
             {t('buttons.cancel', { ns: 'common' })}
           </Button>
           <Button variant="dangerSolid" loading={busy} onClick={() => void submit()}>
-            {t('review.confirmReject')}
+            {confirmLabel}
           </Button>
         </>
       }
     >
-      <p className="mb-4 mt-0 text-sm leading-normal text-ink-soft">{t('review.rejectBody')}</p>
+      <p className="mb-4 mt-0 text-sm leading-normal text-ink-soft">{body}</p>
       <Field label={t('review.reason')} required hint={t('review.reasonHint')} error={error}>
         <textarea
           className={textareaClass}
@@ -225,7 +233,15 @@ export function ReviewSection({ school, schools, members, review }: ReviewSectio
         </>
       )}
 
-      {rejecting && <RejectModal name={name} onClose={() => setRejecting(false)} onReject={reject} />}
+      {rejecting && (
+        <RejectModal
+          title={t('review.rejectTitle', { name })}
+          body={t('review.rejectBody')}
+          confirmLabel={t('review.confirmReject')}
+          onClose={() => setRejecting(false)}
+          onReject={reject}
+        />
+      )}
     </section>
   );
 }

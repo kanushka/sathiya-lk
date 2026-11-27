@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
 // Copyright (C) 2026 Kanushka Gayan
 import { ctx } from '@sathiya/core/fixtures';
-import { screen } from '@testing-library/react';
+import { screen, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { renderWithSchool } from '../../test/renderWithSchool';
@@ -149,42 +149,76 @@ describe('profile page', () => {
 describe('profile page for a reviewed school', () => {
   const reviewed = { ...ctx, school: { ...ctx.school, censusNo: '01234', review: { moeMatched: true } } };
 
-  it('shows the English name, district and census number read-only with a hint', () => {
+  it('shows both names, district and census number read-only', () => {
     renderWithSchool(<ProfilePage />, { ctx: reviewed });
-    for (const label of ['School name in English', 'District', 'Census number']) {
+    for (const label of ['District', 'Census number']) {
       const input = screen.getByLabelText(label);
       expect(input).toHaveAttribute('readonly');
       expect(input).toHaveAccessibleDescription('Locked after registration. Contact Sathiya to change it.');
     }
+    for (const label of ['School name in English', 'School name in Sinhala']) {
+      const input = screen.getByLabelText(label);
+      expect(input).toHaveAttribute('readonly');
+      expect(input).toHaveAccessibleDescription('A name change needs Sathiya approval.');
+    }
     expect(screen.getByLabelText('Census number')).toHaveValue('01234');
-    expect(screen.getByLabelText('School name in Sinhala')).not.toHaveAttribute('readonly');
   });
 
   it('saves without the locked fields', async () => {
     vi.mocked(api.updateSchool).mockResolvedValue(undefined);
     const user = userEvent.setup();
     renderWithSchool(<ProfilePage />, { ctx: reviewed });
-    await user.type(screen.getByLabelText('School name in English'), 'X');
     await user.type(screen.getByLabelText('City'), 'X');
     await user.click(screen.getByRole('button', { name: 'Save changes' }));
     const patch = vi.mocked(api.updateSchool).mock.calls[0]![1];
     expect(patch).not.toHaveProperty('nameEn');
+    expect(patch).not.toHaveProperty('nameSi');
     expect(patch).not.toHaveProperty('district');
     expect(patch.city).toMatch(/X$/);
   });
 
-  it('lets a Sinhala-only reviewed school add its English name', async () => {
-    vi.mocked(api.updateSchool).mockResolvedValue(undefined);
+  it('sends a name change request with both names', async () => {
+    vi.mocked(api.requestNameChange).mockResolvedValue(undefined);
     const user = userEvent.setup();
-    renderWithSchool(<ProfilePage />, { ctx: { ...reviewed, school: { ...reviewed.school, nameEn: '', nameSi: 'සිරිපුර' } } });
-    const nameEn = screen.getByLabelText('School name in English');
-    expect(nameEn).not.toHaveAttribute('readonly');
-    expect(screen.getByLabelText('District')).toHaveAttribute('readonly');
-    await user.type(nameEn, 'Siripura College');
-    await user.click(screen.getByRole('button', { name: 'Save changes' }));
-    const patch = vi.mocked(api.updateSchool).mock.calls[0]![1];
-    expect(patch.nameEn).toBe('Siripura College');
-    expect(patch).not.toHaveProperty('district');
+    renderWithSchool(<ProfilePage />, { ctx: reviewed });
+    await user.click(screen.getByRole('button', { name: 'Request a name change' }));
+    const dialog = screen.getByRole('dialog', { name: 'Request a name change' });
+    const send = within(dialog).getByRole('button', { name: 'Send request' });
+    expect(send).toBeDisabled();
+    const en = within(dialog).getByLabelText('New name in English');
+    await user.clear(en);
+    await user.type(en, 'G/ Siripura M.V.');
+    const si = within(dialog).getByLabelText('New name in Sinhala');
+    await user.clear(si);
+    await user.type(si, 'ගා/ සිරිපුර ම.වි.');
+    await user.click(send);
+    expect(api.requestNameChange).toHaveBeenCalledWith('siripura', { nameEn: 'G/ Siripura M.V.', nameSi: 'ගා/ සිරිපුර ම.වි.' });
+    expect(api.updateSchool).not.toHaveBeenCalled();
+    expect(await screen.findByText('Name change request sent')).toBeInTheDocument();
+    expect(screen.queryByRole('dialog')).not.toBeInTheDocument();
+  });
+
+  it('shows a pending request and keeps the current name', () => {
+    const nameChange = { nameEn: 'G/ Siripura M.V.', nameSi: 'ගා/ සිරිපුර ම.වි.', status: 'pending' as const, requestedAt: 1, requestedBy: 'u1' };
+    renderWithSchool(<ProfilePage />, { ctx: { ...reviewed, school: { ...reviewed.school, nameChange } } });
+    const banner = screen.getByText('Waiting for name change approval').closest('[role="status"]')!;
+    expect(banner).toHaveTextContent('G/ Siripura M.V.');
+    expect(banner).toHaveTextContent('ගා/ සිරිපුර ම.වි.');
+    expect(screen.getByLabelText('School name in English')).toHaveValue('Siripura Central College');
+  });
+
+  it('shows a rejected request with the reason', () => {
+    const nameChange = { nameEn: 'Royal', status: 'rejected' as const, requestedAt: 1, requestedBy: 'u1', reason: 'Use the MOE name' };
+    renderWithSchool(<ProfilePage />, { ctx: { ...reviewed, school: { ...reviewed.school, nameChange } } });
+    const banner = screen.getByText('Name change not approved').closest('[role="alert"]')!;
+    expect(banner).toHaveTextContent('Royal');
+    expect(banner).toHaveTextContent('Use the MOE name');
+  });
+
+  it('hides the request button when read-only', () => {
+    flags.readOnly = true;
+    renderWithSchool(<ProfilePage />, { ctx: reviewed });
+    expect(screen.queryByRole('button', { name: 'Request a name change' })).not.toBeInTheDocument();
   });
 
   it('keeps the fields editable without a review record', () => {

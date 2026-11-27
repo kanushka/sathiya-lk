@@ -26,9 +26,11 @@ export const requestNameChange = onCall(callOpts, async (req): Promise<RequestNa
     if (same(nameEn, current.nameEn) && same(nameSi, current.nameSi)) invalid('The new name is the same as the current name');
     const prev = snap.get('nameChange') as SchoolNameChange | undefined;
     if (prev?.status === 'pending' && same(prev.nameEn, nameEn) && same(prev.nameSi, nameSi)) return undefined;
-    const change: SchoolNameChange = { nameEn, ...(nameSi !== undefined && { nameSi }), status: 'pending', requestedAt: Date.now(), requestedBy: uid };
+    const censusNo = snap.get('censusNo') as string | undefined;
+    const moeName = censusNo ? moeSchool(censusNo)?.name : undefined;
+    const change: SchoolNameChange = { nameEn, nameSi, moeName, status: 'pending', requestedAt: Date.now(), requestedBy: uid };
     tx.update(schoolRef, { nameChange: change });
-    return { current, censusNo: snap.get('censusNo') as string | undefined };
+    return { current, censusNo, moeName };
   });
   if (!result) return { ok: true };
   await sendMail('nameChangeRequested', async () => {
@@ -38,7 +40,7 @@ export const requestNameChange = onCall(callOpts, async (req): Promise<RequestNa
     const message = nameChangeRequested({
       schoolId: sid,
       censusNo: result.censusNo,
-      moeName: result.censusNo ? moeSchool(result.censusNo)?.name : undefined,
+      moeName: result.moeName,
       current: result.current,
       requested: { nameEn, nameSi },
       requester: { name: member.get('name') as string | undefined, email: token.email?.toLowerCase() },

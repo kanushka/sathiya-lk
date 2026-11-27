@@ -2,6 +2,7 @@
 // Copyright (C) 2026 Kanushka Gayan
 import { paths } from '@sathiya/core';
 import { deleteField, doc, updateDoc } from 'firebase/firestore';
+import { call } from '../../lib/callable';
 import { db } from '../../lib/firebase';
 
 export interface SchoolPatch {
@@ -28,4 +29,8 @@ export async function updateSchool(schoolId: string, patch: SchoolPatch): Promis
     staffPrefix: patch.staffPrefix,
     colors: { primary: patch.colors.primary, second: patch.colors.second },
   });
+}
+
+export async function requestNameChange(schoolId: string, names: { nameEn: string; nameSi?: string }): Promise<void> {
+  await call('requestNameChange', { schoolId, ...names });
 }

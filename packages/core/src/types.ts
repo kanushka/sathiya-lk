@@ -9,7 +9,7 @@ export interface School extends Bilingual { id: string; district: string; city: 
 export type SchoolStatus = 'active' | 'pending' | 'rejected' | 'disabled';
 export interface SchoolReview { reason?: string; decidedAt?: number; decidedBy?: string; moeMatched: boolean }
 /** A school admin's request to rename the school. Deleted once approved; a rejected one stays until the next request. */
-export interface SchoolNameChange extends Bilingual { status: 'pending' | 'rejected'; requestedAt: number; requestedBy: string; reason?: string; decidedAt?: number; decidedBy?: string }
+export interface SchoolNameChange extends Bilingual { /** MOE list name for the school's census number when requested. */ moeName?: string; status: 'pending' | 'rejected'; requestedAt: number; requestedBy: string; reason?: string; decidedAt?: number; decidedBy?: string }
 export const SCHOOL_TYPES = ['government', 'private', 'international'] as const;
 export type SchoolType = (typeof SCHOOL_TYPES)[number];
 export const REPORT_REASONS = ['fake', 'duplicate', 'abuse', 'other'] as const;

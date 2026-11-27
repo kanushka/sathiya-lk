@@ -42,7 +42,8 @@
     "enable": "Enable",
     "all": "All",
     "filterCount": "{{label}}, {{count}}",
-    "review": "Review"
+    "review": "Review",
+    "nameChangeFilter": "Name change"
   },
   "reports": {
     "title": "Reports",
@@ -252,5 +253,27 @@
     "toastApproved": "{{name}} approved. The school admin was emailed.",
     "toastRejected": "Registration rejected. Email sent with your reason.",
     "failed": "Could not save the review: {{message}}"
+  },
+  "nameChange": {
+    "title": "Name change",
+    "pending": "Waiting for approval",
+    "rejected": "Not approved",
+    "requestedOn": "Requested on {{date}}",
+    "rejectedOn": "Rejected on {{date}}",
+    "moeName": "MOE list name",
+    "notListed": "Not in the MOE list",
+    "current": "Current name",
+    "requested": "Requested name",
+    "noSi": "No Sinhala name",
+    "approve": "Approve new name",
+    "reject": "Reject…",
+    "rejectTitle": "Reject the new name?",
+    "rejectBody": "The school keeps its current name. The school admin gets an email with your reason and sees it on the profile page.",
+    "confirmReject": "Reject name change",
+    "reasonSent": "Reason sent to the school admin",
+    "footer": "Approving renames the school everywhere, including published timetables and the directory, and emails the school admin.",
+    "toastApproved": "New name approved. The school admin was emailed.",
+    "toastRejected": "Name change rejected. Email sent with your reason.",
+    "failed": "Could not save the decision: {{message}}"
   }
 }

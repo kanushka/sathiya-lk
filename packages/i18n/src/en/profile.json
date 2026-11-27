@@ -21,9 +21,29 @@
     "address": "Address (optional)",
     "phone": "Phone (optional)",
     "censusNo": "Census number",
-    "locked": "Locked after registration. Contact Sathiya to change it."
+    "locked": "Locked after registration. Contact Sathiya to change it.",
+    "nameLocked": "A name change needs Sathiya approval."
   },
   "contrast": {
     "low": "This primary colour is too light for white text (contrast {{ratio}}:1, needs 4.5:1). Buttons and headers may be hard to read. Pick a darker colour."
+  },
+  "nameChange": {
+    "open": "Request a name change",
+    "title": "Request a name change",
+    "body": "Sathiya checks the new name before it replaces the current one. Until then, the current name stays in use everywhere.",
+    "newEn": "New name in English",
+    "newSi": "New name in Sinhala",
+    "unchanged": "Change at least one name.",
+    "send": "Send request",
+    "sending": "Sending…",
+    "sent": "Name change request sent",
+    "failed": "Could not send the request. Try again.",
+    "rateLimited": "Too many requests today. Try again tomorrow.",
+    "pendingTitle": "Waiting for name change approval",
+    "pendingBody": "The current name stays in use until Sathiya approves the change.",
+    "rejectedTitle": "Name change not approved",
+    "rejectedBody": "The school keeps its current name. You can send a new request.",
+    "requested": "Requested name",
+    "reason": "Reason"
   }
 }
