@@ -535,36 +535,39 @@ describe('reviewed school identity', () => {
   ])('denies the pending admin changing %s', async (k, v) => {
     await assertFails(update('pendingAdmin', sp, { [k]: v }));
   });
-  it('denies a full set that changes nameEn and an update that deletes review', async () => {
+  it('denies a full set that changes a name and an update that deletes review', async () => {
     const pending = { ...school('sp', 'pending'), review: { moeMatched: false } };
-    await assertSucceeds(set('pendingAdmin', sp, { ...pending, nameSi: 'නම' }));
+    await assertSucceeds(set('pendingAdmin', sp, { ...pending, city: 'Kurunegala' }));
     await assertFails(set('pendingAdmin', sp, { ...pending, nameEn: 'Renamed College' }));
+    await assertFails(set('pendingAdmin', sp, { ...pending, nameSi: 'නම' }));
     const { review: _r, ...noReview } = pending;
     await assertFails(set('pendingAdmin', sp, noReview));
     await assertFails(set('pendingAdmin', sp, { ...noReview, nameEn: 'Renamed College' }));
     await assertFails(update('pendingAdmin', sp, { review: firebase.firestore.FieldValue.delete() }));
     await assertFails(update('pendingAdmin', sp, { review: firebase.firestore.FieldValue.delete(), nameEn: 'Renamed College' }));
   });
-  it('allows the pending admin to change nameSi and other details', async () => {
-    await assertSucceeds(update('pendingAdmin', sp, { nameSi: 'නම' }));
+  it('allows the pending admin to change other details', async () => {
     await assertSucceeds(update('pendingAdmin', sp, { city: 'Kurunegala', phone: '037 222 3344' }));
   });
-  it('denies the admin of an approved, reviewed school changing nameEn or district but allows nameSi', async () => {
-    await env.withSecurityRulesDisabled((ctx) => ctx.firestore().doc(paths.school('s1')).update({ review: { moeMatched: true } }));
+  it('denies the admin of an approved, reviewed school changing either name or district', async () => {
+    await env.withSecurityRulesDisabled((ctx) => ctx.firestore().doc(paths.school('s1')).update({ review: { moeMatched: true }, nameSi: 'පාසල' }));
     await assertFails(update('admin', paths.school('s1'), { nameEn: 'x' }));
+    await assertFails(update('admin', paths.school('s1'), { nameSi: 'නම' }));
+    await assertFails(update('admin', paths.school('s1'), { nameSi: firebase.firestore.FieldValue.delete() }));
     await assertFails(update('admin', paths.school('s1'), { district: 'Colombo' }));
-    await assertSucceeds(update('admin', paths.school('s1'), { nameSi: 'නම' }));
   });
-  it('lets a Sinhala-only reviewed school add its English name once', async () => {
+  it('denies a Sinhala-only reviewed school adding an English name directly', async () => {
     await env.withSecurityRulesDisabled((ctx) => ctx.firestore().doc(sp).update({ nameEn: '', nameSi: 'නම' }));
-    await assertFails(update('pendingAdmin', sp, { nameEn: 'English Name', district: 'Colombo' }));
-    await assertSucceeds(update('pendingAdmin', sp, { nameEn: 'English Name' }));
-    await assertFails(update('pendingAdmin', sp, { nameEn: 'Renamed College' }));
-    await assertFails(update('pendingAdmin', sp, { nameEn: '' }));
+    await assertFails(update('pendingAdmin', sp, { nameEn: 'English Name' }));
+    await env.withSecurityRulesDisabled((ctx) => ctx.firestore().doc(sp).update({ nameEn: firebase.firestore.FieldValue.delete() }));
+    await assertFails(update('pendingAdmin', sp, { nameEn: 'English Name' }));
   });
-  it('lets a reviewed school without a nameEn field add one', async () => {
-    await env.withSecurityRulesDisabled((ctx) => ctx.firestore().doc(sp).update({ nameEn: firebase.firestore.FieldValue.delete(), nameSi: 'නම' }));
-    await assertSucceeds(update('pendingAdmin', sp, { nameEn: 'English Name' }));
+  it('denies admins writing a name change request directly', async () => {
+    await env.withSecurityRulesDisabled((ctx) => ctx.firestore().doc(paths.school('s1')).update({ review: { moeMatched: true } }));
+    const request = { nameEn: 'New Name', status: 'pending', requestedAt: 1, requestedBy: 'u-admin' };
+    await assertFails(update('admin', paths.school('s1'), { nameChange: request }));
+    await assertFails(update('admin', paths.school('s2'), { nameChange: request }));
+    await assertFails(update('pendingAdmin', sp, { nameChange: request }));
   });
   it('still lets a school without a review record change nameEn and district', async () => {
     await assertSucceeds(update('admin', paths.school('s1'), { nameEn: 'x', district: 'Colombo' }));

@@ -3,6 +3,9 @@
 import { describe, expect, it } from 'vitest';
 import {
   adminInvite,
+  nameChangeApproved,
+  nameChangeRejected,
+  nameChangeRequested,
   passwordReset,
   reliefAssigned,
   reliefCancelled,
@@ -30,6 +33,9 @@ const cases = {
   schoolReactivated: () => schoolReactivated({ school, loginUrl, webUrl }),
   schoolApproved: () => schoolApproved({ school, adminUrl: 'https://app.example.test/s/sid1/admin' }),
   schoolRejected: () => schoolRejected({ school, reason: 'No such school.\nCall us.', contactEmail: 'help@example.test' }),
+  nameChangeApproved: () => nameChangeApproved({ school, oldName: { nameEn: 'Siripura M.V.' }, adminUrl: 'https://app.example.test/s/sid1/admin/profile' }),
+  nameChangeRejected: () =>
+    nameChangeRejected({ school, requested: { nameEn: 'Siripura Royal College' }, reason: 'Use the MOE name.', contactEmail: 'help@example.test' }),
   verifyEmail: () => verifyEmail({ link: 'https://app.example.test/auth/action?mode=verifyEmail&oobCode=abc', lang: 'en', webUrl }),
   passwordReset: () => passwordReset({ link: 'https://app.example.test/auth/action?mode=resetPassword&oobCode=abc', lang: 'si', webUrl }),
 };
@@ -124,6 +130,18 @@ describe('email templates', () => {
       schoolApproved({ school: { nameEn: evil, nameSi: evil }, adminUrl: url }),
       schoolRejected({ school: { nameEn: evil, nameSi: evil }, reason: evil, contactEmail: evil }),
       verifyEmail({ link: url, webUrl: url }),
+      nameChangeApproved({ school: { nameEn: evil, nameSi: evil }, oldName: { nameEn: evil }, adminUrl: url }),
+      nameChangeRejected({ school: { nameEn: evil, nameSi: evil }, requested: { nameEn: evil, nameSi: evil }, reason: evil, contactEmail: evil }),
+      nameChangeRequested({
+        schoolId: evil,
+        censusNo: evil,
+        moeName: evil,
+        current: { nameEn: evil, nameSi: evil },
+        requested: { nameEn: evil, nameSi: evil },
+        requester: { name: evil, email: evil },
+        schoolUrl: url,
+        webUrl: url,
+      }),
     ];
     for (const { html, subject } of out) {
       expect(html).not.toContain('<script');

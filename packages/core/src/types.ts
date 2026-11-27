@@ -5,9 +5,11 @@ export type Lang = 'en' | 'si';
 export type DayIndex = 0 | 1 | 2 | 3 | 4;
 export type Hhmm = string;
 export interface Bilingual { nameEn: string; nameSi?: string }
-export interface School extends Bilingual { id: string; district: string; city: string; address?: string; phone?: string; type: SchoolType; censusNo?: string; releasedCensusNo?: string; censusReleasedAt?: number; censusReleasedBy?: string; grades: number[]; staffPrefix: string; logoUrl?: string; colors: { primary: string; second: string }; status: SchoolStatus; medium?: ('si' | 'en' | 'ta')[]; review?: SchoolReview; termsVersion: string; activeYearId?: string; createdAt: number }
+export interface School extends Bilingual { id: string; district: string; city: string; address?: string; phone?: string; type: SchoolType; censusNo?: string; releasedCensusNo?: string; censusReleasedAt?: number; censusReleasedBy?: string; grades: number[]; staffPrefix: string; logoUrl?: string; colors: { primary: string; second: string }; status: SchoolStatus; medium?: ('si' | 'en' | 'ta')[]; review?: SchoolReview; nameChange?: SchoolNameChange; termsVersion: string; activeYearId?: string; createdAt: number }
 export type SchoolStatus = 'active' | 'pending' | 'rejected' | 'disabled';
 export interface SchoolReview { reason?: string; decidedAt?: number; decidedBy?: string; moeMatched: boolean }
+/** A school admin's request to rename the school. Deleted once approved; a rejected one stays until the next request. */
+export interface SchoolNameChange extends Bilingual { status: 'pending' | 'rejected'; requestedAt: number; requestedBy: string; reason?: string; decidedAt?: number; decidedBy?: string }
 export const SCHOOL_TYPES = ['government', 'private', 'international'] as const;
 export type SchoolType = (typeof SCHOOL_TYPES)[number];
 export const REPORT_REASONS = ['fake', 'duplicate', 'abuse', 'other'] as const;
