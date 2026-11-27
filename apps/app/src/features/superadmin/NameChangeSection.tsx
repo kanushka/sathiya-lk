@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
 // Copyright (C) 2026 Kanushka Gayan
 import type { Bilingual, School, SchoolNameChange } from '@sathiya/core';
-import { useEffect, useState, type ReactNode } from 'react';
+import { useState, type ReactNode } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useLang } from '../../app/LangProvider';
 import { Badge } from '../../ui/Badge';
@@ -39,15 +39,16 @@ export function NameChangeSection({ school, change, decide }: { school: School; 
   const toast = useToast();
   const [approving, setApproving] = useState(false);
   const [rejecting, setRejecting] = useState(false);
-  const [done, setDone] = useState(false);
-  useEffect(() => setDone(false), [change.status, change.requestedAt]);
+  const [decidedAt, setDecidedAt] = useState<number>();
+  const done = decidedAt === change.requestedAt;
   const pending = change.status === 'pending';
 
   async function approve() {
     setApproving(true);
     try {
-      await decide({ schoolId: school.id, approve: true });
-      setDone(true);
+      const { requestedAt } = change;
+      await decide({ schoolId: school.id, requestedAt, approve: true });
+      setDecidedAt(requestedAt);
       toast.show(t('nameChange.toastApproved'), 'success');
     } catch (err) {
       toast.show(t('nameChange.failed', { message: errorMessage(t, err) }), 'error');
@@ -58,8 +59,9 @@ export function NameChangeSection({ school, change, decide }: { school: School; 
 
   async function reject(reason: string): Promise<boolean> {
     try {
-      await decide({ schoolId: school.id, approve: false, reason });
-      setDone(true);
+      const { requestedAt } = change;
+      await decide({ schoolId: school.id, requestedAt, approve: false, reason });
+      setDecidedAt(requestedAt);
       toast.show(t('nameChange.toastRejected'), 'success');
       setRejecting(false);
       return true;

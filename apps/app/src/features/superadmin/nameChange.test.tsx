@@ -2,7 +2,8 @@
 // Copyright (C) 2026 Kanushka Gayan
 import type { School } from '@sathiya/core';
 import { ctx } from '@sathiya/core/fixtures';
-import { screen, waitFor, within } from '@testing-library/react';
+import { act, screen, waitFor, within } from '@testing-library/react';
+import { useState } from 'react';
 import userEvent from '@testing-library/user-event';
 import { describe, expect, it, vi } from 'vitest';
 import { renderWithSchool } from '../../test/renderWithSchool';
@@ -56,8 +57,30 @@ describe('name change review', () => {
   it('approves as requested', async () => {
     const { decide, user } = renderDetail();
     await user.click(within(section()).getByRole('button', { name: 'Approve new name' }));
-    expect(decide).toHaveBeenCalledWith({ schoolId: 'r', approve: true });
+    expect(decide).toHaveBeenCalledWith({ schoolId: 'r', requestedAt: renamed.nameChange!.requestedAt, approve: true });
     expect(await screen.findByText(/New name approved/)).toBeInTheDocument();
+  });
+
+  it('keeps the buttons live for a newer request that arrives while a decision is in flight', async () => {
+    let finish: () => void = () => undefined;
+    const decide = vi.fn(() => new Promise<void>((r) => (finish = r)));
+    let swap: (s: School) => void = () => undefined;
+    function Harness() {
+      const [s, set] = useState(renamed);
+      swap = set;
+      return <SchoolDetail school={{ loading: false, data: s }} setStatus={vi.fn()} decideName={decide} />;
+    }
+    renderWithSchool(
+      <UsageSourceProvider value={source}>
+        <Harness />
+      </UsageSourceProvider>,
+      opts,
+    );
+    const user = userEvent.setup();
+    await user.click(within(section()).getByRole('button', { name: 'Approve new name' }));
+    act(() => swap({ ...renamed, nameChange: { ...renamed.nameChange!, nameEn: 'Newer', requestedAt: renamed.nameChange!.requestedAt + 1 } }));
+    await act(async () => finish());
+    await waitFor(() => expect(within(section()).getByRole('button', { name: 'Approve new name' })).toBeEnabled());
   });
 
   it('rejects with a required reason', async () => {
@@ -69,7 +92,7 @@ describe('name change review', () => {
     expect(within(dialog).getByText(/Enter a reason/)).toBeInTheDocument();
     await user.type(within(dialog).getByRole('textbox'), 'Use the MOE name');
     await user.click(within(dialog).getByRole('button', { name: 'Reject name change' }));
-    expect(decide).toHaveBeenCalledWith({ schoolId: 'r', approve: false, reason: 'Use the MOE name' });
+    expect(decide).toHaveBeenCalledWith({ schoolId: 'r', requestedAt: renamed.nameChange!.requestedAt, approve: false, reason: 'Use the MOE name' });
     await waitFor(() => expect(screen.queryByRole('dialog')).not.toBeInTheDocument());
   });
 

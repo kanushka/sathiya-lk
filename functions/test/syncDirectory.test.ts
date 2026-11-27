@@ -2,7 +2,7 @@
 // Copyright (C) 2026 Kanushka Gayan
 import { paths } from '@sathiya/core';
 import { describe, expect, it } from 'vitest';
-import { syncSchoolDirectory } from '../src/syncDirectory';
+import { syncPublishedName, syncSchoolDirectory } from '../src/syncDirectory';
 import { adminDb, adminWithSchool, makeSuper, signUp } from './helpers';
 
 async function eventually<T>(read: () => Promise<T>, ok: (v: T) => boolean, ms = 10_000): Promise<T> {
@@ -85,5 +85,32 @@ describe('school directory search fields + sync', () => {
     await dirDoc(sid).set({ nameEn: 'Ghost' });
     await syncSchoolDirectory(sid);
     expect((await dirDoc(sid).get()).exists).toBe(false);
+  });
+});
+
+describe('syncPublishedName', () => {
+  const cls = (sid: string) => adminDb.doc(`${paths.publishedClasses(sid, 'y1')}/c1`);
+  const tch = (sid: string) => adminDb.doc(`${paths.publishedTeachers(sid, 'y1')}/t1`);
+
+  it('renames published snapshots to the school name and records it', async () => {
+    const { sid } = await adminWithSchool();
+    await adminDb.doc(`${paths.years(sid)}/y1`).set({ label: '2026', status: 'published' });
+    await cls(sid).set({ classId: 'c1', schoolName: { nameEn: 'Old' } });
+    await tch(sid).set({ teacherId: 't1', schoolName: { nameEn: 'Old' } });
+    await adminDb.doc(paths.school(sid)).update({ nameEn: 'New Name', nameSi: 'නව නම', publishedName: { nameEn: 'Old' } });
+    await syncPublishedName(sid);
+    const want = { nameEn: 'New Name', nameSi: 'නව නම' };
+    expect((await cls(sid).get()).get('schoolName')).toEqual(want);
+    expect((await tch(sid).get()).get('schoolName')).toEqual(want);
+    expect((await adminDb.doc(paths.school(sid)).get()).get('publishedName')).toEqual(want);
+  });
+
+  it('does nothing once the recorded name matches', async () => {
+    const { sid } = await adminWithSchool();
+    await adminDb.doc(`${paths.years(sid)}/y1`).set({ label: '2026', status: 'published' });
+    await expect.poll(async () => (await adminDb.doc(paths.school(sid)).get()).get('publishedName'), { timeout: 10_000 }).toBeDefined();
+    await cls(sid).set({ classId: 'c1', schoolName: { nameEn: 'Untouched' } });
+    await syncPublishedName(sid);
+    expect((await cls(sid).get()).get('schoolName')).toEqual({ nameEn: 'Untouched' });
   });
 });

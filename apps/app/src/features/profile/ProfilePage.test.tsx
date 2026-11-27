@@ -198,6 +198,18 @@ describe('profile page for a reviewed school', () => {
     expect(screen.queryByRole('dialog')).not.toBeInTheDocument();
   });
 
+  it('sends the request on Enter in a name input', async () => {
+    vi.mocked(api.requestNameChange).mockResolvedValue(undefined);
+    const user = userEvent.setup();
+    renderWithSchool(<ProfilePage />, { ctx: reviewed });
+    await user.click(screen.getByRole('button', { name: 'Request a name change' }));
+    const en = within(screen.getByRole('dialog')).getByLabelText('New name in English');
+    await user.type(en, '{Enter}');
+    expect(api.requestNameChange).not.toHaveBeenCalled();
+    await user.type(en, ' MV{Enter}');
+    expect(api.requestNameChange).toHaveBeenCalledWith('siripura', expect.objectContaining({ nameEn: 'Siripura Central College MV' }));
+  });
+
   it('shows a pending request and keeps the current name', () => {
     const nameChange = { nameEn: 'G/ Siripura M.V.', nameSi: 'ගා/ සිරිපුර ම.වි.', status: 'pending' as const, requestedAt: 1, requestedBy: 'u1' };
     renderWithSchool(<ProfilePage />, { ctx: { ...reviewed, school: { ...reviewed.school, nameChange } } });

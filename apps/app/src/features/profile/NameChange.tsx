@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
 // Copyright (C) 2026 Kanushka Gayan
 import type { Bilingual, School, SchoolNameChange } from '@sathiya/core';
-import { useState } from 'react';
+import { useId, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { toApiError } from '../../lib/callable';
 import { Alert } from '../../ui/Alert';
@@ -40,12 +40,13 @@ export function NameChangeModal({ school, onClose }: { school: School; onClose: 
   const [en, setEn] = useState(start.nameEn ?? '');
   const [si, setSi] = useState(start.nameSi ?? '');
   const [busy, setBusy] = useState(false);
+  const formId = useId();
   const nameOk = en.trim() !== '' || si.trim() !== '';
   const changed = en.trim() !== (school.nameEn ?? '').trim() || si.trim() !== (school.nameSi ?? '').trim();
   const pendingSame = school.nameChange?.status === 'pending' && en.trim() === school.nameChange.nameEn && si.trim() === (school.nameChange.nameSi ?? '');
 
   async function send() {
-    if (!nameOk || !changed || pendingSame) return;
+    if (busy || !nameOk || !changed || pendingSame) return;
     setBusy(true);
     try {
       await api.requestNameChange(school.id, { nameEn: en.trim(), ...(si.trim() && { nameSi: si.trim() }) });
@@ -69,25 +70,38 @@ export function NameChangeModal({ school, onClose }: { school: School; onClose: 
           <Button disabled={busy} onClick={onClose}>
             {t('buttons.cancel', { ns: 'common' })}
           </Button>
-          <Button variant="primary" loading={busy} loadingLabel={t('nameChange.sending')} disabled={!nameOk || !changed || pendingSame} onClick={() => void send()}>
+          <Button variant="primary" type="submit" form={formId} loading={busy} loadingLabel={t('nameChange.sending')} disabled={!nameOk || !changed || pendingSame}>
             {t('nameChange.send')}
           </Button>
         </>
       }
     >
       <p className="mb-4 mt-0 text-sm leading-normal text-ink-soft">{t('nameChange.body')}</p>
-      <NameFields
-        legend={t('fields.name')}
-        enLabel={t('nameChange.newEn')}
-        siLabel={t('nameChange.newSi')}
-        en={en}
-        si={si}
-        onEn={setEn}
-        onSi={setSi}
-        missing={!nameOk}
-        hint={nameOk && !changed ? t('nameChange.unchanged') : undefined}
-        siFirst={school.medium?.includes('si')}
-      />
+      <form
+        id={formId}
+        onSubmit={(e) => {
+          e.preventDefault();
+          void send();
+        }}
+        onKeyDown={(e) => {
+          if (e.key !== 'Enter' || !(e.target instanceof HTMLInputElement) || e.nativeEvent.isComposing) return;
+          e.preventDefault();
+          void send();
+        }}
+      >
+        <NameFields
+          legend={t('fields.name')}
+          enLabel={t('nameChange.newEn')}
+          siLabel={t('nameChange.newSi')}
+          en={en}
+          si={si}
+          onEn={setEn}
+          onSi={setSi}
+          missing={!nameOk}
+          hint={nameOk && !changed ? t('nameChange.unchanged') : undefined}
+          siFirst={school.medium?.includes('si')}
+        />
+      </form>
     </Modal>
   );
 }

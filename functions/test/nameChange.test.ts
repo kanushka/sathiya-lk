@@ -9,6 +9,7 @@ const APP_URL = 'https://app.sathiya.kanushka.com';
 const SUPERS = 'sup-a@example.test, sup-b@example.test';
 
 const schoolDoc = async (sid: string) => (await adminDb.doc(paths.school(sid)).get()).data()!;
+const at = async (sid: string): Promise<number> => (await schoolDoc(sid)).nameChange?.requestedAt ?? 1;
 const mails = async (email: string, sid: string) =>
   (await adminDb.collection('mail').where('to', 'array-contains', email.toLowerCase()).get()).docs
     .map((d) => d.data() as { to: string[]; message: { subject: string; html: string; text: string } })
@@ -126,16 +127,18 @@ describe('decideNameChange', () => {
     const old = { nameEn: 'Batapola Sri Kalyanathissa K.V.' };
     await adminDb.doc(`${paths.publishedClasses(sid, 'y1')}/c1`).set({ classId: 'c1', schoolName: old });
     await adminDb.doc(`${paths.publishedTeachers(sid, 'y1')}/t1`).set({ teacherId: 't1', schoolName: old });
+    await adminDb.doc(`${paths.years(sid)}/y1`).set({ label: '2026', status: 'published' });
     const sup = await superClient();
-    await expect(sup.call('decideNameChange', { schoolId: sid, approve: true })).resolves.toEqual({ ok: true });
+    await expect(sup.call('decideNameChange', { schoolId: sid, requestedAt: await at(sid), approve: true })).resolves.toEqual({ ok: true });
 
     const school = await schoolDoc(sid);
     expect(school).toMatchObject({ nameEn: 'G/ Sri Kalyanathissa K.V.', nameSi: 'ගා/ ශ්‍රී කල්‍යාණතිස්ස ක.වි.' });
     expect(school.nameChange).toBeUndefined();
     expect((await adminDb.doc(paths.directory(sid)).get()).data()).toMatchObject({ nameEn: 'G/ Sri Kalyanathissa K.V.', nameSi: 'ගා/ ශ්‍රී කල්‍යාණතිස්ස ක.වි.' });
     const want = { nameEn: 'G/ Sri Kalyanathissa K.V.', nameSi: 'ගා/ ශ්‍රී කල්‍යාණතිස්ස ක.වි.' };
-    expect((await adminDb.doc(`${paths.publishedClasses(sid, 'y1')}/c1`).get()).get('schoolName')).toEqual(want);
-    expect((await adminDb.doc(`${paths.publishedTeachers(sid, 'y1')}/t1`).get()).get('schoolName')).toEqual(want);
+    const published = (p: string) => async () => (await adminDb.doc(p).get()).get('schoolName');
+    await expect.poll(published(`${paths.publishedClasses(sid, 'y1')}/c1`), { timeout: 10_000 }).toEqual(want);
+    await expect.poll(published(`${paths.publishedTeachers(sid, 'y1')}/t1`), { timeout: 10_000 }).toEqual(want);
 
     const sent = (await mails(admin.auth.currentUser!.email!, sid)).find((m) => m.message.subject.includes('name change is approved'));
     expect(sent?.message.text).toContain('G/ Sri Kalyanathissa K.V.');
@@ -146,7 +149,7 @@ describe('decideNameChange', () => {
     await adminDb.doc(paths.school(sid)).update({ nameSi: 'පරණ නම' });
     const admin = (await adminDb.collection(paths.members(sid)).where('role', '==', 'admin').get()).docs[0]!.id;
     await adminDb.doc(paths.school(sid)).update({ nameChange: { nameEn: 'New Name', status: 'pending', requestedAt: 1, requestedBy: admin } });
-    await (await superClient()).call('decideNameChange', { schoolId: sid, approve: true });
+    await (await superClient()).call('decideNameChange', { schoolId: sid, requestedAt: await at(sid), approve: true });
     const school = await schoolDoc(sid);
     expect(school.nameEn).toBe('New Name');
     expect(school.nameSi).toBeUndefined();
@@ -155,7 +158,7 @@ describe('decideNameChange', () => {
   it('rejects with a reason: name unchanged, request kept as rejected, admins mailed the reason', async () => {
     const { admin, sid } = await requested();
     const sup = await superClient();
-    await sup.call('decideNameChange', { schoolId: sid, approve: false, reason: '  Use the name on the MOE letter  ' });
+    await sup.call('decideNameChange', { schoolId: sid, requestedAt: await at(sid), approve: false, reason: '  Use the name on the MOE letter  ' });
     const school = await schoolDoc(sid);
     expect(school.nameEn).toBe('Batapola Sri Kalyanathissa K.V.');
     expect(school.nameChange).toMatchObject({ nameEn: 'G/ Sri Kalyanathissa K.V.', status: 'rejected', reason: 'Use the name on the MOE letter', decidedBy: sup.uid });
@@ -167,19 +170,28 @@ describe('decideNameChange', () => {
     const { sid } = await requested();
     const sup = await superClient();
     for (const reason of [undefined, '', '   ', 'x'.repeat(501)]) {
-      await expectFnError(sup.call('decideNameChange', { schoolId: sid, approve: false, reason } as never), 'invalid-argument', 'invalid');
+      await expectFnError(sup.call('decideNameChange', { schoolId: sid, requestedAt: await at(sid), approve: false, reason } as never), 'invalid-argument', 'invalid');
     }
     expect((await schoolDoc(sid)).nameChange.status).toBe('pending');
   });
 
+  it('refuses a decision on a request that was replaced after review', async () => {
+    const { admin, sid } = await requested();
+    const seen = await at(sid);
+    await admin.call('requestNameChange', { schoolId: sid, nameEn: 'Something Else' });
+    const sup = await superClient();
+    await expectFnError(sup.call('decideNameChange', { schoolId: sid, requestedAt: seen, approve: true }), 'failed-precondition', 'stale');
+    expect(await schoolDoc(sid)).toMatchObject({ nameEn: 'Batapola Sri Kalyanathissa K.V.', nameChange: { nameEn: 'Something Else', status: 'pending' } });
+  });
+
   it('works only on a pending request, and only for a super admin', async () => {
     const { admin, sid } = await requested();
-    await expectFnError(admin.call('decideNameChange', { schoolId: sid, approve: true }), 'permission-denied', 'not-allowed');
+    await expectFnError(admin.call('decideNameChange', { schoolId: sid, requestedAt: await at(sid), approve: true }), 'permission-denied', 'not-allowed');
     const sup = await superClient();
-    await sup.call('decideNameChange', { schoolId: sid, approve: false, reason: 'No' });
-    await expectFnError(sup.call('decideNameChange', { schoolId: sid, approve: true }), 'failed-precondition', 'invalid');
+    await sup.call('decideNameChange', { schoolId: sid, requestedAt: await at(sid), approve: false, reason: 'No' });
+    await expectFnError(sup.call('decideNameChange', { schoolId: sid, requestedAt: await at(sid), approve: true }), 'failed-precondition', 'invalid');
     const { sid: none } = await adminWithSchool();
-    await expectFnError(sup.call('decideNameChange', { schoolId: none, approve: true }), 'failed-precondition', 'invalid');
-    await expectFnError(sup.call('decideNameChange', { schoolId: 'no-such-school', approve: true }), 'not-found', 'invalid');
+    await expectFnError(sup.call('decideNameChange', { schoolId: none, requestedAt: await at(none), approve: true }), 'failed-precondition', 'invalid');
+    await expectFnError(sup.call('decideNameChange', { schoolId: 'no-such-school', requestedAt: 1, approve: true }), 'not-found', 'invalid');
   });
 });

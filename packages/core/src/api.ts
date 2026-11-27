@@ -103,7 +103,8 @@ export interface ReviewSchoolReq { schoolId: string; approve: boolean; reason?: 
 export interface ReviewSchoolRes { ok: true }
 export interface RequestNameChangeReq { schoolId: string; nameEn: string; nameSi?: string }
 export interface RequestNameChangeRes { ok: true }
-export interface DecideNameChangeReq { schoolId: string; approve: boolean; reason?: string }
+/** requestedAt identifies the request the super admin reviewed; a newer request makes the decision stale. */
+export interface DecideNameChangeReq { schoolId: string; requestedAt: number; approve: boolean; reason?: string }
 export interface DecideNameChangeRes { ok: true }
 export interface RemoveRegistrationReq { schoolId: string }
 export interface RemoveRegistrationRes { ok: true }

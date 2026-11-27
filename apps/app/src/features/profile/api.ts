@@ -21,7 +21,7 @@ const optional = (v: string | undefined) => (v === undefined || v.trim() === '' 
 export async function updateSchool(schoolId: string, patch: SchoolPatch): Promise<void> {
   await updateDoc(doc(db, paths.school(schoolId)), {
     ...(patch.nameEn !== undefined && { nameEn: patch.nameEn.trim() }),
-    nameSi: optional(patch.nameSi),
+    ...('nameSi' in patch && { nameSi: optional(patch.nameSi) }),
     city: patch.city.trim(),
     ...(patch.district !== undefined && { district: patch.district.trim() }),
     address: optional(patch.address),

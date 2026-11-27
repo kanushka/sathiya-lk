@@ -222,7 +222,8 @@
   },
   "errors": {
     "denied": "You do not have permission to do this.",
-    "generic": "Something went wrong. Try again."
+    "generic": "Something went wrong. Try again.",
+    "stale": "The school sent a newer name change request. Check it and decide again."
   },
   "review": {
     "title": "Review",

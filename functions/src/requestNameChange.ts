@@ -28,7 +28,7 @@ export const requestNameChange = onCall(callOpts, async (req): Promise<RequestNa
     if (prev?.status === 'pending' && same(prev.nameEn, nameEn) && same(prev.nameSi, nameSi)) return undefined;
     const censusNo = snap.get('censusNo') as string | undefined;
     const moeName = censusNo ? moeSchool(censusNo)?.name : undefined;
-    const change: SchoolNameChange = { nameEn, nameSi, moeName, status: 'pending', requestedAt: Date.now(), requestedBy: uid };
+    const change: SchoolNameChange = { nameEn, nameSi, moeName, status: 'pending', requestedAt: Math.max(Date.now(), (prev?.requestedAt ?? 0) + 1), requestedBy: uid };
     tx.update(schoolRef, { nameChange: change });
     return { current, censusNo, moeName };
   });

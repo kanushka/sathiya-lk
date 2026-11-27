@@ -69,8 +69,18 @@ function classCell(ctx: SchoolContext, cls: SchoolClass, e: Entry, slot: { start
   return withSi({ ...base, title: subject?.short ?? '', sub: names?.en ?? '', ...(names?.si ? { subSi: names.si } : {}), ...(others.length ? { otherClasses: others } : {}), color: subject?.color ?? '' }, subject?.nameSi);
 }
 
+export function snapshotSchoolName(school: Bilingual): Bilingual {
+  const nameEn = pickName(school, 'en');
+  return school.nameSi === undefined ? { nameEn } : { nameEn, nameSi: school.nameSi };
+}
+
+export const sameSchoolName = (a: Bilingual, b: unknown): boolean => {
+  const o = (b ?? {}) as Partial<Bilingual>;
+  return a.nameEn === o.nameEn && a.nameSi === o.nameSi;
+};
+
 export function buildSnapshots(ctx: SchoolContext, entries: Entry[], year: Year): { classes: ClassSnapshot[]; teachers: TeacherSnapshot[] } {
-  const schoolName: Bilingual = ctx.school.nameSi === undefined ? { nameEn: pickName(ctx.school, 'en') } : { nameEn: pickName(ctx.school, 'en'), nameSi: ctx.school.nameSi };
+  const schoolName = snapshotSchoolName(ctx.school);
   const subjects = new Map(ctx.subjects.map((s) => [s.id, s]));
   const slotted = entries.flatMap((e) => {
     const slot = entrySlot(ctx, e);
