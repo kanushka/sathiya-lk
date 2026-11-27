@@ -5,7 +5,7 @@ import { createI18n } from '@sathiya/i18n';
 import writeXlsxFile from 'write-excel-file/browser';
 import { describe, expect, it } from 'vitest';
 import { ImportFileError, readImportFile } from './readFile';
-import { templateSheetNames, templateXlsx } from './template';
+import { templateCopy, templateSheetNames, templateXlsx } from './template';
 
 const asFile = (parts: BlobPart[], name: string) => new File(parts, name);
 
@@ -32,14 +32,13 @@ describe('readImportFile', () => {
 
   it('round-trips the xlsx template', async () => {
     const blob = await templateXlsx({
+      ...templateCopy(createI18n('en')),
       staffPrefix: 'T',
       grades: [6, 7],
-      instructions: { en: ['Fill in rows'], si: ['පේළි පුරවන්න'] },
-      labels: { titles: 'Titles', grades: 'Grades', staffId: 'Staff ID' },
       sheetNames: templateSheetNames(createI18n('en')),
     });
     const sheets = await readImportFile(asFile([blob], 't.xlsx'));
-    expect(sheets.map((s) => s.name)).toEqual(['Subjects - විෂයන්', 'Teachers - ගුරුවරු', 'How to fill - පුරවන ආකාරය']);
+    expect(sheets.map((s) => s.name)).toEqual(['How to fill - පුරවන ආකාරය', 'Subjects - විෂයන්', 'Teachers - ගුරුවරු', 'Example - උදාහරණ']);
     const parsed = readSheets(sheets);
     expect(parsed.errors).toEqual([]);
     expect(parsed.subjects).toEqual([]);

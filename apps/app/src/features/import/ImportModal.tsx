@@ -27,7 +27,7 @@ import { importSetup } from './api';
 import { ImportFileError, readImportFile } from './readFile';
 import { fetchDefaultSubjects } from '../subjects/api';
 import { missingDefaults, standardList } from '../subjects/standard';
-import { downloadBlob, templateCsv, templateSheetNames, templateXlsx } from './template';
+import { downloadBlob, templateCopy, templateCsv, templateSheetNames, templateXlsx } from './template';
 
 type View =
   | { kind: 'start' }
@@ -106,17 +106,11 @@ export function ImportModal({ onClose }: { onClose: () => void }) {
   async function download(kind: 'xlsx' | ImportKind) {
     try {
       if (kind === 'xlsx') {
-        const fixed = (l: Lang) => i18n.getFixedT(l, 'import');
-        const both = (key: string) => `${fixed('en')(key)} / ${fixed('si')(key)}`;
         const blob = await templateXlsx({
+          ...templateCopy(i18n),
           subjects: await prefill(),
           staffPrefix: school.staffPrefix,
           grades: [...school.grades].sort((a, b) => a - b),
-          instructions: {
-            en: fixed('en')('instructions', { returnObjects: true }) as string[],
-            si: fixed('si')('instructions', { returnObjects: true }) as string[],
-          },
-          labels: { titles: both('templateLabels.titles'), grades: both('templateLabels.grades'), staffId: both('templateLabels.staffId') },
           sheetNames: templateSheetNames(i18n),
         });
         downloadBlob(blob, 'sathiya-import-template.xlsx');

@@ -104,18 +104,41 @@
   "templateSheets": {
     "subjects": "Subjects",
     "teachers": "Teachers",
-    "howTo": "How to fill"
+    "howTo": "How to fill",
+    "example": "Example"
   },
   "instructions": [
     "How to fill this template",
     "1. Subjects sheet: common subjects you don't have yet are already listed. Delete the rows you don't teach and add your own below. Leave Short name blank to get a suggested one.",
     "2. Teachers sheet: one teacher per row, name without the title. Grades are required, and Subjects too unless Primary teacher is Yes.",
     "Names: every subject and teacher needs a name in English or Sinhala. Fill both if you can. When one is empty, the app shows the other.",
+    "See the Example sheet for two filled-in teachers. It is not imported.",
     "3. Staff ID: leave blank to number teachers automatically.",
     "4. Subjects: separate with commas, or with semicolons (;) if a subject name has a comma. Use the English, Sinhala or short name of a subject in this file or already in Sathiya.",
     "5. Grades: e.g. 6-9, 11. Max periods/day: blank means 7. Primary teacher: Yes or No.",
     "6. Staff ID, Phone and Grades are formatted as Plain text so Excel doesn't turn 6-9 into a date or drop a phone's leading 0. Keep that formatting. If you paste data, use Paste Values or format those columns as Plain text.",
     "7. Don't change the column headings. Up to 200 rows per sheet.",
     "8. Save as .xlsx. If you save a CSV instead, choose \"CSV UTF-8\" so Sinhala text is kept."
-  ]
+  ],
+  "templateHeadings": {
+    "columns": "Teachers sheet columns",
+    "example": "Example rows to copy the format from. This sheet is not imported. Fill the Teachers sheet."
+  },
+  "templateColumnHelp": {
+    "staffId": "Optional. The school prefix and exactly 3 digits. Leave blank and the app gives the next free number.",
+    "title": "Optional. One of the titles listed above. Keep it out of the name.",
+    "name": "English or Sinhala name is required. Fill both if you can. Write initials then the name, without the title.",
+    "nameSi": "Optional when the English name is filled. Initials, one space, then the name.",
+    "phone": "Optional. Keep the leading 0, e.g. 0771234567.",
+    "email": "Optional. Used to invite the teacher to sign in.",
+    "subjects": "Required unless Primary teacher is Yes. Short names from the Subjects sheet, separated by commas, e.g. Math, Sci.",
+    "grades": "Required. Grades the teacher can teach, e.g. 6-9, 11. Only grades in this school.",
+    "maxPerDay": "Optional. 1 to 10. Blank means 7.",
+    "minPerWeek": "Optional. 0 up to 5 times Max periods/day.",
+    "isPrimary": "Yes or No. Blank means No. A primary teacher teaches every subject of their class, so Subjects can stay blank."
+  },
+  "templateExampleNames": {
+    "one": "K. Perera",
+    "two": "S. Fernando"
+  }
 }
