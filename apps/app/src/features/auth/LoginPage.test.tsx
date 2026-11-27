@@ -57,6 +57,16 @@ describe('report a school', () => {
 });
 
 describe('single sign-in page', () => {
+  it('explains why when sent here from /register', () => {
+    renderAuth(<LoginPage />, { from: '/register' });
+    expect(screen.getByRole('status')).toHaveTextContent('Sign in or create an account first');
+  });
+
+  it('shows no register hint otherwise', () => {
+    renderAuth(<LoginPage />, { from: '/s/x/admin' });
+    expect(screen.queryByText(/Sign in or create an account first/)).not.toBeInTheDocument();
+  });
+
   it('has no admin / teacher switch and no staff ID login', () => {
     renderAuth(<LoginPage />, { route: '/login?as=teacher' });
     expect(screen.queryByRole('tablist')).not.toBeInTheDocument();

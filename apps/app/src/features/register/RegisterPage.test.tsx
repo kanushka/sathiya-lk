@@ -8,9 +8,11 @@ import { ApiError } from '../../lib/callable';
 import * as authApi from '../auth/api';
 import { sendAuthEmail } from '../auth/authEmail';
 import { pickOption } from '../../test/pickOption';
-import { renderAuth } from '../auth/testHarness';
+import { renderAuth as renderAuthBase } from '../auth/testHarness';
 import { RegisterPage } from './RegisterPage';
 import * as api from './api';
+
+const renderAuth: typeof renderAuthBase = (ui, opts = {}) => renderAuthBase(ui, { signedIn: true, ...opts });
 
 vi.mock('./api');
 vi.mock('../auth/api');
@@ -27,6 +29,14 @@ beforeEach(() => {
   vi.mocked(sendAuthEmail).mockResolvedValue(undefined);
   vi.mocked(authApi.getDirectorySchool).mockResolvedValue(null);
   vi.mocked(authApi.searchSchools).mockResolvedValue([]);
+});
+
+describe('signed out', () => {
+  it('sends the visitor to sign in first and back to /register after', () => {
+    renderAuthBase(<RegisterPage />, { route: '/register', at: '/register' });
+    expect(screen.getByTestId('where')).toHaveTextContent('/login');
+    expect(api.createAccount).not.toHaveBeenCalled();
+  });
 });
 
 async function renderForm(opts: Parameters<typeof renderAuth>[1]) {
@@ -173,15 +183,13 @@ describe('register', () => {
     await renderForm({ route: '/register', at: '/register' });
     await toStep3(user);
     await user.type(screen.getByLabelText('Your name'), 'Nimal');
-    await user.type(screen.getByLabelText('Email'), 'nimal@siripura.lk');
-    await user.type(screen.getByLabelText('Password'), 'secret12');
     const create = screen.getByRole('button', { name: 'Create school' });
     expect(create).toBeDisabled();
     await user.click(screen.getByRole('checkbox'));
     expect(create).toBeEnabled();
   });
 
-  it('creates the account, registers, uploads the logo and goes to the school admin', async () => {
+  it('registers, uploads the logo and goes to the school admin', async () => {
     const user = userEvent.setup();
     await renderForm({
       route: '/register',
@@ -190,14 +198,11 @@ describe('register', () => {
     });
     await toStep3(user, true);
     await user.type(screen.getByLabelText('Your name'), 'Nimal');
-    await user.type(screen.getByLabelText('Email'), 'nimal@siripura.lk');
-    await user.type(screen.getByLabelText('Password'), 'secret12');
     await user.click(screen.getByRole('checkbox'));
     await user.click(screen.getByRole('button', { name: 'Create school' }));
-    await confirmGate(user);
 
     await waitFor(() => expect(screen.getByTestId('where')).toHaveTextContent('/s/siripura/admin'));
-    expect(api.createAccount).toHaveBeenCalledWith('nimal@siripura.lk', 'secret12', 'Nimal');
+    expect(api.createAccount).not.toHaveBeenCalled();
     expect(api.registerSchool).toHaveBeenCalledWith({
       school: {
         type: 'government',
@@ -226,16 +231,13 @@ describe('register', () => {
     });
     await toStep3(user, true);
     await user.type(screen.getByLabelText('Your name'), 'Nimal');
-    await user.type(screen.getByLabelText('Email'), 'nimal@siripura.lk');
-    await user.type(screen.getByLabelText('Password'), 'secret12');
     await user.click(screen.getByRole('checkbox'));
     await user.click(screen.getByRole('button', { name: 'Create school' }));
-    await confirmGate(user);
     await waitFor(() => expect(screen.getByTestId('where')).toHaveTextContent('/s/siripura/admin'));
     expect(screen.getByText(/logo could not be uploaded/)).toBeInTheDocument();
   });
 
-  it('skips account creation for an already signed-in user', async () => {
+  it('asks only for the admin name on the account step', async () => {
     const user = userEvent.setup();
     await renderForm({
       route: '/register',
@@ -252,45 +254,10 @@ describe('register', () => {
     expect(api.createAccount).not.toHaveBeenCalled();
   });
 
-  it('shows an email-in-use error on the email field', async () => {
-    const user = userEvent.setup();
-    vi.mocked(api.createAccount).mockRejectedValue(Object.assign(new Error('x'), { code: 'auth/email-already-in-use' }));
-    await renderForm({ route: '/register', at: '/register' });
-    await toStep3(user);
-    await user.type(screen.getByLabelText('Your name'), 'Nimal');
-    await user.type(screen.getByLabelText('Email'), 'nimal@siripura.lk');
-    await user.type(screen.getByLabelText('Password'), 'secret12');
-    await user.click(screen.getByRole('checkbox'));
-    await user.click(screen.getByRole('button', { name: 'Create school' }));
-    expect(await screen.findByText('That email already has an account. Log in instead.')).toBeInTheDocument();
-    expect(api.registerSchool).not.toHaveBeenCalled();
-  });
-
-  it('shows a policy rejection on the password field', async () => {
-    const user = userEvent.setup();
-    vi.mocked(api.createAccount).mockRejectedValue(Object.assign(new Error('x'), { code: 'auth/password-does-not-meet-requirements' }));
-    await renderForm({ route: '/register', at: '/register' });
-    await toStep3(user);
-    await user.type(screen.getByLabelText('Your name'), 'Nimal');
-    await user.type(screen.getByLabelText('Email'), 'nimal@siripura.lk');
-    await user.type(screen.getByLabelText('Password'), 'secret12');
-    await user.click(screen.getByRole('checkbox'));
-    await user.click(screen.getByRole('button', { name: 'Create school' }));
-    expect(await screen.findByText('Password must be at least 8 characters')).toBeInTheDocument();
-  });
-
-  async function confirmGate(user: ReturnType<typeof userEvent.setup>) {
-    await user.click(await screen.findByRole('button', { name: "I've confirmed it" }));
-    await user.click(await screen.findByRole('button', { name: 'Create school' }));
-  }
-
   async function submitStep3(user: ReturnType<typeof userEvent.setup>) {
     await user.type(screen.getByLabelText('Your name'), 'Nimal');
-    await user.type(screen.getByLabelText('Email'), 'nimal@siripura.lk');
-    await user.type(screen.getByLabelText('Password'), 'secret12');
     await user.click(screen.getByRole('checkbox'));
     await user.click(screen.getByRole('button', { name: 'Create school' }));
-    await confirmGate(user);
   }
 
   it('refreshes claims before uploading the logo', async () => {
@@ -316,7 +283,7 @@ describe('register', () => {
     expect(order).toEqual(['register', 'refresh', 'upload']);
   });
 
-  it('retries after a registerSchool failure without creating a second account', async () => {
+  it('retries after a registerSchool failure', async () => {
     const user = userEvent.setup();
     vi.mocked(api.registerSchool).mockRejectedValueOnce(new Error('down'));
     await renderForm({
@@ -329,7 +296,6 @@ describe('register', () => {
     expect(await screen.findByRole('alert')).toBeInTheDocument();
     await user.click(screen.getByRole('button', { name: 'Create school' }));
     await waitFor(() => expect(screen.getByTestId('where')).toHaveTextContent('/s/siripura/admin'));
-    expect(api.createAccount).toHaveBeenCalledTimes(1);
     expect(api.registerSchool).toHaveBeenCalledTimes(2);
   });
 
@@ -573,21 +539,6 @@ describe('register', () => {
     it('skips the gate for Google and verified users', () => {
       renderAuth(<RegisterPage />, { route: '/register', at: '/register', signedIn: true });
       expect(screen.getByRole('button', { name: 'Find my school' })).toBeInTheDocument();
-    });
-
-    it('never calls registerSchool right after creating a new account', async () => {
-      const user = userEvent.setup();
-      await renderForm({ route: '/register', at: '/register' });
-      await toStep3(user);
-      await user.type(screen.getByLabelText('Your name'), 'Nimal');
-      await user.type(screen.getByLabelText('Email'), 'nimal@siripura.lk');
-      await user.type(screen.getByLabelText('Password'), 'secret12');
-      await user.click(screen.getByRole('checkbox'));
-      await user.click(screen.getByRole('button', { name: 'Create school' }));
-      expect(await screen.findByRole('heading', { name: 'Check your email' })).toBeInTheDocument();
-      expect(api.createAccount).toHaveBeenCalledTimes(1);
-      expect(sendAuthEmail).toHaveBeenCalledWith({ kind: 'verify', lang: 'en' });
-      expect(api.registerSchool).not.toHaveBeenCalled();
     });
   });
 });
