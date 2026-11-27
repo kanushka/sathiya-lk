@@ -3,8 +3,9 @@
 import { C, ctx, entries, entry, mahasen, S, T } from '@sathiya/core/fixtures';
 import { screen, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
-import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { call } from '../../lib/callable';
+import { installMatchMedia } from '../../test/matchMedia';
 import { renderWithSchool } from '../../test/renderWithSchool';
 import * as api from './api';
 import { DashboardPage } from './DashboardPage';
@@ -158,5 +159,22 @@ describe('dashboard while the school is pending review', () => {
     setup();
     expect(screen.getByRole('button', { name: 'Publish to teachers' })).toBeEnabled();
     expect(screen.queryByText('Available after Sathiya approves your school.')).not.toBeInTheDocument();
+  });
+});
+
+describe('dashboard on a phone', () => {
+  let restore: () => void = () => undefined;
+  beforeEach(() => {
+    restore = installMatchMedia(390);
+  });
+  afterEach(() => restore());
+
+  it('shows a short Publish label, the stats without sub-lines and New year beside the year', () => {
+    renderWithSchool(<DashboardPage />, { ctx, entries });
+    const publish = screen.getByRole('button', { name: 'Publish to teachers' });
+    expect(publish).toHaveTextContent(/^Publish$/);
+    expect(screen.getByRole('button', { name: 'New year' }).parentElement).toBe(screen.getByRole('combobox', { name: /year/i }).closest('div.flex'));
+    expect(screen.getByText('Classes complete')).toBeInTheDocument();
+    expect(screen.getByText('Classes complete').closest('.grid')).toHaveClass('grid-cols-2');
   });
 });

@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
 // Copyright (C) 2026 Kanushka Gayan
-import { nameTaken, shortTaken, suggestSubjectShort } from '@sathiya/core';
+import { nameTaken, shortTaken, suggestSubjectShort, type Subject } from '@sathiya/core';
 import { useState, type FormEvent } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useSchool } from '../../app/SchoolProvider';
@@ -14,17 +14,24 @@ import { ColorSwatches } from '../register/ColorSwatches';
 import * as api from './api';
 import { DEFAULT_SUBJECT_COLOR, SHORT_MAX, SUBJECT_SWATCHES } from './palette';
 
-export function SubjectModal({ onClose }: { onClose: () => void }) {
+export interface SubjectModalProps {
+  /** Edit this subject. Without it the dialog adds a new one. */
+  subject?: Subject;
+  onClose: () => void;
+}
+
+export function SubjectModal({ subject, onClose }: SubjectModalProps) {
   const { t } = useTranslation('subjects');
-  const { school, subjects } = useSchool();
+  const { school, subjects: all } = useSchool();
+  const subjects = subject ? all.filter((s) => s.id !== subject.id) : all;
   const existingShorts = subjects.map((s) => s.short);
   const existingNames = subjects.flatMap((s) => [s.nameEn, s.nameSi]);
   const toast = useToast();
-  const [nameEn, setNameEn] = useState('');
-  const [nameSi, setNameSi] = useState('');
-  const [short, setShort] = useState('');
-  const [shortTouched, setShortTouched] = useState(false);
-  const [color, setColor] = useState(DEFAULT_SUBJECT_COLOR);
+  const [nameEn, setNameEn] = useState(subject?.nameEn ?? '');
+  const [nameSi, setNameSi] = useState(subject?.nameSi ?? '');
+  const [short, setShort] = useState(subject?.short ?? '');
+  const [shortTouched, setShortTouched] = useState(!!subject);
+  const [color, setColor] = useState(subject?.color ?? DEFAULT_SUBJECT_COLOR);
   const [submitted, setSubmitted] = useState(false);
   const [saving, setSaving] = useState(false);
   const [saveError, setSaveError] = useState(false);
@@ -50,8 +57,13 @@ export function SubjectModal({ onClose }: { onClose: () => void }) {
     setSaving(true);
     setSaveError(false);
     try {
-      await api.addSubject(school.id, { nameEn, nameSi, short: shortValue, color });
-      toast.show(t('modal.saved'), 'success');
+      if (subject) {
+        await api.updateSubject(school.id, subject.id, { nameEn, nameSi, short: shortValue, color });
+        toast.show(t('modal.savedEdit'), 'success');
+      } else {
+        await api.addSubject(school.id, { nameEn, nameSi, short: shortValue, color });
+        toast.show(t('modal.saved'), 'success');
+      }
       onClose();
     } catch {
       setSaveError(true);
@@ -63,18 +75,18 @@ export function SubjectModal({ onClose }: { onClose: () => void }) {
     <Modal
       open
       width={560}
-      title={t('modal.title')}
-      subtitle={t('modal.subtitle')}
+      title={t(subject ? 'modal.titleEdit' : 'modal.title')}
+      subtitle={subject ? undefined : t('modal.subtitle')}
       onClose={onClose}
       busy={saving}
       footer={
         <>
           {saveError && (
-            <FormError className="mr-auto">{t('modal.saveFailed')}</FormError>
+            <FormError className="mr-auto">{t(subject ? 'modal.saveEditFailed' : 'modal.saveFailed')}</FormError>
           )}
           <Button onClick={onClose} disabled={saving}>{t('modal.cancel')}</Button>
           <Button variant="primary" type="submit" form="subject-form" loading={saving} loadingLabel={t('busy.saving', { ns: 'common' })}>
-            {t('modal.save')}
+            {t(subject ? 'modal.saveEdit' : 'modal.save')}
           </Button>
         </>
       }

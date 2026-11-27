@@ -145,5 +145,21 @@
     "confirm": "Unlink",
     "cancel": "Cancel",
     "selfBody": "This is your own record. You will be signed out and must sign in again. You stay an admin."
+  },
+  "phone": {
+    "requests": "Join requests",
+    "notLinked": "Not linked",
+    "linked": "Linked",
+    "grades": "Gr {{grades}}",
+    "classTeacher": "CT {{classes}}",
+    "load": "load {{load}}",
+    "link": "Link",
+    "linkFor": "Make a personal link for {{name}}",
+    "editFor": "Edit {{name}}",
+    "deleteTeacher": "Delete teacher",
+    "moreTeacher": "More actions for this teacher",
+    "moreList": "More teacher actions",
+    "inviteOff": "Off",
+    "inviteMore": "Invite link actions"
   }
 }

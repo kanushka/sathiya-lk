@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
 // Copyright (C) 2026 Kanushka Gayan
 import { formatStaffId, isValidStaffId, nextStaffNumber, normalizeTeacher, pickName, splitTitle, TEACHER_TITLE_LABELS, TEACHER_TITLES, teacherDisplayName, type Lang, type Teacher, type TeacherTitle } from '@sathiya/core';
-import { useState, type FormEvent } from 'react';
+import { useState, type FormEvent, type ReactNode } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useReadOnly } from '../../ui/AdminLayout';
 import { Button } from '../../ui/Button';
@@ -21,6 +21,8 @@ import * as api from './api';
 export interface TeacherModalProps {
   teacher?: Teacher;
   onClose: () => void;
+  /** Extra controls at the start of the footer, such as a ⋯ menu on phones. */
+  footerStart?: ReactNode;
 }
 
 interface Form {
@@ -47,7 +49,7 @@ function initialName(raw: Teacher | undefined): { title: TeacherTitle | ''; name
 
 const toggle = <T,>(list: T[], v: T): T[] => (list.includes(v) ? list.filter((x) => x !== v) : [...list, v]);
 
-export function TeacherModal({ teacher, onClose }: TeacherModalProps) {
+export function TeacherModal({ teacher, onClose, footerStart }: TeacherModalProps) {
   const { t, i18n } = useTranslation('teachers');
   const lang = i18n.language as Lang;
   const { school, teachers, subjects } = useSchool();
@@ -140,8 +142,9 @@ export function TeacherModal({ teacher, onClose }: TeacherModalProps) {
       busy={saving}
       footer={
         <>
+          {footerStart && <div className="mr-auto">{footerStart}</div>}
           {saveError && (
-            <FormError className="mr-auto">{saveError}</FormError>
+            <FormError className={footerStart ? 'basis-full' : 'mr-auto'}>{saveError}</FormError>
           )}
           <Button onClick={onClose} disabled={saving}>{t('modal.cancel')}</Button>
           {!readOnly && (

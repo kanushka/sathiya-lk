@@ -18,25 +18,25 @@ test('setup pages fit a phone without sideways scrolling', async ({ page }) => {
   }
 });
 
-test('teachers and subjects show as labelled cards on a phone', async ({ page }) => {
+test('teachers and subjects show as grouped lists on a phone', async ({ page }) => {
   await loginAdmin(page, ADMIN.email, ADMIN.password);
   await page.goto(`/s/${SID}/admin/teachers`);
-  const rizan = page.getByRole('row').filter({ hasText: 'Mr. A. Rizan' });
-  await expect(rizan.getByRole('cell').filter({ hasText: 'SCC031' })).toBeVisible();
-  await expect(rizan.locator('td[data-label="Grades"]')).toBeVisible();
-  const headers = page.getByRole('columnheader');
-  await expect(headers.first()).toBeAttached();
-  expect((await page.locator('thead').first().boundingBox())?.width ?? 0).toBeLessThanOrEqual(1);
+  await expect(page.getByRole('table')).toHaveCount(0);
+  const rizan = page.getByRole('region', { name: /^Not linked/ }).getByRole('button', { name: 'Edit Mr. A. Rizan' });
+  await expect(rizan).toContainText('SCC031');
+  await expect(rizan).toContainText('Gr 6–11');
   await shot(page, 'phone-teachers');
 
   await page.goto(`/s/${SID}/admin/subjects`);
-  const name = page.getByRole('textbox', { name: 'English name of Art' });
-  await name.fill('Art & Craft');
-  await name.press('Enter');
-  await expect(page.getByRole('textbox', { name: 'English name of Art & Craft' })).toHaveValue('Art & Craft');
-  await page.getByRole('textbox', { name: 'English name of Art & Craft' }).fill('Art');
-  await page.getByRole('textbox', { name: 'English name of Art & Craft' }).press('Enter');
-  await expect(page.getByRole('textbox', { name: 'English name of Art' })).toHaveValue('Art');
+  await page.getByRole('button', { name: 'Edit Art' }).tap();
+  const edit = page.getByRole('dialog', { name: 'Edit subject' });
+  await edit.getByLabel('Name in English').fill('Art & Craft');
+  await edit.getByRole('button', { name: 'Save' }).tap();
+  await expect(edit).toBeHidden();
+  await page.getByRole('button', { name: 'Edit Art & Craft' }).tap();
+  await edit.getByLabel('Name in English').fill('Art');
+  await edit.getByRole('button', { name: 'Save' }).tap();
+  await expect(page.getByRole('button', { name: 'Edit Art' })).toBeVisible();
 });
 
 test('grades and templates are usable on a phone', async ({ page }) => {
@@ -59,17 +59,21 @@ test('grades and templates are usable on a phone', async ({ page }) => {
   await shot(page, 'phone-templates');
 });
 
-test('Sinhala card labels never spill into the next row', async ({ page }) => {
+test('Sinhala list rows stay inside the screen', async ({ page }) => {
   await loginAdmin(page, ADMIN.email, ADMIN.password);
   await page.goto(`/s/${SID}/admin/teachers`);
   await page.getByRole('button', { name: 'Open menu' }).tap();
   await page.getByRole('button', { name: /^Language/ }).tap();
   await page.getByRole('button', { name: 'මෙනුව වසන්න' }).tap();
-  for (const path of ['/admin/teachers', '/admin/members']) {
+  for (const path of ['/admin/teachers', '/admin/members', '/admin/subjects']) {
     await page.goto(`/s/${SID}${path}`);
-    await expect(page.locator('td[data-label]').first()).toBeVisible();
-    const spilled = await page.locator('td[data-label]').evaluateAll((cells) => cells.filter((c) => c.scrollHeight > c.clientHeight + 1).length);
-    expect(spilled, path).toBe(0);
+    await expect(page.getByRole('listitem').first()).toBeVisible();
+    const outside = await page.locator('main li').evaluateAll((rows) => {
+      const vw = document.documentElement.clientWidth;
+      return rows.filter((r) => r.getBoundingClientRect().right > vw + 1).length;
+    });
+    expect(outside, path).toBe(0);
+    expect(await page.evaluate(() => document.documentElement.scrollWidth), path).toBeLessThanOrEqual(375);
   }
   await page.getByRole('button', { name: 'මෙනුව විවෘත කරන්න' }).tap();
   await page.getByRole('button', { name: /^භාෂාව/ }).tap();

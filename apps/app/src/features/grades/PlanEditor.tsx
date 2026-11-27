@@ -23,6 +23,8 @@ export interface PlanEditorProps {
   subjects: Subject[];
   readOnly: boolean;
   onChange: (plan: PlanItem[]) => void;
+  /** Phone layout: each subject on one line, group options as chips with Edit. */
+  compact?: boolean;
 }
 
 const fitColor: Record<PlanFit, string> = {
@@ -32,7 +34,7 @@ const fitColor: Record<PlanFit, string> = {
   over: 'text-danger',
 };
 
-export function PlanEditor({ plan, capacity, subjects, readOnly, onChange }: PlanEditorProps) {
+export function PlanEditor({ plan, capacity, subjects, readOnly, onChange, compact = false }: PlanEditorProps) {
   const base = useAdminBase();
   const { t, i18n } = useTranslation('grades');
   const lang = i18n.language as Lang;
@@ -53,8 +55,8 @@ export function PlanEditor({ plan, capacity, subjects, readOnly, onChange }: Pla
 
   return (
     <div>
-      <div className="mb-1.5 flex flex-wrap items-end justify-between gap-3">
-        <h3 className="m-0 text-[17px] font-bold">{t('plan.title')}</h3>
+      <div className={compact ? 'px-4 pb-3 pt-4' : 'mb-1.5 flex flex-wrap items-end justify-between gap-3'}>
+        <h3 className={compact ? 'm-0 text-[15px] font-bold' : 'm-0 text-[17px] font-bold'}>{t('plan.title')}</h3>
         <p className="m-0 text-sm">
           {showPeriods && (
             <>
@@ -67,13 +69,47 @@ export function PlanEditor({ plan, capacity, subjects, readOnly, onChange }: Pla
           {timed > 0 && <span className={showPeriods ? 'ml-1.5 text-ink-soft' : 'text-ink-soft'} data-testid="plan-timed">{t(showPeriods ? 'plan.timedTotal' : 'plan.timedOnly', { amount: formatAmount(timed, 'minutes', lang) })}</span>}
         </p>
       </div>
-      <p className="mb-4 text-sm text-ink-soft">{t('plan.intro')}</p>
+      {!compact && <p className="mb-4 text-sm text-ink-soft">{t('plan.intro')}</p>}
 
-      <div className="overflow-hidden rounded-xl border border-line-soft">
+      <div className={compact ? 'border-t border-line-soft' : 'overflow-hidden rounded-xl border border-line-soft'}>
         {plan.length === 0 && <p className="px-3.5 py-4 text-sm text-ink-muted">{t('plan.empty')}</p>}
         {plan.map((p, i) => {
           const subject = p.kind === 'subject' ? byId.get(p.subjectId) : undefined;
           const name = itemName(p);
+          if (compact) {
+            return (
+              <div
+                key={p.kind === 'group' ? `g:${p.key}` : `s:${p.subjectId}`}
+                className={`border-b border-line-soft py-1.5 pl-2.5 pr-0 ${p.kind === 'group' ? 'bg-warning-soft/40' : ''}`}
+              >
+                <div className="flex flex-wrap items-center gap-x-1.5 gap-y-1.5">
+                  <span className="h-3.5 w-3.5 shrink-0 rounded-sm" style={{ background: subject?.color ?? '#FBEAC9' }} />
+                  <span className="min-w-0 flex-1">
+                    <strong className="block text-[13px] leading-tight [overflow-wrap:break-word]">{name}</strong>
+                    {p.kind === 'group' && (
+                      <Badge tone="warning" className="mt-0.5 uppercase tracking-wide">
+                        {t('plan.group')}
+                      </Badge>
+                    )}
+                  </span>
+                  <AmountEditor item={p} name={name} disabled={readOnly} compact onChange={(next) => replace(i, applyAmount(p, next))} />
+                  {!readOnly && <IconButton icon="close" label={t('plan.removeItem', { name })} className="h-11 w-11" onClick={() => remove(i)} />}
+                </div>
+                {p.kind === 'group' && (
+                  <div className="mt-1.5 flex flex-wrap items-center gap-1.5 pl-6">
+                    {p.optionSubjectIds.map((id) => (
+                      <Chip key={id}>{subjectName(id)}</Chip>
+                    ))}
+                    {!readOnly && (
+                      <Button variant="link" className="min-h-11 px-1" onClick={() => setDialog({ index: i })}>
+                        {t('plan.editGroup')}
+                      </Button>
+                    )}
+                  </div>
+                )}
+              </div>
+            );
+          }
           return (
             <div
               key={p.kind === 'group' ? `g:${p.key}` : `s:${p.subjectId}`}
@@ -138,7 +174,7 @@ export function PlanEditor({ plan, capacity, subjects, readOnly, onChange }: Pla
           <div className="flex flex-wrap items-center gap-4 bg-surface px-3.5 py-3">
             {unused.length > 0 && (
               <Select
-                className="w-56"
+                className={compact ? 'min-w-0 flex-1' : 'w-56'}
                 aria-label={t('plan.addSubject')}
                 value=""
                 placeholder={t('plan.addSubject')}

@@ -4,9 +4,10 @@ import { ctx } from '@sathiya/core/fixtures';
 import { ADMIN_INVITE_TTL_MS, type Member } from '@sathiya/core';
 import { screen, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
-import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { ApiError, call } from '../../lib/callable';
 import { pickOption } from '../../test/pickOption';
+import { installMatchMedia } from '../../test/matchMedia';
 import { renderWithSchool } from '../../test/renderWithSchool';
 import { MembersPage } from './MembersPage';
 
@@ -208,5 +209,32 @@ describe('members page while the school is pending review', () => {
     await user.type(within(dialog).getByLabelText('Email'), 'new@siripura.lk');
     await user.click(within(dialog).getByRole('button', { name: 'Send invite' }));
     expect(await screen.findByText('Available after Sathiya approves your school.')).toBeInTheDocument();
+  });
+});
+
+describe('members page on a phone', () => {
+  let restore: () => void = () => undefined;
+  beforeEach(() => {
+    restore = installMatchMedia(390);
+  });
+  afterEach(() => restore());
+
+  it('splits admins and teachers with access into sections', async () => {
+    const user = setup();
+    expect(screen.queryByRole('table')).not.toBeInTheDocument();
+    const admins = screen.getByRole('region', { name: /^Admins/ });
+    expect(within(admins).getAllByRole('listitem')).toHaveLength(2);
+    expect(within(admins).getByText('principal@siripura.lk')).toBeInTheDocument();
+    const teachers = screen.getByRole('region', { name: /Teachers with access/ });
+    expect(within(teachers).getByText('Mr. A. Rizan')).toBeInTheDocument();
+    await user.click(within(admins).getByRole('button', { name: 'Remove Principal Siripura as admin' }));
+    expect(screen.getByRole('dialog', { name: 'Remove Principal Siripura as admin?' })).toBeInTheDocument();
+  });
+
+  it('shrinks the app links to one Copy row', () => {
+    setup();
+    const row = screen.getByRole('region', { name: 'Admin sign-in link' });
+    expect(within(row).getByRole('button', { name: 'Copy admin sign-in link' })).toBeInTheDocument();
+    expect(screen.queryByText('App links')).not.toBeInTheDocument();
   });
 });

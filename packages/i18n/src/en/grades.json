@@ -103,7 +103,8 @@
     "minutes": "Minutes per week",
     "minutesFor": "Minutes per week for {{name}}",
     "perDay": "Minutes per day",
-    "perDayFor": "Minutes per day for {{name}}"
+    "perDayFor": "Minutes per day for {{name}}",
+    "periodsShort": "Per"
   },
   "staffing": {
     "title": "Staffing",
@@ -118,5 +119,10 @@
     "specialists": "Specialist subjects",
     "specialistsPlaceholder": "+ subject",
     "removeSpecialist": "Remove {{name}} from specialist subjects"
+  },
+  "phone": {
+    "classesAndStaffing": "Classes and staffing",
+    "ct": "CT {{name}}",
+    "more": "More actions for this grade"
   }
 }

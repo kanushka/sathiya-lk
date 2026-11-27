@@ -3,7 +3,7 @@
 import { C, ctx, entries, G, mahasen, S } from '@sathiya/core/fixtures';
 import { screen, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
-import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { pickOption } from '../../test/pickOption';
 import { call } from '../../lib/callable';
 import { installMatchMedia } from '../../test/matchMedia';
@@ -362,5 +362,40 @@ describe('grades page', () => {
     expect(screen.getByRole('combobox', { name: /^Specialist subjects/ })).toBeInTheDocument();
     expect(screen.getByRole('button', { name: 'Remove English from specialist subjects' })).toBeInTheDocument();
     expect(screen.queryByText('Using the default for this grade.')).not.toBeInTheDocument();
+  });
+});
+
+describe('grades page on a phone', () => {
+  let restore: () => void = () => undefined;
+  beforeEach(() => {
+    restore = installMatchMedia(390);
+    Element.prototype.scrollTo = vi.fn();
+  });
+  afterEach(() => restore());
+
+  it('folds classes and staffing into a summary row', async () => {
+    const user = userEvent.setup();
+    renderWithSchool(<GradesPage />, { ctx, entries });
+    const summary = screen.getByText('Classes and staffing');
+    expect(summary.closest('details')).not.toHaveAttribute('open');
+    expect(summary.closest('summary')).toHaveTextContent(/1A · CT Mrs\. S\. Wickramasinghe/);
+    await user.click(summary);
+    expect(summary.closest('details')).toHaveAttribute('open');
+  });
+
+  it('moves Delete grade under the ⋯ menu', async () => {
+    const user = userEvent.setup();
+    renderWithSchool(<GradesPage />, { ctx, entries });
+    expect(screen.queryByRole('button', { name: 'Delete grade' })).not.toBeInTheDocument();
+    await user.click(screen.getByRole('button', { name: 'More actions for this grade' }));
+    await user.click(screen.getByRole('menuitem', { name: 'Delete grade' }));
+    expect(screen.getByRole('dialog')).toBeInTheDocument();
+  });
+
+  it('keeps each subject on one row with a short unit label and no per week text', () => {
+    renderWithSchool(<GradesPage />, { ctx, entries });
+    expect(screen.queryByText('per week')).not.toBeInTheDocument();
+    expect(screen.getAllByRole('radio', { name: /^Periods for / })[0]).toHaveTextContent('Per');
+    for (const b of screen.getAllByRole('button', { name: /^Remove / })) expect(b).toHaveClass('h-11', 'w-11');
   });
 });

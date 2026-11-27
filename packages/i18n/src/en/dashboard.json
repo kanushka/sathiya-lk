@@ -46,7 +46,8 @@
     "confirmAnyway": "Publish anyway",
     "cancel": "Cancel",
     "done": "Published: {{classes}} classes, {{teachers}} teachers",
-    "failed": "Could not publish. Try again."
+    "failed": "Could not publish. Try again.",
+    "short": "Publish"
   },
   "stats": {
     "complete": "Classes complete",
@@ -67,9 +68,22 @@
   "attention": {
     "title": "Needs attention",
     "none": "Nothing needs attention.",
-    "over-limit": { "title": "{{teacher}} — {{n}} periods on {{dayName}}", "detail": "Daily limit is {{max}}" },
-    "over-target": { "title": "{{class}} {{subject}} {{placed}} / {{needed}}", "detail": "{{extra}} too many periods", "detail_minutes": "{{extra}} too much" },
-    "group-no-teacher": { "title": "{{group}} has an option without a teacher", "detail": "{{class}} · {{dayName}} P{{period}}" },
-    "orphaned": { "title": "{{class}} {{dayName}} P{{period}} is outside the period template", "detail": "Move or remove this entry" }
+    "over-limit": {
+      "title": "{{teacher}} — {{n}} periods on {{dayName}}",
+      "detail": "Daily limit is {{max}}"
+    },
+    "over-target": {
+      "title": "{{class}} {{subject}} {{placed}} / {{needed}}",
+      "detail": "{{extra}} too many periods",
+      "detail_minutes": "{{extra}} too much"
+    },
+    "group-no-teacher": {
+      "title": "{{group}} has an option without a teacher",
+      "detail": "{{class}} · {{dayName}} P{{period}}"
+    },
+    "orphaned": {
+      "title": "{{class}} {{dayName}} P{{period}} is outside the period template",
+      "detail": "Move or remove this entry"
+    }
   }
 }

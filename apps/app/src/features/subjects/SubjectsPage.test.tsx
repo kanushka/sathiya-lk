@@ -3,8 +3,9 @@
 import { ctx, entries } from '@sathiya/core/fixtures';
 import { screen, waitFor, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
-import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { call } from '../../lib/callable';
+import { installMatchMedia } from '../../test/matchMedia';
 import { renderWithSchool } from '../../test/renderWithSchool';
 import * as api from './api';
 import { SubjectsPage } from './SubjectsPage';
@@ -193,5 +194,45 @@ describe('subject name order by school medium', () => {
     await user.click(screen.getByRole('button', { name: '+ Add subject' }));
     const langs = within(screen.getByRole('dialog')).getAllByRole('textbox').filter((el) => el.getAttribute('lang')).map((el) => el.getAttribute('lang'));
     expect(langs).toEqual(['en', 'si']);
+  });
+});
+
+describe('subjects page on a phone', () => {
+  let restore: () => void = () => undefined;
+  beforeEach(() => {
+    restore = installMatchMedia(390);
+  });
+  afterEach(() => restore());
+
+  it('lists unused subjects first with Delete, then subjects in the timetable with their slot count', () => {
+    render();
+    expect(screen.queryByRole('table')).not.toBeInTheDocument();
+    const unused = screen.getByRole('region', { name: /Not used yet/ });
+    const used = screen.getByRole('region', { name: /In the timetable/ });
+    expect(unused.compareDocumentPosition(used) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
+    expect(within(unused).getByRole('button', { name: 'Delete Pali' })).toBeInTheDocument();
+    expect(within(used).queryByRole('button', { name: /^Delete/ })).not.toBeInTheDocument();
+    expect(within(used).getAllByText(/\d+ slots?$/).length).toBeGreaterThan(0);
+  });
+
+  it('keeps Load standard list and Import as buttons below the title row', () => {
+    render();
+    expect(within(screen.getByTestId('page-header')).getAllByRole('button').map((b) => b.textContent)).toEqual(['+ Add subject']);
+    expect(screen.getByRole('button', { name: 'Load standard Sri Lankan list' })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'Import' })).toBeInTheDocument();
+  });
+
+  it('tapping a subject opens an edit dialog that saves the change', async () => {
+    const user = userEvent.setup();
+    render();
+    await user.click(screen.getByRole('button', { name: 'Edit Art' }));
+    const dialog = screen.getByRole('dialog', { name: 'Edit subject' });
+    const en = within(dialog).getByLabelText('Name in English');
+    expect(en).toHaveValue('Art');
+    await user.clear(en);
+    await user.type(en, 'Art & Craft');
+    await user.click(within(dialog).getByRole('button', { name: 'Save' }));
+    await waitFor(() => expect(api.updateSubject).toHaveBeenCalledWith(ctx.school.id, 's-art', expect.objectContaining({ nameEn: 'Art & Craft' })));
+    expect(api.addSubject).not.toHaveBeenCalled();
   });
 });
