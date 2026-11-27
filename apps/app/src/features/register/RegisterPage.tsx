@@ -3,21 +3,20 @@
 import { padCensusNo, pickName, type MoeSchool } from '@sathiya/core';
 import { useEffect, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { useNavigate } from 'react-router-dom';
+import { Navigate, useLocation, useNavigate } from 'react-router-dom';
 import { useAuth } from '../../app/AuthProvider';
-import { useLang } from '../../app/LangProvider';
 import { cx } from '../../ui/cx';
+import { LoadingState } from '../../ui/LoadingState';
 import { useToast } from '../../ui/Toast';
 import { BrandLockup, LanguageToggle } from '../auth/AuthChrome';
 import { useDocumentTitle } from '../../lib/brand';
-import { sendAuthEmail } from '../auth/authEmail';
 import { ReportSchoolModal } from '../auth/ReportSchoolModal';
 import { StepAccount } from './StepAccount';
 import { StepBrand } from './StepBrand';
 import { CensusEntry, ConfirmSchool } from './StepCensus';
 import { StepSchool } from './StepSchool';
 import { VerifyEmailGate } from './VerifyEmailGate';
-import { accountCreateError, isUnverifiedPasswordUser, registerFailure } from './errors';
+import { isUnverifiedPasswordUser, registerFailure } from './errors';
 import * as api from './api';
 import { defaultBrand, emptyAccount, emptySchool, gradeList, listedDraft, type AccountDraft, type BrandDraft, type SchoolDraft } from './model';
 import { toApiError } from '../../lib/callable';
@@ -30,8 +29,8 @@ export function RegisterPage() {
   const { t } = useTranslation('register');
   const { t: ta } = useTranslation('auth');
   useDocumentTitle(ta('pageTitle.register'));
-  const { user, refreshClaims } = useAuth();
-  const { lang } = useLang();
+  const { user, loading, refreshClaims } = useAuth();
+  const location = useLocation();
   const navigate = useNavigate();
   const toast = useToast();
   const [step, setStep] = useState<Step>(1);
@@ -39,7 +38,6 @@ export function RegisterPage() {
   const [brand, setBrand] = useState<BrandDraft>(defaultBrand);
   const [account, setAccount] = useState<AccountDraft>({ ...emptyAccount, adminName: user?.displayName ?? '' });
   const [busy, setBusy] = useState(false);
-  const accountCreated = useRef(false);
   const [error, setError] = useState<{ field: 'email' | 'password' | null; message: string } | null>(null);
   const [gate, setGate] = useState(false);
   const [confirmed, setConfirmed] = useState(false);
@@ -55,6 +53,10 @@ export function RegisterPage() {
   const [lookupError, setLookupError] = useState<string | null>(null);
   const [notListedCensus, setNotListedCensus] = useState('');
   const lookupVersion = useRef(0);
+  const displayName = user?.displayName ?? '';
+  useEffect(() => {
+    if (displayName) setAccount((a) => (a.adminName ? a : { ...a, adminName: displayName }));
+  }, [displayName]);
   const sectionRef = useRef<HTMLDivElement>(null);
   const firstRender = useRef(true);
   const keepFocus = useRef(false);
@@ -158,23 +160,6 @@ export function RegisterPage() {
   async function submit() {
     setBusy(true);
     setError(null);
-    try {
-      if (!user && !accountCreated.current) {
-        await api.createAccount(account.email.trim(), account.password, account.adminName.trim());
-        accountCreated.current = true;
-        await sendAuthEmail({ kind: 'verify', lang }).catch(() => undefined);
-        setConfirmed(false);
-        setGate(true);
-        setBusy(false);
-        return;
-      }
-    } catch (err) {
-      const failed = accountCreateError(err);
-      setError(failed ? { field: failed.field, message: t(`errors.${failed.key}`) } : { field: null, message: t('errors.generic') });
-      setBusy(false);
-      return;
-    }
-
     let schoolId: string;
     try {
       const termsVersion = await api.currentTermsVersion();
@@ -233,6 +218,9 @@ export function RegisterPage() {
     navigate(`/s/${schoolId}/admin`, { replace: true });
   }
 
+  if (loading) return <LoadingState />;
+  if (!user) return <Navigate to="/login" replace state={{ from: location }} />;
+
   return (
     <div className="min-h-screen bg-canvas px-4 py-10">
       <div className="mx-auto max-w-[1040px]">
@@ -264,7 +252,7 @@ export function RegisterPage() {
         <div ref={sectionRef}>
           {needsGate && (
             <VerifyEmailGate
-              email={user?.email ?? account.email}
+              email={user.email ?? ''}
               onConfirmed={() => {
                 setGate(false);
                 setConfirmed(true);
@@ -322,8 +310,8 @@ export function RegisterPage() {
             <StepAccount
               value={account}
               onChange={setAccount}
-              signedIn={!!user}
-              signedInEmail={user?.email}
+              signedIn
+              signedInEmail={user.email}
               busy={busy}
               error={error}
               onBack={() => setStep(2)}

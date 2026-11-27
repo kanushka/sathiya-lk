@@ -23,6 +23,10 @@
   [role='button']:not(:disabled) {
     cursor: pointer;
   }
+
+  a {
+    color: var(--brand);
+  }
 }
 
 :root {
@@ -44,9 +48,6 @@ body {
   padding-right: env(safe-area-inset-right);
 }
 
-a {
-  color: var(--brand);
-}
 
 .loading-bell-icon {
   transform-origin: 50% 15%;
