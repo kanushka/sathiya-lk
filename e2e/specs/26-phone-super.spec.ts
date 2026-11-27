@@ -1,10 +1,27 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
 // Copyright (C) 2026 Kanushka Gayan
 import { expect, test } from '@playwright/test';
+import { paths } from '@sathiya/core';
+import { FieldValue } from 'firebase-admin/firestore';
 import { admin, PENDING_SCHOOL, SID, SUPER } from '../../scripts/seed';
 import { loginAdmin, shot } from '../helpers';
 
 test.use({ viewport: { width: 390, height: 844 }, isMobile: true, hasTouch: true });
+
+// Spec 24 rejects the seeded pending school earlier in the run, which also releases its census number.
+// Put it back the way the seed left it, so the review card and Release census number are there to check.
+test.beforeAll(async () => {
+  const { db } = admin();
+  await db.doc(paths.school(PENDING_SCHOOL.sid)).update({
+    status: 'pending',
+    review: { moeMatched: false },
+    censusNo: PENDING_SCHOOL.censusNo,
+    releasedCensusNo: FieldValue.delete(),
+    censusReleasedAt: FieldValue.delete(),
+    censusReleasedBy: FieldValue.delete(),
+  });
+  await db.doc(paths.censusIndex(PENDING_SCHOOL.censusNo)).set({ schoolId: PENDING_SCHOOL.sid });
+});
 
 const pages: Array<[string, string]> = [
   ['/super', 'schools'],
