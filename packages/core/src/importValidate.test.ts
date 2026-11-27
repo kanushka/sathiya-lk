@@ -185,6 +185,12 @@ describe('validateImport teacher errors', () => {
     expect(errs(p)).toEqual([e('subjects', 'unknownSubject')]);
     expect(p.errors[0]?.params).toEqual({ value: 'maths' });
   });
+  it('gives a primary teacher with no grades the school grades up to 5', () => {
+    const p = one({ name: 'A', isPrimary: 'Yes' }, { ...ctx, schoolGrades: [8, 1, 3, 2, 6] });
+    expect(p.errors).toEqual([]);
+    expect(p.teachers[0]?.teacher.grades).toEqual([1, 2, 3]);
+    expect(one({ name: 'A', isPrimary: 'Yes', grades: '4' }, { ...ctx, schoolGrades: [1, 2, 3, 4] }).teachers[0]?.teacher.grades).toEqual([4]);
+  });
   it('accepts a teacher with no subjects or grades', () => {
     const p = one({ name: 'A' });
     expect(p.errors).toEqual([]);

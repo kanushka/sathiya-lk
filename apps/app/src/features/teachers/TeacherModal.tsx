@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
 // Copyright (C) 2026 Kanushka Gayan
-import { formatStaffId, isValidStaffId, nextStaffNumber, normalizeTeacher, pickName, splitTitle, TEACHER_TITLE_LABELS, TEACHER_TITLES, teacherDisplayName, type Lang, type Teacher, type TeacherTitle } from '@sathiya/core';
+import { defaultPrimaryGrades, formatStaffId, isValidStaffId, nextStaffNumber, normalizeTeacher, pickName, splitTitle, TEACHER_TITLE_LABELS, TEACHER_TITLES, teacherDisplayName, type Lang, type Teacher, type TeacherTitle } from '@sathiya/core';
 import { useState, type FormEvent, type ReactNode } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useReadOnly } from '../../ui/AdminLayout';
@@ -191,7 +191,7 @@ export function TeacherModal({ teacher, onClose, footerStart }: TeacherModalProp
           <div className="rounded-lg border border-line bg-surface p-3">
             <Checkbox
               checked={form.isPrimary}
-              onChange={(v) => set('isPrimary', v)}
+              onChange={(v) => setForm((f) => ({ ...f, isPrimary: v, grades: v && f.grades.length === 0 ? defaultPrimaryGrades(school.grades) : f.grades }))}
               disabled={locked}
               label={t('modal.primary')}
               hint={t('modal.primaryHint')}

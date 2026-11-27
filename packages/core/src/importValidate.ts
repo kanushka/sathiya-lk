@@ -14,6 +14,7 @@ import {
   type TeacherColumn,
 } from './importSheet';
 import { formatStaffId, isValidStaffId, nextStaffNumber } from './staff';
+import { defaultPrimaryGrades } from './staffing';
 import { SHORT_MAX, SUBJECT_SWATCHES, nameTaken, shortTaken, suggestSubjectShort } from './subjectShort';
 import { TEACHER_TITLES, type Subject, type Teacher } from './types';
 
@@ -241,6 +242,7 @@ function validateTeachers(
       primaryInvalid = true;
       err('isPrimary', 'primaryValue', { value: c.isPrimary! });
     }
+    if (isPrimary && parsed !== null && parsed.length === 0) grades = defaultPrimaryGrades(ctx.schoolGrades);
 
     const subjectRefs: SubjectRef[] = [];
     if (!isPrimary && !primaryInvalid) {
