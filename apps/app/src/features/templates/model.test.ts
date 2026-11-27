@@ -2,7 +2,7 @@
 // Copyright (C) 2026 Kanushka Gayan
 import type { TemplateRow } from '@sathiya/core';
 import { describe, expect, it } from 'vitest';
-import { appendRow, toPerDay, validateTemplate } from './model';
+import { appendRow, dayStart, hasGaps, insertRow, moveRow, removeRow, rowMinutes, setDayStart, setRowMinutes, toPerDay, validateTemplate } from './model';
 
 const p = (start: string, end: string): TemplateRow => ({ type: 'period', start, end });
 
@@ -67,5 +67,50 @@ describe('toPerDay', () => {
     expect(Object.keys(days)).toEqual(['0', '1', '2', '3', '4']);
     expect(days[4]).toEqual(rows);
     expect(days[4]).not.toBe(days[0]);
+  });
+});
+
+describe('duration editing', () => {
+  const i = (start: string, end: string): TemplateRow => ({ type: 'interval', start, end });
+  const day = [p('07:45', '08:30'), p('08:30', '09:10'), i('09:10', '09:30'), p('09:30', '10:10')];
+
+  it('reads minutes and day start from times', () => {
+    expect(day.map(rowMinutes)).toEqual([45, 40, 20, 40]);
+    expect(dayStart(day)).toBe('07:45');
+    expect(dayStart([])).toBe('07:45');
+    expect(rowMinutes(p('', ''))).toBe(40);
+  });
+
+  it('changing minutes shifts every later row', () => {
+    expect(setRowMinutes(day, 0, 50)).toEqual([p('07:45', '08:35'), p('08:35', '09:15'), i('09:15', '09:35'), p('09:35', '10:15')]);
+  });
+
+  it('clamps minutes to 5..240', () => {
+    expect(rowMinutes(setRowMinutes(day, 1, 0)[1]!)).toBe(5);
+    expect(rowMinutes(setRowMinutes(day, 1, 999)[1]!)).toBe(240);
+  });
+
+  it('moving the day start keeps every length', () => {
+    expect(setDayStart(day, '07:30').map((r) => [r.start, r.end])).toEqual([['07:30', '08:15'], ['08:15', '08:55'], ['08:55', '09:15'], ['09:15', '09:55']]);
+  });
+
+  it('moves a row and recomputes times', () => {
+    expect(moveRow(day, 2, 1)).toEqual([p('07:45', '08:30'), i('08:30', '08:50'), p('08:50', '09:30'), p('09:30', '10:10')]);
+    expect(moveRow(day, 0, -1)).toEqual(day);
+  });
+
+  it('inserts a default-length row between rows', () => {
+    expect(insertRow(day, 1, 'interval').slice(0, 3)).toEqual([p('07:45', '08:30'), i('08:30', '08:50'), p('08:50', '09:30')]);
+  });
+
+  it('removes a row and closes the gap', () => {
+    expect(removeRow(day, 2)).toEqual([p('07:45', '08:30'), p('08:30', '09:10'), p('09:10', '09:50')]);
+  });
+
+  it('turns an empty gap into an interval on the next edit, keeping clock times', () => {
+    const gappy = [p('07:45', '08:30'), p('08:40', '09:20')];
+    expect(hasGaps(gappy)).toBe(true);
+    expect(setDayStart(gappy, '07:45')).toEqual([p('07:45', '08:30'), i('08:30', '08:40'), p('08:40', '09:20')]);
+    expect(hasGaps(day)).toBe(false);
   });
 });

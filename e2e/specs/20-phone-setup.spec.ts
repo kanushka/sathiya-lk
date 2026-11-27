@@ -49,10 +49,13 @@ test('grades and templates are usable on a phone', async ({ page }) => {
   await shot(page, 'phone-grades');
 
   await page.goto(`/s/${SID}/admin/templates`);
-  const start = page.getByLabel('Start, row 1');
-  await expect(start.first()).toBeVisible();
-  const box = await start.first().boundingBox();
+  const remove = page.getByRole('button', { name: 'Remove row 1' });
+  await expect(remove).toBeVisible();
+  const box = await remove.boundingBox();
   expect(box!.x + box!.width).toBeLessThanOrEqual(375);
+  await page.getByRole('button', { name: '5 minutes more, row 1' }).tap();
+  await expect(page.getByTestId('template-row').nth(1)).toContainText('08:35–09:15');
+  expect(await page.evaluate(() => document.documentElement.scrollWidth)).toBeLessThanOrEqual(375);
   await shot(page, 'phone-templates');
 });
 
