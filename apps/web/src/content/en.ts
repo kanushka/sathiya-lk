@@ -158,10 +158,10 @@ export const en = {
     report: 'Seen a fake or duplicate school registration?',
   },
   cta: {
-    title: 'Less spreadsheet stress. Fewer clashes. A smoother school week.',
+    title: 'Build your school timetable in days, not weeks.',
     sub: 'සෑම ශ්‍රී ලාංකීය පාසලකටම නොමිලේ.',
     subLang: 'si',
-    button: 'Register your school — free',
+    button: 'Register your school',
   },
   footer: {
     copyright: '© 2026 Sathiya (සතිය)',
