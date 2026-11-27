@@ -4,7 +4,7 @@ import { expect, test } from '@playwright/test';
 import { paths } from '@sathiya/core';
 import { school, T } from '@sathiya/core/fixtures';
 import { admin, ADMIN, INVITEE, joinPath, REQUESTER, SID, YEAR_ID } from '../../scripts/seed';
-import { callAs, freshSchoolAdmin, idToken, loginAdmin, loginTeacher, pick, shot, submitSignIn } from '../helpers';
+import { callAs, expectTeacherSignedIn, freshSchoolAdmin, idToken, loginAdmin, loginTeacher, pick, shot, submitSignIn } from '../helpers';
 
 test.beforeAll(async () => {
   await callAs(await idToken(ADMIN.email, ADMIN.password), 'publishYear', { schoolId: SID, yearId: YEAR_ID });
@@ -24,7 +24,7 @@ test('admin approves a join request and the teacher sees their timetable', async
 
   const teacher = await (await browser.newContext()).newPage();
   await loginTeacher(teacher, REQUESTER.email, REQUESTER.password);
-  await expect(teacher.getByRole('banner')).toContainText('SCC007');
+  await expectTeacherSignedIn(teacher, 'SCC007');
 });
 
 test('a teacher whose email matches their record joins with the school link at once', async ({ page, browser }) => {
@@ -35,7 +35,7 @@ test('a teacher whose email matches their record joins with the school link at o
   await expect(page).toHaveURL(/\/login$/);
   await submitSignIn(page, INVITEE.email, password);
   await expect(page).toHaveURL(new RegExp(`/s/${SID}/me$`));
-  await expect(page.getByRole('banner')).toContainText('SCC014');
+  await expectTeacherSignedIn(page, 'SCC014');
 
   const adminPage = await (await browser.newContext()).newPage();
   await loginAdmin(adminPage, ADMIN.email, ADMIN.password);
@@ -51,7 +51,7 @@ test('a user in two schools switches between them', async ({ page }) => {
   await expect(page).toHaveURL(/\/login$/);
   await submitSignIn(page, other.email, other.password);
   await expect(page).toHaveURL(new RegExp(`/s/${SID}/me$`));
-  await expect(page.getByRole('banner')).toContainText('SCC019');
+  await expectTeacherSignedIn(page, 'SCC019');
   await shot(page, 'school-switcher');
 
   await pick(page, /^School /, /^switch School · Admin$/);
@@ -62,5 +62,5 @@ test('a user in two schools switches between them', async ({ page }) => {
 
   await pick(page, /^School /, `${school.nameEn} · Teacher`);
   await expect(page).toHaveURL(new RegExp(`/s/${SID}/me$`));
-  await expect(page.getByRole('banner')).toContainText('SCC019');
+  await expectTeacherSignedIn(page, 'SCC019');
 });

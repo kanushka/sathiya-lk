@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
 // Copyright (C) 2026 Kanushka Gayan
-import { EMAIL_RE, isSchoolAdmin, paths, type ApiErrorCode, type Claims, type Member, type School, type SchoolStatus } from '@sathiya/core';
+import { EMAIL_RE, isSchoolAdmin, paths, teacherIdOf, type ApiErrorCode, type Claims, type Member, type School, type SchoolStatus } from '@sathiya/core';
 import { HttpsError, type CallableRequest, type FunctionsErrorCode } from 'firebase-functions/v2/https';
 import { db } from './admin';
 
@@ -58,6 +58,25 @@ export async function requireSchoolAdmin(
   if (school!.status === 'disabled') schoolDisabled();
   if (school!.status === 'rejected' && !opts.allowRejected) schoolRejected();
   return { ...caller, sid: schoolId, school: school! };
+}
+
+// The caller is linked to a teacher record of sid (claim and record agree) and the school is open.
+// For teacher self-service callables: the teacher id always comes from the caller, never from the request.
+export async function requireLinkedTeacher(
+  req: CallableRequest,
+  sid: unknown,
+): Promise<Caller & { sid: string; tid: string; school: Omit<School, 'id'> }> {
+  const caller = requireAuth(req);
+  const schoolId = docId(sid, 'schoolId');
+  const tid = teacherIdOf(caller.claims, schoolId);
+  if (!tid) notAllowed('Not a teacher of this school');
+  const [snap, teacher] = await Promise.all([db.doc(paths.school(schoolId)).get(), db.doc(`${paths.teachers(schoolId)}/${tid}`).get()]);
+  const school = snap.data() as Omit<School, 'id'> | undefined;
+  if (!school) notAllowed('School is not active');
+  if (school!.status === 'disabled') schoolDisabled();
+  if (school!.status === 'rejected') schoolRejected();
+  if (!teacher.exists || teacher.get('uid') !== caller.uid) notAllowed('Not linked to this teacher');
+  return { ...caller, sid: schoolId, tid: tid!, school: school! };
 }
 
 export function assertApproved(status: SchoolStatus | undefined): void {

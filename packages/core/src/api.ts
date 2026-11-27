@@ -38,6 +38,8 @@ export const callables = {
   requestNameChange: 'requestNameChange',
   decideNameChange: 'decideNameChange',
   applyAutoFill: 'applyAutoFill',
+  setMyPhone: 'setMyPhone',
+  myReliefCount: 'myReliefCount',
 } as const;
 
 // Terms version assumed when platform/config has none.
@@ -108,6 +110,12 @@ export interface DecideNameChangeReq { schoolId: string; requestedAt: number; ap
 export interface DecideNameChangeRes { ok: true }
 export interface RemoveRegistrationReq { schoolId: string }
 export interface RemoveRegistrationRes { ok: true }
+/** A linked teacher sets the phone on their own teacher record; '' clears it. */
+export interface SetMyPhoneReq { schoolId: string; phone: string }
+export interface SetMyPhoneRes { phone: string | null }
+/** Relief periods the calling teacher has covered in the school's active year. */
+export interface MyReliefCountReq { schoolId: string }
+export interface MyReliefCountRes { count: number }
 interface CallableMap {
   registerSchool: { req: RegisterSchoolReq; res: RegisterSchoolRes };
   createTeacher: { req: CreateTeacherReq; res: CreateTeacherRes };
@@ -140,6 +148,8 @@ interface CallableMap {
   requestNameChange: { req: RequestNameChangeReq; res: RequestNameChangeRes };
   decideNameChange: { req: DecideNameChangeReq; res: DecideNameChangeRes };
   applyAutoFill: { req: ApplyAutoFillReq; res: ApplyAutoFillRes };
+  setMyPhone: { req: SetMyPhoneReq; res: SetMyPhoneRes };
+  myReliefCount: { req: MyReliefCountReq; res: MyReliefCountRes };
 }
 export type CallableName = keyof typeof callables;
 export type CallableTypes = { [K in CallableName]: CallableMap[K] };
