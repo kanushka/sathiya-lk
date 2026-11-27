@@ -4,7 +4,8 @@ import { IMPORT_COLUMNS, IMPORT_MAX_ROWS, parseCsv, readSheets } from '@sathiya/
 import { createI18n } from '@sathiya/i18n';
 import { describe, expect, it, vi } from 'vitest';
 import { readImportFile } from './readFile';
-import { sheetName, templateCsv, templateSheetNames, templateXlsx, type TemplateCopy } from './template';
+import tailwindConfig from '../../../tailwind.config';
+import { sheetName, TEMPLATE_COLORS, templateCsv, templateSheetNames, templateXlsx, type TemplateCopy } from './template';
 
 const SHEET_NAMES = { howTo: 'How to fill - පුරවන ආකාරය', subjects: 'Subjects - විෂයන්', teachers: 'Teachers - ගුරුවරු', example: 'Example - උදාහරණ' };
 
@@ -136,5 +137,13 @@ describe('Example sheet', () => {
     const parsed = readSheets(sheets);
     expect(parsed.errors).toEqual([]);
     expect(parsed.teachers).toEqual([]);
+  });
+});
+
+describe('template colours', () => {
+  it('match the Tailwind tokens', () => {
+    const colors = tailwindConfig.theme?.extend?.colors as unknown as Record<string, string | Record<string, string>>;
+    const tok = (k: string, sub: string) => (colors[k] as Record<string, string>)[sub];
+    expect(TEMPLATE_COLORS).toEqual({ navy: colors.navy, exampleFill: tok('surface', '2'), muted: tok('ink', 'muted') });
   });
 });

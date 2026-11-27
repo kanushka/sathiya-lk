@@ -67,10 +67,9 @@ export function templateCopy(i18n: Pick<I18n, 'getFixedT'>): TemplateCopy {
   };
 }
 
-// Palette from tailwind.config.ts: navy, surface.2, ink.muted.
-const NAVY = '#14213D';
-const EXAMPLE_FILL = '#F4F5F7';
-const MUTED = '#5A6378';
+// Excel needs literal hex, so these mirror tailwind.config.ts (navy, surface.2, ink.muted). A test keeps them in sync.
+export const TEMPLATE_COLORS = { navy: '#14213D', exampleFill: '#F4F5F7', muted: '#5A6378' } as const;
+const { navy: NAVY, exampleFill: EXAMPLE_FILL, muted: MUTED } = TEMPLATE_COLORS;
 
 function exampleTeachers(opts: { staffPrefix: string; grades: number[]; subjects?: readonly TemplateSubject[]; names: readonly [Bi, Bi] }) {
   const g = opts.grades;
