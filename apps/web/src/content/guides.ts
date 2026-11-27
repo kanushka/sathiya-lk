@@ -33,7 +33,7 @@ export const guides: Guide[] = [
     text: {
       en: {
         title: 'Register your school',
-        summary: 'Create your school on Sathiya and become its first admin. It takes about 3 minutes and is free.',
+        summary: 'Create your school on Sathiya and become its first admin. It is free.',
         steps: [
           {
             title: 'Sign in with Google',
@@ -69,7 +69,7 @@ export const guides: Guide[] = [
       },
       si: {
         title: 'ඔබේ පාසල ලියාපදිංචි කරන්න',
-        summary: 'සතිය හි ඔබේ පාසල සාදා එහි පළමු පරිපාලක වන්න. මිනිත්තු 3 ක් පමණ ගත වේ. සම්පූර්ණයෙන්ම නොමිලේ.',
+        summary: 'සතිය හි ඔබේ පාසල සාදා එහි පළමු පරිපාලක වන්න. සම්පූර්ණයෙන්ම නොමිලේ.',
         steps: [
           {
             title: 'Google සමඟ පිවිසෙන්න',

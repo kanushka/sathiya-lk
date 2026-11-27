@@ -1241,6 +1241,10 @@ h3 {
 }
 
 /* Guides */
+.guide-back {
+  margin-bottom: 20px !important;
+}
+
 .guide-summary {
   font-size: 19px !important;
 }
