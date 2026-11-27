@@ -1,10 +1,12 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
 // Copyright (C) 2026 Kanushka Gayan
-import type { PeriodTemplate, PlanItem, SchoolClass } from '@sathiya/core';
+import { staffingFor, teacherDisplayName, type Lang, type PeriodTemplate, type PlanItem, type SchoolClass } from '@sathiya/core';
 import { useEffect, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useSchool } from '../../app/SchoolProvider';
 import { useReadOnly } from '../../ui/AdminLayout';
+import { ActionMenu } from '../../ui/ActionMenu';
+import { Icon } from '../../ui/Icon';
 import { Button } from '../../ui/Button';
 import { EmptyState } from '../../ui/EmptyState';
 import { LinkButton } from '../../ui/LinkButton';
@@ -25,7 +27,8 @@ import { StaffingCard } from './StaffingCard';
 type Dialog = { kind: 'addGrade' } | { kind: 'deleteGrade' } | { kind: 'plan'; cls: SchoolClass } | { kind: 'delete'; cls: SchoolClass } | null;
 
 export function GradesPage() {
-  const { t } = useTranslation('grades');
+  const { t, i18n } = useTranslation('grades');
+  const lang = i18n.language as Lang;
   const school = useSchool();
   const readOnly = useReadOnly();
   const base = useAdminBase();
@@ -76,51 +79,18 @@ export function GradesPage() {
     );
   };
 
-  const addGradeButton = !readOnly && choices.length > 0 && (
-    <Button variant="primary" onClick={() => setDialog({ kind: 'addGrade' })}>
-      {t('rail.addGrade')}
-    </Button>
-  );
-
-  return (
-    <div>
-      <PageHeader title={t('page.heading')} actions={addGradeButton || undefined} />
-      <div className="flex flex-col gap-4 md:min-h-[600px] md:flex-row md:gap-6">
-      <nav ref={railRef} aria-label={t('rail.title')} className="-mx-1.5 flex gap-1 overflow-x-auto border-b border-line-soft px-1.5 pb-2 pt-1.5 md:mx-0 md:block md:pt-0 md:w-[150px] md:shrink-0 md:border-b-0 md:border-r md:px-0 md:pb-0 md:pr-2.5">
-        <p className="mx-2 mb-2.5 hidden text-[11px] font-bold uppercase tracking-widest text-ink-muted md:block">{t('rail.title')}</p>
-        {grades.map((g) => (
-          <button
-            key={g.id}
-            type="button"
-            aria-current={g.id === grade?.id ? 'page' : undefined}
-            onClick={() => setSelectedId(g.id)}
-            className={`flex min-h-11 shrink-0 items-center justify-between gap-2 whitespace-nowrap rounded-lg px-2.5 py-2 text-left text-sm md:min-h-0 md:w-full md:gap-0 focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-brand focus-visible:ring-offset-2 ${
-              g.id === grade?.id ? 'bg-brand/10 font-bold text-brand' : 'text-ink-soft hover:bg-surface'
-            }`}
-          >
-            {t('rail.grade', { n: g.number })}{' '}
-            <span className="text-xs font-medium text-ink-muted">{school.classes.filter((c) => c.gradeId === g.id).length}</span>
-          </button>
-        ))}
-      </nav>
-
-      <div className="min-w-0 flex-1">
-        {school.loading ? (
-          <LoadingState />
-        ) : !grade ? (
-          <EmptyState icon="grades" title={t('page.empty')} body={t('page.emptyBody')} action={addGradeButton || undefined} />
-        ) : (
-          <>
-            <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
-              <h2 className="m-0 text-xl font-bold text-ink">{t('page.title', { n: grade.number })}</h2>
-              {!readOnly && (
-                <Button variant="danger" size="sm" onClick={() => setDialog({ kind: 'deleteGrade' })}>
-                  {t('page.deleteGrade')}
-                </Button>
-              )}
-            </div>
-
-            <section className="mb-5 rounded-[14px] border border-line-soft bg-white p-4 md:p-5">
+  const classTeacherName = (c: SchoolClass) => {
+    const x = school.teachers.find((tt) => tt.id === c.classTeacherId);
+    return x ? teacherDisplayName(x, lang) : t('classes.noTeacher');
+  };
+  const classSummary = grade
+    ? [
+        ...gradeClasses.map((c) => `${c.name} · ${t('phone.ct', { name: classTeacherName(c) })}`),
+        t(`staffing.modes.${staffingFor(grade, school).mode}`),
+      ].join(' · ')
+    : '';
+  const classesSection = grade && (
+            <section className={isPhone ? 'rounded-[14px] border border-line-soft bg-white p-3' : 'mb-5 rounded-[14px] border border-line-soft bg-white p-4 md:p-5'}>
               <div className="mb-3.5 flex items-center justify-between">
                 <h3 className="m-0 text-[17px] font-bold">{t('classes.title')}</h3>
                 {!readOnly && defaultTemplate && (
@@ -157,15 +127,87 @@ export function GradesPage() {
                 </div>
               )}
             </section>
+  );
 
-            <StaffingCard grade={grade} ctx={school} readOnly={readOnly} onChange={(st) => void saveStaffing(st)} />
+  const addGradeButton = !readOnly && choices.length > 0 && (
+    <Button variant="primary" onClick={() => setDialog({ kind: 'addGrade' })}>
+      {t('rail.addGrade')}
+    </Button>
+  );
 
-            <section className="rounded-[14px] border border-line-soft bg-white p-4 md:p-5">
+  return (
+    <div>
+      <PageHeader title={t('page.heading')} actions={addGradeButton || undefined} phoneActions={addGradeButton || null} />
+      <div className="flex flex-col gap-4 md:min-h-[600px] md:flex-row md:gap-6">
+      <nav ref={railRef} aria-label={t('rail.title')} className="-mx-1.5 flex gap-1 overflow-x-auto border-b border-line-soft px-1.5 pb-2 pt-1.5 md:mx-0 md:block md:pt-0 md:w-[150px] md:shrink-0 md:border-b-0 md:border-r md:px-0 md:pb-0 md:pr-2.5">
+        <p className="mx-2 mb-2.5 hidden text-[11px] font-bold uppercase tracking-widest text-ink-muted md:block">{t('rail.title')}</p>
+        {grades.map((g) => (
+          <button
+            key={g.id}
+            type="button"
+            aria-current={g.id === grade?.id ? 'page' : undefined}
+            onClick={() => setSelectedId(g.id)}
+            className={`flex min-h-11 shrink-0 items-center justify-between gap-2 whitespace-nowrap rounded-lg px-2.5 py-2 text-left text-sm md:min-h-0 md:w-full md:gap-0 focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-brand focus-visible:ring-offset-2 ${
+              g.id === grade?.id ? 'bg-brand/10 font-bold text-brand' : 'text-ink-soft hover:bg-surface'
+            }`}
+          >
+            {t('rail.grade', { n: g.number })}{' '}
+            <span className="text-xs font-medium text-ink-muted">{school.classes.filter((c) => c.gradeId === g.id).length}</span>
+          </button>
+        ))}
+      </nav>
+
+      <div className="min-w-0 flex-1">
+        {school.loading ? (
+          <LoadingState />
+        ) : !grade ? (
+          <EmptyState icon="grades" title={t('page.empty')} body={t('page.emptyBody')} action={addGradeButton || undefined} />
+        ) : (
+          <>
+            <div className={isPhone ? 'mb-3 flex items-center justify-between gap-3' : 'mb-4 flex flex-wrap items-center justify-between gap-3'}>
+              <h2 className={isPhone ? 'm-0 text-[17px] font-bold text-ink' : 'm-0 text-xl font-bold text-ink'}>{t('page.title', { n: grade.number })}</h2>
+              {!readOnly &&
+                (isPhone ? (
+                  <ActionMenu
+                    variant="ghost"
+                    label={t('phone.more')}
+                    items={[{ key: 'delete', label: t('page.deleteGrade'), icon: 'trash', tone: 'danger', onSelect: () => setDialog({ kind: 'deleteGrade' }) }]}
+                  />
+                ) : (
+                  <Button variant="danger" size="sm" onClick={() => setDialog({ kind: 'deleteGrade' })}>
+                    {t('page.deleteGrade')}
+                  </Button>
+                ))}
+            </div>
+
+            {isPhone ? (
+              <details className="group mb-4 rounded-[14px] border border-line-soft bg-white">
+                <summary className="flex min-h-14 cursor-pointer list-none items-center gap-3 rounded-[14px] px-4 py-2.5 focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-brand [&::-webkit-details-marker]:hidden">
+                  <span className="min-w-0 flex-1">
+                    <b className="block text-[15px]">{t('phone.classesAndStaffing')}</b>
+                    <span className="block truncate text-[13px] text-ink-muted">{classSummary}</span>
+                  </span>
+                  <Icon name="chevronDown" size={16} className="shrink-0 text-ink-muted transition-transform group-open:rotate-180" />
+                </summary>
+                <div className="flex flex-col gap-4 border-t border-line-soft p-3">
+                  {classesSection}
+                  <StaffingCard grade={grade} ctx={school} readOnly={readOnly} onChange={(st) => void saveStaffing(st)} />
+                </div>
+              </details>
+            ) : (
+              <>
+                {classesSection}
+                <StaffingCard grade={grade} ctx={school} readOnly={readOnly} onChange={(st) => void saveStaffing(st)} />
+              </>
+            )}
+
+            <section className={isPhone ? 'overflow-hidden rounded-[14px] border border-line-soft bg-white' : 'rounded-[14px] border border-line-soft bg-white p-4 md:p-5'}>
               <PlanEditor
                 plan={grade.plan}
                 capacity={planCapacity(capacityTemplates)}
                 subjects={school.subjects}
                 readOnly={readOnly}
+                compact={isPhone}
                 onChange={(p) => void savePlan(p)}
               />
             </section>

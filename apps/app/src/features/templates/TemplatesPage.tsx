@@ -73,18 +73,19 @@ export function TemplatesPage() {
 
   const orphans = orphanedEntries(entries, school).length;
 
+  const newButton = !readOnly && (
+    <Button variant="primary" onClick={() => setDialog({ kind: 'new' })}>
+      {t('list.new')}
+    </Button>
+  );
+
   return (
     <div>
       <PageHeader
         title={t('page.title')}
         subtitle={t('page.subtitle')}
-        actions={
-          !readOnly && (
-            <Button variant="primary" onClick={() => setDialog({ kind: 'new' })}>
-              {t('list.new')}
-            </Button>
-          )
-        }
+        actions={newButton}
+        phoneActions={newButton || null}
       />
 
       {orphans > 0 && (

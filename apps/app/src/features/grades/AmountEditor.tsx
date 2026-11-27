@@ -57,9 +57,11 @@ export interface AmountEditorProps {
   disabled: boolean;
   onChange: (next: Amount) => void;
   onPendingChange?: (pending: boolean) => void;
+  /** Phone rows: a short unit label and no "per week" text. */
+  compact?: boolean;
 }
 
-export function AmountEditor({ item, name, disabled, onChange, onPendingChange }: AmountEditorProps) {
+export function AmountEditor({ item, name, disabled, onChange, onPendingChange, compact = false }: AmountEditorProps) {
   const { t } = useTranslation('grades');
   const [pending, setPending] = useState<'periods' | 'minutes' | null>(null);
   const stored = item.unit === 'minutes' ? 'minutes' : 'periods';
@@ -88,7 +90,7 @@ export function AmountEditor({ item, name, disabled, onChange, onPendingChange }
         disabled={disabled}
         onChange={choose}
         options={[
-          { value: 'periods', label: t('amount.periods'), ariaLabel: label('periodsUnit') },
+          { value: 'periods', label: t(compact ? 'amount.periodsShort' : 'amount.periods'), ariaLabel: label('periodsUnit') },
           { value: 'minutes', label: t('amount.time'), ariaLabel: label('timeUnit') },
         ]}
       />
@@ -126,7 +128,7 @@ export function AmountEditor({ item, name, disabled, onChange, onPendingChange }
             disabled={disabled}
             onCommit={(n) => emit({ perWeek: n ?? 0 })}
           />
-          <span className="text-[13px] text-ink-soft">{t('plan.perWeek')}</span>
+          {!compact && <span className="text-[13px] text-ink-soft">{t('plan.perWeek')}</span>}
         </>
       )}
     </div>

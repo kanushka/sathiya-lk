@@ -46,7 +46,8 @@
     "confirmAnyway": "කෙසේ වුවත් ප්‍රකාශ කරන්න",
     "cancel": "අවලංගු කරන්න",
     "done": "ප්‍රකාශ කරන ලදී: පන්ති {{classes}}, ගුරුවරු {{teachers}}",
-    "failed": "ප්‍රකාශ කිරීමට නොහැකි විය. නැවත උත්සාහ කරන්න."
+    "failed": "ප්‍රකාශ කිරීමට නොහැකි විය. නැවත උත්සාහ කරන්න.",
+    "short": "ප්‍රකාශ කරන්න"
   },
   "stats": {
     "complete": "සම්පූර්ණ පන්ති",
@@ -67,9 +68,22 @@
   "attention": {
     "title": "අවධානය අවශ්‍යයි",
     "none": "අවධානය අවශ්‍ය කිසිවක් නැත.",
-    "over-limit": { "title": "{{teacher}} — {{dayName}} කාලච්ඡේද {{n}}", "detail": "දෛනික සීමාව {{max}} කි" },
-    "over-target": { "title": "{{class}} {{subject}} {{placed}} / {{needed}}", "detail": "කාලච්ඡේද {{extra}} ක් වැඩිය", "detail_minutes": "{{extra}} ක් වැඩිය" },
-    "group-no-teacher": { "title": "{{group}} හි තේරීමකට ගුරුවරයෙකු නැත", "detail": "{{class}} · {{dayName}} P{{period}}" },
-    "orphaned": { "title": "{{class}} {{dayName}} P{{period}} කාලච්ඡේද ආකෘතියෙන් පිටත ය", "detail": "මෙම ඇතුළත් කිරීම ගෙන යන්න හෝ ඉවත් කරන්න" }
+    "over-limit": {
+      "title": "{{teacher}} — {{dayName}} කාලච්ඡේද {{n}}",
+      "detail": "දෛනික සීමාව {{max}} කි"
+    },
+    "over-target": {
+      "title": "{{class}} {{subject}} {{placed}} / {{needed}}",
+      "detail": "කාලච්ඡේද {{extra}} ක් වැඩිය",
+      "detail_minutes": "{{extra}} ක් වැඩිය"
+    },
+    "group-no-teacher": {
+      "title": "{{group}} හි තේරීමකට ගුරුවරයෙකු නැත",
+      "detail": "{{class}} · {{dayName}} P{{period}}"
+    },
+    "orphaned": {
+      "title": "{{class}} {{dayName}} P{{period}} කාලච්ඡේද ආකෘතියෙන් පිටත ය",
+      "detail": "මෙම ඇතුළත් කිරීම ගෙන යන්න හෝ ඉවත් කරන්න"
+    }
   }
 }
