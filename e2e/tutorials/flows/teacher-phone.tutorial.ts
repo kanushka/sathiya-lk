@@ -56,26 +56,34 @@ test('teacher on a phone', async ({ page, lang, tutorial, browser }) => {
   await expect(page).toHaveURL(new RegExp(`/s/${sid}/me$`), { timeout: 20_000 });
   await page.waitForTimeout(1200);
 
+  const nav = page.getByRole('navigation', { name: t('nav.label') });
   await tut.say({
-    en: "You're in. The top card shows the lesson happening now and how many minutes are left.",
-    si: 'ඔබ ඇතුළු විය. දැන් සිදුවන පාඩම සහ ඉතිරි මිනිත්තු ගණන ඉහළ කාඩ්පතේ පෙනේ.',
+    en: "You're in. \"Today\" shows the lesson happening now, the minutes left, and the rest of your day.",
+    si: 'ඔබ ඇතුළු විය. "අද" තුළ දැන් සිදුවන පාඩම, ඉතිරි මිනිත්තු සහ ඔබේ දිනයේ ඉතිරිය පෙනේ.',
   });
   await tut.still('now');
+
   await tut.say({
-    en: "Scroll to see the rest of today's lessons, with intervals and free periods.",
-    si: 'විවේක සහ නිදහස් කාලච්ඡේද සමඟ අද දින ඉතිරි පාඩම් බැලීමට පහළට යන්න.',
+    en: 'Tap "Timetable" for your full timetable. Switch between Day, 3 days and Week.',
+    si: 'ඔබේ සම්පූර්ණ කාලසටහනට "කාලසටහන" තට්ටු කරන්න. දිනය, දින 3 සහ සතිය අතර මාරු වන්න.',
   }, 2400);
-  await page.mouse.wheel(0, 500);
-  await page.waitForTimeout(1500);
-
-  await tut.say({ en: 'Tap another day to see that day.', si: 'එම දිනය බැලීමට වෙනත් දිනයක් තට්ටු කරන්න.' }, 1800);
-  await page.mouse.wheel(0, -800);
-  await page.waitForTimeout(600);
-  await tut.click(page.getByRole('main').getByRole('button', { name: tut.t('common', 'days.short.1'), exact: true }), 1500);
-
-  await tut.say({ en: 'Or switch to "Week" for the whole week.', si: 'නැතහොත් මුළු සතියම බැලීමට "සතිය" වෙත මාරු වන්න.' }, 1800);
-  await tut.click(page.getByRole('link', { name: t('views.week'), exact: true }), 1800);
+  await tut.click(nav.getByRole('link', { name: t('nav.timetable'), exact: true }), 1500);
+  await tut.click(page.getByRole('main').getByRole('radio', { name: t('timetable.week'), exact: true }), 1800);
   await tut.still('week');
+
+  await tut.say({
+    en: "Class teachers see their class's week under \"My class\", including who covers a lesson when a teacher is away.",
+    si: 'පන්ති භාර ගුරුවරුන්ට "මගේ පන්තිය" යටතේ තම පන්තියේ සතිය පෙනේ, ගුරුවරයෙකු නොපැමිණි විට පාඩම බාරගන්නේ කවුදැයි ද ඇතුළුව.',
+  }, 2600);
+  await tut.click(nav.getByRole('link', { name: t('nav.myClass'), exact: true }), 1800);
+  await tut.still('my-class');
+
+  await tut.say({
+    en: '"Me" has your details and phone number, how many periods you teach, and a button to print your timetable.',
+    si: '"මම" තුළ ඔබේ විස්තර සහ දුරකථන අංකය, ඔබ උගන්වන කාලච්ඡේද ගණන සහ ඔබේ කාලසටහන මුද්‍රණය කිරීමට බොත්තමක් ඇත.',
+  }, 2600);
+  await tut.click(nav.getByRole('link', { name: t('nav.me'), exact: true }), 1800);
+  await tut.still('me');
 
   await tut.say({
     en: 'When the school publishes changes or plans relief for you, you see it here.',

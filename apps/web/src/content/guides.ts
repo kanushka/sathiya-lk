@@ -415,8 +415,10 @@ const list: Guide[] = [
         steps: [
           { title: 'Open the join link', body: 'Your school admin shares a join link, for example on WhatsApp. Open it on your phone.', image: 'join' },
           { title: 'Sign in', body: 'Click "Continue with Google" with the email your school has for you. You can also use an email and password.' },
-          { title: 'Your day', body: 'The top card shows the lesson happening now and the minutes left. Scroll for the rest of today, tap a day to see it, or switch to "Week".', image: 'now' },
-          { title: 'Your week', body: 'When the school publishes changes or plans relief for you, you see it here.', image: 'week' },
+          { title: 'Today', body: '"Today" shows the lesson happening now, the minutes left, and the rest of your day.', image: 'now' },
+          { title: 'Timetable', body: 'Tap "Timetable" for your full timetable, and switch between Day, 3 days and Week.', image: 'week' },
+          { title: 'My class', body: 'Class teachers see their class\'s week under "My class", including who covers a lesson when a teacher is away.', image: 'my-class' },
+          { title: 'Me', body: '"Me" has your details and phone number, how many periods you teach, and a button to print your timetable. When the school publishes changes or plans relief for you, you see it in the app.', image: 'me' },
         ],
       },
       si: {
@@ -425,8 +427,10 @@ const list: Guide[] = [
         steps: [
           { title: 'සම්බන්ධ වීමේ සබැඳිය විවෘත කරන්න', body: 'ඔබේ පාසල් පරිපාලක සම්බන්ධ වීමේ සබැඳියක් බෙදා ගනී, උදා. WhatsApp හරහා. එය ඔබේ දුරකථනයේ විවෘත කරන්න.', image: 'join' },
           { title: 'පිවිසෙන්න', body: 'ඔබේ පාසල ඔබ සඳහා භාවිත කරන විද්‍යුත් තැපෑල සමඟ "Google සමඟ ඉදිරියට යන්න" ක්ලික් කරන්න. විද්‍යුත් තැපෑල සහ මුරපදයක්ද භාවිත කළ හැක.' },
-          { title: 'ඔබේ දිනය', body: 'දැන් සිදුවන පාඩම සහ ඉතිරි මිනිත්තු ඉහළ කාඩ්පතේ පෙනේ. අද දිනයේ ඉතිරිය බැලීමට පහළට යන්න, දිනයක් තට්ටු කරන්න, නැතහොත් "සතිය" වෙත මාරු වන්න.', image: 'now' },
-          { title: 'ඔබේ සතිය', body: 'පාසල වෙනස්කම් ප්‍රකාශයට පත් කළ විට හෝ ඔබට ආදේශක කාලච්ඡේද සැලසූ විට, ඔබට එය මෙහි පෙනේ.', image: 'week' },
+          { title: 'අද', body: '"අද" තුළ දැන් සිදුවන පාඩම, ඉතිරි මිනිත්තු සහ ඔබේ දිනයේ ඉතිරිය පෙනේ.', image: 'now' },
+          { title: 'කාලසටහන', body: 'ඔබේ සම්පූර්ණ කාලසටහනට "කාලසටහන" තට්ටු කර, දිනය, දින 3 සහ සතිය අතර මාරු වන්න.', image: 'week' },
+          { title: 'මගේ පන්තිය', body: 'පන්ති භාර ගුරුවරුන්ට "මගේ පන්තිය" යටතේ තම පන්තියේ සතිය පෙනේ, ගුරුවරයෙකු නොපැමිණි විට පාඩම බාරගන්නේ කවුදැයි ද ඇතුළුව.', image: 'my-class' },
+          { title: 'මම', body: '"මම" තුළ ඔබේ විස්තර සහ දුරකථන අංකය, ඔබ උගන්වන කාලච්ඡේද ගණන සහ ඔබේ කාලසටහන මුද්‍රණය කිරීමට බොත්තමක් ඇත. පාසල වෙනස්කම් ප්‍රකාශයට පත් කළ විට හෝ ඔබට ආදේශක කාලච්ඡේද සැලසූ විට, ඔබට එය යෙදුමේ පෙනේ.', image: 'me' },
         ],
       },
     },
