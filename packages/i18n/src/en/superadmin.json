@@ -43,7 +43,14 @@
     "all": "All",
     "filterCount": "{{label}}, {{count}}",
     "review": "Review",
-    "nameChangeFilter": "Name change"
+    "nameChangeFilter": "Name change",
+    "phone": {
+      "needsReview": "Needs review",
+      "teachers_one": "{{count}} teacher",
+      "teachers_other": "{{count}} teachers",
+      "classes_one": "{{count}} class",
+      "classes_other": "{{count}} classes"
+    }
   },
   "reports": {
     "title": "Reports",
@@ -70,6 +77,10 @@
     "toast": {
       "closed": "Report closed",
       "closeFailed": "Could not close report: {{message}}"
+    },
+    "phone": {
+      "open": "Open",
+      "closeReport": "Close report"
     }
   },
   "status": {
@@ -133,7 +144,11 @@
     "never": "Never",
     "noData": "—",
     "loading": "Loading…",
-    "countError": "Error"
+    "countError": "Error",
+    "phone": {
+      "entries_one": "{{count}} entry",
+      "entries_other": "{{count}} entries"
+    }
   },
   "subjects": {
     "title": "Default subjects",
@@ -171,6 +186,9 @@
       "title": "Delete {{name}}?",
       "body": "It is removed from the standard list. Schools that already loaded it keep their copy.",
       "confirm": "Delete subject"
+    },
+    "phone": {
+      "section": "Subjects"
     }
   },
   "terms": {
@@ -203,7 +221,12 @@
     },
     "published": "Version {{version}} published",
     "failed": "Could not publish: {{message}}",
-    "configError": "Could not load the current version, so none is marked."
+    "configError": "Could not load the current version, so none is marked.",
+    "phone": {
+      "versions": "Versions",
+      "version": "Version {{version}}",
+      "published": "Published {{date}}"
+    }
   },
   "announcements": {
     "title": "Announcements",

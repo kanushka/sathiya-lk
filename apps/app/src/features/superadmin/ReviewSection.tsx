@@ -3,12 +3,13 @@
 import { pickName, type Member, type School } from '@sathiya/core';
 import { useEffect, useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import { useLang } from '../../app/LangProvider';
 import type { CollectionState } from '../../lib/firestore';
 import { Badge } from '../../ui/Badge';
 import { Button } from '../../ui/Button';
 import { Field, textareaClass } from '../../ui/Field';
+import { ListInitials, ListRow, ListSection } from '../../ui/GroupedList';
 import { Modal } from '../../ui/Modal';
 import { PHONE_QUERY, useMediaQuery } from '../../ui/PhoneNotice';
 import { useToast } from '../../ui/Toast';
@@ -20,6 +21,35 @@ import { StatusPill } from './StatusControl';
 export function MoeBadge({ matched }: { matched: boolean }) {
   const { t } = useTranslation('superadmin');
   return <Badge tone={matched ? 'success' : 'warning'}>{t(matched ? 'review.moeMatched' : 'review.moeMissing')}</Badge>;
+}
+
+function DuplicatePhoneList({ title, schools }: { title: string; schools: School[] }) {
+  const { t } = useTranslation('superadmin');
+  const { lang } = useLang();
+  const navigate = useNavigate();
+  if (schools.length === 0)
+    return (
+      <ListSection title={title} count={0} bare className="mb-3">
+        <p className="m-0 text-sm text-ink-muted">{t('review.none')}</p>
+      </ListSection>
+    );
+  return (
+    <ListSection title={title} count={schools.length} className="mb-3">
+      {schools.map((s) => {
+        const name = pickName(s, lang);
+        return (
+          <ListRow
+            key={s.id}
+            lead={<ListInitials name={name} />}
+            title={name}
+            detail={[s.censusNo && t('schools.censusShort', { no: s.censusNo }), s.city, s.district].filter(Boolean).join(' · ')}
+            meta={<StatusPill status={s.status} />}
+            onOpen={() => navigate(`/super/schools/${s.id}`)}
+          />
+        );
+      })}
+    </ListSection>
+  );
 }
 
 function DuplicateList({ title, schools }: { title: string; schools: School[] }) {
@@ -229,10 +259,17 @@ export function ReviewSection({ school, schools, members, review }: ReviewSectio
             {schools.loading ? (
               <p className="m-0 text-sm text-ink-muted">…</p>
             ) : (
+              isPhone ? (
+                <>
+                  <DuplicatePhoneList title={t('review.similar')} schools={dups.similar} />
+                  <DuplicatePhoneList title={t('review.sameArea', { district: school.district })} schools={dups.sameArea} />
+                </>
+              ) : (
               <div className="flex flex-wrap gap-x-8 gap-y-4">
                 <DuplicateList title={t('review.similar')} schools={dups.similar} />
                 <DuplicateList title={t('review.sameArea', { district: school.district })} schools={dups.sameArea} />
               </div>
+              )
             )}
             <p className="mb-0 mt-3 text-xs text-ink-muted">{t('review.moeNote')}</p>
           </section>

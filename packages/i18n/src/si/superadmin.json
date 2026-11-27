@@ -43,7 +43,14 @@
     "all": "සියල්ල",
     "filterCount": "{{label}}, {{count}}",
     "review": "සමාලෝචනය කරන්න",
-    "nameChangeFilter": "නම වෙනස් කිරීම"
+    "nameChangeFilter": "නම වෙනස් කිරීම",
+    "phone": {
+      "needsReview": "සමාලෝචනය අවශ්‍යයි",
+      "teachers_one": "ගුරුවරු {{count}}",
+      "teachers_other": "ගුරුවරු {{count}}",
+      "classes_one": "පන්ති {{count}}",
+      "classes_other": "පන්ති {{count}}"
+    }
   },
   "reports": {
     "title": "වාර්තා",
@@ -70,6 +77,10 @@
     "toast": {
       "closed": "වාර්තාව වසා දැමුවා",
       "closeFailed": "වාර්තාව වැසීමට නොහැකි විය: {{message}}"
+    },
+    "phone": {
+      "open": "විවෘත",
+      "closeReport": "වාර්තාව වසන්න"
     }
   },
   "status": {
@@ -133,7 +144,11 @@
     "never": "කිසිදා නැත",
     "noData": "—",
     "loading": "පූරණය වෙමින්…",
-    "countError": "දෝෂයකි"
+    "countError": "දෝෂයකි",
+    "phone": {
+      "entries_one": "ඇතුළත් කිරීම් {{count}}",
+      "entries_other": "ඇතුළත් කිරීම් {{count}}"
+    }
   },
   "subjects": {
     "title": "පෙරනිමි විෂය",
@@ -171,6 +186,9 @@
       "title": "{{name}} මකන්නද?",
       "body": "එය සම්මත ලැයිස්තුවෙන් ඉවත් වේ. දැනටමත් පූරණය කළ පාසල්වල පිටපත් එලෙසම පවතී.",
       "confirm": "විෂය මකන්න"
+    },
+    "phone": {
+      "section": "විෂය"
     }
   },
   "terms": {
@@ -203,7 +221,12 @@
     },
     "published": "{{version}} අනුවාදය ප්‍රකාශ කෙරිණි",
     "failed": "ප්‍රකාශ කළ නොහැකි විය: {{message}}",
-    "configError": "වත්මන් අනුවාදය පූරණය කළ නොහැකි විය, එබැවින් කිසිවක් සලකුණු කර නැත."
+    "configError": "වත්මන් අනුවාදය පූරණය කළ නොහැකි විය, එබැවින් කිසිවක් සලකුණු කර නැත.",
+    "phone": {
+      "versions": "අනුවාද",
+      "version": "අනුවාදය {{version}}",
+      "published": "ප්‍රකාශිත දිනය {{date}}"
+    }
   },
   "announcements": {
     "title": "නිවේදන",

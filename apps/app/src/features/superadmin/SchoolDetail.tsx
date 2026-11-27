@@ -7,13 +7,16 @@ import { Link, useParams } from 'react-router-dom';
 import { useLang } from '../../app/LangProvider';
 import { useCollection, useDoc, type CollectionState, type DocState } from '../../lib/firestore';
 import { EmptyState } from '../../ui/EmptyState';
+import { ActionMenu, type ActionMenuItem } from '../../ui/ActionMenu';
+import { buttonClass } from '../../ui/Button';
 import { LoadingState } from '../../ui/LoadingState';
-import { defaultReleaseCensus, ReleaseCensusButton, type ReleaseCensusFn } from './ReleaseCensus';
+import { PHONE_QUERY, useMediaQuery } from '../../ui/PhoneNotice';
+import { defaultReleaseCensus, ReleaseCensusButton, useReleaseCensus, type ReleaseCensusFn } from './ReleaseCensus';
 import { defaultReview, type ReviewFn } from './review';
 import { defaultDecideName, type DecideNameFn } from './nameChange';
 import { NameChangeSection } from './NameChangeSection';
 import { MoeBadge, ReviewSection } from './ReviewSection';
-import { StatusButton, StatusPill } from './StatusControl';
+import { StatusButton, StatusPill, useStatusToggle } from './StatusControl';
 import { formatActivity, formatDate } from './format';
 import { useUsageCounts } from './source';
 import { defaultSetStatus, type SetStatusFn } from './status';
@@ -33,6 +36,42 @@ function Row({ label, children }: { label: string; children: ReactNode }) {
     <div className="flex flex-col gap-0.5 border-b border-line-soft py-2.5 text-sm last:border-b-0 sm:flex-row sm:gap-4 sm:py-3 sm:last:border-b">
       <dt className="shrink-0 text-xs text-ink-muted sm:w-56 sm:text-sm">{label}</dt>
       <dd className="m-0 min-w-0 break-words">{children}</dd>
+    </div>
+  );
+}
+
+function DetailActions({ school, setStatus, releaseCensus }: { school: School; setStatus: SetStatusFn; releaseCensus: ReleaseCensusFn }) {
+  const { t } = useTranslation('superadmin');
+  const isPhone = useMediaQuery(PHONE_QUERY);
+  const toggle = useStatusToggle(school, setStatus);
+  const census = useReleaseCensus(school, releaseCensus);
+  const readOnly = `/super/schools/${school.id}/admin`;
+  if (!isPhone) {
+    return (
+      <div className="flex flex-wrap gap-2">
+        <Link
+          to={readOnly}
+          className="inline-flex h-8 items-center rounded-lg border border-line-strong bg-white px-3 text-[13px] font-semibold hover:bg-surface"
+        >
+          {t('detail.openReadOnly')}
+        </Link>
+        <StatusButton school={school} setStatus={setStatus} />
+        <ReleaseCensusButton school={school} release={releaseCensus} />
+      </div>
+    );
+  }
+  const items: ActionMenuItem[] = [];
+  if (toggle.visible)
+    items.push({ key: 'status', label: toggle.label, tone: toggle.disabling ? 'danger' : 'default', disabled: toggle.busy, onSelect: toggle.start });
+  if (census.visible) items.push({ key: 'census', label: census.label, tone: 'danger', disabled: census.busy, onSelect: census.start });
+  return (
+    <div className="flex shrink-0 items-center gap-2">
+      <Link to={readOnly} aria-label={t('detail.openReadOnly')} className={buttonClass({ variant: 'secondary', size: 'md' })}>
+        {t('schools.open')}
+      </Link>
+      {items.length > 0 && <ActionMenu items={items} />}
+      {toggle.modal}
+      {census.modal}
     </div>
   );
 }
@@ -72,18 +111,9 @@ export function SchoolDetail({
       <Link to="/super" className="mb-1 inline-flex min-h-11 items-center text-sm font-semibold text-teal underline-offset-2 hover:underline md:mb-3 md:min-h-0">
         {t('detail.back')}
       </Link>
-      <div className="mb-5 flex flex-wrap items-center justify-between gap-3">
-        <h1 className="m-0 text-[22px] font-bold md:text-[26px]">{pickName(school, lang)}</h1>
-        <div className="flex flex-wrap gap-2">
-          <Link
-            to={`/super/schools/${school.id}/admin`}
-            className="inline-flex h-8 items-center rounded-lg border border-line-strong bg-white px-3 text-[13px] font-semibold hover:bg-surface"
-          >
-            {t('detail.openReadOnly')}
-          </Link>
-          <StatusButton school={school} setStatus={setStatus} />
-          <ReleaseCensusButton school={school} release={releaseCensus} />
-        </div>
+      <div className="mb-4 flex items-center justify-between gap-3 md:mb-5 md:flex-wrap">
+        <h1 className="m-0 min-w-0 text-[22px] font-bold md:text-[26px]">{pickName(school, lang)}</h1>
+        <DetailActions school={school} setStatus={setStatus} releaseCensus={releaseCensus} />
       </div>
       {(reviewing || school.review?.decidedAt) && <ReviewSection school={school} schools={schools} members={members} review={review} />}
       {school.nameChange && <NameChangeSection school={school} change={school.nameChange} decide={decideName} />}

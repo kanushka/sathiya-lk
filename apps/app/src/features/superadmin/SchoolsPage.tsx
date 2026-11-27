@@ -3,12 +3,13 @@
 import { pickName, type School } from '@sathiya/core';
 import { useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import { useLang } from '../../app/LangProvider';
 import { useCollection, type CollectionState } from '../../lib/firestore';
 import { Badge } from '../../ui/Badge';
 import { buttonClass } from '../../ui/Button';
 import { EmptyState } from '../../ui/EmptyState';
+import { ListInitials, ListRow, ListSection } from '../../ui/GroupedList';
 import { LoadingState } from '../../ui/LoadingState';
 import { PHONE_QUERY, useMediaQuery } from '../../ui/PhoneNotice';
 import { cx } from '../../ui/cx';
@@ -136,6 +137,8 @@ export function SchoolsPage({ schools: injected, setStatus = defaultSetStatus }:
         <EmptyState icon="search" title={t('schools.loadError')} />
       ) : visible.length === 0 ? (
         <EmptyState icon="search" title={t('schools.empty')} body={t('schools.emptyBody')} />
+      ) : isPhone ? (
+        <SchoolsPhoneList schools={visible} counts={counts} />
       ) : (
         <Table className="md:min-w-[820px]">
           <THead>
@@ -191,5 +194,59 @@ export function SchoolsPage({ schools: injected, setStatus = defaultSetStatus }:
         </Table>
       )}
     </div>
+  );
+}
+
+type Group = { key: string; title: string; tone: 'warning' | 'success' | 'danger' | 'neutral'; schools: School[] };
+
+function SchoolsPhoneList({ schools, counts }: { schools: School[]; counts: Record<string, CountState | undefined> }) {
+  const { t } = useTranslation('superadmin');
+  const { lang } = useLang();
+  const navigate = useNavigate();
+  const groups: Group[] = [
+    { key: 'review', title: t('schools.phone.needsReview'), tone: 'warning', schools: schools.filter(needsReview) },
+    { key: 'active', title: t('status.active'), tone: 'success', schools: schools.filter((s) => s.status === 'active' && !renaming(s)) },
+    { key: 'disabled', title: t('status.disabled'), tone: 'danger', schools: schools.filter((s) => s.status === 'disabled' && !renaming(s)) },
+    { key: 'rejected', title: t('status.rejected'), tone: 'neutral', schools: schools.filter((s) => s.status === 'rejected' && !renaming(s)) },
+  ];
+
+  function detail(s: School): string {
+    const census = s.censusNo && t('schools.censusShort', { no: s.censusNo });
+    if (needsReview(s)) return [t(s.status === 'pending' ? 'status.pending' : 'schools.nameChangeFilter'), s.district, census].filter(Boolean).join(' · ');
+    const c = counts[s.id];
+    const usage =
+      c?.status === 'ready'
+        ? [t('schools.phone.teachers', { count: c.counts.teachers }), t('schools.phone.classes', { count: c.counts.classes })]
+        : [];
+    return [s.district, ...usage].filter(Boolean).join(' · ');
+  }
+
+  return (
+    <>
+      {groups
+        .filter((g) => g.schools.length > 0)
+        .map((g) => (
+          <ListSection key={g.key} title={g.title} count={g.schools.length} tone={g.tone}>
+            {g.schools.map((s) => {
+              const name = pickName(s, lang);
+              const review = needsReview(s);
+              return (
+                <ListRow
+                  key={s.id}
+                  lead={<ListInitials name={name} />}
+                  title={name}
+                  detail={detail(s)}
+                  onOpen={() => navigate(`/super/schools/${s.id}`)}
+                  action={{
+                    label: t(review ? 'schools.review' : 'schools.open'),
+                    ariaLabel: `${t(review ? 'schools.review' : 'schools.open')}: ${name}`,
+                    onClick: () => navigate(review ? `/super/schools/${s.id}` : `/super/schools/${s.id}/admin`),
+                  }}
+                />
+              );
+            })}
+          </ListSection>
+        ))}
+    </>
   );
 }
