@@ -53,5 +53,11 @@
     "cancel": "Cancel",
     "sent": "Invite sent to {{email}}",
     "failed": "Could not send the invite. Try again."
+  },
+  "phone": {
+    "admins": "Admins",
+    "teachers": "Teachers with access",
+    "remove": "Remove",
+    "removeFor": "Remove {{name}} as admin"
   }
 }

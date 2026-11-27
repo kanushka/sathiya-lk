@@ -7,7 +7,7 @@ import { PinBar } from './PinBar';
 import { PinLegend } from './pinOverlay';
 import type { PinMode } from './usePinMode';
 
-export function PinHeader({ pin, hint, readOnly }: { pin: PinMode; hint: string; readOnly: boolean }) {
+export function PinHeader({ pin, hint, readOnly, hideHint = false }: { pin: PinMode; hint: string; readOnly: boolean; hideHint?: boolean }) {
   if (pin.target && pin.progress) {
     return (
       <PinBar
@@ -23,7 +23,7 @@ export function PinHeader({ pin, hint, readOnly }: { pin: PinMode; hint: string;
       />
     );
   }
-  return readOnly ? null : <p className="mb-3.5 rounded-lg border border-line bg-white px-3.5 py-2.5 text-[13px] text-ink-soft">{hint}</p>;
+  return readOnly || hideHint ? null : <p className="mb-3.5 rounded-lg border border-line bg-white px-3.5 py-2.5 text-[13px] text-ink-soft">{hint}</p>;
 }
 
 export interface PinSectionProps {

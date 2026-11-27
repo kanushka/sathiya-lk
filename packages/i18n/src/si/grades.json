@@ -103,7 +103,8 @@
     "minutes": "සතියකට මිනිත්තු",
     "minutesFor": "{{name}} සඳහා සතියකට මිනිත්තු",
     "perDay": "දිනකට මිනිත්තු",
-    "perDayFor": "{{name}} සඳහා දිනකට මිනිත්තු"
+    "perDayFor": "{{name}} සඳහා දිනකට මිනිත්තු",
+    "periodsShort": "කාල"
   },
   "staffing": {
     "title": "ගුරු සේවා නියුක්තිය",
@@ -118,5 +119,10 @@
     "specialists": "විශේෂඥ විෂයන්",
     "specialistsPlaceholder": "+ විෂයක්",
     "removeSpecialist": "විශේෂඥ විෂයන්වලින් {{name}} ඉවත් කරන්න"
+  },
+  "phone": {
+    "classesAndStaffing": "පන්ති සහ ගුරු මණ්ඩලය",
+    "ct": "පන්ති භාර {{name}}",
+    "more": "මෙම ශ්‍රේණිය සඳහා තවත් ක්‍රියා"
   }
 }

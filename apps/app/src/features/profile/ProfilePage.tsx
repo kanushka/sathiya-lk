@@ -90,7 +90,7 @@ export function ProfilePage() {
 
   return (
     <div>
-      <PageHeader title={t('page.title')} subtitle={t('page.subtitle')} />
+      <PageHeader title={t('page.title')} subtitle={t('page.subtitle')} phoneActions={null} />
       <NameChangeStatus change={school.nameChange} />
       <form
         className="flex flex-wrap gap-6 rounded-[14px] border border-line-soft bg-white p-6"

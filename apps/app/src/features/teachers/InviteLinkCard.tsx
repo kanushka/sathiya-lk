@@ -3,6 +3,7 @@
 import { useEffect, useId, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { isSchoolPendingError, PendingNote, useSchoolPending } from '../../app/PendingReview';
+import { ActionMenu } from '../../ui/ActionMenu';
 import { Badge } from '../../ui/Badge';
 import { Button } from '../../ui/Button';
 import { CopyLink } from '../../ui/CopyLink';
@@ -10,13 +11,15 @@ import { FormError } from '../../ui/FormError';
 import { Icon } from '../../ui/Icon';
 import { Modal } from '../../ui/Modal';
 import * as api from './api';
+import { CopyRow } from './CopyRow';
 import { schoolJoinUrl } from './links';
 import { useJoinLink } from './useJoinLink';
 
 type Action = 'create' | 'off';
 
-export function InviteLinkCard({ schoolId }: { schoolId: string }) {
+export function InviteLinkCard({ schoolId, compact = false }: { schoolId: string; compact?: boolean }) {
   const { t } = useTranslation('teachers');
+
   const headingId = useId();
   const lockedId = useId();
   const pending = useSchoolPending();
@@ -45,6 +48,77 @@ export function InviteLinkCard({ schoolId }: { schoolId: string }) {
     } finally {
       setBusy(null);
     }
+  }
+
+  const confirmOff = confirming && (
+    <Modal
+      open
+      width={460}
+      title={t('inviteLink.confirmOffTitle')}
+      onClose={() => setConfirming(false)}
+      busy={busy !== null}
+      footer={
+        <>
+          <Button onClick={() => setConfirming(false)} disabled={busy !== null}>
+            {t('inviteLink.cancel')}
+          </Button>
+          <Button variant="dangerSolid" loading={busy === 'off'} onClick={() => void run('off')}>
+            {t('inviteLink.confirmOff')}
+          </Button>
+        </>
+      }
+    >
+      <p className="m-0 text-sm text-ink-soft">{t('inviteLink.confirmOffBody')}</p>
+      {failed && <FormError className="mt-3">{failed}</FormError>}
+    </Modal>
+  );
+
+  if (compact && !pending && !link.loading) {
+    const url = token ? schoolJoinUrl(window.location.origin, schoolId, token) : null;
+    const errors = (
+      <>
+        {link.error && <FormError className="mt-1">{t('inviteLink.loadFailed')}</FormError>}
+        {failed && !confirming && <FormError className="mt-1">{failed}</FormError>}
+        {confirmOff}
+      </>
+    );
+    if (url) {
+      return (
+        <CopyRow
+          title={t('inviteLink.title')}
+          url={url}
+          shown={url.replace(/^https?:\/\/[^/]+/, '…')}
+          copyLabel={t('inviteLink.copy')}
+          trailing={
+            <ActionMenu
+              variant="ghost"
+              label={t('phone.inviteMore')}
+              items={[{ key: 'off', label: t('inviteLink.off'), icon: 'linkOff', tone: 'danger', onSelect: () => setConfirming(true) }]}
+            />
+          }
+        >
+          {errors}
+        </CopyRow>
+      );
+    }
+    return (
+      <section aria-labelledby={headingId} className="mb-5 rounded-[14px] border border-line bg-white py-2.5 pl-4 pr-2">
+        <div className="flex items-center gap-2">
+          <div className="min-w-0 flex-1">
+            <h2 id={headingId} className="m-0 text-[15px] font-semibold text-ink">
+              {t('inviteLink.title')}
+            </h2>
+            {!link.error && <span className="block text-[13px] text-ink-muted">{t('phone.inviteOff')}</span>}
+          </div>
+          {!link.error && (
+            <Button size="lg" variant="primary" loading={busy === 'create'} onClick={() => void run('create')}>
+              {t('inviteLink.create')}
+            </Button>
+          )}
+        </div>
+        {errors}
+      </section>
+    );
   }
 
   return (
@@ -92,28 +166,7 @@ export function InviteLinkCard({ schoolId }: { schoolId: string }) {
         </>
       )}
       {failed && !confirming && <FormError className="mt-2">{failed}</FormError>}
-      {confirming && (
-        <Modal
-          open
-          width={460}
-          title={t('inviteLink.confirmOffTitle')}
-          onClose={() => setConfirming(false)}
-          busy={busy !== null}
-          footer={
-            <>
-              <Button onClick={() => setConfirming(false)} disabled={busy !== null}>
-                {t('inviteLink.cancel')}
-              </Button>
-              <Button variant="dangerSolid" loading={busy === 'off'} onClick={() => void run('off')}>
-                {t('inviteLink.confirmOff')}
-              </Button>
-            </>
-          }
-        >
-          <p className="m-0 text-sm text-ink-soft">{t('inviteLink.confirmOffBody')}</p>
-          {failed && <FormError className="mt-3">{failed}</FormError>}
-        </Modal>
-      )}
+      {confirmOff}
     </section>
   );
 }

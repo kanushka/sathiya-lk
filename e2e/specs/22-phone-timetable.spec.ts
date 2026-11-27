@@ -20,6 +20,7 @@ const dayHeader = (page: Page, d: string) => page.getByRole('group', { name: /gr
 test('admin edits a class timetable on a phone', async ({ page }) => {
   await loginAdmin(page, ADMIN.email, ADMIN.password);
   await page.goto(`/s/${SID}/admin/timetable/class/c-12a`);
+  await page.getByRole('radio', { name: 'Week' }).tap();
   const grid = page.getByRole('group', { name: /grid/i });
   await expect(grid).toBeVisible();
   expect(await page.evaluate(() => document.documentElement.scrollWidth)).toBeLessThanOrEqual(W);
@@ -80,6 +81,7 @@ test('Sinhala day names fit their columns on a phone', async ({ page }) => {
   await page.getByRole('button', { name: 'Open menu' }).tap();
   await page.getByRole('button', { name: /^Language/ }).tap();
   await page.getByRole('button', { name: /මෙනුව වසන්න/ }).tap();
+  await page.getByRole('radio', { name: 'සතිය' }).tap();
   for (const d of ['සඳු', 'අඟ', 'බදා']) {
     const header = page.getByText(d, { exact: true });
     await expect(header).toBeVisible();

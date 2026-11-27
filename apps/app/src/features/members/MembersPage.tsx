@@ -15,10 +15,13 @@ import { Badge } from '../../ui/Badge';
 import { Button } from '../../ui/Button';
 import { CopyLink } from '../../ui/CopyLink';
 import { EmptyState } from '../../ui/EmptyState';
+import { ListInitials, ListRow, ListSection } from '../../ui/GroupedList';
 import { IconButton } from '../../ui/IconButton';
 import { PageHeader } from '../../ui/PageHeader';
+import { PHONE_QUERY, useMediaQuery } from '../../ui/PhoneNotice';
 import { Table, TBody, Td, Th, THead, Tr } from '../../ui/Table';
 import { useToast } from '../../ui/Toast';
+import { CopyRow, withoutHost } from '../teachers/CopyRow';
 import { useAdminBase } from '../timetable/paths';
 import * as api from './api';
 import { InviteModal } from './InviteModal';
@@ -29,6 +32,7 @@ export function MembersPage() {
   const { lang } = useLang();
   const { school, teachers } = useSchool();
   const readOnly = useReadOnly();
+  const isPhone = useMediaQuery(PHONE_QUERY);
   const pending = useSchoolPending();
   const { user, signOut } = useAuth();
   const toast = useToast();
@@ -71,12 +75,55 @@ export function MembersPage() {
 
   const adminLink = `${window.location.origin}/login`;
   const base = useAdminBase();
+  const nameOf = (m: Member, teacher: (typeof rows)[number]['teacher']) =>
+    m.name ?? (teacher ? teacherDisplayName(teacher, lang) : (m.email ?? t('list.unknown')));
+
+  const inviteButton = (
+    <Button variant="primary" disabled={pending} aria-describedby={pending ? 'invite-locked' : undefined} onClick={() => setInviting(true)}>
+      {t('page.invite')}
+    </Button>
+  );
+
+  const phoneRow = ({ m, teacher }: (typeof rows)[number]) => {
+    const name = nameOf(m, teacher);
+    const email = m.email ?? teacher?.email;
+    return (
+      <ListRow
+        key={m.uid}
+        lead={<ListInitials name={name} />}
+        title={name}
+        detail={
+          teacher ? (
+            <>
+              <span className="font-mono text-xs">{teacher.staffId}</span>
+              {email && ` · ${email}`}
+            </>
+          ) : (
+            email
+          )
+        }
+        action={
+          !readOnly && m.role === 'admin' && adminCount > 1
+            ? {
+                label: t('phone.remove'),
+                ariaLabel: t('phone.removeFor', { name }),
+                tone: 'danger',
+                onClick: () => setRemoving({ uid: m.uid, name, teacher: !!m.teacherId }),
+              }
+            : undefined
+        }
+      />
+    );
+  };
+  const admins = rows.filter((r) => r.m.role === 'admin');
+  const teacherRows = rows.filter((r) => r.m.role !== 'admin');
 
   return (
     <div>
       <PageHeader
         title={t('page.title')}
         subtitle={t('page.subtitle')}
+        phoneActions={readOnly ? null : inviteButton}
         actions={
           !readOnly && (
             <div className="flex flex-col items-end gap-1.5">
@@ -94,8 +141,23 @@ export function MembersPage() {
         }
       />
 
+      {isPhone && !readOnly && pending && <PendingNote id="invite-locked" />}
+
       {rows.length === 0 ? (
         <EmptyState icon="members" title={t('list.empty')} />
+      ) : isPhone ? (
+        <>
+          {admins.length > 0 && (
+            <ListSection title={t('phone.admins')} count={admins.length} tone="brand">
+              {admins.map(phoneRow)}
+            </ListSection>
+          )}
+          {teacherRows.length > 0 && (
+            <ListSection title={t('phone.teachers')} count={teacherRows.length}>
+              {teacherRows.map(phoneRow)}
+            </ListSection>
+          )}
+        </>
       ) : (
         <Table>
           <THead>
@@ -109,7 +171,7 @@ export function MembersPage() {
           </THead>
           <TBody>
             {rows.map(({ m, teacher }) => {
-              const name = m.name ?? (teacher ? teacherDisplayName(teacher, lang) : (m.email ?? t('list.unknown')));
+              const name = nameOf(m, teacher);
               return (
                 <Tr key={m.uid}>
                   <Td>{name}</Td>
@@ -136,8 +198,8 @@ export function MembersPage() {
         </Table>
       )}
 
-      <section className="mt-6 rounded-[14px] border border-line-soft bg-white p-5">
-        <h2 className="m-0 mb-3 text-[17px] font-bold">{t('invites.title')}</h2>
+      <section className={isPhone ? 'mb-5 rounded-[14px] border border-line bg-white px-4 py-3.5' : 'mt-6 rounded-[14px] border border-line-soft bg-white p-5'}>
+        <h2 className={isPhone ? 'm-0 mb-1 text-[15px] font-semibold' : 'm-0 mb-3 text-[17px] font-bold'}>{t('invites.title')}</h2>
         {invites.data.length === 0 ? (
           <p className="m-0 text-sm text-ink-muted">{t('invites.none')}</p>
         ) : (
@@ -167,6 +229,9 @@ export function MembersPage() {
         )}
       </section>
 
+      {isPhone ? (
+        <CopyRow title={t('page.adminLink')} url={adminLink} shown={withoutHost(adminLink)} copyLabel={t('page.copyAdmin')} />
+      ) : (
       <section className="mt-6 rounded-[14px] border border-line-soft bg-white p-5">
         <h2 className="m-0 text-[17px] font-bold">{t('page.linkTitle')}</h2>
         <p className="mb-0 mt-1 text-sm text-ink-soft">{t('page.linkBody')}</p>
@@ -180,6 +245,7 @@ export function MembersPage() {
           </Link>
         </p>
       </section>
+      )}
 
       {removing && (
         <RemoveAdminModal

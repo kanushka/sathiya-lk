@@ -94,11 +94,7 @@ export function ReliefPage() {
     pickDate(d.toISOString().slice(0, 10));
   };
 
-  const header = (
-    <PageHeader
-      title={t('title')}
-      subtitle={isToday ? `${t('today')} · ${formatDate(date, lang)}` : `${formatDate(date, lang)} · ${t('viewOnly')}`}
-      actions={
+  const dateNav = (
         <div className="flex items-center gap-1.5">
           <IconButton icon="chevronLeft" variant="secondary" label={t('prevDay')} onClick={() => shift(-1)} />
           <input
@@ -111,7 +107,13 @@ export function ReliefPage() {
           />
           <IconButton icon="chevronRight" variant="secondary" label={t('nextDay')} disabled={isToday} onClick={() => shift(1)} />
         </div>
-      }
+  );
+  const header = (
+    <PageHeader
+      title={t('title')}
+      subtitle={isToday ? `${t('today')} · ${formatDate(date, lang)}` : `${formatDate(date, lang)} · ${t('viewOnly')}`}
+      actions={dateNav}
+      phoneActions={dateNav}
     />
   );
 

@@ -318,5 +318,19 @@
     "confirmTitle": "Delete this entry?",
     "confirmBody": "{{slot}} · {{classes}} · {{subjects}} will be removed from the timetable. This can't be undone."
   },
-  "autoFill": "Auto-fill"
+  "autoFill": "Auto-fill",
+  "phone": {
+    "view": "Timetable view",
+    "day": "Day",
+    "week": "Week",
+    "dayLabel": "Day",
+    "dayCount": "{{done}}/{{total}}",
+    "dayStat": "{{day}}, {{done}} of {{total}}",
+    "dayList": "{{day}} periods",
+    "addLesson": "+ Add lesson",
+    "more": "More timetable actions",
+    "fill": "Fill with class teacher",
+    "ct": "CT",
+    "placed": "{{placed}} / {{total}} placed"
+  }
 }

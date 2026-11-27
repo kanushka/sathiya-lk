@@ -54,6 +54,16 @@
       "short": "Enter a short name",
       "nameTaken": "{{name}} already exists",
       "shortTaken": "Another subject already uses this short name"
-    }
+    },
+    "titleEdit": "Edit subject",
+    "saveEdit": "Save",
+    "savedEdit": "Subject saved",
+    "saveEditFailed": "Could not save the subject. Try again."
+  },
+  "phone": {
+    "unused": "Not used yet",
+    "used": "In the timetable",
+    "editFor": "Edit {{name}}",
+    "deleteFor": "Delete {{name}}"
   }
 }

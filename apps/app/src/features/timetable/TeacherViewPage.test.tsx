@@ -6,7 +6,8 @@ import { C, ctx, entries, entry, S, T } from '@sathiya/core/fixtures';
 import { cleanup, fireEvent, screen, waitFor, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { Route, Routes } from 'react-router-dom';
-import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import { installMatchMedia } from '../../test/matchMedia';
 import { renderWithSchool } from '../../test/renderWithSchool';
 import { sortedTeachers, TeacherIndexRedirect, TeacherViewPage } from './TeacherViewPage';
 import { TimetableApiContext, type TimetableApi } from './useTimetable';
@@ -430,5 +431,26 @@ describe('teacher view while the school is pending review', () => {
     expect(autoFill).toBeDisabled();
     expect(autoFill).toHaveAccessibleDescription('Available after Sathiya approves your school.');
     expect(screen.getByText('Available after Sathiya approves your school.')).not.toHaveClass('sr-only');
+  });
+});
+
+describe('TeacherViewPage on a phone', () => {
+  let restore: () => void = () => undefined;
+  beforeEach(() => {
+    restore = installMatchMedia(390);
+    localStorage.clear();
+  });
+  afterEach(() => restore());
+
+  it('opens on the Day view with load per day and Print under ⋯', async () => {
+    setup(T.rizan);
+    expect(screen.getByRole('radio', { name: 'Day' })).toHaveAttribute('aria-checked', 'true');
+    expect(screen.getByRole('radio', { name: /^Monday, \d+ of 7$/ })).toBeInTheDocument();
+    expect(screen.queryByRole('group', { name: 'Timetable grid' })).not.toBeInTheDocument();
+    await userEvent.click(screen.getByRole('button', { name: 'More timetable actions' }));
+    expect(screen.getAllByRole('menuitem').map((m) => m.textContent)).toEqual(['Print']);
+    await userEvent.keyboard('{Escape}');
+    await userEvent.click(screen.getByRole('radio', { name: 'Week' }));
+    expect(screen.getByRole('group', { name: 'Timetable grid' })).toBeInTheDocument();
   });
 });
