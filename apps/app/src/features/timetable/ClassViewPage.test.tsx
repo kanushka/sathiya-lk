@@ -6,8 +6,9 @@ import { C, ctx, entries6B, entry, G, S, T } from '@sathiya/core/fixtures';
 import { cleanup, fireEvent, screen, waitFor, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { Route, Routes } from 'react-router-dom';
-import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { ApiError } from '../../lib/callable';
+import { installMatchMedia } from '../../test/matchMedia';
 import { renderWithSchool } from '../../test/renderWithSchool';
 import { ClassIndexRedirect, ClassViewPage } from './ClassViewPage';
 import { TimetableApiContext, type TimetableApi } from './useTimetable';
@@ -610,5 +611,66 @@ describe('class view while the school is pending review', () => {
     expect(autoFill).toBeDisabled();
     expect(autoFill).toHaveAccessibleDescription('Available after Sathiya approves your school.');
     expect(screen.getByText('Available after Sathiya approves your school.')).not.toHaveClass('sr-only');
+  });
+});
+
+describe('ClassViewPage on a phone', () => {
+  let restore: () => void = () => undefined;
+  beforeEach(() => {
+    restore = installMatchMedia(390);
+    localStorage.clear();
+  });
+  afterEach(() => restore());
+
+  it('opens on the Day view with a row per period and day buttons', async () => {
+    setup(C.c6b);
+    expect(screen.getByRole('radio', { name: 'Day' })).toHaveAttribute('aria-checked', 'true');
+    await userEvent.click(screen.getByRole('radio', { name: /^Monday, \d+ of 8$/ }));
+    expect(screen.getByRole('list', { name: 'Monday periods' })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: /^Monday, period 1, .*: Maths/ })).toHaveTextContent('Mrs. N. Perera');
+    expect(screen.getByText(/^\d+ \/ \d+ placed$/, { selector: 'b' })).toBeInTheDocument();
+  });
+
+  it('+ Add lesson opens the same assign picker', async () => {
+    setup(C.c6b);
+    await userEvent.click(screen.getByRole('radio', { name: /^Monday/ }));
+    const empty = screen.queryAllByRole('button', { name: /^Monday, period \d+, .*Add lesson$/ });
+    if (empty.length === 0) await userEvent.click(screen.getByRole('radio', { name: /^Friday/ }));
+    await userEvent.click(screen.getAllByRole('button', { name: /, period \d+, .*Add lesson$/ })[0]!);
+    expect(screen.getByRole('dialog', { name: 'Choose a subject' })).toBeInTheDocument();
+  });
+
+  it('Week shows the swipeable grid', async () => {
+    setup(C.c6b);
+    expect(screen.queryByRole('group', { name: 'Timetable grid' })).not.toBeInTheDocument();
+    await userEvent.click(screen.getByRole('radio', { name: 'Week' }));
+    expect(screen.getByRole('group', { name: 'Timetable grid' })).toBeInTheDocument();
+    expect(screen.queryByRole('list', { name: /periods$/ })).not.toBeInTheDocument();
+  });
+
+  it('puts Fill with class teacher and Print under ⋯ and keeps Auto-fill visible', async () => {
+    setup(C.c6b);
+    expect(screen.getByRole('link', { name: 'Auto-fill' })).toBeVisible();
+    expect(screen.queryByRole('button', { name: 'Print' })).not.toBeInTheDocument();
+    await userEvent.click(screen.getByRole('button', { name: 'More timetable actions' }));
+    expect(screen.getAllByRole('menuitem').map((m) => m.textContent)).toContain('Print');
+  });
+
+  it('shows the long hint on the first visit only', () => {
+    setup(C.c6b);
+    expect(screen.getByText(/to add a lesson/)).toBeInTheDocument();
+    cleanup();
+    setup(C.c6b);
+    expect(screen.queryByText(/to add a lesson/)).not.toBeInTheDocument();
+  });
+
+  it('folds the subject list into a summary row', async () => {
+    setup(C.c6b);
+    const summary = screen.getByText('6B subjects').closest('summary')!;
+    expect(summary).toHaveTextContent(/\d+ \/ \d+ placed/);
+    expect(summary.closest('details')).not.toHaveAttribute('open');
+    await userEvent.click(summary);
+    expect(summary.closest('details')).toHaveAttribute('open');
+    expect(screen.getAllByRole('button', { name: /^Pin / }).length).toBeGreaterThan(0);
   });
 });

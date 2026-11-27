@@ -33,7 +33,6 @@ import { useSchool, useYear } from '../../app/SchoolProvider';
 import { useReadOnly } from '../../ui/AdminLayout';
 import { ActionMenu, type ActionMenuItem } from '../../ui/ActionMenu';
 import { Button } from '../../ui/Button';
-import { cx } from '../../ui/cx';
 import { EmptyState } from '../../ui/EmptyState';
 import { LinkButton } from '../../ui/LinkButton';
 import { Icon } from '../../ui/Icon';
@@ -336,7 +335,8 @@ function ClassView({ cls, classes }: { cls: SchoolClass; classes: SchoolClass[] 
         </>
       ) : null}
 
-      <div className={cx('flex flex-wrap items-start gap-5', isPhone && mode === 'day' && 'hidden')}>
+      {!(isPhone && mode === 'day') && (
+      <div className="flex flex-wrap items-start gap-5">
         <PinSection pin={pin} teacher={pin.names?.teacher ?? ''} className="flex-[999_1_620px]">
           <TimetableGrid
             rows={rows}
@@ -365,6 +365,7 @@ function ClassView({ cls, classes }: { cls: SchoolClass; classes: SchoolClass[] 
         </div>
         )}
       </div>
+      )}
 
       {isPhone && (
         <details className="group mt-4 rounded-[14px] border border-line bg-white">

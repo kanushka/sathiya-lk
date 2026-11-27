@@ -4,9 +4,10 @@ import { teacherLoad, usageCount } from '@sathiya/core';
 import { T, ctx, entries, entry, mahasen } from '@sathiya/core/fixtures';
 import { act, cleanup, fireEvent, screen, waitFor, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
-import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { ApiError, call } from '../../lib/callable';
 import { pickOption } from '../../test/pickOption';
+import { installMatchMedia } from '../../test/matchMedia';
 import { renderWithSchool } from '../../test/renderWithSchool';
 import * as api from './api';
 import { TeachersPage } from './TeachersPage';
@@ -739,5 +740,72 @@ describe('teachers page while the school is pending review', () => {
     render();
     await user.click(screen.getAllByRole('button', { name: 'Personal link' })[0]!);
     expect(await screen.findByText('Available after Sathiya approves your school.')).toBeInTheDocument();
+  });
+});
+
+describe('teachers page on a phone', () => {
+  let restore: () => void = () => undefined;
+  beforeEach(() => {
+    restore = installMatchMedia(390);
+  });
+  afterEach(() => restore());
+
+  const linkedCtx = { ...ctx, teachers: ctx.teachers.map((x) => (x.id === T.perera ? { ...x, uid: 'u-perera' } : x)) };
+
+  it('groups teachers into join requests, not linked and linked, with no table', () => {
+    data.requests = [{ uid: 'u-k', email: 'kumari@siripura.lk', name: 'D. Kumari', staffId: 'SCC007', teacherId: T.kumari, createdAt: 1, status: 'pending' }];
+    renderWithSchool(<TeachersPage />, { ctx: linkedCtx, entries });
+    expect(screen.queryByRole('table')).not.toBeInTheDocument();
+    const headings = screen.getAllByRole('heading', { level: 2 }).map((h) => h.textContent);
+    expect(headings.slice(0, 3)).toEqual(['Join requests1', `Not linked${linkedCtx.teachers.length - 1}`, 'Linked1']);
+    const requests = screen.getByRole('region', { name: /Join requests/ });
+    expect(within(requests).getByText('kumari@siripura.lk')).toBeInTheDocument();
+    expect(within(requests).getByText('Name on their account (not checked): D. Kumari')).toBeInTheDocument();
+    expect(within(requests).getAllByRole('button').map((b) => b.textContent)).toEqual(['Approve', 'Reject']);
+    const linked = screen.getByRole('region', { name: /^Linked/ });
+    expect(within(linked).getByText('Mrs. N. Perera')).toBeInTheDocument();
+    expect(within(linked).queryByRole('button', { name: /^Make a personal link/ })).not.toBeInTheDocument();
+  });
+
+  it('puts Add teacher on the title row and Import under the ⋯ menu', async () => {
+    const user = userEvent.setup();
+    render();
+    const header = screen.getByTestId('page-header');
+    expect(within(header).getAllByRole('button').map((b) => b.textContent)).toEqual(['+ Add teacher']);
+    await user.click(screen.getByRole('button', { name: 'More teacher actions' }));
+    await user.click(screen.getByRole('menuitem', { name: 'Import' }));
+    expect(screen.getByRole('dialog')).toBeInTheDocument();
+  });
+
+  it('Link on a row makes a personal link', async () => {
+    const user = userEvent.setup();
+    vi.mocked(api.createTeacherLink).mockResolvedValue({ token: 'tok', expiresAt: Date.now() + 1000 });
+    render();
+    await user.click(screen.getByRole('button', { name: 'Make a personal link for Mrs. N. Perera' }));
+    expect(api.createTeacherLink).toHaveBeenCalledWith(ctx.school.id, T.perera);
+  });
+
+  it('tapping a row opens the edit dialog, where Delete now lives', async () => {
+    const user = userEvent.setup();
+    render();
+    expect(screen.queryByRole('button', { name: 'Delete' })).not.toBeInTheDocument();
+    await user.click(screen.getByRole('button', { name: 'Edit Mrs. N. Perera' }));
+    const dialog = screen.getByRole('dialog');
+    expect(within(dialog).getByLabelText('Name in English')).toHaveValue('N. Perera');
+    await user.click(within(dialog).getByRole('button', { name: 'More actions for this teacher' }));
+    await user.click(screen.getByRole('menuitem', { name: 'Delete teacher' }));
+    expect(screen.getByRole('dialog', { name: /Delete/ })).toBeInTheDocument();
+  });
+
+  it('shows the invite link as one row with Copy and Turn off link under ⋯', async () => {
+    const user = userEvent.setup();
+    data.joinLink = { token: 'join-tok' };
+    render();
+    const row = screen.getByRole('region', { name: 'Invite link' });
+    expect(within(row).getByText(/…\/join\/.*join-tok/)).toBeInTheDocument();
+    expect(within(row).getByRole('button', { name: 'Copy invite link' })).toBeInTheDocument();
+    await user.click(within(row).getByRole('button', { name: 'Invite link actions' }));
+    await user.click(screen.getByRole('menuitem', { name: 'Turn off link' }));
+    expect(screen.getByRole('dialog', { name: 'Turn off the invite link?' })).toBeInTheDocument();
   });
 });
