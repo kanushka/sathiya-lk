@@ -108,7 +108,7 @@
   "instructions": [
     "How to fill this template",
     "1. Subjects sheet: common subjects you don't have yet are already listed. Delete the rows you don't teach and add your own below. Leave Short name blank to get a suggested one.",
-    "2. Teachers sheet: one teacher per row, name without the title. A teacher with no subjects or grades is added but not timetabled.",
+    "2. Teachers sheet: one teacher per row, name without the title. A primary teacher with no grades gets grades 1-5. Any other teacher with no subjects or grades is added but not timetabled.",
     "Names: every subject and teacher needs a name in English or Sinhala. Fill both if you can. When one is empty, the app shows the other.",
     "See the Example sheet for two filled-in teachers. It is not imported.",
     "3. Staff ID: leave blank to number teachers automatically.",
@@ -133,7 +133,7 @@
     "grades": "Grades the teacher can teach, e.g. 6-9, 11. Only grades in this school. Blank for a primary teacher means 1-5.",
     "maxPerDay": "Optional. 1 to 10. Blank means 7.",
     "minPerWeek": "Optional. 0 up to 5 times Max periods/day.",
-    "isPrimary": "Yes or No. Blank means No. A primary teacher teaches every subject of their class, so Subjects can stay blank. A teacher with no subjects or grades is added but not timetabled."
+    "isPrimary": "Yes or No. Blank means No. A primary teacher teaches every subject of their class, so Subjects can stay blank. Blank Grades for a primary teacher means 1-5."
   },
   "templateExampleNames": {
     "one": "K. Perera",
