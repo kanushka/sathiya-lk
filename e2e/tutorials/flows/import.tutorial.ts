@@ -31,8 +31,8 @@ test('bulk import', async ({ page, lang, tutorial }) => {
   await tut.still('template');
 
   await tut.say({
-    en: 'Fill in one row per teacher: title, name, subjects, grades and daily limit. Staff IDs can be left empty; Sathiya adds them.',
-    si: 'එක් ගුරුවරයෙකුට එක් පේළියක් පුරවන්න: ගෞරව නාමය, නම, විෂයයන්, ශ්‍රේණි සහ දෛනික සීමාව. සේවක අංක හිස්ව තැබිය හැක; සතිය ඒවා එක් කරයි.',
+    en: 'Fill in one row per teacher: title, name, subjects, grades and daily limit. Staff IDs can be left empty. Sathiya adds them.',
+    si: 'එක් ගුරුවරයෙකුට එක් පේළියක් පුරවන්න: ගෞරව නාමය, නම, විෂයයන්, ශ්‍රේණි සහ දෛනික සීමාව. සේවක අංක හිස්ව තැබිය හැක. සතිය ඒවා එක් කරයි.',
   });
   await tut.say({ en: 'Then click "Choose file" and pick the filled file.', si: 'ඉන්පසු "ගොනුව තෝරන්න" ක්ලික් කර පුරවා ඇති ගොනුව තෝරන්න.' }, 1800);
   await dialog.getByText(t('chooseFile'), { exact: true }).hover();

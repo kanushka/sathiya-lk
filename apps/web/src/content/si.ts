@@ -245,6 +245,10 @@ export const si: Content = {
     videoSoon: 'මෙම මාර්ගෝපදේශයේ වීඩියෝව ළඟදීම. පහත පියවර අනුගමනය කරන්න.',
     steps: 'පියවරෙන් පියවර',
     minutes: 'මිනිත්තු {n} ක් පමණ',
+    listMinutes: 'මිනි. {n}',
+    hasVideo: 'වීඩියෝව',
+    next: 'ඊළඟට',
+    enlarge: 'සම්පූර්ණ ප්‍රමාණයේ පින්තූරය විවෘත කරන්න: {title}',
   },
   legal: {
     version: 'අනුවාදය',

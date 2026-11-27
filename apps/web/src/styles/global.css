@@ -1241,6 +1241,10 @@ h3 {
 }
 
 /* Guides */
+.guide-back {
+  margin-bottom: 20px !important;
+}
+
 .guide-summary {
   font-size: 19px !important;
 }
@@ -1280,10 +1284,22 @@ h3 {
   font-size: 19px;
 }
 
+.guide-still {
+  display: block;
+  cursor: zoom-in;
+}
+
+.guide-still:focus-visible {
+  outline: 3px solid var(--teal);
+  outline-offset: 3px;
+  border-radius: 10px;
+}
+
 .guide-steps img {
   display: block;
-  width: 100%;
+  max-width: 100%;
   height: auto;
+  margin-inline: auto;
   margin-top: 12px;
   border: 1px solid var(--line);
   border-radius: 10px;
@@ -1296,11 +1312,35 @@ h3 {
 .guide-list {
   padding: 0;
   list-style: none;
+  counter-reset: guide;
 }
 
 .guide-list li {
-  padding: 18px 0;
+  position: relative;
+  padding: 18px 0 18px 52px;
   border-bottom: 1px solid var(--line);
+  counter-increment: guide;
+}
+
+.guide-list li::before {
+  content: counter(guide);
+  position: absolute;
+  left: 0;
+  top: 18px;
+  display: grid;
+  place-items: center;
+  width: 34px;
+  height: 34px;
+  border-radius: 50%;
+  background: var(--teal);
+  color: #fff;
+  font-weight: 700;
+}
+
+.guide-list .guide-meta {
+  margin-top: 4px;
+  font-size: 14px;
+  color: var(--muted);
 }
 
 .guide-list a {
@@ -1310,6 +1350,30 @@ h3 {
 
 .guide-list p {
   margin: 6px 0 0;
+}
+
+.guide-next a {
+  display: block;
+  padding: 18px 20px;
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  background: #fff;
+  text-decoration: none;
+}
+
+.guide-next a:hover {
+  border-color: var(--teal);
+}
+
+.guide-next span {
+  display: block;
+  font-size: 14px;
+  color: var(--ink-2);
+}
+
+.guide-next strong {
+  font-size: 19px;
+  color: var(--teal);
 }
 
 /* Consent */

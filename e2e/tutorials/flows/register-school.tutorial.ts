@@ -35,7 +35,9 @@ test('register a school', async ({ page, lang, tutorial }) => {
   await expect(page).toHaveURL(/\/login$/);
 
   await page.waitForTimeout(700);
-  await tut.still('signin');
+  const form = (await page.locator('form').first().boundingBox())!;
+  const vp = page.viewportSize()!;
+  await tut.still('signin', { x: Math.max(form.x - 48, 0), y: 0, width: Math.min(form.width + 96, vp.width), height: Math.min(form.y + form.height + 32, vp.height) });
   const google = page.getByRole('button', { name: tut.t('auth', 'signIn.google') });
   await google.evaluate((el) => el.scrollIntoView({ block: 'center' }));
   await signInWithGoogle(tut, google, d.email, d.name, async () => {
@@ -56,6 +58,7 @@ test('register a school', async ({ page, lang, tutorial }) => {
     si: 'ඔබේ පාසලේ සංගණන අංකය ඇතුළත් කරන්න. අධ්‍යාපන අමාත්‍යාංශ ලිපිවල එය පාසල් කාර්යාලයේ ඇත.',
   }, 2400);
   await tut.type(page.getByLabel(t('census.label')), d.census);
+  await tut.still('find-school');
   await tut.click(page.getByRole('button', { name: t('census.find') }), 1200);
 
   await expect(page.getByRole('heading', { name: t('confirm.title') })).toBeVisible();
