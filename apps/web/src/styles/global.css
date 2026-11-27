@@ -1289,6 +1289,10 @@ h3 {
   border-radius: 10px;
 }
 
+.guide-steps.portrait img {
+  max-width: 320px;
+}
+
 .guide-list {
   padding: 0;
   list-style: none;

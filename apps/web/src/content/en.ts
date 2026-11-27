@@ -52,6 +52,34 @@ export const en = {
       title: 'How to build the timetable by class · Sathiya (සතිය)',
       description: 'Place lessons class by class in Sathiya (සතිය), with teacher clashes prevented.',
     },
+    'guide/profile': {
+      title: 'How to change your school profile, logo and colours · Sathiya (සතිය)',
+      description: 'Update school details, upload a logo and pick colours in Sathiya (සතිය).',
+    },
+    'guide/members': {
+      title: 'How to invite another admin · Sathiya (සතිය)',
+      description: 'Invite a deputy principal or timetable teacher as an admin in Sathiya (සතිය).',
+    },
+    'guide/import': {
+      title: 'How to import teachers from Excel · Sathiya (සතිය)',
+      description: 'Add all your teachers and subjects at once from an Excel template in Sathiya (සතිය).',
+    },
+    'guide/timetable-teacher': {
+      title: 'How to use the timetable by teacher · Sathiya (සතිය)',
+      description: 'See each teacher\'s week and daily load, and give them lessons in Sathiya (සතිය).',
+    },
+    'guide/autofill': {
+      title: 'How to auto-fill the whole timetable · Sathiya (සතිය)',
+      description: 'Let Sathiya (සතිය) place every lesson for every class in seconds, without clashes.',
+    },
+    'guide/publish-print': {
+      title: 'How to publish and print the timetable · Sathiya (සතිය)',
+      description: 'Publish the timetable to teachers and print class and teacher sheets in Sathiya (සතිය).',
+    },
+    'guide/teacher-phone': {
+      title: 'For teachers: your timetable on your phone · Sathiya (සතිය)',
+      description: 'Join your school once and see your day and week on your phone with Sathiya (සතිය).',
+    },
     '404': {
       title: 'Page not found · Sathiya (සතිය)',
       description: `This page does not exist on ${SITE_HOST}.`,

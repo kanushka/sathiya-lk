@@ -27,6 +27,7 @@ export class Tutorial {
   private readonly cuts: Array<{ from: number; to: number }> = [];
   private caption: { [Symbol.asyncDispose](): Promise<void> } | null = null;
   private t0 = 0;
+  private size = { width: 1920, height: 1080 };
   private n = 0;
 
   constructor(
@@ -67,8 +68,11 @@ export class Tutorial {
 
   async start(): Promise<void> {
     this.t0 = Date.now();
+    const vp = this.page.viewportSize() ?? { width: 1280, height: 720 };
+    const scale = (vp.width > vp.height ? 1920 : 1080) / vp.width;
+    this.size = { width: Math.round(vp.width * scale / 2) * 2, height: Math.round(vp.height * scale / 2) * 2 };
     await this.page.screencast.start({
-      size: { width: 1920, height: 1080 },
+      size: this.size,
       quality: 92,
       onFrame: ({ data }) => {
         const file = `frames/${String(this.n++).padStart(6, '0')}.jpg`;
@@ -99,10 +103,10 @@ export class Tutorial {
         <div style="position:absolute;inset:0;background-image:linear-gradient(rgba(251,250,247,.14) 2px,transparent 2px),linear-gradient(90deg,rgba(251,250,247,.14) 2px,transparent 2px);background-size:80px 60px"></div>
         ${cells.map(([x, y, c, o]) => `<div style="position:absolute;left:${x * 80 + 2}px;top:${y * 60 + 2}px;width:78px;height:58px;background:${c};opacity:${o}"></div>`).join('')}
         <div style="position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:16px;text-align:center;padding:60px">
-          <div style="display:flex;align-items:center;gap:14px;background:${TEAL};padding:10px 22px;border-radius:14px">${MARK}<span style="font-size:26px;font-weight:700">Sathiya <span style="font-weight:600;opacity:.85">· සතිය</span></span></div>
+          <div style="display:flex;align-items:center;gap:14px;background:${TEAL};padding:10px 22px;border-radius:14px">${MARK}<span style="font-size:26px;font-weight:700;white-space:nowrap">Sathiya <span style="font-weight:600;opacity:.85">· සතිය</span></span></div>
           <div style="background:${TEAL};padding:14px 30px;border-radius:16px;max-width:1040px">
-            <div style="font-size:46px;font-weight:700;line-height:1.3">${esc(title[this.lang])}</div>
-            <div style="font-size:24px;opacity:.92;line-height:1.5;margin-top:10px">${esc(sub[this.lang])}</div>
+            <div style="font-size:clamp(28px,4.2vw,46px);font-weight:700;line-height:1.3">${esc(title[this.lang])}</div>
+            <div style="font-size:clamp(17px,2.4vw,24px);opacity:.92;line-height:1.5;margin-top:10px">${esc(sub[this.lang])}</div>
           </div>
         </div>
       </div>`,
@@ -117,7 +121,7 @@ export class Tutorial {
     this.captions.push({ text: s, from: this.now() });
     this.caption = await this.page.screencast.showOverlay(
       `<div style="position:fixed;left:0;right:0;bottom:28px;display:flex;justify-content:center;pointer-events:none">
-        <div style="max-width:1080px;background:${TEAL};color:${CREAM};font-family:${FONT};font-size:23px;line-height:1.55;padding:12px 26px;border-radius:12px;border-left:6px solid ${SAFFRON};box-shadow:0 6px 24px rgba(9,78,77,.35)">${esc(s)}</div>
+        <div style="max-width:min(1080px,calc(100vw - 24px));background:${TEAL};color:${CREAM};font-family:${FONT};font-size:clamp(16px,2.2vw,23px);line-height:1.55;padding:12px 26px;border-radius:12px;border-left:6px solid ${SAFFRON};box-shadow:0 6px 24px rgba(9,78,77,.35)">${esc(s)}</div>
       </div>`,
     );
     await this.page.waitForTimeout(ms ?? Math.min(5500, 1600 + s.length * 45));
@@ -168,7 +172,7 @@ export class Tutorial {
     await this.page.screencast.stop();
     writeFileSync(
       `${this.dir}meta.json`,
-      JSON.stringify({ flow: this.flow, lang: this.lang, end: this.now(), frames: this.frames, captions: this.captions, stills: this.stills, cuts: this.cuts }, null, 1),
+      JSON.stringify({ flow: this.flow, lang: this.lang, end: this.now(), size: this.size, frames: this.frames, captions: this.captions, stills: this.stills, cuts: this.cuts }, null, 1),
     );
   }
 }
