@@ -82,10 +82,10 @@ export function TermsPage({ versions: injectedVersions, config: injectedConfig, 
     <div>
       <div className="mb-5 flex items-start justify-between gap-4">
         <div>
-          <h1 className="mb-1 text-[26px] font-bold">{t('terms.title')}</h1>
+          <h1 className="mb-1 text-[22px] font-bold md:text-[26px]">{t('terms.title')}</h1>
           <p className="text-sm text-ink-muted">{t('terms.intro')}</p>
         </div>
-        <Button variant="primary" onClick={openModal}>
+        <Button variant="primary" className="shrink-0 whitespace-nowrap" onClick={openModal}>
           {t('terms.new')}
         </Button>
       </div>

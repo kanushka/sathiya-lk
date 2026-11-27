@@ -30,9 +30,9 @@ export interface SchoolDetailProps {
 
 function Row({ label, children }: { label: string; children: ReactNode }) {
   return (
-    <div className="flex gap-4 border-b border-line-soft py-3 text-sm">
-      <dt className="w-56 shrink-0 text-ink-muted">{label}</dt>
-      <dd className="m-0">{children}</dd>
+    <div className="flex flex-col gap-0.5 border-b border-line-soft py-2.5 text-sm last:border-b-0 sm:flex-row sm:gap-4 sm:py-3 sm:last:border-b">
+      <dt className="shrink-0 text-xs text-ink-muted sm:w-56 sm:text-sm">{label}</dt>
+      <dd className="m-0 min-w-0 break-words">{children}</dd>
     </div>
   );
 }
@@ -69,12 +69,12 @@ export function SchoolDetail({
 
   return (
     <div className="max-w-3xl">
-      <Link to="/super" className="mb-3 inline-block text-sm font-semibold text-teal underline-offset-2 hover:underline">
+      <Link to="/super" className="mb-1 inline-flex min-h-11 items-center text-sm font-semibold text-teal underline-offset-2 hover:underline md:mb-3 md:min-h-0">
         {t('detail.back')}
       </Link>
       <div className="mb-5 flex flex-wrap items-center justify-between gap-3">
-        <h1 className="m-0 text-[26px] font-bold">{pickName(school, lang)}</h1>
-        <div className="flex gap-2">
+        <h1 className="m-0 text-[22px] font-bold md:text-[26px]">{pickName(school, lang)}</h1>
+        <div className="flex flex-wrap gap-2">
           <Link
             to={`/super/schools/${school.id}/admin`}
             className="inline-flex h-8 items-center rounded-lg border border-line-strong bg-white px-3 text-[13px] font-semibold hover:bg-surface"
@@ -87,7 +87,7 @@ export function SchoolDetail({
       </div>
       {(reviewing || school.review?.decidedAt) && <ReviewSection school={school} schools={schools} members={members} review={review} />}
       {school.nameChange && <NameChangeSection school={school} change={school.nameChange} decide={decideName} />}
-      <dl className="m-0 rounded-[14px] border border-line bg-white px-5">
+      <dl className="m-0 rounded-[14px] border border-line bg-white px-4 sm:px-5">
         <Row label={t('detail.name')}>{pickName(school, 'en')}</Row>
         <Row label={t('detail.nameSi')}>{school.nameSi || t('usage.noData')}</Row>
         <Row label={t('detail.city')}>{school.city || t('usage.noData')}</Row>

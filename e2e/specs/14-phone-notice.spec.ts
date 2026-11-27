@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
 // Copyright (C) 2026 Kanushka Gayan
 import { expect, test } from '@playwright/test';
-import { ADMIN, SUPER } from '../../scripts/seed';
+import { ADMIN, SID, SUPER } from '../../scripts/seed';
 import { loginAdmin, shot } from '../helpers';
 
 test.use({ viewport: { width: 375, height: 812 }, isMobile: true, hasTouch: true });
@@ -29,7 +29,16 @@ test('admin on a phone gets the phone shell, no notice', async ({ page }) => {
   await expect(page.getByRole('navigation', { name: 'Menu' })).toBeVisible();
 });
 
-test('super admin on a phone still sees the notice', async ({ page }) => {
+test('super admin on a phone gets the super shell, no notice', async ({ page }) => {
   await loginAdmin(page, SUPER.email, SUPER.password, /\/super$/);
+  await expect(page.getByRole('button', { name: 'Open menu' })).toBeVisible();
+  await expect(page.getByRole('dialog', { name: notice })).toHaveCount(0);
+  await expect(page.getByText('Admin screens work best on a laptop, desktop or tablet.')).toHaveCount(0);
+  await expect(page.getByRole('navigation', { name: 'Super admin menu' })).toBeHidden();
+});
+
+test('super admin still sees the notice in the read-only school view', async ({ page }) => {
+  await loginAdmin(page, SUPER.email, SUPER.password, /\/super$/);
+  await page.goto(`/super/schools/${SID}/admin`);
   await expect(page.getByRole('dialog', { name: notice })).toBeVisible();
 });

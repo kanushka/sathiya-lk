@@ -164,7 +164,6 @@ export function buildRoutes(featureRoutes: RouteObject[]): RouteObject[] {
     {
       element: (
         <RequireRole role="super">
-          <PhoneNotice />
           <Outlet />
         </RequireRole>
       ),

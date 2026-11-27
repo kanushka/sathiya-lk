@@ -47,7 +47,7 @@ export function ReportsPage({
 
   return (
     <div>
-      <h1 className="mb-1 text-[26px] font-bold">{t('reports.title')}</h1>
+      <h1 className="mb-1 text-[22px] font-bold md:text-[26px]">{t('reports.title')}</h1>
       <p className="mb-5 text-sm text-ink-muted">{t('reports.intro')}</p>
       {state.loading ? (
         <LoadingState />

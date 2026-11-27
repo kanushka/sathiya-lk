@@ -56,9 +56,9 @@ function AnnouncementForm({ initial, writer }: { initial: PlatformConfig['announ
 
   return (
     <div className="max-w-[720px]">
-      <h1 className="mb-1 text-[26px] font-bold">{t('announcements.title')}</h1>
+      <h1 className="mb-1 text-[22px] font-bold md:text-[26px]">{t('announcements.title')}</h1>
       <p className="mb-5 text-sm text-ink-muted">{t('announcements.intro')}</p>
-      <div className="flex flex-col gap-4 rounded-[14px] border border-line bg-white p-5">
+      <div className="flex flex-col gap-4 rounded-[14px] border border-line bg-white p-4 md:p-5">
         <Field label={t('announcements.textEn')} error={error ? t('announcements.textEnRequired') : undefined}>
           <textarea rows={3} className={textareaClass} value={textEn} onChange={(e) => setTextEn(e.target.value)} />
         </Field>
@@ -77,7 +77,7 @@ function AnnouncementForm({ initial, writer }: { initial: PlatformConfig['announ
           </div>
         </div>
         <div>
-          <Button variant="primary" loading={busy} loadingLabel={t('busy.saving', { ns: 'common' })} onClick={() => void save()}>
+          <Button variant="primary" className="w-full md:w-auto" loading={busy} loadingLabel={t('busy.saving', { ns: 'common' })} onClick={() => void save()}>
             {t('buttons.save', { ns: 'common' })}
           </Button>
         </div>

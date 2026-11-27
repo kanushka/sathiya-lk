@@ -70,6 +70,8 @@ function renderAt(path: string) {
   );
 }
 
+const SUPER_SCHOOL = '/super/schools/s1/admin/teachers';
+
 const dialog = () => screen.queryByRole('dialog', { name: 'Best on a bigger screen' });
 const banner = () => screen.queryByText('Admin screens work best on a laptop, desktop or tablet.');
 
@@ -91,32 +93,32 @@ describe('PhoneNotice', () => {
     expect(banner()).toBeNull();
   });
 
-  it('shows a modal on /super at 375px', () => {
-    renderAt('/super');
+  it('shows a modal on the read-only school view at 375px', () => {
+    renderAt(SUPER_SCHOOL);
     expect(dialog()).toBeInTheDocument();
     expect(screen.getByRole('button', { name: 'Continue anyway' })).toBeInTheDocument();
   });
 
-  it.each(['/super', '/super/schools/s1/admin/teachers'])('shows on %s at 375px', (path) => {
+  it.each([SUPER_SCHOOL, '/super/schools/s1/admin'])('shows on %s at 375px', (path) => {
     renderAt(path);
     expect(dialog()).toBeInTheDocument();
   });
 
   it.each([768, 1024, 1440])('is hidden at %ipx', (w) => {
     width = w;
-    renderAt('/super');
+    renderAt(SUPER_SCHOOL);
     expect(dialog()).toBeNull();
     expect(banner()).toBeNull();
   });
 
-  it.each(['/s/s1/me', '/login', '/register', '/auth/action', '/s/s1/admin/print/class/c1'])('is hidden on %s', (path) => {
+  it.each(['/super', '/s/s1/me', '/login', '/register', '/auth/action', '/s/s1/admin/print/class/c1'])('is hidden on %s', (path) => {
     renderAt(path);
     expect(dialog()).toBeNull();
     expect(banner()).toBeNull();
   });
 
   it('remembers dismissal and shows a banner instead', async () => {
-    renderAt('/super');
+    renderAt(SUPER_SCHOOL);
     await userEvent.click(screen.getByRole('button', { name: 'Continue anyway' }));
     expect(dialog()).toBeNull();
     expect(banner()).toBeInTheDocument();
@@ -125,13 +127,13 @@ describe('PhoneNotice', () => {
 
   it('shows only the banner once dismissed', () => {
     localStorage.setItem(PHONE_NOTICE_KEY, '1');
-    renderAt('/super');
+    renderAt(SUPER_SCHOOL);
     expect(dialog()).toBeNull();
     expect(banner()).toBeInTheDocument();
   });
 
   it('closes on Escape', async () => {
-    renderAt('/super');
+    renderAt(SUPER_SCHOOL);
     await userEvent.keyboard('{Escape}');
     expect(dialog()).toBeNull();
     expect(localStorage.getItem(PHONE_NOTICE_KEY)).toBe('1');
@@ -139,7 +141,7 @@ describe('PhoneNotice', () => {
 
   it('reacts to resizes', () => {
     width = 1280;
-    renderAt('/super');
+    renderAt(SUPER_SCHOOL);
     expect(dialog()).toBeNull();
     resize(375);
     expect(dialog()).toBeInTheDocument();
@@ -154,7 +156,7 @@ describe('PhoneNotice', () => {
     const set = vi.spyOn(localStorage, 'setItem').mockImplementation(() => {
       throw new Error('blocked');
     });
-    renderAt('/super');
+    renderAt(SUPER_SCHOOL);
     await userEvent.click(screen.getByRole('button', { name: 'Continue anyway' }));
     expect(banner()).toBeInTheDocument();
     get.mockRestore();

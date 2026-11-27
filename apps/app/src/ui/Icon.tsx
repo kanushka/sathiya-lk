@@ -152,6 +152,11 @@ const shapes = {
   check: <path d="M5 12.5l4.5 4.5L19 7.5" />,
   minus: <path d="M5 12h14" />,
   logout: <path d="M15 4h3a2 2 0 0 1 2 2v12a2 2 0 0 1-2 2h-3M10 17l-5-5 5-5M5 12h11" />,
+  school: <path d="M3 21h18M5 21V9l7-5 7 5v12M10 21v-5h4v5" />,
+  flag: <path d="M5 21V4M5 4h12l-2.5 4L17 12H5" />,
+  chart: <path d="M3 20h18M6 20v-8M11 20V5M16 20v-11" />,
+  document: <path d="M7 3h7l5 5v13H7zM14 3v5h5M10 13h6M10 17h6" />,
+  megaphone: <path d="M4 10v4h3l7 4V6l-7 4zM17.5 9a4 4 0 0 1 0 6" />,
   eye: (
     <>
       <path d="M2 12s3.6-7 10-7 10 7 10 7-3.6 7-10 7S2 12 2 12z" />

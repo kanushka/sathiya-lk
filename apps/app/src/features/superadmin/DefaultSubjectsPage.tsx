@@ -87,10 +87,10 @@ export function DefaultSubjectsPage({ doc: injected, writer = firestorePlatformW
     <div>
       <div className="mb-5 flex items-start justify-between gap-4">
         <div>
-          <h1 className="mb-1 text-[26px] font-bold">{t('subjects.title')}</h1>
+          <h1 className="mb-1 text-[22px] font-bold md:text-[26px]">{t('subjects.title')}</h1>
           <p className="text-sm text-ink-muted">{t('subjects.intro')}</p>
         </div>
-        <Button variant="primary" disabled={!ready} onClick={() => open(null)}>
+        <Button variant="primary" className="shrink-0 whitespace-nowrap" disabled={!ready} onClick={() => open(null)}>
           {t('subjects.add')}
         </Button>
       </div>
