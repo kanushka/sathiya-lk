@@ -5,7 +5,7 @@ import { en, type Content } from '../content/en';
 import { si } from '../content/si';
 
 export type Lang = 'en' | 'si';
-export type Page = 'index' | 'terms' | 'privacy' | 'contact' | '404';
+export type Page = 'index' | 'terms' | 'privacy' | 'contact' | 'guide' | 'guide/register-school' | 'guide/subjects' | 'guide/grades' | 'guide/templates' | 'guide/teachers' | 'guide/timetable-class' | '404';
 
 import { APP_URL } from '../site';
 
