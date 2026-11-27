@@ -11,7 +11,10 @@ import { Button } from '../../ui/Button';
 import { EmptyState } from '../../ui/EmptyState';
 import { Field, inputClass, textareaClass } from '../../ui/Field';
 import { LoadingState } from '../../ui/LoadingState';
+import { ListRow, ListSection, ListTile } from '../../ui/GroupedList';
 import { Modal } from '../../ui/Modal';
+import { PageHeader } from '../../ui/PageHeader';
+import { PHONE_QUERY, useMediaQuery } from '../../ui/PhoneNotice';
 import { Table, TBody, Td, Th, THead, Tr } from '../../ui/Table';
 import { useToast } from '../../ui/Toast';
 import { errorMessage } from './errors';
@@ -43,6 +46,7 @@ export function TermsPage({ versions: injectedVersions, config: injectedConfig, 
   const [privacyMd, setPrivacyMd] = useState('');
   const [errors, setErrors] = useState<Errors>({});
   const [busy, setBusy] = useState(false);
+  const isPhone = useMediaQuery(PHONE_QUERY);
 
   function openModal() {
     setVersion('');
@@ -80,15 +84,27 @@ export function TermsPage({ versions: injectedVersions, config: injectedConfig, 
 
   return (
     <div>
+      {isPhone ? (
+        <PageHeader
+          title={t('terms.title')}
+          subtitle={t('terms.intro')}
+          phoneActions={
+            <Button variant="primary" className="whitespace-nowrap" onClick={openModal}>
+              {t('terms.new')}
+            </Button>
+          }
+        />
+      ) : (
       <div className="mb-5 flex items-start justify-between gap-4">
         <div>
-          <h1 className="mb-1 text-[26px] font-bold">{t('terms.title')}</h1>
+          <h1 className="mb-1 text-[22px] font-bold md:text-[26px]">{t('terms.title')}</h1>
           <p className="text-sm text-ink-muted">{t('terms.intro')}</p>
         </div>
-        <Button variant="primary" onClick={openModal}>
+        <Button variant="primary" className="shrink-0 whitespace-nowrap" onClick={openModal}>
           {t('terms.new')}
         </Button>
       </div>
+      )}
       {config.error && <p className="mb-3 text-sm text-ink-muted">{t('terms.configError')}</p>}
       {versionsState.loading ? (
         <LoadingState />
@@ -96,6 +112,18 @@ export function TermsPage({ versions: injectedVersions, config: injectedConfig, 
         <EmptyState icon="search" title={t('terms.loadError')} />
       ) : versions.length === 0 ? (
         <EmptyState icon="search" title={t('terms.empty')} />
+      ) : isPhone ? (
+        <ListSection title={t('terms.phone.versions')} count={versions.length}>
+          {versions.map((v) => (
+            <ListRow
+              key={v.version}
+              lead={<ListTile label={`v${v.version}`} />}
+              title={t('terms.phone.version', { version: v.version })}
+              detail={t('terms.phone.published', { date: formatDate(v.publishedAt, lang) })}
+              meta={v.version === current ? <Badge tone="success">{t('terms.current')}</Badge> : undefined}
+            />
+          ))}
+        </ListSection>
       ) : (
         <Table className="md:min-w-[520px]">
           <THead>

@@ -7,8 +7,11 @@ import { useDoc, type DocState } from '../../lib/firestore';
 import { Button } from '../../ui/Button';
 import { EmptyState } from '../../ui/EmptyState';
 import { Field, inputClass } from '../../ui/Field';
+import { ListRow, ListSection, ListTile } from '../../ui/GroupedList';
 import { LoadingState } from '../../ui/LoadingState';
 import { Modal } from '../../ui/Modal';
+import { PageHeader } from '../../ui/PageHeader';
+import { PHONE_QUERY, useMediaQuery } from '../../ui/PhoneNotice';
 import { Table, TBody, Td, Th, THead, Tr } from '../../ui/Table';
 import { useToast } from '../../ui/Toast';
 import { errorMessage } from './errors';
@@ -42,6 +45,7 @@ export function DefaultSubjectsPage({ doc: injected, writer = firestorePlatformW
   const [errors, setErrors] = useState<Errors>({});
   const [deleting, setDeleting] = useState<number | null>(null);
   const [busy, setBusy] = useState(false);
+  const isPhone = useMediaQuery(PHONE_QUERY);
 
   const ready = !state.loading && !state.error;
 
@@ -85,21 +89,46 @@ export function DefaultSubjectsPage({ doc: injected, writer = firestorePlatformW
 
   return (
     <div>
+      {isPhone ? (
+        <PageHeader
+          title={t('subjects.title')}
+          subtitle={t('subjects.intro')}
+          phoneActions={
+            <Button variant="primary" className="whitespace-nowrap" disabled={!ready} onClick={() => open(null)}>
+              {t('subjects.add')}
+            </Button>
+          }
+        />
+      ) : (
       <div className="mb-5 flex items-start justify-between gap-4">
         <div>
-          <h1 className="mb-1 text-[26px] font-bold">{t('subjects.title')}</h1>
+          <h1 className="mb-1 text-[22px] font-bold md:text-[26px]">{t('subjects.title')}</h1>
           <p className="text-sm text-ink-muted">{t('subjects.intro')}</p>
         </div>
-        <Button variant="primary" disabled={!ready} onClick={() => open(null)}>
+        <Button variant="primary" className="shrink-0 whitespace-nowrap" disabled={!ready} onClick={() => open(null)}>
           {t('subjects.add')}
         </Button>
       </div>
+      )}
       {state.loading ? (
         <LoadingState />
       ) : state.error ? (
         <EmptyState icon="search" title={t('subjects.loadError')} />
       ) : list.length === 0 ? (
         <EmptyState icon="search" title={t('subjects.empty')} body={t('subjects.emptyBody')} />
+      ) : isPhone ? (
+        <ListSection title={t('subjects.phone.section')} count={list.length}>
+          {list.map((s, i) => (
+            <ListRow
+              key={`${s.short}-${i}`}
+              lead={<ListTile label={s.short} color={s.color} />}
+              title={s.nameEn}
+              detail={s.nameSi || undefined}
+              openLabel={t('subjects.edit', { name: s.nameEn })}
+              onOpen={() => open(i)}
+            />
+          ))}
+        </ListSection>
       ) : (
         <Table className="md:min-w-[640px]">
           <THead>
@@ -149,6 +178,20 @@ export function DefaultSubjectsPage({ doc: injected, writer = firestorePlatformW
         busy={busy}
         footer={
           <>
+            {isPhone && editing?.index != null && (
+              <Button
+                variant="danger"
+                className="mr-auto"
+                aria-label={t('subjects.delete', { name: list[editing.index]?.nameEn ?? '' })}
+                disabled={busy}
+                onClick={() => {
+                  setDeleting(editing.index);
+                  setEditing(null);
+                }}
+              >
+                {t('buttons.delete', { ns: 'common' })}
+              </Button>
+            )}
             <Button onClick={() => setEditing(null)} disabled={busy}>{t('buttons.cancel', { ns: 'common' })}</Button>
             <Button variant="primary" loading={busy} loadingLabel={t('busy.saving', { ns: 'common' })} onClick={() => void saveEdit()}>
               {t('buttons.save', { ns: 'common' })}

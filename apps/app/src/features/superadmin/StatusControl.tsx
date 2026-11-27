@@ -18,7 +18,7 @@ export function StatusPill({ status }: { status: School['status'] }) {
   );
 }
 
-export function StatusButton({ school, setStatus }: { school: School; setStatus: SetStatusFn }) {
+export function useStatusToggle(school: School, setStatus: SetStatusFn) {
   const { t } = useTranslation('superadmin');
   const { lang } = useLang();
   const toast = useToast();
@@ -26,7 +26,7 @@ export function StatusButton({ school, setStatus }: { school: School; setStatus:
   const [busy, setBusy] = useState(false);
   const name = pickName(school, lang);
   const disabling = school.status === 'active';
-  if (school.status === 'pending' || school.status === 'rejected') return null;
+  const visible = school.status !== 'pending' && school.status !== 'rejected';
 
   async function apply() {
     setBusy(true);
@@ -42,34 +42,52 @@ export function StatusButton({ school, setStatus }: { school: School; setStatus:
     }
   }
 
+  const modal = (
+    <Modal
+      open={confirming}
+      title={t('confirmDisable.title', { name })}
+      width={460}
+      onClose={() => setConfirming(false)}
+      busy={busy}
+      footer={
+        <>
+          <Button onClick={() => setConfirming(false)} disabled={busy}>{t('buttons.cancel', { ns: 'common' })}</Button>
+          <Button variant="dangerSolid" loading={busy} onClick={() => void apply()}>
+            {t('confirmDisable.confirm')}
+          </Button>
+        </>
+      }
+    >
+      <p className="text-sm text-ink-soft">{t('confirmDisable.body')}</p>
+    </Modal>
+  );
+
+  return {
+    visible,
+    disabling,
+    busy,
+    confirming,
+    label: t(disabling ? 'schools.disable' : 'schools.enable'),
+    start: () => (disabling ? setConfirming(true) : void apply()),
+    modal,
+  };
+}
+
+export function StatusButton({ school, setStatus }: { school: School; setStatus: SetStatusFn }) {
+  const toggle = useStatusToggle(school, setStatus);
+  if (!toggle.visible) return null;
   return (
     <>
       <Button
         size="sm"
-        variant={disabling ? 'danger' : 'secondary'}
-        loading={busy && !confirming}
-        disabled={busy && confirming}
-        onClick={() => (disabling ? setConfirming(true) : void apply())}
+        variant={toggle.disabling ? 'danger' : 'secondary'}
+        loading={toggle.busy && !toggle.confirming}
+        disabled={toggle.busy && toggle.confirming}
+        onClick={toggle.start}
       >
-        {t(disabling ? 'schools.disable' : 'schools.enable')}
+        {toggle.label}
       </Button>
-      <Modal
-        open={confirming}
-        title={t('confirmDisable.title', { name })}
-        width={460}
-        onClose={() => setConfirming(false)}
-        busy={busy}
-        footer={
-          <>
-            <Button onClick={() => setConfirming(false)} disabled={busy}>{t('buttons.cancel', { ns: 'common' })}</Button>
-            <Button variant="dangerSolid" loading={busy} onClick={() => void apply()}>
-              {t('confirmDisable.confirm')}
-            </Button>
-          </>
-        }
-      >
-        <p className="text-sm text-ink-soft">{t('confirmDisable.body')}</p>
-      </Modal>
+      {toggle.modal}
     </>
   );
 }

@@ -5,7 +5,9 @@ import { useTranslation } from 'react-i18next';
 import { useLang } from '../../app/LangProvider';
 import { useCollection, type CollectionState } from '../../lib/firestore';
 import { EmptyState } from '../../ui/EmptyState';
+import { ListInitials, ListRow, ListSection } from '../../ui/GroupedList';
 import { LoadingState } from '../../ui/LoadingState';
+import { PHONE_QUERY, useMediaQuery } from '../../ui/PhoneNotice';
 import { Table, TBody, Td, Th, THead, Tr } from '../../ui/Table';
 import { formatActivity } from './format';
 import { useUsageCounts } from './source';
@@ -18,6 +20,7 @@ export function UsagePage({ schools: injected }: { schools?: CollectionState<Sch
   const schools = [...state.data].sort((a, b) => pickName(a, 'en').localeCompare(pickName(b, 'en')));
   const counts = useUsageCounts(state.data);
   const dash = t('usage.noData');
+  const isPhone = useMediaQuery(PHONE_QUERY);
 
   const rows = schools.map((s) => counts[s.id]);
   const anyError = rows.some((c) => c?.status === 'error');
@@ -35,12 +38,56 @@ export function UsagePage({ schools: injected }: { schools?: CollectionState<Sch
 
   return (
     <div>
-      <h1 className="mb-1 text-[26px] font-bold">{t('usage.title')}</h1>
+      <h1 className="mb-1 text-[22px] font-bold md:text-[26px]">{t('usage.title')}</h1>
       <p className="mb-5 text-sm text-ink-muted">{t('usage.intro')}</p>
       {state.loading ? (
         <LoadingState />
       ) : state.error ? (
         <EmptyState icon="search" title={t('schools.loadError')} />
+      ) : isPhone ? (
+        <>
+          <dl className="mb-4 grid grid-cols-2 gap-2" aria-label={t('usage.totals')}>
+            {(
+              [
+                ['nav.schools', schools.length],
+                ['usage.columns.teachers', total((c) => c.teachers)],
+                ['usage.columns.classes', total((c) => c.classes)],
+                ['usage.columns.entries', total((c) => c.entries)],
+              ] as const
+            ).map(([key, value]) => (
+              <div key={key} className="rounded-[14px] border border-line-soft bg-white px-3.5 py-3">
+                <dt className="text-xs text-ink-soft">{t(key)}</dt>
+                <dd className="m-0 mt-0.5 text-[22px] font-extrabold">{value}</dd>
+              </div>
+            ))}
+          </dl>
+          <ListSection title={t('nav.schools')} count={schools.length}>
+            {schools.map((s) => {
+              const c = counts[s.id];
+              const ready = c?.status === 'ready' ? c.counts : undefined;
+              const fallback = !c || c.status === 'loading' ? t('usage.loading') : t('usage.countError');
+              const name = pickName(s, lang);
+              const detail = ready
+                ? [
+                    t('schools.phone.teachers', { count: ready.teachers }),
+                    t('schools.phone.classes', { count: ready.classes }),
+                    ready.entries === null ? undefined : t('usage.phone.entries', { count: ready.entries }),
+                  ]
+                    .filter(Boolean)
+                    .join(' · ')
+                : fallback;
+              return (
+                <ListRow
+                  key={s.id}
+                  lead={<ListInitials name={name} />}
+                  title={name}
+                  detail={<span className="whitespace-normal">{detail}</span>}
+                  meta={ready ? formatActivity(ready.lastActivity, lang, t('usage.never'), dash) : undefined}
+                />
+              );
+            })}
+          </ListSection>
+        </>
       ) : (
         <Table className="md:min-w-[720px]">
           <THead>

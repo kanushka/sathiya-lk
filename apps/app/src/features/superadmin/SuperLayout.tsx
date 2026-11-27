@@ -10,22 +10,10 @@ import { homePath, readLastSchool } from '../../app/schoolHome';
 import type { CollectionState } from '../../lib/firestore';
 import { cx } from '../../ui/cx';
 import { BrandMark } from '../auth/AuthChrome';
+import { superNav } from './nav';
 import { useOpenReports } from './reports';
+import { SuperPhoneBar } from './SuperPhoneBar';
 
-interface NavItem {
-  to: string;
-  labelKey: string;
-  end?: boolean;
-}
-
-export const superNav: NavItem[] = [
-  { to: '/super', labelKey: 'nav.schools', end: true },
-  { to: '/super/reports', labelKey: 'nav.reports' },
-  { to: '/super/usage', labelKey: 'nav.usage' },
-  { to: '/super/subjects', labelKey: 'nav.subjects' },
-  { to: '/super/terms', labelKey: 'nav.terms' },
-  { to: '/super/announcements', labelKey: 'nav.announcements' },
-];
 
 const linkClass = ({ isActive }: { isActive: boolean }) =>
   cx(
@@ -42,9 +30,18 @@ export function SuperLayout({ children, openReports }: { children: ReactNode; op
   const openCount = reports.loading || reports.error ? 0 : reports.data.filter((r) => r.status === 'open').length;
   const schoolHome = homePath(claims, readLastSchool());
   const isMember = schoolHome.startsWith('/s/');
+  const langLabel = t(`common:languages.${target}`);
   return (
-    <div className="flex min-h-screen bg-canvas font-sans text-ink">
-      <aside className="w-[230px] shrink-0 bg-navy px-3.5 py-5">
+    <div className="flex min-h-screen flex-col bg-canvas font-sans text-ink md:flex-row">
+      <SuperPhoneBar
+        openCount={openCount}
+        schoolHome={isMember ? schoolHome : undefined}
+        language={
+          langCtl ? { label: langLabel, ariaLabel: `${t('shell:sidebar.language')}: ${langLabel}`, onToggle: () => langCtl.setLang(target) } : undefined
+        }
+        onSignOut={() => void signOut()}
+      />
+      <aside className="hidden w-[230px] shrink-0 bg-navy px-3.5 py-5 md:block">
         <div className="flex items-center gap-2.5 px-2 pb-[18px]">
           <BrandMark size={28} />
           <div>
@@ -89,7 +86,7 @@ export function SuperLayout({ children, openReports }: { children: ReactNode; op
           </button>
         </div>
       </aside>
-      <main className="min-w-0 flex-1 px-9 py-7">{children}</main>
+      <main className="min-w-0 flex-1 px-4 py-4 md:px-9 md:py-7">{children}</main>
     </div>
   );
 }

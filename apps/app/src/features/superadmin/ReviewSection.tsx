@@ -3,13 +3,15 @@
 import { pickName, type Member, type School } from '@sathiya/core';
 import { useEffect, useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import { useLang } from '../../app/LangProvider';
 import type { CollectionState } from '../../lib/firestore';
 import { Badge } from '../../ui/Badge';
 import { Button } from '../../ui/Button';
 import { Field, textareaClass } from '../../ui/Field';
+import { ListInitials, ListRow, ListSection } from '../../ui/GroupedList';
 import { Modal } from '../../ui/Modal';
+import { PHONE_QUERY, useMediaQuery } from '../../ui/PhoneNotice';
 import { useToast } from '../../ui/Toast';
 import { errorMessage } from './errors';
 import { formatDate } from './format';
@@ -19,6 +21,35 @@ import { StatusPill } from './StatusControl';
 export function MoeBadge({ matched }: { matched: boolean }) {
   const { t } = useTranslation('superadmin');
   return <Badge tone={matched ? 'success' : 'warning'}>{t(matched ? 'review.moeMatched' : 'review.moeMissing')}</Badge>;
+}
+
+function DuplicatePhoneList({ title, schools }: { title: string; schools: School[] }) {
+  const { t } = useTranslation('superadmin');
+  const { lang } = useLang();
+  const navigate = useNavigate();
+  if (schools.length === 0)
+    return (
+      <ListSection title={title} count={0} bare className="mb-3">
+        <p className="m-0 text-sm text-ink-muted">{t('review.none')}</p>
+      </ListSection>
+    );
+  return (
+    <ListSection title={title} count={schools.length} className="mb-3">
+      {schools.map((s) => {
+        const name = pickName(s, lang);
+        return (
+          <ListRow
+            key={s.id}
+            lead={<ListInitials name={name} />}
+            title={name}
+            detail={[s.censusNo && t('schools.censusShort', { no: s.censusNo }), s.city, s.district].filter(Boolean).join(' · ')}
+            meta={<StatusPill status={s.status} />}
+            onOpen={() => navigate(`/super/schools/${s.id}`)}
+          />
+        );
+      })}
+    </ListSection>
+  );
 }
 
 function DuplicateList({ title, schools }: { title: string; schools: School[] }) {
@@ -119,6 +150,7 @@ export function ReviewSection({ school, schools, members, review }: ReviewSectio
   const toast = useToast();
   const [approving, setApproving] = useState(false);
   const [rejecting, setRejecting] = useState(false);
+  const isPhone = useMediaQuery(PHONE_QUERY);
   const [done, setDone] = useState(false);
   useEffect(() => setDone(false), [school.status]);
   const name = pickName(school, lang);
@@ -153,8 +185,20 @@ export function ReviewSection({ school, schools, members, review }: ReviewSectio
     }
   }
 
+  const rejectButton = (
+    <Button key="reject" variant="danger" disabled={approving || done} onClick={() => setRejecting(true)}>
+      {t('review.reject')}
+    </Button>
+  );
+  const approveButton = (
+    <Button key="approve" variant="primary" loading={approving} disabled={done} onClick={() => void approve()}>
+      {t('review.approve')}
+    </Button>
+  );
+  const actions = isPhone ? [approveButton, rejectButton] : [rejectButton, approveButton];
+
   return (
-    <section aria-labelledby="review-title" className="mb-5 rounded-[14px] border border-line bg-white px-5 py-5 sm:px-7">
+    <section aria-labelledby="review-title" className="mb-5 rounded-[14px] border border-line bg-white px-4 py-4 sm:px-7 sm:py-5">
       <div className="flex flex-wrap items-start justify-between gap-4">
         <div className="flex flex-wrap items-center gap-2.5">
           <h2 id="review-title" className="m-0 text-xl font-bold">
@@ -163,14 +207,7 @@ export function ReviewSection({ school, schools, members, review }: ReviewSectio
           <StatusPill status={school.status} />
         </div>
         {pending ? (
-          <div className="flex flex-wrap gap-2.5">
-            <Button variant="danger" disabled={approving || done} onClick={() => setRejecting(true)}>
-              {t('review.reject')}
-            </Button>
-            <Button variant="primary" loading={approving} disabled={done} onClick={() => void approve()}>
-              {t('review.approve')}
-            </Button>
-          </div>
+          !isPhone && <div className="flex flex-wrap gap-2.5">{actions}</div>
         ) : (
           decidedAt && (
             <p className="m-0 text-[13px] text-ink-soft">
@@ -212,6 +249,7 @@ export function ReviewSection({ school, schools, members, review }: ReviewSectio
               </dd>
             </div>
           </dl>
+          {pending && isPhone && <div className="mt-4 grid grid-cols-2 gap-2 [&>button]:h-11 [&>button]:px-2">{actions}</div>}
 
           <section aria-labelledby="dups-title" className="mt-5 rounded-xl border border-line p-4">
             <h3 id="dups-title" className="m-0 text-[15px] font-bold">
@@ -221,10 +259,17 @@ export function ReviewSection({ school, schools, members, review }: ReviewSectio
             {schools.loading ? (
               <p className="m-0 text-sm text-ink-muted">…</p>
             ) : (
+              isPhone ? (
+                <>
+                  <DuplicatePhoneList title={t('review.similar')} schools={dups.similar} />
+                  <DuplicatePhoneList title={t('review.sameArea', { district: school.district })} schools={dups.sameArea} />
+                </>
+              ) : (
               <div className="flex flex-wrap gap-x-8 gap-y-4">
                 <DuplicateList title={t('review.similar')} schools={dups.similar} />
                 <DuplicateList title={t('review.sameArea', { district: school.district })} schools={dups.sameArea} />
               </div>
+              )
             )}
             <p className="mb-0 mt-3 text-xs text-ink-muted">{t('review.moeNote')}</p>
           </section>

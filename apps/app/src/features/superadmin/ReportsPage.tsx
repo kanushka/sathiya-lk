@@ -6,10 +6,13 @@ import { useTranslation } from 'react-i18next';
 import { Link } from 'react-router-dom';
 import { useLang } from '../../app/LangProvider';
 import { useCollection, type CollectionState } from '../../lib/firestore';
-import { Button } from '../../ui/Button';
+import { Button, buttonClass } from '../../ui/Button';
+import { cx } from '../../ui/cx';
 import { EmptyState } from '../../ui/EmptyState';
+import { ListInitials, ListRow, ListSection } from '../../ui/GroupedList';
 import { LoadingState } from '../../ui/LoadingState';
 import { Modal } from '../../ui/Modal';
+import { PHONE_QUERY, useMediaQuery } from '../../ui/PhoneNotice';
 import { Table, TBody, Td, Th, THead, Tr } from '../../ui/Table';
 import { useToast } from '../../ui/Toast';
 import { errorMessage } from './errors';
@@ -36,6 +39,7 @@ export function ReportsPage({
 }: ReportsPageProps) {
   const { t } = useTranslation('superadmin');
   const { lang } = useLang();
+  const isPhone = useMediaQuery(PHONE_QUERY);
   const state = useOpenReports(injected);
   const liveSchools = useCollection<School>(injectedSchools ? null : 'schools');
   const schools = injectedSchools ?? liveSchools;
@@ -47,7 +51,7 @@ export function ReportsPage({
 
   return (
     <div>
-      <h1 className="mb-1 text-[26px] font-bold">{t('reports.title')}</h1>
+      <h1 className="mb-1 text-[22px] font-bold md:text-[26px]">{t('reports.title')}</h1>
       <p className="mb-5 text-sm text-ink-muted">{t('reports.intro')}</p>
       {state.loading ? (
         <LoadingState />
@@ -55,6 +59,8 @@ export function ReportsPage({
         <EmptyState icon="search" title={t('reports.loadError')} />
       ) : rows.length === 0 ? (
         <EmptyState icon="search" title={t('reports.empty')} body={t('reports.emptyBody')} />
+      ) : isPhone ? (
+        <ReportsPhoneList rows={rows} byId={byId} writer={writer} setStatus={setStatus} releaseCensus={releaseCensus} />
       ) : (
         <Table className="md:min-w-[900px]">
           <THead>
@@ -111,7 +117,7 @@ export function ReportsPage({
   );
 }
 
-function CloseButton({ report, writer }: { report: SchoolReport; writer: ReportWriter }) {
+function useCloseReport(report: SchoolReport, writer: ReportWriter) {
   const { t } = useTranslation('superadmin');
   const toast = useToast();
   const [busy, setBusy] = useState(false);
@@ -126,9 +132,15 @@ function CloseButton({ report, writer }: { report: SchoolReport; writer: ReportW
       setBusy(false);
     }
   }
+  return { busy, close };
+}
+
+function CloseButton({ report, writer, size = 'sm' }: { report: SchoolReport; writer: ReportWriter; size?: 'sm' | 'md' }) {
+  const { t } = useTranslation('superadmin');
+  const { busy, close } = useCloseReport(report, writer);
   return (
-    <Button size="sm" loading={busy} onClick={() => void close()}>
-      {t('reports.close')}
+    <Button size={size} loading={busy} onClick={() => void close()}>
+      {t(size === 'md' ? 'reports.phone.closeReport' : 'reports.close')}
     </Button>
   );
 }
@@ -177,5 +189,108 @@ function SuspendButton({ school, setStatus }: { school: School; setStatus: SetSt
         <p className="text-sm text-ink-soft">{t('confirmDisable.body')}</p>
       </Modal>
     </>
+  );
+}
+
+interface ReportsPhoneListProps {
+  rows: SchoolReport[];
+  byId: Map<string, School>;
+  writer: ReportWriter;
+  setStatus: SetStatusFn;
+  releaseCensus: ReleaseCensusFn;
+}
+
+function ReportsPhoneList({ rows, byId, writer, setStatus, releaseCensus }: ReportsPhoneListProps) {
+  const { t } = useTranslation('superadmin');
+  const [openId, setOpenId] = useState<string>();
+  const selected = rows.find((r) => r.id === openId);
+  return (
+    <>
+      <ListSection title={t('reports.phone.open')} count={rows.length} tone="warning">
+        {rows.map((r) => (
+          <ReportRow key={r.id} report={r} school={byId.get(r.schoolId)} writer={writer} onOpen={() => setOpenId(r.id)} />
+        ))}
+      </ListSection>
+      {selected && (
+        <ReportSheet
+          report={selected}
+          school={byId.get(selected.schoolId)}
+          writer={writer}
+          setStatus={setStatus}
+          releaseCensus={releaseCensus}
+          onClose={() => setOpenId(undefined)}
+        />
+      )}
+    </>
+  );
+}
+
+function useReportText(report: SchoolReport, school: School | undefined) {
+  const { t } = useTranslation('superadmin');
+  const { lang } = useLang();
+  const name = school ? pickName(school, lang) : report.schoolId;
+  const line = [
+    t(`reports.reasons.${report.reason}`, { defaultValue: report.reason }),
+    formatDate(report.createdAt, lang),
+    school?.status === 'disabled' && t('status.disabled'),
+  ]
+    .filter(Boolean)
+    .join(' · ');
+  return { name, line };
+}
+
+function ReportRow({ report, school, writer, onOpen }: { report: SchoolReport; school?: School; writer: ReportWriter; onOpen: () => void }) {
+  const { t } = useTranslation('superadmin');
+  const { busy, close } = useCloseReport(report, writer);
+  const { name, line } = useReportText(report, school);
+  return (
+    <ListRow
+      lead={<ListInitials name={name} />}
+      title={name}
+      detail={line}
+      onOpen={onOpen}
+      action={{ label: t('reports.close'), ariaLabel: `${t('reports.close')}: ${name}`, loading: busy, onClick: () => void close() }}
+    />
+  );
+}
+
+interface ReportSheetProps {
+  report: SchoolReport;
+  school?: School;
+  writer: ReportWriter;
+  setStatus: SetStatusFn;
+  releaseCensus: ReleaseCensusFn;
+  onClose: () => void;
+}
+
+function ReportSheet({ report, school, writer, setStatus, releaseCensus, onClose }: ReportSheetProps) {
+  const { t } = useTranslation('superadmin');
+  const { name, line } = useReportText(report, school);
+  return (
+    <Modal open title={name} subtitle={line} onClose={onClose}>
+      <p className="m-0 whitespace-pre-wrap text-sm text-ink">{report.details || t('usage.noData')}</p>
+      {report.email && (
+        <p className="mb-0 mt-2 text-sm">
+          <a href={`mailto:${report.email}`} className="break-all text-teal underline-offset-2 hover:underline">
+            {report.email}
+          </a>
+        </p>
+      )}
+      <Link
+        to={`/super/schools/${report.schoolId}/admin`}
+        className={cx(buttonClass({ variant: 'secondary', size: 'md' }), 'mt-4 h-11 w-full')}
+      >
+        {t('detail.openReadOnly')}
+      </Link>
+      <div className="mt-2 grid grid-cols-2 gap-2 [&>button]:h-11">
+        <CloseButton report={report} writer={writer} size="md" />
+        {school && school.status === 'active' && <SuspendButton school={school} setStatus={setStatus} />}
+      </div>
+      {school && (
+        <div className="mt-2 grid [&>button]:h-11">
+          <ReleaseCensusButton school={school} release={releaseCensus} />
+        </div>
+      )}
+    </Modal>
   );
 }

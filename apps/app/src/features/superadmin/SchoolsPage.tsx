@@ -3,13 +3,15 @@
 import { pickName, type School } from '@sathiya/core';
 import { useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import { useLang } from '../../app/LangProvider';
 import { useCollection, type CollectionState } from '../../lib/firestore';
 import { Badge } from '../../ui/Badge';
 import { buttonClass } from '../../ui/Button';
 import { EmptyState } from '../../ui/EmptyState';
+import { ListInitials, ListRow, ListSection } from '../../ui/GroupedList';
 import { LoadingState } from '../../ui/LoadingState';
+import { PHONE_QUERY, useMediaQuery } from '../../ui/PhoneNotice';
 import { cx } from '../../ui/cx';
 import { SegmentedControl } from '../../ui/SegmentedControl';
 import { Select } from '../../ui/Select';
@@ -49,6 +51,9 @@ export function SchoolsPage({ schools: injected, setStatus = defaultSetStatus }:
   const [search, setSearch] = useState('');
   const [status, setStatusFilter] = useState<StatusFilter>('all');
   const [district, setDistrict] = useState('all');
+  const isPhone = useMediaQuery(PHONE_QUERY);
+  const filterLabel = (f: StatusFilter) =>
+    f === 'all' ? t('schools.all') : f === 'nameChange' ? t('schools.nameChangeFilter') : t(`status.${f}`);
 
   const statusCounts = useMemo(() => {
     const c: Record<StatusFilter, number> = { all: state.data.length, pending: 0, nameChange: 0, active: 0, disabled: 0, rejected: 0 };
@@ -74,14 +79,23 @@ export function SchoolsPage({ schools: injected, setStatus = defaultSetStatus }:
 
   return (
     <div>
-      <h1 className="mb-5 text-[26px] font-bold">{t('schools.title')}</h1>
-      <div className="mb-3 flex flex-wrap items-center gap-2.5">
+      <h1 className="mb-5 text-[22px] font-bold md:text-[26px]">{t('schools.title')}</h1>
+      <div className="mb-3 grid grid-cols-2 gap-2 md:flex md:flex-wrap md:items-center md:gap-2.5">
+        {isPhone ? (
+          <Select
+            aria-label={t('schools.statusLabel')}
+            className="min-w-0"
+            value={status}
+            onChange={setStatusFilter}
+            options={statusFilters.map((f) => ({ value: f, label: t('schools.filterCount', { label: filterLabel(f), count: statusCounts[f] }) }))}
+          />
+        ) : (
         <SegmentedControl
           aria-label={t('schools.statusLabel')}
           value={status}
           onChange={setStatusFilter}
           options={statusFilters.map((f) => {
-            const label = f === 'all' ? t('schools.all') : f === 'nameChange' ? t('schools.nameChangeFilter') : t(`status.${f}`);
+            const label = filterLabel(f);
             return {
               value: f,
               ariaLabel: t('schools.filterCount', { label, count: statusCounts[f] }),
@@ -101,16 +115,17 @@ export function SchoolsPage({ schools: injected, setStatus = defaultSetStatus }:
             };
           })}
         />
+        )}
         <input
           aria-label={t('schools.searchLabel')}
           placeholder={t('schools.searchPlaceholder')}
           value={search}
           onChange={(e) => setSearch(e.target.value)}
-          className="h-10 min-w-[280px] flex-1 rounded-lg border border-line-strong bg-white px-3 text-sm focus:border-brand focus:outline-hidden focus:ring-[3px] focus:ring-brand/30"
+          className="order-first col-span-2 h-11 w-full min-w-0 rounded-lg md:order-none md:h-10 md:w-auto md:min-w-[280px] md:flex-1 border border-line-strong bg-white px-3 text-sm focus:border-brand focus:outline-hidden focus:ring-[3px] focus:ring-brand/30"
         />
         <Select
           aria-label={t('schools.districtLabel')}
-          className="w-52"
+          className="min-w-0 md:w-52"
           value={district}
           onChange={setDistrict}
           options={[{ value: 'all', label: t('schools.allDistricts') }, ...districts.map((d) => ({ value: d, label: d }))]}
@@ -122,6 +137,8 @@ export function SchoolsPage({ schools: injected, setStatus = defaultSetStatus }:
         <EmptyState icon="search" title={t('schools.loadError')} />
       ) : visible.length === 0 ? (
         <EmptyState icon="search" title={t('schools.empty')} body={t('schools.emptyBody')} />
+      ) : isPhone ? (
+        <SchoolsPhoneList schools={visible} counts={counts} />
       ) : (
         <Table className="md:min-w-[820px]">
           <THead>
@@ -177,5 +194,59 @@ export function SchoolsPage({ schools: injected, setStatus = defaultSetStatus }:
         </Table>
       )}
     </div>
+  );
+}
+
+type Group = { key: string; title: string; tone: 'warning' | 'success' | 'danger' | 'neutral'; schools: School[] };
+
+function SchoolsPhoneList({ schools, counts }: { schools: School[]; counts: Record<string, CountState | undefined> }) {
+  const { t } = useTranslation('superadmin');
+  const { lang } = useLang();
+  const navigate = useNavigate();
+  const groups: Group[] = [
+    { key: 'review', title: t('schools.phone.needsReview'), tone: 'warning', schools: schools.filter(needsReview) },
+    { key: 'active', title: t('status.active'), tone: 'success', schools: schools.filter((s) => s.status === 'active' && !renaming(s)) },
+    { key: 'disabled', title: t('status.disabled'), tone: 'danger', schools: schools.filter((s) => s.status === 'disabled' && !renaming(s)) },
+    { key: 'rejected', title: t('status.rejected'), tone: 'neutral', schools: schools.filter((s) => s.status === 'rejected' && !renaming(s)) },
+  ];
+
+  function detail(s: School): string {
+    const census = s.censusNo && t('schools.censusShort', { no: s.censusNo });
+    if (needsReview(s)) return [t(s.status === 'pending' ? 'status.pending' : 'schools.nameChangeFilter'), s.district, census].filter(Boolean).join(' · ');
+    const c = counts[s.id];
+    const usage =
+      c?.status === 'ready'
+        ? [t('schools.phone.teachers', { count: c.counts.teachers }), t('schools.phone.classes', { count: c.counts.classes })]
+        : [];
+    return [s.district, ...usage].filter(Boolean).join(' · ');
+  }
+
+  return (
+    <>
+      {groups
+        .filter((g) => g.schools.length > 0)
+        .map((g) => (
+          <ListSection key={g.key} title={g.title} count={g.schools.length} tone={g.tone}>
+            {g.schools.map((s) => {
+              const name = pickName(s, lang);
+              const review = needsReview(s);
+              return (
+                <ListRow
+                  key={s.id}
+                  lead={<ListInitials name={name} />}
+                  title={name}
+                  detail={detail(s)}
+                  onOpen={() => navigate(`/super/schools/${s.id}`)}
+                  action={{
+                    label: t(review ? 'schools.review' : 'schools.open'),
+                    ariaLabel: `${t(review ? 'schools.review' : 'schools.open')}: ${name}`,
+                    onClick: () => navigate(review ? `/super/schools/${s.id}` : `/super/schools/${s.id}/admin`),
+                  }}
+                />
+              );
+            })}
+          </ListSection>
+        ))}
+    </>
   );
 }

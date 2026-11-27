@@ -7,13 +7,16 @@ import { Link, useParams } from 'react-router-dom';
 import { useLang } from '../../app/LangProvider';
 import { useCollection, useDoc, type CollectionState, type DocState } from '../../lib/firestore';
 import { EmptyState } from '../../ui/EmptyState';
+import { ActionMenu, type ActionMenuItem } from '../../ui/ActionMenu';
+import { Button, buttonClass } from '../../ui/Button';
 import { LoadingState } from '../../ui/LoadingState';
-import { defaultReleaseCensus, ReleaseCensusButton, type ReleaseCensusFn } from './ReleaseCensus';
+import { PHONE_QUERY, useMediaQuery } from '../../ui/PhoneNotice';
+import { defaultReleaseCensus, useReleaseCensus, type ReleaseCensusFn } from './ReleaseCensus';
 import { defaultReview, type ReviewFn } from './review';
 import { defaultDecideName, type DecideNameFn } from './nameChange';
 import { NameChangeSection } from './NameChangeSection';
 import { MoeBadge, ReviewSection } from './ReviewSection';
-import { StatusButton, StatusPill } from './StatusControl';
+import { StatusPill, useStatusToggle } from './StatusControl';
 import { formatActivity, formatDate } from './format';
 import { useUsageCounts } from './source';
 import { defaultSetStatus, type SetStatusFn } from './status';
@@ -30,10 +33,62 @@ export interface SchoolDetailProps {
 
 function Row({ label, children }: { label: string; children: ReactNode }) {
   return (
-    <div className="flex gap-4 border-b border-line-soft py-3 text-sm">
-      <dt className="w-56 shrink-0 text-ink-muted">{label}</dt>
-      <dd className="m-0">{children}</dd>
+    <div className="flex flex-col gap-0.5 border-b border-line-soft py-2.5 text-sm last:border-b-0 sm:flex-row sm:gap-4 sm:py-3 sm:last:border-b">
+      <dt className="shrink-0 text-xs text-ink-muted sm:w-56 sm:text-sm">{label}</dt>
+      <dd className="m-0 min-w-0 break-words">{children}</dd>
     </div>
+  );
+}
+
+function DetailActions({ school, setStatus, releaseCensus }: { school: School; setStatus: SetStatusFn; releaseCensus: ReleaseCensusFn }) {
+  const { t } = useTranslation('superadmin');
+  const isPhone = useMediaQuery(PHONE_QUERY);
+  // One owner for each action's state, so an open confirmation survives a resize across the phone breakpoint.
+  const toggle = useStatusToggle(school, setStatus);
+  const census = useReleaseCensus(school, releaseCensus);
+  const readOnly = `/super/schools/${school.id}/admin`;
+  const items: ActionMenuItem[] = [];
+  if (toggle.visible)
+    items.push({ key: 'status', label: toggle.label, tone: toggle.disabling ? 'danger' : 'default', disabled: toggle.busy, onSelect: toggle.start });
+  if (census.visible) items.push({ key: 'census', label: census.label, tone: 'danger', disabled: census.busy, onSelect: census.start });
+  return (
+    <>
+      {isPhone ? (
+        <div className="flex shrink-0 items-center gap-2">
+          <Link to={readOnly} aria-label={t('detail.openReadOnly')} className={buttonClass({ variant: 'secondary', size: 'md' })}>
+            {t('schools.open')}
+          </Link>
+          {items.length > 0 && <ActionMenu items={items} />}
+        </div>
+      ) : (
+        <div className="flex flex-wrap gap-2">
+          <Link
+            to={readOnly}
+            className="inline-flex h-8 items-center rounded-lg border border-line-strong bg-white px-3 text-[13px] font-semibold hover:bg-surface"
+          >
+            {t('detail.openReadOnly')}
+          </Link>
+          {toggle.visible && (
+            <Button
+              size="sm"
+              variant={toggle.disabling ? 'danger' : 'secondary'}
+              loading={toggle.busy && !toggle.confirming}
+              disabled={toggle.busy && toggle.confirming}
+              onClick={toggle.start}
+            >
+              {toggle.label}
+            </Button>
+          )}
+          {census.visible && (
+            <Button size="sm" variant="danger" disabled={census.busy} onClick={census.start}>
+              {census.label}
+            </Button>
+          )}
+        </div>
+      )}
+      {toggle.modal}
+      {census.modal}
+    </>
   );
 }
 
@@ -69,25 +124,16 @@ export function SchoolDetail({
 
   return (
     <div className="max-w-3xl">
-      <Link to="/super" className="mb-3 inline-block text-sm font-semibold text-teal underline-offset-2 hover:underline">
+      <Link to="/super" className="mb-1 inline-flex min-h-11 items-center text-sm font-semibold text-teal underline-offset-2 hover:underline md:mb-3 md:min-h-0">
         {t('detail.back')}
       </Link>
-      <div className="mb-5 flex flex-wrap items-center justify-between gap-3">
-        <h1 className="m-0 text-[26px] font-bold">{pickName(school, lang)}</h1>
-        <div className="flex gap-2">
-          <Link
-            to={`/super/schools/${school.id}/admin`}
-            className="inline-flex h-8 items-center rounded-lg border border-line-strong bg-white px-3 text-[13px] font-semibold hover:bg-surface"
-          >
-            {t('detail.openReadOnly')}
-          </Link>
-          <StatusButton school={school} setStatus={setStatus} />
-          <ReleaseCensusButton school={school} release={releaseCensus} />
-        </div>
+      <div className="mb-4 flex items-center justify-between gap-3 md:mb-5 md:flex-wrap">
+        <h1 className="m-0 min-w-0 text-[22px] font-bold md:text-[26px]">{pickName(school, lang)}</h1>
+        <DetailActions school={school} setStatus={setStatus} releaseCensus={releaseCensus} />
       </div>
       {(reviewing || school.review?.decidedAt) && <ReviewSection school={school} schools={schools} members={members} review={review} />}
       {school.nameChange && <NameChangeSection school={school} change={school.nameChange} decide={decideName} />}
-      <dl className="m-0 rounded-[14px] border border-line bg-white px-5">
+      <dl className="m-0 rounded-[14px] border border-line bg-white px-4 sm:px-5">
         <Row label={t('detail.name')}>{pickName(school, 'en')}</Row>
         <Row label={t('detail.nameSi')}>{school.nameSi || t('usage.noData')}</Row>
         <Row label={t('detail.city')}>{school.city || t('usage.noData')}</Row>

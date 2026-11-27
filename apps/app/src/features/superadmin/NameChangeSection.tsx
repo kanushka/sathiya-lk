@@ -6,6 +6,7 @@ import { useTranslation } from 'react-i18next';
 import { useLang } from '../../app/LangProvider';
 import { Badge } from '../../ui/Badge';
 import { Button } from '../../ui/Button';
+import { PHONE_QUERY, useMediaQuery } from '../../ui/PhoneNotice';
 import { useToast } from '../../ui/Toast';
 import { errorMessage } from './errors';
 import { formatDate } from './format';
@@ -14,8 +15,8 @@ import { RejectModal } from './ReviewSection';
 
 function Row({ label, children }: { label: string; children: ReactNode }) {
   return (
-    <div className="flex gap-4 border-t border-line-soft py-2.5 text-sm first:border-t-0">
-      <dt className="w-44 shrink-0 text-ink-muted">{label}</dt>
+    <div className="flex flex-col gap-0.5 border-t border-line-soft py-2.5 text-sm first:border-t-0 sm:flex-row sm:gap-4">
+      <dt className="shrink-0 text-xs text-ink-muted sm:w-44 sm:text-sm">{label}</dt>
       <dd className="m-0 min-w-0">{children}</dd>
     </div>
   );
@@ -39,6 +40,7 @@ export function NameChangeSection({ school, change, decide }: { school: School; 
   const toast = useToast();
   const [approving, setApproving] = useState(false);
   const [rejecting, setRejecting] = useState(false);
+  const isPhone = useMediaQuery(PHONE_QUERY);
   const [decidedAt, setDecidedAt] = useState<number>();
   const done = decidedAt === change.requestedAt;
   const pending = change.status === 'pending';
@@ -71,8 +73,20 @@ export function NameChangeSection({ school, change, decide }: { school: School; 
     }
   }
 
+  const rejectButton = (
+    <Button key="reject" variant="danger" disabled={approving || done} onClick={() => setRejecting(true)}>
+      {t('nameChange.reject')}
+    </Button>
+  );
+  const approveButton = (
+    <Button key="approve" variant="primary" loading={approving} disabled={done} onClick={() => void approve()}>
+      {t('nameChange.approve')}
+    </Button>
+  );
+  const actions = isPhone ? [approveButton, rejectButton] : [rejectButton, approveButton];
+
   return (
-    <section aria-labelledby="name-change-title" className="mb-5 rounded-[14px] border border-line bg-white px-5 py-5 sm:px-7">
+    <section aria-labelledby="name-change-title" className="mb-5 rounded-[14px] border border-line bg-white px-4 py-4 sm:px-7 sm:py-5">
       <div className="flex flex-wrap items-start justify-between gap-4">
         <div className="flex flex-wrap items-center gap-2.5">
           <h2 id="name-change-title" className="m-0 text-xl font-bold">
@@ -81,14 +95,7 @@ export function NameChangeSection({ school, change, decide }: { school: School; 
           <Badge tone={pending ? 'warning' : 'danger'}>{t(pending ? 'nameChange.pending' : 'nameChange.rejected')}</Badge>
         </div>
         {pending ? (
-          <div className="flex flex-wrap gap-2.5">
-            <Button variant="danger" disabled={approving || done} onClick={() => setRejecting(true)}>
-              {t('nameChange.reject')}
-            </Button>
-            <Button variant="primary" loading={approving} disabled={done} onClick={() => void approve()}>
-              {t('nameChange.approve')}
-            </Button>
-          </div>
+          !isPhone && <div className="flex flex-wrap gap-2.5">{actions}</div>
         ) : (
           change.decidedAt && <p className="m-0 text-[13px] text-ink-soft">{t('nameChange.rejectedOn', { date: formatDate(change.decidedAt, lang) })}</p>
         )}
@@ -103,6 +110,7 @@ export function NameChangeSection({ school, change, decide }: { school: School; 
           <span className="mt-0.5 block text-xs text-ink-muted">{t('nameChange.requestedOn', { date: formatDate(change.requestedAt, lang) })}</span>
         </Row>
       </dl>
+      {pending && isPhone && <div className="mt-4 grid grid-cols-2 gap-2 [&>button]:h-11 [&>button]:px-2">{actions}</div>}
       {!pending && change.reason && (
         <div className="mt-4">
           <p className="mb-1.5 mt-0 text-[13px] font-semibold text-ink-muted">{t('nameChange.reasonSent')}</p>
