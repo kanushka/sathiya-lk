@@ -155,9 +155,9 @@ export class Tutorial {
     await this.click(this.page.getByRole('option', { name: option, exact: true }), 600);
   }
 
-  async still(name: string): Promise<void> {
+  async still(name: string, clip?: { x: number; y: number; width: number; height: number }): Promise<void> {
     await this.page.screencast.hideOverlays();
-    await this.page.screenshot({ path: `${this.dir}stills/${name}.png` });
+    await this.page.screenshot({ path: `${this.dir}stills/${name}.png`, ...(clip ? { clip } : {}) });
     await this.page.screencast.showOverlays();
     this.stills.push(name);
   }

@@ -13,12 +13,16 @@ const t = content(lang).guide;
 <article class="wrap prose guide">
   <h1>{t.title}</h1>
   <p class="guide-summary">{t.intro}</p>
-  <ul class="guide-list">
+  <ol class="guide-list">
     {guides.map((g) => (
       <li>
         <a href={pagePath(lang, `guide/${g.slug}`)}>{g.text[lang].title}</a>
         <p>{g.text[lang].summary}</p>
+        <p class="guide-meta">
+          {t.listMinutes.replace('{n}', String(g.minutes))}
+          {g.youtube[lang] && <span> · {t.hasVideo}</span>}
+        </p>
       </li>
     ))}
-  </ul>
+  </ol>
 </article>

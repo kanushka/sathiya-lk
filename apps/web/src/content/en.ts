@@ -216,6 +216,10 @@ export const en = {
     videoSoon: 'The video for this guide is coming soon. Follow the steps below.',
     steps: 'Step by step',
     minutes: 'About {n} minutes',
+    listMinutes: '{n} min',
+    hasVideo: 'Video',
+    next: 'Next',
+    enlarge: 'Open the full-size picture: {title}',
   },
   legal: {
     version: 'Version',

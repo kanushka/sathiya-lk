@@ -53,7 +53,7 @@ for (const flow of readdirSync(OUT)) {
     const stills = `${GUIDE}${flow}/${lang}/`;
     mkdirSync(stills, { recursive: true });
     for (const s of meta.stills) {
-      execFileSync('ffmpeg', ['-y', '-loglevel', 'error', '-i', `${dir}stills/${s}.png`, '-vf', 'scale=1440:-1:flags=lanczos', `${stills}${s}.png`]);
+      execFileSync('ffmpeg', ['-y', '-loglevel', 'error', '-i', `${dir}stills/${s}.png`, '-vf', 'scale=min(1440\\,iw):-2:flags=lanczos', `${stills}${s}.png`]);
     }
     console.log(`${flow} ${lang}: ${mp4}`);
   }
