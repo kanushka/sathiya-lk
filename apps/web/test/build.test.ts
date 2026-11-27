@@ -11,7 +11,7 @@ import { robotsTxt, sitemapXml } from '../src/lib/seo';
 const dist = fileURLToPath(new URL('../dist/', import.meta.url));
 const APP = APP_URL;
 
-const pages = ['index', 'terms', 'privacy', 'contact', 'guide', 'guide/register-school', 'guide/subjects', 'guide/grades', 'guide/templates', 'guide/teachers', 'guide/timetable-class'];
+const pages = ['index', 'terms', 'privacy', 'contact', 'guide', 'guide/register-school', 'guide/subjects', 'guide/grades', 'guide/templates', 'guide/teachers', 'guide/timetable-class', 'guide/profile', 'guide/members', 'guide/import', 'guide/timetable-teacher', 'guide/autofill', 'guide/publish-print', 'guide/teacher-phone'];
 const enPaths = pages.map((p) => (p === 'index' ? 'index.html' : `${p}/index.html`));
 const siPaths = enPaths.map((p) => `si/${p}`);
 const allPaths = [...enPaths, ...siPaths];

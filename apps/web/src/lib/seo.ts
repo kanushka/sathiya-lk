@@ -4,7 +4,7 @@
 import { PRODUCTION_SITE_URL } from '../site';
 import { pagePath, type Lang, type Page } from './links';
 
-export const PUBLIC_PAGES: Page[] = ['index', 'terms', 'privacy', 'contact', 'guide', 'guide/register-school', 'guide/subjects', 'guide/grades', 'guide/templates', 'guide/teachers', 'guide/timetable-class'];
+export const PUBLIC_PAGES: Page[] = ['index', 'terms', 'privacy', 'contact', 'guide', 'guide/register-school', 'guide/subjects', 'guide/grades', 'guide/templates', 'guide/teachers', 'guide/timetable-class', 'guide/profile', 'guide/members', 'guide/import', 'guide/timetable-teacher', 'guide/autofill', 'guide/publish-print', 'guide/teacher-phone'];
 const LANGS: Lang[] = ['en', 'si'];
 
 const abs = (site: string, path: string) => new URL(path, `${site.replace(/\/+$/, '')}/`).href;

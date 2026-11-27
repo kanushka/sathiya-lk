@@ -39,13 +39,13 @@ const video = g.youtube[lang];
 
   <section aria-labelledby="steps">
     <h2 id="steps">{t.steps}</h2>
-    <ol class="guide-steps">
+    <ol class:list={['guide-steps', { portrait: g.portrait }]}>
       {d.steps.map((s) => (
         <li>
           <h3>{s.title}</h3>
           <p>{s.body}</p>
           {s.image && (
-            <img src={`/guide/${slug}/${lang}/${s.image}.png`} alt={s.title} width="1440" height="810" loading="lazy" decoding="async" />
+            <img src={`/guide/${slug}/${lang}/${s.image}.png`} alt={s.title} width={g.portrait ? 720 : 1440} height={g.portrait ? 1558 : 810} loading="lazy" decoding="async" />
           )}
         </li>
       ))}
