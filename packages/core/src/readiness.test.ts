@@ -64,13 +64,15 @@ describe('readiness', () => {
     expect(find(withPlan6(plan), 'plan-zero-target')[0]?.params).toEqual({ classId: C.c6a, planKey: `subject:${S.pts}` });
   });
 
-  it('blocks a teacher with no subjects unless primary', () => {
+  it('warns, without blocking, about a non-primary teacher with no subjects', () => {
     expect(find(withTeacher(T.bandara, { subjectIds: [] }), 'teacher-no-subjects')[0]?.ref).toEqual({ kind: 'teacher', id: T.bandara });
-    expect(codes(withTeacher(T.wickramasinghe, { subjectIds: [] }))).not.toContain('teacher-no-subjects');
+    expect(codes(withTeacher(T.wickramasinghe, { subjectIds: [] }), 'warnings')).not.toContain('teacher-no-subjects');
+    expect(codes(withTeacher(T.bandara, { subjectIds: [] }))).not.toContain('teacher-no-subjects');
   });
 
-  it('blocks a teacher with no grades', () => {
-    expect(find(withTeacher(T.rajan, { grades: [] }), 'teacher-no-grades')[0]?.ref.id).toBe(T.rajan);
+  it('warns, without blocking, about a teacher with no grades', () => {
+    expect(codes(withTeacher(T.rajan, { grades: [] }), 'warnings')).toContain('teacher-no-grades');
+    expect(codes(withTeacher(T.rajan, { grades: [] }))).not.toContain('teacher-no-grades');
   });
 
   it('blocks a teacher with no daily maximum', () => {

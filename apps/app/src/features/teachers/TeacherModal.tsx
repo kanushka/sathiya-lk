@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
 // Copyright (C) 2026 Kanushka Gayan
-import { formatStaffId, isValidStaffId, nextStaffNumber, normalizeTeacher, pickName, splitTitle, TEACHER_TITLE_LABELS, TEACHER_TITLES, teacherDisplayName, type Lang, type Teacher, type TeacherTitle } from '@sathiya/core';
+import { defaultPrimaryGrades, formatStaffId, isValidStaffId, nextStaffNumber, normalizeTeacher, pickName, splitTitle, TEACHER_TITLE_LABELS, TEACHER_TITLES, teacherDisplayName, type Lang, type Teacher, type TeacherTitle } from '@sathiya/core';
 import { useState, type FormEvent, type ReactNode } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useReadOnly } from '../../ui/AdminLayout';
@@ -86,8 +86,6 @@ export function TeacherModal({ teacher, onClose, footerStart }: TeacherModalProp
         : teachers.some((x) => x.staffId === form.staffId)
           ? t('modal.errors.staffIdTaken')
           : null,
-    subjects: form.isPrimary || form.subjectIds.length > 0 ? null : t('modal.errors.subjects'),
-    grades: form.grades.length > 0 ? null : t('modal.errors.grades'),
     maxPerDay: Number.isInteger(maxPerDay) && maxPerDay >= 1 && maxPerDay <= 10 ? null : t('modal.errors.maxPerDay'),
     minPerWeek:
       minPerWeek === undefined || (Number.isInteger(minPerWeek) && minPerWeek >= 0 && minPerWeek <= minPerWeekCap)
@@ -193,14 +191,14 @@ export function TeacherModal({ teacher, onClose, footerStart }: TeacherModalProp
           <div className="rounded-lg border border-line bg-surface p-3">
             <Checkbox
               checked={form.isPrimary}
-              onChange={(v) => set('isPrimary', v)}
+              onChange={(v) => setForm((f) => ({ ...f, isPrimary: v, grades: v && f.grades.length === 0 ? defaultPrimaryGrades(school.grades) : f.grades }))}
               disabled={locked}
               label={t('modal.primary')}
               hint={t('modal.primaryHint')}
             />
           </div>
           {!form.isPrimary && (
-            <Field label={t('modal.subjects')} error={show('subjects')}>
+            <Field label={t('modal.subjects')}>
               <MultiSelect
                 value={form.subjectIds}
                 onChange={(v) => set('subjectIds', v)}
@@ -228,7 +226,6 @@ export function TeacherModal({ teacher, onClose, footerStart }: TeacherModalProp
                 </ToggleChip>
               ))}
             </div>
-            <FormError size="field" className="mt-1">{show('grades')}</FormError>
           </div>
           <div className="grid grid-cols-2 gap-3">
             <Field label={t('modal.maxPerDay')} error={show('maxPerDay')}>

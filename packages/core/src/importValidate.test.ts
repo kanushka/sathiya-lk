@@ -137,8 +137,8 @@ describe('validateImport teacher errors', () => {
   const only = (cells: Partial<Record<TeacherColumn, string>>) => errs(one(cells));
   const e = (column: TeacherColumn, code: string) => ({ sheet: 'teachers', row: 7, column, code });
 
-  it('required name and gradesRequired', () => {
-    expect(only({ isPrimary: 'y' })).toEqual([e('name', 'nameMissing'), e('grades', 'gradesRequired')]);
+  it('requires a name', () => {
+    expect(only({ isPrimary: 'y' })).toEqual([e('name', 'nameMissing')]);
   });
   it('accepts a Sinhala-only or two-language name', () => {
     const { name: _drop, ...noEn } = okTeacher;
@@ -185,8 +185,17 @@ describe('validateImport teacher errors', () => {
     expect(errs(p)).toEqual([e('subjects', 'unknownSubject')]);
     expect(p.errors[0]?.params).toEqual({ value: 'maths' });
   });
-  it('subjectsRequired for non-primary', () => {
-    expect(only({ name: 'A', grades: '6' })).toEqual([e('subjects', 'subjectsRequired')]);
+  it('gives a primary teacher with no grades the school grades up to 5', () => {
+    const p = one({ name: 'A', isPrimary: 'Yes' }, { ...ctx, schoolGrades: [8, 1, 3, 2, 6] });
+    expect(p.errors).toEqual([]);
+    expect(p.teachers[0]?.teacher.grades).toEqual([1, 2, 3]);
+    expect(one({ name: 'A', isPrimary: 'Yes', grades: '4' }, { ...ctx, schoolGrades: [1, 2, 3, 4] }).teachers[0]?.teacher.grades).toEqual([4]);
+  });
+  it('accepts a teacher with no subjects or grades', () => {
+    const p = one({ name: 'A' });
+    expect(p.errors).toEqual([]);
+    expect(p.teachers[0]?.teacher).toMatchObject({ grades: [], isPrimary: false });
+    expect(p.teachers[0]?.subjectRefs).toEqual([]);
   });
   it('dedupes subject refs', () => {
     const p = one({ name: 'A', grades: '6', subjects: 'math, Mathematics' });
@@ -254,10 +263,10 @@ describe('validateImport teacher errors', () => {
     ]);
   });
   it('collects errors across rows with original row numbers', () => {
-    const p = run([], [tch(4, { grades: '6', isPrimary: 'y' }), tch(9, { name: 'A', isPrimary: 'y' })]);
+    const p = run([], [tch(4, { grades: '6', isPrimary: 'y' }), tch(9, { grades: '7' })]);
     expect(errs(p)).toEqual([
       { sheet: 'teachers', row: 4, column: 'name', code: 'nameMissing' },
-      { sheet: 'teachers', row: 9, column: 'grades', code: 'gradesRequired' },
+      { sheet: 'teachers', row: 9, column: 'name', code: 'nameMissing' },
     ]);
   });
 });

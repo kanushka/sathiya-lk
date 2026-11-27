@@ -74,8 +74,6 @@
     "primaryValue": "Use Yes or No (got \"{{value}}\")",
     "phone": "Not a valid phone number: {{value}}",
     "email": "Not a valid email: {{value}}",
-    "subjectsRequired": "Add at least one subject, or mark as a primary teacher",
-    "gradesRequired": "Add at least one grade",
     "tooLong": "Too long (max {{max}} characters)",
     "excelDate": "Excel changed this to a date. Format the column as Plain text and type it again.",
     "excelNumber": "Excel changed this to a number and may have dropped a leading 0. Format the column as Plain text and type it again.",
@@ -110,7 +108,7 @@
   "instructions": [
     "How to fill this template",
     "1. Subjects sheet: common subjects you don't have yet are already listed. Delete the rows you don't teach and add your own below. Leave Short name blank to get a suggested one.",
-    "2. Teachers sheet: one teacher per row, name without the title. Grades are required, and Subjects too unless Primary teacher is Yes.",
+    "2. Teachers sheet: one teacher per row, name without the title. A primary teacher with no grades gets grades 1-5. Any other teacher with no subjects or grades is added but not timetabled.",
     "Names: every subject and teacher needs a name in English or Sinhala. Fill both if you can. When one is empty, the app shows the other.",
     "See the Example sheet for two filled-in teachers. It is not imported.",
     "3. Staff ID: leave blank to number teachers automatically.",
@@ -131,11 +129,11 @@
     "nameSi": "Optional when the English name is filled. Initials, one space, then the name.",
     "phone": "Optional. Keep the leading 0, e.g. 0771234567.",
     "email": "Optional. Used to invite the teacher to sign in.",
-    "subjects": "Required unless Primary teacher is Yes. Short names from the Subjects sheet, separated by commas, e.g. Math, Sci.",
-    "grades": "Required. Grades the teacher can teach, e.g. 6-9, 11. Only grades in this school.",
+    "subjects": "Optional. Short names from the Subjects sheet, separated by commas, e.g. Math, Sci.",
+    "grades": "Grades the teacher can teach, e.g. 6-9, 11. Only grades in this school. Blank for a primary teacher means 1-5.",
     "maxPerDay": "Optional. 1 to 10. Blank means 7.",
     "minPerWeek": "Optional. 0 up to 5 times Max periods/day.",
-    "isPrimary": "Yes or No. Blank means No. A primary teacher teaches every subject of their class, so Subjects can stay blank."
+    "isPrimary": "Yes or No. Blank means No. A primary teacher teaches every subject of their class, so Subjects can stay blank. Blank Grades for a primary teacher means 1-5."
   },
   "templateExampleNames": {
     "one": "K. Perera",

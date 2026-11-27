@@ -14,6 +14,7 @@ import {
   type TeacherColumn,
 } from './importSheet';
 import { formatStaffId, isValidStaffId, nextStaffNumber } from './staff';
+import { defaultPrimaryGrades } from './staffing';
 import { SHORT_MAX, SUBJECT_SWATCHES, nameTaken, shortTaken, suggestSubjectShort } from './subjectShort';
 import { TEACHER_TITLES, type Subject, type Teacher } from './types';
 
@@ -213,9 +214,7 @@ function validateTeachers(
     const gradeText = c.grades ?? '';
     const parsed = parseGrades(gradeText);
     if (parsed === null) err('grades', 'gradeFormat', { value: gradeText });
-    else if (parsed.length === 0) {
-      if (!bad.has('grades')) err('grades', 'gradesRequired');
-    } else {
+    else {
       grades = parsed;
       const outside = parsed.filter((g) => !ctx.schoolGrades.includes(g));
       if (outside.length > 0) err('grades', 'gradeNotInSchool', { value: outside.join(', ') });
@@ -243,11 +242,11 @@ function validateTeachers(
       primaryInvalid = true;
       err('isPrimary', 'primaryValue', { value: c.isPrimary! });
     }
+    if (isPrimary && parsed !== null && parsed.length === 0) grades = defaultPrimaryGrades(ctx.schoolGrades);
 
     const subjectRefs: SubjectRef[] = [];
     if (!isPrimary && !primaryInvalid) {
       const tokens = splitList(c.subjects ?? '');
-      if (tokens.length === 0 && !bad.has('subjects')) err('subjects', 'subjectsRequired');
       const unknown: string[] = [];
       for (const t of tokens) {
         const ref = findSubject(t);

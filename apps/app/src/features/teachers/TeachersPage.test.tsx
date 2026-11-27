@@ -92,6 +92,15 @@ describe('teachers page', () => {
     expect(within(dialog).queryByText('Subjects')).not.toBeInTheDocument();
   });
 
+  it('selects grades 1-5 when a teacher with no grades is marked primary', async () => {
+    const user = userEvent.setup();
+    render();
+    const dialog = await openAdd(user);
+    await user.click(within(dialog).getByRole('checkbox', { name: /Primary teacher/ }));
+    for (const g of ['1', '2', '3', '4', '5']) expect(within(dialog).getByRole('button', { name: g, pressed: true })).toBeInTheDocument();
+    expect(within(dialog).getByRole('button', { name: '6', pressed: false })).toBeInTheDocument();
+  });
+
   it('prefills the next staff ID', async () => {
     const user = userEvent.setup();
     render();
