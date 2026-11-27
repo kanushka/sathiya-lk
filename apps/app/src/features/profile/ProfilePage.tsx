@@ -20,6 +20,7 @@ import { LogoUpload } from '../register/LogoUpload';
 import { prefixOk } from '../register/model';
 import * as api from './api';
 import { contrastWithWhite, isLowContrast } from './contrast';
+import { NameChangeModal, NameChangeStatus } from './NameChange';
 
 const lockedClass = 'bg-surface-2 text-ink-muted hover:border-line-strong';
 
@@ -31,7 +32,7 @@ export function ProfilePage() {
   const { school } = useSchool();
   const readOnly = useReadOnly();
   const locked = !!school.review;
-  const nameLocked = locked && school.nameEn !== '';
+  const [renaming, setRenaming] = useState(false);
   const toast = useToast();
   const [draft, setDraft] = useState(() => ({
     nameEn: school.nameEn,
@@ -71,9 +72,7 @@ export function ProfilePage() {
     try {
       if (logo) await uploadLogo(school.id, logo);
       await api.updateSchool(school.id, {
-        ...(!nameLocked && { nameEn: draft.nameEn }),
-        ...(!locked && { district: draft.district }),
-        nameSi: blankToUndefined(draft.nameSi),
+        ...(!locked && { nameEn: draft.nameEn, nameSi: blankToUndefined(draft.nameSi), district: draft.district }),
         city: draft.city,
         address: blankToUndefined(draft.address),
         phone: blankToUndefined(draft.phone),
@@ -92,6 +91,7 @@ export function ProfilePage() {
   return (
     <div>
       <PageHeader title={t('page.title')} subtitle={t('page.subtitle')} />
+      <NameChangeStatus change={school.nameChange} />
       <form
         className="flex flex-wrap gap-6 rounded-[14px] border border-line-soft bg-white p-6"
         onSubmit={(e) => {
@@ -100,14 +100,21 @@ export function ProfilePage() {
         }}
       >
         <fieldset disabled={readOnly} className="m-0 flex min-w-[300px] flex-[1_1_320px] flex-col gap-3.5 border-0 p-0">
-          {nameLocked ? (
+          {locked ? (
             <>
-              <Field label={t('fields.nameEn')} hint={t('fields.locked')}>
+              <Field label={t('fields.nameEn')} hint={t('fields.nameLocked')}>
                 <input className={cx(inputClass, lockedClass)} lang="en" readOnly value={school.nameEn} />
               </Field>
-              <Field label={t('fields.nameSi')}>
-                <input className={inputClass} lang="si" value={draft.nameSi} onChange={(e) => set('nameSi', e.target.value)} />
+              <Field label={t('fields.nameSi')} hint={t('fields.nameLocked')}>
+                <input className={cx(inputClass, lockedClass)} lang="si" readOnly value={school.nameSi ?? ''} />
               </Field>
+              {!readOnly && (
+                <div>
+                  <Button size="sm" onClick={() => setRenaming(true)}>
+                    {t('nameChange.open')}
+                  </Button>
+                </div>
+              )}
             </>
           ) : (
             <NameFields
@@ -180,6 +187,7 @@ export function ProfilePage() {
           )}
         </div>
       </form>
+      {renaming && <NameChangeModal school={school} onClose={() => setRenaming(false)} />}
     </div>
   );
 }

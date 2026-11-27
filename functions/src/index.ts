@@ -32,3 +32,5 @@ export { cancelTeacherLink } from './cancelTeacherLink';
 export { unlinkTeacher } from './unlinkTeacher';
 export { reviewSchool } from './reviewSchool';
 export { removeRegistration } from './removeRegistration';
+export { requestNameChange } from './requestNameChange';
+export { decideNameChange } from './decideNameChange';

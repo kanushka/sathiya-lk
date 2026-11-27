@@ -5,5 +5,6 @@ import type { TFunction } from 'i18next';
 export function errorMessage(t: TFunction<'superadmin'>, err: unknown): string {
   const code = (err as { code?: unknown } | null)?.code;
   if (code === 'not-allowed' || code === 'permission-denied' || code === 'unauthenticated') return t('errors.denied');
+  if (code === 'stale') return t('errors.stale');
   return t('errors.generic');
 }

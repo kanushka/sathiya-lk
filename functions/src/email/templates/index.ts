@@ -15,6 +15,14 @@ export {
   type SchoolPendingInput,
   type SchoolRejectedInput,
 } from './schoolReview';
+export {
+  nameChangeApproved,
+  nameChangeRejected,
+  nameChangeRequested,
+  type NameChangeApprovedInput,
+  type NameChangeRejectedInput,
+  type NameChangeRequestedInput,
+} from './nameChange';
 export { schoolSuspended, schoolReactivated, type SchoolStatusInput } from './schoolStatus';
 export { verifyEmail, passwordReset, type LinkEmailInput } from './authLinks';
 export { reliefAssigned, reliefCancelled, type ReliefAssignedInput, type ReliefCancelledInput, type ReliefMailRow } from './relief';

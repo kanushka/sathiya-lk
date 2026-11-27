@@ -10,6 +10,8 @@ import { EmptyState } from '../../ui/EmptyState';
 import { LoadingState } from '../../ui/LoadingState';
 import { defaultReleaseCensus, ReleaseCensusButton, type ReleaseCensusFn } from './ReleaseCensus';
 import { defaultReview, type ReviewFn } from './review';
+import { defaultDecideName, type DecideNameFn } from './nameChange';
+import { NameChangeSection } from './NameChangeSection';
 import { MoeBadge, ReviewSection } from './ReviewSection';
 import { StatusButton, StatusPill } from './StatusControl';
 import { formatActivity, formatDate } from './format';
@@ -23,6 +25,7 @@ export interface SchoolDetailProps {
   schools?: CollectionState<School>;
   members?: CollectionState<Member>;
   review?: ReviewFn;
+  decideName?: DecideNameFn;
 }
 
 function Row({ label, children }: { label: string; children: ReactNode }) {
@@ -41,6 +44,7 @@ export function SchoolDetail({
   schools: injectedSchools,
   members: injectedMembers,
   review = defaultReview,
+  decideName = defaultDecideName,
 }: SchoolDetailProps) {
   const { t } = useTranslation('superadmin');
   const { lang } = useLang();
@@ -82,6 +86,7 @@ export function SchoolDetail({
         </div>
       </div>
       {(reviewing || school.review?.decidedAt) && <ReviewSection school={school} schools={schools} members={members} review={review} />}
+      {school.nameChange && <NameChangeSection school={school} change={school.nameChange} decide={decideName} />}
       <dl className="m-0 rounded-[14px] border border-line bg-white px-5">
         <Row label={t('detail.name')}>{pickName(school, 'en')}</Row>
         <Row label={t('detail.nameSi')}>{school.nameSi || t('usage.noData')}</Row>

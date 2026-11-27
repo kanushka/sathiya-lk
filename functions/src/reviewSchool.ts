@@ -3,7 +3,8 @@
 import { paths, type ReviewSchoolRes } from '@sathiya/core';
 import type { DocumentSnapshot } from 'firebase-admin/firestore';
 import { onCall } from 'firebase-functions/v2/https';
-import { auth, db } from './lib/admin';
+import { db } from './lib/admin';
+import { adminEmails } from './lib/adminEmails';
 import { mailConfig } from './email/params';
 import { sendMail } from './email/send';
 import { schoolApproved, schoolRejected } from './email/templates';
@@ -14,14 +15,6 @@ import { bool, docId, fail, obj, requireSuper, str } from './lib/guards';
 import { runTx } from './lib/tx';
 
 const REASON_MAX = 500;
-
-async function adminEmails(sid: string): Promise<string[]> {
-  const admins = await db.collection(paths.members(sid)).where('role', '==', 'admin').get();
-  const emails = await Promise.all(
-    admins.docs.map(async (d) => (d.get('email') as string | undefined) || (await auth.getUser(d.id).catch(() => undefined))?.email),
-  );
-  return emails.filter((e): e is string => !!e);
-}
 
 export const reviewSchool = onCall(callOpts, async (req): Promise<ReviewSchoolRes> => {
   const { uid } = requireSuper(req);

@@ -35,6 +35,8 @@ export const callables = {
   lookupCensus: 'lookupCensus',
   reviewSchool: 'reviewSchool',
   removeRegistration: 'removeRegistration',
+  requestNameChange: 'requestNameChange',
+  decideNameChange: 'decideNameChange',
   applyAutoFill: 'applyAutoFill',
 } as const;
 
@@ -99,6 +101,11 @@ export interface LookupCensusReq { censusNo: string }
 export type LookupCensusRes = { status: 'listed'; school: MoeSchool } | { status: 'registered' | 'unlisted' }
 export interface ReviewSchoolReq { schoolId: string; approve: boolean; reason?: string }
 export interface ReviewSchoolRes { ok: true }
+export interface RequestNameChangeReq { schoolId: string; nameEn: string; nameSi?: string }
+export interface RequestNameChangeRes { ok: true }
+/** requestedAt identifies the request the super admin reviewed; a newer request makes the decision stale. */
+export interface DecideNameChangeReq { schoolId: string; requestedAt: number; approve: boolean; reason?: string }
+export interface DecideNameChangeRes { ok: true }
 export interface RemoveRegistrationReq { schoolId: string }
 export interface RemoveRegistrationRes { ok: true }
 interface CallableMap {
@@ -130,6 +137,8 @@ interface CallableMap {
   lookupCensus: { req: LookupCensusReq; res: LookupCensusRes };
   reviewSchool: { req: ReviewSchoolReq; res: ReviewSchoolRes };
   removeRegistration: { req: RemoveRegistrationReq; res: RemoveRegistrationRes };
+  requestNameChange: { req: RequestNameChangeReq; res: RequestNameChangeRes };
+  decideNameChange: { req: DecideNameChangeReq; res: DecideNameChangeRes };
   applyAutoFill: { req: ApplyAutoFillReq; res: ApplyAutoFillRes };
 }
 export type CallableName = keyof typeof callables;
