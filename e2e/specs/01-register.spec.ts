@@ -18,9 +18,35 @@ async function verifyLinkFromMail(email: string): Promise<string> {
   return link!;
 }
 
-test('register a government school: census lookup, email verification gate, lands on /admin', async ({ page, context }) => {
+test('register a government school: sign up first, verify email, census lookup, lands on /admin', async ({ page, context }) => {
   const email = `principal-${Date.now()}@example.com`;
   await page.goto('/register');
+  await expect(page).toHaveURL(/\/login$/);
+  await expect(page.getByRole('status')).toContainText('Sign in or create an account first');
+  await shot(page, 'register-signin-first');
+
+  await page.getByRole('button', { name: 'Create account' }).click();
+  await page.getByLabel('Your name').fill('Mrs. P. Principal');
+  await page.getByLabel('Email', { exact: true }).fill(email);
+  await page.getByLabel('Password', { exact: true }).fill('principal-1');
+  await page.getByRole('checkbox', { name: /I agree to the/ }).check();
+  await page.getByRole('button', { name: 'Create account' }).click();
+
+  await expect(page.getByRole('heading', { name: 'Check your email' })).toBeVisible();
+  await expect(page.getByText(email)).toBeVisible();
+  await shot(page, 'register-verify-gate');
+  await page.getByRole('button', { name: "I've confirmed it" }).click();
+  await expect(page.getByText('Not verified yet.', { exact: false })).toBeVisible();
+
+  const link = await verifyLinkFromMail(email);
+  const code = new URL(link).searchParams.get('oobCode');
+  const inbox = await context.newPage();
+  await inbox.goto(`/auth/action?mode=verifyEmail&oobCode=${code}`);
+  await expect(inbox.getByRole('heading', { name: 'Email confirmed' })).toBeVisible();
+  await inbox.close();
+
+  await page.getByRole('button', { name: "I've confirmed it" }).click();
+  await expect(page).toHaveURL(/\/register$/);
   await shot(page, 'register-step1');
   await page.getByRole('button', { name: 'Find my school' }).click();
   await expect(page.getByText('Enter the census number, or choose "My school isn\'t listed" below.')).toBeVisible();
@@ -46,29 +72,11 @@ test('register a government school: census lookup, email verification gate, land
 
   await shot(page, 'register-step2');
   await page.getByRole('button', { name: 'Next: your account' }).click();
+  await expect(page.getByRole('heading', { name: '3 · Your admin account' })).toBeVisible();
+  await expect(page.getByLabel('Password', { exact: true })).toHaveCount(0);
   await page.getByLabel('Your name').fill('Mrs. P. Principal');
-  await page.getByLabel('Email', { exact: true }).fill(email);
-  await page.getByLabel('Password', { exact: true }).fill('principal-1');
   await page.getByRole('checkbox', { name: /I agree to the/ }).check();
   await shot(page, 'register-step3');
-  await page.getByRole('button', { name: 'Create school' }).click();
-
-  await expect(page.getByRole('heading', { name: 'Check your email' })).toBeVisible();
-  await expect(page.getByText(email)).toBeVisible();
-  await shot(page, 'register-verify-gate');
-  await page.getByRole('button', { name: "I've confirmed it" }).click();
-  await expect(page.getByText('Not verified yet.', { exact: false })).toBeVisible();
-  await expect(page.getByRole('heading', { name: 'Check your email' })).toBeVisible();
-
-  const link = await verifyLinkFromMail(email);
-  const code = new URL(link).searchParams.get('oobCode');
-  const inbox = await context.newPage();
-  await inbox.goto(`/auth/action?mode=verifyEmail&oobCode=${code}`);
-  await expect(inbox.getByRole('heading', { name: 'Email confirmed' })).toBeVisible();
-  await inbox.close();
-
-  await page.getByRole('button', { name: "I've confirmed it" }).click();
-  await expect(page.getByRole('heading', { name: '3 · Your admin account' })).toBeVisible();
   await page.getByRole('button', { name: 'Create school' }).click();
   await expect(page).toHaveURL(/\/admin$/);
   await expect(page.getByRole('navigation', { name: 'Menu' })).toContainText('Nugegoda Central College');
