@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
 // Copyright (C) 2026 Kanushka Gayan
-import { orphanedEntries, usageCount, type PeriodTemplate, type TemplatePatch } from '@sathiya/core';
+import { orphanedEntries, usageCount, type DayIndex, type PeriodTemplate, type TemplatePatch, type TemplateRow } from '@sathiya/core';
 import { useEffect, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useSchool, useYear } from '../../app/SchoolProvider';
@@ -15,12 +15,45 @@ import { useToast } from '../../ui/Toast';
 import { DeleteSetupModal } from '../teachers/DeleteSetupModal';
 import * as api from './api';
 import { toApiError } from '../../lib/callable';
-import { draftToTemplate, periodCount, validateTemplate, type TemplateDraft, type ValidationError } from './model';
+import { DAY_INDEXES, draftToTemplate, periodCount, validateTemplate, type TemplateDraft, type ValidationError } from './model';
 import { NewTemplateModal } from './NewTemplateModal';
 import { ShrinkWarningModal } from './ShrinkWarningModal';
 import { TemplateEditor } from './TemplateEditor';
 
 type Dialog = { kind: 'new' } | { kind: 'delete' } | { kind: 'shrink'; count: number } | null;
+
+const rowsOn = (t: TemplateDraft, d: DayIndex): TemplateRow[] => (t.mode === 'perDay' && t.days ? t.days[d] : t.rows);
+
+function TimeChanges({ before, after, classes }: { before: TemplateDraft; after: TemplateDraft; classes: number }) {
+  const { t } = useTranslation('templates');
+  const { t: tc } = useTranslation('common');
+  const days: (DayIndex | null)[] = before.mode === 'same' && after.mode === 'same' ? [null] : DAY_INDEXES;
+  const lines: string[] = [];
+  for (const d of days) {
+    const prefix = d === null ? '' : `${tc(`days.short.${d}`)} `;
+    const oldP = rowsOn(before, d ?? 0).filter((r) => r.type === 'period');
+    const newP = rowsOn(after, d ?? 0).filter((r) => r.type === 'period');
+    for (let i = 0; i < Math.max(oldP.length, newP.length); i++) {
+      const label = prefix + tc('periods.periodN', { n: i + 1 });
+      const o = oldP[i];
+      const n = newP[i];
+      if (o && !n) lines.push(t('editor.changeRemoved', { label }));
+      else if (!o && n) lines.push(t('editor.changeAdded', { label, to: `${n.start}–${n.end}` }));
+      else if (o && n && (o.start !== n.start || o.end !== n.end)) lines.push(t('editor.changeMoved', { label, from: `${o.start}–${o.end}`, to: `${n.start}–${n.end}` }));
+    }
+  }
+  if (classes === 0 || lines.length === 0) return null;
+  return (
+    <Alert tone="warning" role="status" className="mt-4">
+      <p className="m-0 font-semibold">{t('editor.changesTitle', { count: classes })}</p>
+      <ul className="mb-0 mt-1.5 pl-5">
+        {lines.map((l) => (
+          <li key={l}>{l}</li>
+        ))}
+      </ul>
+    </Alert>
+  );
+}
 
 function toDraft(t: PeriodTemplate): TemplateDraft {
   return { name: t.name, mode: t.mode, rows: t.rows, ...(t.mode === 'perDay' && t.days ? { days: t.days } : {}) };
@@ -232,6 +265,7 @@ function TemplateDetail({ template, readOnly, dialog, setDialog }: DetailProps) 
       </div>
 
       <TemplateEditor draft={draft} errors={errors} readOnly={readOnly} onChange={setDraft} />
+      {!readOnly && <TimeChanges before={toDraft(template)} after={draft} classes={classes} />}
 
       {inUse > 0 && (
         <Alert tone="danger" role="alert" className="mt-4">

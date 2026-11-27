@@ -32,19 +32,12 @@ function setup() {
 }
 
 describe('templates page', () => {
-  it.each([
-    [375, ['Type, row 1', 'Remove row 1', 'Start, row 1', 'End, row 1']],
-    [1280, ['Type, row 1', 'Start, row 1', 'End, row 1', 'Remove row 1']],
-  ])('tab order in a period row follows the layout at %ipx', (width, order) => {
-    const restore = installMatchMedia(width);
-    try {
-      setup();
-      const row = screen.getAllByTestId('template-row')[0]!;
-      const names = Array.from(row.querySelectorAll('input,button')).map((el) => el.getAttribute('aria-label'));
-      expect(names).toEqual(order);
-    } finally {
-      restore();
-    }
+  it('a row reads handle, type, minutes, then remove', () => {
+    setup();
+    const row = screen.getAllByTestId('template-row')[0]!;
+    const names = Array.from(row.querySelectorAll('input,button')).map((el) => el.getAttribute('aria-label'));
+    expect(names).toEqual(['Move row 1. Drag, or press the up and down arrow keys.', 'Type, row 1', '5 minutes less, row 1', 'Minutes, row 1', '5 minutes more, row 1', 'Remove row 1']);
+    expect(row).toHaveTextContent('07:45–08:30');
   });
 
   it('lets the list and editor take the full width on phones', () => {
@@ -52,7 +45,6 @@ describe('templates page', () => {
     const editor = screen.getAllByTestId('template-row')[0]!.closest('section')!;
     expect(editor).toHaveClass('md:min-w-[520px]');
     expect(editor).not.toHaveClass('min-w-[520px]');
-    expect(screen.getAllByTestId('template-row')[0]).toHaveClass('flex-wrap', 'md:flex-nowrap');
   });
 
   it('puts + New template at the top right of the page header', () => {
@@ -66,12 +58,36 @@ describe('templates page', () => {
     expect(screen.getByRole('button', { name: /Short Friday/ })).toHaveTextContent(/· 1 class$/);
   });
 
-  it('rejects overlapping rows', async () => {
+  it('longer P1 shifts every later row and lists the changed period times', async () => {
     const user = setup();
-    fireEvent.change(screen.getByLabelText('Start, row 2'), { target: { value: '08:00' } });
+    await user.click(screen.getByRole('button', { name: '5 minutes more, row 1' }));
+    expect(screen.getAllByTestId('template-row')[1]).toHaveTextContent('08:35–09:15');
+    const changes = screen.getByRole('status');
+    expect(changes).toHaveTextContent('Period times that change for the 3 classes using this template');
+    expect(changes).toHaveTextContent('P2: 08:30–09:10 → 08:35–09:15');
     await user.click(screen.getByRole('button', { name: 'Save template' }));
-    expect(screen.getByRole('alert')).toHaveTextContent(/overlap/i);
-    expect(api.saveTemplateWithRemap).not.toHaveBeenCalled();
+    const [, , patch] = vi.mocked(api.saveTemplateWithRemap).mock.calls.at(-1)!;
+    expect(patch.rows.at(-1)).toMatchObject({ start: '12:55', end: '13:35' });
+  });
+
+  it('moves a row with the arrow keys on its handle', async () => {
+    const user = setup();
+    screen.getByRole('button', { name: /^Move row 5\./ }).focus();
+    await user.keyboard('{ArrowUp}');
+    const rows = screen.getAllByTestId('template-row');
+    expect(rows[3]).toHaveTextContent('09:50–10:10');
+    expect(rows[4]).toHaveTextContent('10:10–10:50');
+    expect(screen.getByRole('button', { name: /^Move row 4\./ })).toHaveFocus();
+  });
+
+  it('inserts a row between two rows', async () => {
+    const user = setup();
+    await user.click(screen.getByRole('button', { name: 'Insert a row before row 2' }));
+    await user.click(screen.getByRole('button', { name: 'Interval' }));
+    const rows = screen.getAllByTestId('template-row');
+    expect(rows).toHaveLength(10);
+    expect(rows[1]).toHaveTextContent('08:30–08:50');
+    expect(rows[2]).toHaveTextContent('08:50–09:30');
   });
 
   it('per-day switch copies rows to every day', async () => {
@@ -79,7 +95,7 @@ describe('templates page', () => {
     await user.click(screen.getByRole('radio', { name: 'Different per day' }));
     expect(screen.getAllByRole('tab')).toHaveLength(5);
     await user.click(screen.getByRole('tab', { name: 'Fri' }));
-    expect(screen.getAllByLabelText(/^Start, row/)).toHaveLength(9);
+    expect(screen.getAllByLabelText(/^Minutes, row/)).toHaveLength(9);
     await user.click(screen.getByRole('button', { name: 'Save template' }));
     const [, , patch] = vi.mocked(api.saveTemplateWithRemap).mock.calls[0]!;
     expect(patch.mode).toBe('perDay');
@@ -211,14 +227,17 @@ describe('templates page', () => {
     expect(within(dialog).getByRole('button', { name: 'Create template' })).toBeEnabled();
   });
 
-  it('rejects a blank time and never shows NaN minutes', async () => {
+  it('moving the day start keeps every length and ignores a blank time', async () => {
     const user = setup();
-    const start = screen.getByLabelText('Start, row 1');
+    const start = screen.getByLabelText('Day starts at');
     fireEvent.change(start, { target: { value: '' } });
-    expect(screen.queryByText(/NaN/)).not.toBeInTheDocument();
+    expect(screen.getAllByTestId('template-row')[0]).toHaveTextContent('07:45–08:30');
+    fireEvent.change(start, { target: { value: '07:30' } });
+    expect(screen.getAllByTestId('template-row')[0]).toHaveTextContent('07:30–08:15');
+    expect(screen.getByText(/ends at 13:15/)).toBeInTheDocument();
     await user.click(screen.getByRole('button', { name: 'Save template' }));
-    expect(api.saveTemplateWithRemap).not.toHaveBeenCalled();
-    expect(screen.getByText(/Row 1: enter a valid time/)).toBeInTheDocument();
+    const [, , patch] = vi.mocked(api.saveTemplateWithRemap).mock.calls.at(-1)!;
+    expect(patch.rows[4]).toMatchObject({ type: 'interval', start: '10:15', end: '10:35' });
   });
 
   it('read-only hides every write control', () => {
@@ -227,6 +246,8 @@ describe('templates page', () => {
     for (const name of ['Save template', '+ New template', 'Set as default', '+ Period', '+ Interval', '+ Activity', 'Delete template']) {
       expect(screen.queryByRole('button', { name })).not.toBeInTheDocument();
     }
-    expect(screen.getByLabelText('Start, row 1')).toBeDisabled();
+    expect(screen.getByLabelText('Minutes, row 1')).toBeDisabled();
+    expect(screen.queryByRole('button', { name: /^Move row 1/ })).not.toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: /^Insert a row/ })).not.toBeInTheDocument();
   });
 });
