@@ -191,6 +191,23 @@ describe('phone lists', () => {
     expect(screen.getByRole('dialog', { name: /Disable/ })).toBeInTheDocument();
   });
 
+  it('keeps an open confirmation when the screen crosses the phone width', async () => {
+    const user = userEvent.setup();
+    renderWithSchool(
+      <UsageSourceProvider value={source}>
+        <SchoolDetail school={{ loading: false, data: { ...list[0]!, censusNo: '03021' } }} setStatus={vi.fn()} releaseCensus={vi.fn()} />
+      </UsageSourceProvider>,
+      opts,
+    );
+    await user.click(screen.getByRole('button', { name: 'More actions' }));
+    await user.click(screen.getByRole('menuitem', { name: 'Disable' }));
+    resize(1024);
+    expect(screen.getByRole('dialog', { name: /Disable/ })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'Disable' })).toBeInTheDocument();
+    resize(375);
+    expect(screen.getByRole('dialog', { name: /Disable/ })).toBeInTheDocument();
+  });
+
   it('opens a report as a sheet and closes it from the row', async () => {
     const user = userEvent.setup();
     const writer = { closeReport: vi.fn().mockResolvedValue(undefined) };
@@ -208,6 +225,7 @@ describe('phone lists', () => {
     const sheet = screen.getByRole('dialog', { name: 'Siripura Central College' });
     expect(within(sheet).getByText('Second account')).toBeInTheDocument();
     expect(within(sheet).getByRole('button', { name: 'Suspend school' })).toBeInTheDocument();
+    expect(within(sheet).getByRole('link', { name: 'Open read-only view' })).toHaveAttribute('href', '/super/schools/a/admin');
     await user.click(within(sheet).getByRole('button', { name: 'Close' }));
     await user.click(screen.getByRole('button', { name: 'Close: Siripura Central College' }));
     expect(writer.closeReport).toHaveBeenCalledWith('r1');

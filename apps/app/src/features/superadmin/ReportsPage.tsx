@@ -6,7 +6,8 @@ import { useTranslation } from 'react-i18next';
 import { Link } from 'react-router-dom';
 import { useLang } from '../../app/LangProvider';
 import { useCollection, type CollectionState } from '../../lib/firestore';
-import { Button } from '../../ui/Button';
+import { Button, buttonClass } from '../../ui/Button';
+import { cx } from '../../ui/cx';
 import { EmptyState } from '../../ui/EmptyState';
 import { ListInitials, ListRow, ListSection } from '../../ui/GroupedList';
 import { LoadingState } from '../../ui/LoadingState';
@@ -275,7 +276,13 @@ function ReportSheet({ report, school, writer, setStatus, releaseCensus, onClose
           </a>
         </p>
       )}
-      <div className="mt-4 grid grid-cols-2 gap-2 [&>button]:h-11">
+      <Link
+        to={`/super/schools/${report.schoolId}/admin`}
+        className={cx(buttonClass({ variant: 'secondary', size: 'md' }), 'mt-4 h-11 w-full')}
+      >
+        {t('detail.openReadOnly')}
+      </Link>
+      <div className="mt-2 grid grid-cols-2 gap-2 [&>button]:h-11">
         <CloseButton report={report} writer={writer} size="md" />
         {school && school.status === 'active' && <SuspendButton school={school} setStatus={setStatus} />}
       </div>

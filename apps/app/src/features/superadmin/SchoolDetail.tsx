@@ -8,15 +8,15 @@ import { useLang } from '../../app/LangProvider';
 import { useCollection, useDoc, type CollectionState, type DocState } from '../../lib/firestore';
 import { EmptyState } from '../../ui/EmptyState';
 import { ActionMenu, type ActionMenuItem } from '../../ui/ActionMenu';
-import { buttonClass } from '../../ui/Button';
+import { Button, buttonClass } from '../../ui/Button';
 import { LoadingState } from '../../ui/LoadingState';
 import { PHONE_QUERY, useMediaQuery } from '../../ui/PhoneNotice';
-import { defaultReleaseCensus, ReleaseCensusButton, useReleaseCensus, type ReleaseCensusFn } from './ReleaseCensus';
+import { defaultReleaseCensus, useReleaseCensus, type ReleaseCensusFn } from './ReleaseCensus';
 import { defaultReview, type ReviewFn } from './review';
 import { defaultDecideName, type DecideNameFn } from './nameChange';
 import { NameChangeSection } from './NameChangeSection';
 import { MoeBadge, ReviewSection } from './ReviewSection';
-import { StatusButton, StatusPill, useStatusToggle } from './StatusControl';
+import { StatusPill, useStatusToggle } from './StatusControl';
 import { formatActivity, formatDate } from './format';
 import { useUsageCounts } from './source';
 import { defaultSetStatus, type SetStatusFn } from './status';
@@ -43,36 +43,52 @@ function Row({ label, children }: { label: string; children: ReactNode }) {
 function DetailActions({ school, setStatus, releaseCensus }: { school: School; setStatus: SetStatusFn; releaseCensus: ReleaseCensusFn }) {
   const { t } = useTranslation('superadmin');
   const isPhone = useMediaQuery(PHONE_QUERY);
+  // One owner for each action's state, so an open confirmation survives a resize across the phone breakpoint.
   const toggle = useStatusToggle(school, setStatus);
   const census = useReleaseCensus(school, releaseCensus);
   const readOnly = `/super/schools/${school.id}/admin`;
-  if (!isPhone) {
-    return (
-      <div className="flex flex-wrap gap-2">
-        <Link
-          to={readOnly}
-          className="inline-flex h-8 items-center rounded-lg border border-line-strong bg-white px-3 text-[13px] font-semibold hover:bg-surface"
-        >
-          {t('detail.openReadOnly')}
-        </Link>
-        <StatusButton school={school} setStatus={setStatus} />
-        <ReleaseCensusButton school={school} release={releaseCensus} />
-      </div>
-    );
-  }
   const items: ActionMenuItem[] = [];
   if (toggle.visible)
     items.push({ key: 'status', label: toggle.label, tone: toggle.disabling ? 'danger' : 'default', disabled: toggle.busy, onSelect: toggle.start });
   if (census.visible) items.push({ key: 'census', label: census.label, tone: 'danger', disabled: census.busy, onSelect: census.start });
   return (
-    <div className="flex shrink-0 items-center gap-2">
-      <Link to={readOnly} aria-label={t('detail.openReadOnly')} className={buttonClass({ variant: 'secondary', size: 'md' })}>
-        {t('schools.open')}
-      </Link>
-      {items.length > 0 && <ActionMenu items={items} />}
+    <>
+      {isPhone ? (
+        <div className="flex shrink-0 items-center gap-2">
+          <Link to={readOnly} aria-label={t('detail.openReadOnly')} className={buttonClass({ variant: 'secondary', size: 'md' })}>
+            {t('schools.open')}
+          </Link>
+          {items.length > 0 && <ActionMenu items={items} />}
+        </div>
+      ) : (
+        <div className="flex flex-wrap gap-2">
+          <Link
+            to={readOnly}
+            className="inline-flex h-8 items-center rounded-lg border border-line-strong bg-white px-3 text-[13px] font-semibold hover:bg-surface"
+          >
+            {t('detail.openReadOnly')}
+          </Link>
+          {toggle.visible && (
+            <Button
+              size="sm"
+              variant={toggle.disabling ? 'danger' : 'secondary'}
+              loading={toggle.busy && !toggle.confirming}
+              disabled={toggle.busy && toggle.confirming}
+              onClick={toggle.start}
+            >
+              {toggle.label}
+            </Button>
+          )}
+          {census.visible && (
+            <Button size="sm" variant="danger" disabled={census.busy} onClick={census.start}>
+              {census.label}
+            </Button>
+          )}
+        </div>
+      )}
       {toggle.modal}
       {census.modal}
-    </div>
+    </>
   );
 }
 

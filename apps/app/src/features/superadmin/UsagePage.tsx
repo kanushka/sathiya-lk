@@ -81,7 +81,7 @@ export function UsagePage({ schools: injected }: { schools?: CollectionState<Sch
                   key={s.id}
                   lead={<ListInitials name={name} />}
                   title={name}
-                  detail={detail}
+                  detail={<span className="whitespace-normal">{detail}</span>}
                   meta={ready ? formatActivity(ready.lastActivity, lang, t('usage.never'), dash) : undefined}
                 />
               );
