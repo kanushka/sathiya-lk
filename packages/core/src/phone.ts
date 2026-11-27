@@ -4,6 +4,8 @@
 import { PHONE_RE } from './importValidate';
 
 export const PHONE_MAX = 30;
+/** PHONE_RE alone lets '-------' or '( )( )( )' through, so a number also needs this many digits. */
+export const PHONE_MIN_DIGITS = 7;
 
 /**
  * A teacher's own phone number as typed: '' clears it, anything else must look like a phone number.
@@ -14,5 +16,6 @@ export function cleanPhone(v: unknown): string | null | undefined {
   const s = v.trim().replace(/\s+/g, ' ');
   if (s === '') return null;
   if (s.length > PHONE_MAX || !PHONE_RE.test(s)) return undefined;
+  if ((s.match(/\d/g) ?? []).length < PHONE_MIN_DIGITS) return undefined;
   return s;
 }

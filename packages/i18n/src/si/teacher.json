@@ -74,7 +74,8 @@
     "away": "නැත",
     "reliefBy": "ආදේශක: {{name}}",
     "noRelief": "තවම ආදේශකයෙක් නැත",
-    "together": "{{classes}} සමඟ"
+    "together": "{{classes}} සමඟ",
+    "loadError": "ඔබේ පන්තිය පූරණය කළ නොහැකි විය. නැවත උත්සාහ කරන්න."
   },
   "me": {
     "details": "මගේ විස්තර",
@@ -93,5 +94,6 @@
     "periodsAWeek": "සතියකට කාල පරිච්ඡේද",
     "printTimetable": "කාලසටහන මුද්‍රණය",
     "grades": "ශ්‍රේණි {{grades}}"
-  }
+  },
+  "tryAgain": "නැවත උත්සාහ කරන්න"
 }

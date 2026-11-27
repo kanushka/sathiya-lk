@@ -21,4 +21,11 @@ describe('cleanPhone', () => {
     expect(cleanPhone(712345678)).toBeUndefined();
     expect(cleanPhone(null)).toBeUndefined();
   });
+  it('needs digits, not just phone punctuation', () => {
+    expect(cleanPhone('-------')).toBeUndefined();
+    expect(cleanPhone('( )( )( )')).toBeUndefined();
+    expect(cleanPhone('+ - - - - - -')).toBeUndefined();
+    expect(cleanPhone('12-34-56')).toBeUndefined();
+    expect(cleanPhone('123-4567')).toBe('123-4567');
+  });
 });

@@ -49,6 +49,8 @@ export interface TeacherData {
   snapshot: DocState<TeacherSnapshot>;
   base: TeacherSnapshot | null;
   reliefOn: (date: string) => ReliefDay | null;
+  /** Whether the relief days for today and the next school day are still loading, or failed. A missing doc is no relief. */
+  relief: { loading: boolean; error?: Error };
   /** The snapshot with the relief of that date laid over it (relief is read for today and the next school day). */
   snapFor: (date: string) => OverlaySnapshot | null;
   classes: CollectionState<SchoolClass>;
@@ -62,8 +64,6 @@ export function useTeacherData(): TeacherData {
   if (!v) throw new Error('useTeacherData must be used inside TeacherDataProvider');
   return v;
 }
-
-const noClasses: SchoolClass[] = [];
 
 export function TeacherDataProvider({ injected, children }: { injected: TeacherInjected; children: ReactNode }) {
   const { claims } = useAuth();
@@ -84,9 +84,13 @@ export function TeacherDataProvider({ injected, children }: { injected: TeacherI
   const nextLive = useDoc<ReliefDay>(reliefPath(next.date, true));
   const liveClasses = useCollection<SchoolClass>(!injected.classes && tid ? paths.classes(sid) : null, where('classTeacherId', '==', tid ?? ''));
   const classes = useMemo<CollectionState<SchoolClass>>(
-    () => (injected.classes ? { loading: false, data: injected.classes } : liveClasses.error ? { ...liveClasses, data: noClasses } : liveClasses),
+    () => (injected.classes ? { loading: false, data: injected.classes } : liveClasses),
     [injected.classes, liveClasses],
   );
+  const reliefError = todayLive.error ?? nextLive.error;
+  const relief = injected.reliefDays
+    ? { loading: false }
+    : { loading: todayLive.loading || nextLive.loading, ...(reliefError && { error: reliefError }) };
 
   const todayData = todayLive.data ?? null;
   const nextData = nextLive.data ?? null;
@@ -116,6 +120,7 @@ export function TeacherDataProvider({ injected, children }: { injected: TeacherI
     snapshot,
     base,
     reliefOn,
+    relief,
     snapFor,
     classes,
     injected,

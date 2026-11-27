@@ -11,7 +11,7 @@ import { LoadingState } from '../../ui/LoadingState';
 import { PHONE_QUERY, useMediaQuery } from '../../ui/PhoneNotice';
 import { SegmentedControl } from '../../ui/SegmentedControl';
 import { cellText, cellsAt, clock, slotsOf, weekdays } from './cells';
-import { PageTitle, PeriodLead, PrintIconLink, printClassPath } from './parts';
+import { LoadError, PageTitle, PeriodLead, PrintIconLink, printClassPath } from './parts';
 import type { OverlayCell } from './reliefOverlay';
 import { useClassSnapshot, useTeacherData } from './teacherData';
 import { columnDates, firstSchoolDay, TimetableGrid, type Column } from './TimetableView';
@@ -46,6 +46,7 @@ export function MyClassPage() {
   const cls = sorted.find((c) => c.id === picked) ?? sorted[0];
 
   if (classes.loading) return <LoadingState />;
+  if (classes.error) return <LoadError title={t('myClass.loadError')} />;
   if (!cls) return <EmptyState icon="school" title={t('myClass.none')} body={t('myClass.noneBody')} />;
   return (
     <div className="flex flex-col gap-2.5">
@@ -67,7 +68,7 @@ function ClassBody({ classId, fallbackName }: { classId: string; fallbackName: s
   const { t } = useTranslation(['teacher', 'common']);
   const { lang } = useLang();
   const isPhone = useMediaQuery(PHONE_QUERY);
-  const { sid, today, reliefOn, base } = useTeacherData();
+  const { sid, today, reliefOn, relief, base } = useTeacherData();
   const snap = useClassSnapshot(classId);
   const [mode, setMode] = useState<'day' | 'week'>(isPhone ? 'day' : 'week');
   const [day, setDay] = useState<DayIndex>(today.day ?? 0);
@@ -76,8 +77,8 @@ function ClassBody({ classId, fallbackName }: { classId: string; fallbackName: s
   const header = (
     <PageTitle title={title} sub={t('myClass.youAre')} action={<PrintIconLink to={printClassPath(sid, classId)} label={t('myClass.print', { name: title })} />} />
   );
-  if (snap.loading) return <LoadingState />;
-  if (snap.error) return <EmptyState title={t('loadError')} />;
+  if (snap.loading || relief.loading) return <LoadingState />;
+  if (snap.error || relief.error) return <LoadError title={t('myClass.loadError')} />;
   if (!snap.data) {
     return (
       <>
@@ -137,8 +138,9 @@ function weekColumns(snap: ClassSnapshot, today: { date: string; day: DayIndex |
     const isToday = date === today.date;
     const cells = snap.cells.map((c): OverlayCell => {
       const named = c.entryId && own.has(c.entryId) ? { ...c, sub: words.you, subSi: words.you } : c;
-      const r = isToday && c.day === day && c.entryId ? reliefs.get(c.entryId)?.[0] : undefined;
-      return r ? { ...named, relief: { forTeacher: r.absent, note: words.note(r) } } : named;
+      // A grouped lesson can have several teachers away: every record shows, not just the first.
+      const rs = isToday && c.day === day && c.entryId ? (reliefs.get(c.entryId) ?? []) : [];
+      return rs.length ? { ...named, relief: { forTeacher: rs.map((r) => r.absent).join(', '), note: rs.map(words.note).join(' · ') } } : named;
     });
     return { date, day, isToday, snap: { rows: snap.rows, cells } };
   });

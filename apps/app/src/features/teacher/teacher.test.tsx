@@ -199,6 +199,32 @@ describe('Today', () => {
     expect(screen.getByText('බදාදා 25 නොවැම්බර්')).toBeInTheDocument();
   });
 
+  it('keeps the leave note on the now card: who covers, or that nobody does', () => {
+    const lesson = snapshotFor(T.perera).cells.find((c) => c.day === 2 && c.period === 3)!;
+    const leave = (reliefTeacherId: string | null): ReliefDay => ({
+      ...wedRelief,
+      leaves: [{ teacherId: T.perera, type: 'full', entryIds: [lesson.entryId!] }],
+      reliefs: [{ entryId: lesson.entryId!, absentTeacherId: T.perera, day: 2, period: 3, start: '09:10', end: '09:50', classIds: [C.c6b], subjectId: S.maths, reliefTeacherId }],
+    });
+    const { unmount } = renderTeacher(<TodayPage />, { reliefDays: { [WED]: leave(T.wijesekara) } });
+    expect(screen.getByTestId('now-card')).toHaveTextContent('On leave · relief: Ms. A. Wijesekara');
+    unmount();
+    renderTeacher(<TodayPage />, { reliefDays: { [WED]: leave(null) } });
+    expect(screen.getByTestId('now-card')).toHaveTextContent('On leave · no relief');
+  });
+
+  it('goes back to the current week when Week is picked after moving days', async () => {
+    renderTeacher(<TodayPage />);
+    const week = screen.getByRole('region', { name: 'This week' });
+    await userEvent.click(within(week).getByRole('radio', { name: 'Day' }));
+    for (let i = 0; i < 3; i++) await userEvent.click(within(week).getByRole('button', { name: 'Later' }));
+    expect(within(week).getAllByText('Monday 30 November').length).toBeGreaterThan(0);
+    await userEvent.click(within(week).getByRole('radio', { name: 'Week' }));
+    expect(within(week).getByText('This week')).toBeInTheDocument();
+    expect(within(week).getByTestId(`cell-${WED}-3`)).toHaveTextContent('6B');
+    expect(within(week).queryByTestId('cell-2026-11-30-1')).toBeNull();
+  });
+
   it('shows own leave on the now card list with the relief teacher', () => {
     asPhone();
     const lesson = snapshotFor(T.perera).cells.find((c) => c.day === 2 && c.period === 4)!;
@@ -399,6 +425,22 @@ describe('My class', () => {
     expect(screen.getByTestId('cell-2026-11-23-2')).toHaveTextContent('ScienceMrs. S. Gunasekara');
   });
 
+  it('shows every absent teacher of a grouped lesson in the week', () => {
+    const group = class6B.cells.find((c) => c.day === 2 && c.period === 2 && c.isGroup)!;
+    const base = { entryId: group.entryId!, day: 2 as const, period: 2, start: '08:30', end: '09:10', classIds: [C.c6a, C.c6b], subjectId: S.buddhism };
+    const two: ReliefDay = {
+      ...wedRelief,
+      names: { ...names, [T.ananda]: { en: 'Ven. Ananda Thero' }, [T.rizan]: { en: 'Mr. M. Rizan' } },
+      reliefs: [
+        { ...base, absentTeacherId: T.ananda, reliefTeacherId: T.perera },
+        { ...base, absentTeacherId: T.rizan, subjectId: S.islam, reliefTeacherId: null },
+      ],
+    };
+    renderTeacher(<MyClassPage />, { reliefDays: { [WED]: two } });
+    const cell = screen.getByTestId(`cell-${WED}-2`);
+    expect(cell).toHaveTextContent('Relief: Mrs. N. Perera · No relief yet');
+  });
+
   it('says so for a teacher who is not a class teacher', () => {
     renderTeacher(<MyClassPage />, { classes: [] });
     expect(screen.getByText('You are not a class teacher')).toBeInTheDocument();
@@ -469,6 +511,18 @@ describe('Me', () => {
     await userEvent.click(screen.getByRole('button', { name: 'Save' }));
     expect(screen.getByText('Enter a phone number, for example 071 234 5678.')).toBeInTheDocument();
     expect(input).toHaveAttribute('aria-invalid', 'true');
+    expect(call).not.toHaveBeenCalledWith('setMyPhone', expect.anything());
+  });
+
+  it('shows the error for an invalid value when no phone is saved yet', async () => {
+    const { phone: _p, ...noPhone } = pereraRecord;
+    renderTeacher(<MePage />, { teacher: { loading: false, data: noPhone } });
+    const input = screen.getByLabelText('Phone number');
+    expect(screen.getByRole('button', { name: 'Save' })).toBeDisabled();
+    await userEvent.type(input, 'abc');
+    expect(screen.getByRole('button', { name: 'Save' })).toBeEnabled();
+    await userEvent.click(screen.getByRole('button', { name: 'Save' }));
+    expect(screen.getByText('Enter a phone number, for example 071 234 5678.')).toBeInTheDocument();
     expect(call).not.toHaveBeenCalledWith('setMyPhone', expect.anything());
   });
 

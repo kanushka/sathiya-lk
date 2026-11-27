@@ -4,7 +4,7 @@ import type { TeacherSnapshot } from '@sathiya/core';
 import type { ReactNode } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Link } from 'react-router-dom';
-import { buttonClass } from '../../ui/Button';
+import { Button, buttonClass } from '../../ui/Button';
 import { cx } from '../../ui/cx';
 import { EmptyState } from '../../ui/EmptyState';
 import { Icon } from '../../ui/Icon';
@@ -12,14 +12,32 @@ import { LoadingState } from '../../ui/LoadingState';
 import { clock } from './cells';
 import { useTeacherData } from './teacherData';
 
-/** Renders the page once the teacher's published timetable is in, else the loading, error or not-published state. */
+/**
+ * Renders the page once the teacher's published timetable and the relief laid over it are in, else the loading,
+ * error or not-published state. A schedule without its relief would look complete and be wrong.
+ */
 export function SnapshotGate({ children }: { children: (base: TeacherSnapshot) => ReactNode }) {
   const { t } = useTranslation('teacher');
-  const { snapshot } = useTeacherData();
-  if (snapshot.loading) return <LoadingState />;
-  if (snapshot.error) return <EmptyState title={t('loadError')} />;
+  const { snapshot, relief } = useTeacherData();
+  if (snapshot.loading || relief.loading) return <LoadingState />;
+  if (snapshot.error || relief.error) return <LoadError />;
   if (!snapshot.data) return <EmptyState icon="calendar" title={t('notPublished.title')} body={t('notPublished.body')} />;
   return <>{children(snapshot.data)}</>;
+}
+
+/** The load error with a way to recover: listeners do not retry, so Try again reloads the page. */
+export function LoadError({ title }: { title?: string }) {
+  const { t } = useTranslation('teacher');
+  return (
+    <EmptyState
+      title={title ?? t('loadError')}
+      action={
+        <Button variant="secondary" size="lg" onClick={() => window.location.reload()}>
+          {t('tryAgain')}
+        </Button>
+      }
+    />
+  );
 }
 
 /** P3 over 9:10, the lead of a period row. */

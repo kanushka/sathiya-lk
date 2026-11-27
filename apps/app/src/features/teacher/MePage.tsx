@@ -106,7 +106,9 @@ function PhoneCard({ sid, saved }: { sid: string; saved: string }) {
   const [value, setValue] = useState(saved);
   const [error, setError] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
-  const unchanged = (cleanPhone(value) ?? '') === saved;
+  // Only a valid value that matches the saved phone is unchanged. An invalid one keeps Save on, so the error can show.
+  const cleaned = cleanPhone(value);
+  const unchanged = cleaned !== undefined && (cleaned ?? '') === saved;
 
   async function save(e: FormEvent) {
     e.preventDefault();

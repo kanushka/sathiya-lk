@@ -57,7 +57,8 @@ function ShellFrame({ children }: { children: ReactNode }) {
     if (tid) recordSignInOnce();
   }, [tid]);
 
-  const tabs = teacherTabs(sid, classes.data.length > 0);
+  // A failed class query keeps the tab, so My class can say so and offer Try again instead of vanishing.
+  const tabs = teacherTabs(sid, !!classes.error || classes.data.length > 0);
   const name = pickName(school, lang);
   const target = lang === 'en' ? 'si' : 'en';
   const fullName = base ? (lang === 'si' && base.nameSi) || base.name : '';

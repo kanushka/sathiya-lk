@@ -48,9 +48,10 @@ export function PrintMyClassPage() {
   const tid = teacherIdOf(claims, school.id);
   const yid = school.activeYearId;
   const mine = useCollection<SchoolClass>(tid ? paths.classes(school.id) : null, where('classTeacherId', '==', tid ?? ''));
-  const allowed = !tid || mine.error ? false : mine.loading ? null : mine.data.some((c) => c.id === id);
+  // Only a query that worked and lacks the class means not theirs. A failed query is an error, not "not found".
+  const allowed = !tid ? false : mine.loading || mine.error ? null : mine.data.some((c) => c.id === id);
   const doc = useDoc<ClassSnapshot>(allowed && id && yid ? paths.publishedClass(school.id, yid, id) : null);
-  const status = allowed && !yid ? 'notPublished' : statusOf(doc, allowed);
+  const status: PrintStatus = mine.error ? 'error' : allowed && !yid ? 'notPublished' : statusOf(doc, allowed);
   return (
     <PrintPage status={status} auto={params.get('auto') === '1'} icon="classView" notFoundTitle={t('states.classNotFoundTitle')} notFoundBody={t('states.classNotFoundBody')}>
       {doc.data && <PrintSheet kind="class" snapshot={doc.data} lang={lang} {...(school.logoUrl ? { logoUrl: school.logoUrl } : {})} />}

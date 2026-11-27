@@ -2,7 +2,8 @@
 // Copyright (C) 2026 Kanushka Gayan
 import { paths } from '@sathiya/core';
 import { describe, expect, it } from 'vitest';
-import { adminDb, adminWithSchool, expectFnError, linkedTeacher, makeSuper, signUp, teacherInput } from './helpers';
+import { writeOwnPhone } from '../src/setMyPhone';
+import { adminDb, adminWithSchool, expectFnError, linkedTeacher, makeSuper, signUp, teacherInput, uniq } from './helpers';
 
 const teacherDoc = (sid: string, tid: string) => adminDb.doc(`${paths.teachers(sid)}/${tid}`);
 
@@ -53,6 +54,26 @@ describe('setMyPhone', () => {
     const { sid, teacherId, t } = await teacher('SCC406');
     await teacherDoc(sid, teacherId).update({ uid: 'someone-else' });
     await expectFnError(t.call('setMyPhone', { schoolId: sid, phone: '0771234567' }), 'permission-denied', 'not-allowed');
+  });
+
+  it('checks the link inside the write transaction, so an unlink after the guard does not land', async () => {
+    // Set up with the admin SDK only, so this runs against the Firestore emulator without the functions emulator.
+    const sid = `s-${uniq()}`;
+    const teacherId = `t-${uniq()}`;
+    const t = { uid: `u-${uniq()}` };
+    await teacherDoc(sid, teacherId).set({ staffId: 'SCC408', name: 'T', uid: t.uid, phone: '0771234567' });
+    await writeOwnPhone(sid, teacherId, t.uid, '0112223334');
+    expect((await teacherDoc(sid, teacherId).get()).get('phone')).toBe('0112223334');
+
+    await teacherDoc(sid, teacherId).update({ uid: 'someone-else' });
+    await expect(writeOwnPhone(sid, teacherId, t.uid, '0779998888')).rejects.toMatchObject({ code: 'permission-denied' });
+    await expect(writeOwnPhone(sid, 'no-such-teacher', t.uid, '0779998888')).rejects.toMatchObject({ code: 'permission-denied' });
+    expect((await teacherDoc(sid, teacherId).get()).get('phone')).toBe('0112223334');
+  });
+
+  it('refuses a punctuation-only phone', async () => {
+    const { sid, t } = await teacher('SCC409');
+    await expectFnError(t.call('setMyPhone', { schoolId: sid, phone: '-------' }), 'invalid-argument', 'invalid');
   });
 
   it('refuses a teacher of a disabled school', async () => {

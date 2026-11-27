@@ -74,7 +74,8 @@
     "away": "away",
     "reliefBy": "Relief: {{name}}",
     "noRelief": "No relief yet",
-    "together": "With {{classes}}"
+    "together": "With {{classes}}",
+    "loadError": "Could not load your class. Please try again."
   },
   "me": {
     "details": "My details",
@@ -93,5 +94,6 @@
     "periodsAWeek": "Periods a week",
     "printTimetable": "Print timetable",
     "grades": "Grades {{grades}}"
-  }
+  },
+  "tryAgain": "Try again"
 }

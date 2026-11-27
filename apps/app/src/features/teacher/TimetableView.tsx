@@ -307,7 +307,12 @@ function CellDetail({ cell, column, lang, onClose }: { cell: OverlayCell; column
 /** Stateful Day / 3 days / Week with its own start date, starting on today. */
 export function useTimetableState(initial: TimetableMode) {
   const { today } = useTeacherData();
-  const [mode, setMode] = useState<TimetableMode>(initial);
+  const [mode, setModeState] = useState<TimetableMode>(initial);
   const [start, setStart] = useState(() => firstSchoolDay(today.date));
+  // Week has no arrows and no dates, so picking it always goes back to the current week.
+  const setMode = (m: TimetableMode) => {
+    if (m === 'week') setStart(firstSchoolDay(today.date));
+    setModeState(m);
+  };
   return { mode, setMode, start, setStart };
 }

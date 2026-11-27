@@ -9,6 +9,7 @@ import { LinkButton } from '../../ui/LinkButton';
 import { ListSection } from '../../ui/GroupedList';
 import { PHONE_QUERY, useMediaQuery } from '../../ui/PhoneNotice';
 import { cellText, clock } from './cells';
+import { leaveText } from './CellNote';
 import { greetingKey } from './colomboNow';
 import { PageTitle, SnapshotGate, printTimetablePath } from './parts';
 import type { OverlayCell, OverlaySnapshot } from './reliefOverlay';
@@ -174,6 +175,7 @@ function NowCard({ isSchoolDay, current, next, minutesLeft, lang }: NowCardProps
         {text.sub} · {text.title}
       </p>
       {cell.relief && <p className="m-0 mt-1 text-[13px] text-ink-muted">{t('relief.covering', { name: cell.relief.forTeacher })}</p>}
+      {cell.onLeave && <p className="m-0 mt-1 text-[13px] font-semibold text-warning">{leaveText(cell, t)}</p>}
       {nextLine}
     </section>
   );
