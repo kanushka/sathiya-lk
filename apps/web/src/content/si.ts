@@ -159,10 +159,10 @@ export const si: Content = {
     report: 'ව්‍යාජ හෝ දෙවරක් ලියාපදිංචි කළ පාසලක් දුටුවාද?',
   },
   cta: {
-    title: 'ශ්‍රී ලාංකීය පාසල් ප්‍රජාවට කරන දායකත්වයක්.',
+    title: 'පාසල් කාලසටහන සති ගණනක් නොව දින කිහිපයකින්.',
     sub: 'Free for every Sri Lankan school.',
     subLang: 'en',
-    button: 'ඔබේ පාසල ලියාපදිංචි කරන්න — නොමිලේ',
+    button: 'පාසල ලියාපදිංචි කරන්න',
   },
   footer: {
     copyright: '© 2026 Sathiya (සතිය)',
