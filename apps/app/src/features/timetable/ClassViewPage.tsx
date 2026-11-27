@@ -2,13 +2,16 @@
 // Copyright (C) 2026 Kanushka Gayan
 
 import {
+  classPlacement,
   effectivePlan,
+  formatSummaryAmount,
   fillWithClassTeacher,
   groupSpecIsCurrent,
   latestGroupSpec,
   pickName,
   planKey,
   periodsFor,
+  placementSummary,
   rowsFor,
   teacherDisplayName,
   windowOf,
@@ -28,17 +31,21 @@ import { useLang } from '../../app/LangProvider';
 import { LockedButton, useSchoolPending } from '../../app/PendingReview';
 import { useSchool, useYear } from '../../app/SchoolProvider';
 import { useReadOnly } from '../../ui/AdminLayout';
+import { ActionMenu, type ActionMenuItem } from '../../ui/ActionMenu';
 import { Button } from '../../ui/Button';
+import { cx } from '../../ui/cx';
 import { EmptyState } from '../../ui/EmptyState';
 import { LinkButton } from '../../ui/LinkButton';
 import { Icon } from '../../ui/Icon';
 import { IconButton } from '../../ui/IconButton';
 import { LoadingState } from '../../ui/LoadingState';
 import { Modal } from '../../ui/Modal';
+import { PHONE_QUERY, useMediaQuery } from '../../ui/PhoneNotice';
 import { Select } from '../../ui/Select';
 import { AssignPicker } from './AssignPicker';
 import { BlockEditor } from './BlockEditor';
 import { blockKey, blockStateFor, isBlock, type BlockState } from './blockState';
+import { DayPicker, DayView, defaultDay, firstRun, ModeToggle, type TimetableMode } from './DayView';
 import { classCellView } from './labels';
 import { OutsideTemplateList } from './OutsideTemplateList';
 import { OUTSIDE_TEMPLATE_ID, pickInitial, rememberLast, useAdminBase } from './paths';
@@ -135,6 +142,16 @@ function ClassView({ cls, classes }: { cls: SchoolClass; classes: SchoolClass[] 
     if (hash === `#${OUTSIDE_TEMPLATE_ID}`) document.getElementById(OUTSIDE_TEMPLATE_ID)?.scrollIntoView({ block: 'start' });
   }, [hash]);
   const fillPlan = useMemo(() => fillWithClassTeacher({ ctx, entries, classId: cls.id }), [ctx, entries, cls.id]);
+  const isPhone = useMediaQuery(PHONE_QUERY);
+  const [mode, setMode] = useState<TimetableMode>('day');
+  const [day, setDay] = useState<DayIndex>(() => defaultDay());
+  const [showHint] = useState(() => firstRun('sathiya.hint.classView'));
+  const placed = useMemo(() => placementSummary(classPlacement(cls, entries, ctx).rows), [cls, entries, ctx]);
+  const placedText = t('phone.placed', { placed: formatSummaryAmount(placed.placed, placed, lang), total: formatSummaryAmount(placed.needed, placed, lang) });
+  const dayStat = (d: DayIndex) => {
+    const periods = periodsFor(template, d);
+    return { done: periods.filter((p) => entryAt(d, p.period)).length, total: periods.length };
+  };
 
   const index = classes.findIndex((c) => c.id === cls.id);
   const go = (c: SchoolClass | undefined) => c && navigate(`${base}/timetable/class/${c.id}`, { replace: true });
@@ -229,6 +246,17 @@ function ClassView({ cls, classes }: { cls: SchoolClass; classes: SchoolClass[] 
     setFill(null);
   }
 
+  const canFill = !readOnly && !!classTeacher && fillPlan.skip !== 'not-primary';
+  const openFill = () => setFill({ plan: fillPlan, drafts: fillPlan.drafts, done: 0, running: false });
+  const moreItems: ActionMenuItem[] = [
+    ...(canFill ? [{ key: 'fill', label: t('phone.fill'), onSelect: openFill }] : []),
+    ...(!pending ? [{ key: 'print', label: t('classView.print'), icon: 'print' as const, onSelect: print }] : []),
+  ];
+  const cellsFor = (d: DayIndex, p: number) => {
+    const e = entryAt(d, p);
+    return e ? classCellView(e, ctx, lang, t, plan) : null;
+  };
+
   return (
     <div>
       <div className="mb-[18px] flex flex-wrap items-center justify-between gap-3">
@@ -256,8 +284,18 @@ function ClassView({ cls, classes }: { cls: SchoolClass; classes: SchoolClass[] 
               t('classView.noClassTeacher')
             )}{' '}
             · {template.name}
+            {isPhone && <> · <b className="text-ink">{placedText}</b></>}
           </span>
         </div>
+        {isPhone ? (
+          <div className="flex w-full items-center gap-2">
+            <ModeToggle value={mode} onChange={setMode} />
+            <span className="flex-1" />
+            {!readOnly &&
+              (pending ? <LockedButton>{t('autoFill')}</LockedButton> : <LinkButton size="lg" to={`${base}/timetable/auto-fill`}>{t('autoFill')}</LinkButton>)}
+            {moreItems.length > 0 && <ActionMenu label={t('phone.more')} items={moreItems} />}
+          </div>
+        ) : (
         <div className="flex flex-wrap gap-2">
           {!readOnly && classTeacher && fillPlan.skip !== 'not-primary' && (
             <Button onClick={() => setFill({ plan: fillPlan, drafts: fillPlan.drafts, done: 0, running: false })}>
@@ -273,20 +311,36 @@ function ClassView({ cls, classes }: { cls: SchoolClass; classes: SchoolClass[] 
             </Button>
           )}
         </div>
+        )}
       </div>
 
-      <PinHeader pin={pin} hint={t('pin.hint')} readOnly={readOnly} />
+      <PinHeader pin={pin} hint={t('pin.hint')} readOnly={readOnly} hideHint={isPhone && !showHint} />
 
       <OutsideTemplateList entries={outside} onDelete={remove} readOnly={readOnly} />
 
-      <div className="flex flex-wrap items-start gap-5">
+      {isPhone && mode === 'day' ? (
+        <>
+          <DayPicker value={day} onChange={setDay} stat={dayStat} />
+          <PinSection pin={pin} teacher={pin.names?.teacher ?? ''}>
+            <DayView
+              rows={rows}
+              day={day}
+              cellsFor={cellsFor}
+              onSelect={(d, period) => setSelected({ day: d, period })}
+              onActivate={onActivate}
+              onClear={onClear}
+              readOnly={readOnly}
+              overlay={pinTarget ? pinOverlay : undefined}
+            />
+          </PinSection>
+        </>
+      ) : null}
+
+      <div className={cx('flex flex-wrap items-start gap-5', isPhone && mode === 'day' && 'hidden')}>
         <PinSection pin={pin} teacher={pin.names?.teacher ?? ''} className="flex-[999_1_620px]">
           <TimetableGrid
             rows={rows}
-            cellsFor={(d, p) => {
-              const e = entryAt(d, p);
-              return e ? classCellView(e, ctx, lang, t, plan) : null;
-            }}
+            cellsFor={cellsFor}
             selected={selected}
             onSelect={(day, period) => setSelected({ day, period })}
             onActivate={onActivate}
@@ -295,6 +349,7 @@ function ClassView({ cls, classes }: { cls: SchoolClass; classes: SchoolClass[] 
             overlay={pinTarget ? pinOverlay : undefined}
           />
         </PinSection>
+        {!isPhone && (
         <div className="flex min-w-[280px] max-w-[360px] flex-[1_1_300px] flex-col gap-4">
           <SubjectProgress
             cls={cls}
@@ -308,7 +363,32 @@ function ClassView({ cls, classes }: { cls: SchoolClass; classes: SchoolClass[] 
                 })}
           />
         </div>
+        )}
       </div>
+
+      {isPhone && (
+        <details className="group mt-4 rounded-[14px] border border-line bg-white">
+          <summary className="flex min-h-12 cursor-pointer list-none items-center gap-3 rounded-[14px] px-4 focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-brand [&::-webkit-details-marker]:hidden">
+            <b className="flex-1 text-[15px]">{t('progress.title', { class: cls.name })}</b>
+            <span className="text-[13px] text-ink-muted">{placedText}</span>
+            <Icon name="chevronDown" size={16} className="text-ink-muted transition-transform group-open:rotate-180" />
+          </summary>
+          <div className="border-t border-line-soft px-4 py-3">
+            <SubjectProgress
+              cls={cls}
+              entries={entries}
+              headless
+              {...(readOnly
+                ? {}
+                : {
+                    onPin: pinFromList,
+                    onStop: stopPin,
+                    ...(activePlanItem ? { activeKey: planKey(activePlanItem) } : {}),
+                  })}
+            />
+          </div>
+        </details>
+      )}
 
       {assign && (
         <AssignPicker

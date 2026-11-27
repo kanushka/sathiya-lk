@@ -25,6 +25,7 @@ import { useLang } from '../../app/LangProvider';
 import { LockedButton, useSchoolPending } from '../../app/PendingReview';
 import { useSchool, useYear } from '../../app/SchoolProvider';
 import { useReadOnly } from '../../ui/AdminLayout';
+import { ActionMenu } from '../../ui/ActionMenu';
 import { Button } from '../../ui/Button';
 import { Combobox } from '../../ui/Combobox';
 import { cx } from '../../ui/cx';
@@ -34,9 +35,11 @@ import { Icon } from '../../ui/Icon';
 import { IconButton } from '../../ui/IconButton';
 import { LoadingState } from '../../ui/LoadingState';
 import { Modal } from '../../ui/Modal';
+import { PHONE_QUERY, useMediaQuery } from '../../ui/PhoneNotice';
 import { BlockEditor } from './BlockEditor';
 import { blockKey, blockStateFor, isBlock, type BlockState } from './blockState';
 import type { CellView } from './Cell';
+import { DayPicker, DayView, defaultDay, firstRun, ModeToggle, type TimetableMode } from './DayView';
 import { classNames } from './labels';
 import { OutsideTemplateList } from './OutsideTemplateList';
 import { pickInitial, rememberLast, useAdminBase } from './paths';
@@ -165,6 +168,10 @@ function TeacherView({ teacher, teachers, template }: { teacher: Teacher; teache
     return { bySlot, outside, orphans };
   }, [mine, ctx, template]);
   const at = (day: DayIndex, period: number) => bySlot.get(`${day}-${period}`) ?? [];
+  const isPhone = useMediaQuery(PHONE_QUERY);
+  const [mode, setMode] = useState<TimetableMode>('day');
+  const [day, setDay] = useState<DayIndex>(() => defaultDay());
+  const [showHint] = useState(() => firstRun('sathiya.hint.teacherView'));
 
   const index = teachers.findIndex((x) => x.id === teacher.id);
   const go = (x: Teacher | undefined) => x && navigate(`${base}/timetable/teacher/${x.id}`, { replace: true });
@@ -309,6 +316,11 @@ function TeacherView({ teacher, teachers, template }: { teacher: Teacher; teache
     });
   };
 
+  const cellsFor = (d: DayIndex, p: number) => {
+    const list = at(d, p);
+    return list.length ? list.map((e) => cellView(e, p)) : null;
+  };
+
   return (
     <div>
       <div className="mb-[18px] flex flex-wrap items-center justify-between gap-3">
@@ -338,6 +350,15 @@ function TeacherView({ teacher, teachers, template }: { teacher: Teacher; teache
           />
           <span className="basis-full text-sm text-ink-muted md:ml-1.5 md:basis-auto">{summary}</span>
         </div>
+        {isPhone ? (
+          <div className="flex w-full items-center gap-2">
+            <ModeToggle value={mode} onChange={setMode} />
+            <span className="flex-1" />
+            {!readOnly &&
+              (pending ? <LockedButton>{t('autoFill')}</LockedButton> : <LinkButton size="lg" to={`${base}/timetable/auto-fill`}>{t('autoFill')}</LinkButton>)}
+            {!pending && <ActionMenu label={t('phone.more')} items={[{ key: 'print', label: t('teacherView.print'), icon: 'print', onSelect: print }]} />}
+          </div>
+        ) : (
         <div className="flex flex-wrap gap-2">
           {!readOnly &&
             (pending ? <LockedButton>{t('autoFill')}</LockedButton> : <LinkButton to={`${base}/timetable/auto-fill`}>{t('autoFill')}</LinkButton>)}
@@ -348,9 +369,18 @@ function TeacherView({ teacher, teachers, template }: { teacher: Teacher; teache
             </Button>
           )}
         </div>
+        )}
       </div>
 
-      <PinHeader pin={pin} hint={t('teacherView.pinHint')} readOnly={readOnly} />
+      <PinHeader pin={pin} hint={t('teacherView.pinHint')} readOnly={readOnly} hideHint={isPhone && !showHint} />
+
+      {isPhone && mode === 'day' && (
+        <DayPicker
+          value={day}
+          onChange={setDay}
+          stat={(d) => ({ done: teacherDayLoad(teacher.id, d, entries, ctx), total: teacher.maxPerDay })}
+        />
+      )}
 
       <PinSection
         pin={pin}
@@ -358,7 +388,7 @@ function TeacherView({ teacher, teachers, template }: { teacher: Teacher; teache
         teacherRows
         footer={
           <>
-            <p className="mb-0 mt-3 text-xs text-ink-muted">{t('teacherView.hint')}</p>
+            {!(isPhone && mode === 'day') && <p className="mb-0 mt-3 text-xs text-ink-muted">{t('teacherView.hint')}</p>}
             {outside.length > 0 && (
               <div className="mt-4 border-t border-line pt-3">
                 <h3 className="m-0 text-sm font-bold text-ink">{t('teacherView.outside')}</h3>
@@ -376,12 +406,21 @@ function TeacherView({ teacher, teachers, template }: { teacher: Teacher; teache
           </>
         }
       >
+        {isPhone && mode === 'day' ? (
+          <DayView
+            rows={rows}
+            day={day}
+            cellsFor={cellsFor}
+            onSelect={(d, period) => setSelected({ day: d, period })}
+            onActivate={onActivate}
+            onClear={onClear}
+            readOnly={readOnly}
+            overlay={pinTarget ? pinOverlay : undefined}
+          />
+        ) : (
         <TimetableGrid
           rows={rows}
-          cellsFor={(d, p) => {
-            const list = at(d, p);
-            return list.length ? list.map((e) => cellView(e, p)) : null;
-          }}
+          cellsFor={cellsFor}
           selected={selected}
           onSelect={(day, period) => setSelected({ day, period })}
           onActivate={onActivate}
@@ -390,6 +429,7 @@ function TeacherView({ teacher, teachers, template }: { teacher: Teacher; teache
           headerExtra={loadBar}
           overlay={pinTarget ? pinOverlay : undefined}
         />
+        )}
       </PinSection>
 
       {assign && (

@@ -15,24 +15,18 @@ export interface SubjectProgressProps {
   onPin?(item: PlanItem): void;
   onStop?(): void;
   activeKey?: string;
+  /** Rows only, for a fold that already shows the title and total. */
+  headless?: boolean;
 }
 
-export function SubjectProgress({ cls, entries, onPin, onStop, activeKey }: SubjectProgressProps) {
+export function SubjectProgress({ cls, entries, onPin, onStop, activeKey, headless = false }: SubjectProgressProps) {
   const { t } = useTranslation('timetable');
   const { lang } = useLang();
   const ctx = useSchool();
   const { rows } = classPlacement(cls, entries, ctx);
   const summary = placementSummary(rows);
 
-  return (
-    <section className="rounded-[14px] border border-line bg-white p-4">
-      <div className="mb-2.5 flex items-baseline justify-between">
-        <h2 className="m-0 text-[15px] font-bold">{t('progress.title', { class: cls.name })}</h2>
-        <span className="text-[13px] text-ink-muted">
-          <b className="text-ink">{formatSummaryAmount(summary.placed, summary, lang)}</b>{' '}
-          <span>{t('progress.placedOf', { total: formatSummaryAmount(summary.needed, summary, lang) })}</span>
-        </span>
-      </div>
+  const list = (
       <ul className="m-0 list-none p-0">
         {rows.map((r) => {
           const done = r.placed >= r.needed;
@@ -70,6 +64,18 @@ export function SubjectProgress({ cls, entries, onPin, onStop, activeKey }: Subj
           );
         })}
       </ul>
+  );
+  if (headless) return list;
+  return (
+    <section className="rounded-[14px] border border-line bg-white p-4">
+      <div className="mb-2.5 flex items-baseline justify-between">
+        <h2 className="m-0 text-[15px] font-bold">{t('progress.title', { class: cls.name })}</h2>
+        <span className="text-[13px] text-ink-muted">
+          <b className="text-ink">{formatSummaryAmount(summary.placed, summary, lang)}</b>{' '}
+          <span>{t('progress.placedOf', { total: formatSummaryAmount(summary.needed, summary, lang) })}</span>
+        </span>
+      </div>
+      {list}
     </section>
   );
 }
