@@ -16,16 +16,33 @@ export interface GuideText {
   next?: string;
 }
 
-export type GuideSlug = 'register-school' | 'subjects' | 'grades' | 'templates' | 'teachers' | 'timetable-class';
+export const GUIDE_ORDER = [
+  'register-school',
+  'profile',
+  'members',
+  'subjects',
+  'grades',
+  'templates',
+  'teachers',
+  'import',
+  'timetable-class',
+  'timetable-teacher',
+  'autofill',
+  'publish-print',
+  'teacher-phone',
+] as const;
+
+export type GuideSlug = (typeof GUIDE_ORDER)[number];
 
 export interface Guide {
   slug: GuideSlug;
   minutes: number;
+  portrait?: boolean;
   youtube: Record<Lang, string>;
   text: Record<Lang, GuideText>;
 }
 
-export const guides: Guide[] = [
+const list: Guide[] = [
   {
     slug: 'register-school',
     minutes: 3,
@@ -236,6 +253,194 @@ export const guides: Guide[] = [
       },
     },
   },
+  {
+    slug: 'profile',
+    minutes: 1,
+    youtube: { en: '', si: '' },
+    text: {
+      en: {
+        title: 'School profile, logo and colours',
+        summary: 'Change your school details, logo and colours at any time.',
+        steps: [
+          { title: 'Open the profile', body: 'Open "School profile & colours". The school name comes from registration. To change it, click "Request a name change" and Sathiya checks it first.', image: 'profile' },
+          { title: 'Add details and your logo', body: 'Add the phone number and address. Upload a square PNG, JPEG or WebP logo up to 1 MB.' },
+          { title: 'Pick colours and save', body: 'Choose the primary and second colours. The preview shows how timetables and buttons will look. Click "Save changes".', image: 'colours' },
+        ],
+      },
+      si: {
+        title: 'පාසල් තොරතුරු, ලාංඡනය සහ වර්ණ',
+        summary: 'ඕනෑම වේලාවක පාසලේ විස්තර, ලාංඡනය සහ වර්ණ වෙනස් කරන්න.',
+        steps: [
+          { title: 'පැතිකඩ විවෘත කරන්න', body: '"පාසල් තොරතුරු සහ වර්ණ" විවෘත කරන්න. පාසලේ නම ලියාපදිංචියේදී ලැබේ. එය වෙනස් කිරීමට "නම වෙනස් කිරීමට ඉල්ලන්න" ක්ලික් කරන්න, සතිය මුලින්ම එය පරීක්ෂා කරයි.', image: 'profile' },
+          { title: 'විස්තර සහ ලාංඡනය එක් කරන්න', body: 'දුරකථන අංකය සහ ලිපිනය එක් කරන්න. 1 MB දක්වා සමචතුරස්‍ර PNG, JPEG හෝ WebP ලාංඡනයක් උඩුගත කරන්න.' },
+          { title: 'වර්ණ තෝරා සුරකින්න', body: 'ප්‍රධාන සහ දෙවන වර්ණ තෝරන්න. කාලසටහන් සහ බොත්තම් පෙනෙන ආකාරය පෙරදසුනේ පෙනේ. "වෙනස්කම් සුරකින්න" ක්ලික් කරන්න.', image: 'colours' },
+        ],
+      },
+    },
+  },
+  {
+    slug: 'members',
+    minutes: 1,
+    youtube: { en: '', si: '' },
+    text: {
+      en: {
+        title: 'Invite another admin',
+        summary: 'A deputy principal or timetable teacher can help as an admin too.',
+        steps: [
+          { title: 'Open Members', body: 'Open "Members". It lists everyone who can sign in to your school.', image: 'members' },
+          { title: 'Send an invite', body: 'Click "Invite admin", type their email and click "Send invite". If they also teach, link them to their teacher record.', image: 'invite' },
+          { title: 'Pending invites', body: 'The invite shows under "Pending invites" until they sign in with that email. You can cancel it any time. Teachers do not need an invite here. They join with the link on the Teachers page.', image: 'pending' },
+        ],
+      },
+      si: {
+        title: 'තවත් පරිපාලකයෙකුට ආරාධනා කරන්න',
+        summary: 'නියෝජ්‍ය විදුහල්පතිවරයෙකුට හෝ කාලසටහන් ගුරුවරයෙකුටත් පරිපාලක ලෙස උදව් කළ හැක.',
+        steps: [
+          { title: 'සාමාජිකයන් විවෘත කරන්න', body: '"සාමාජිකයන්" විවෘත කරන්න. ඔබේ පාසලට පිවිසිය හැකි සැමදෙනාම එහි ලැයිස්තුගත වේ.', image: 'members' },
+          { title: 'ආරාධනාවක් යවන්න', body: '"පරිපාලකයෙකු ආරාධනා කරන්න" ක්ලික් කර, ඔවුන්ගේ විද්‍යුත් තැපෑල ලියා "ආරාධනය යවන්න" ක්ලික් කරන්න. ඔවුන් උගන්වන්නේ නම්, ඔවුන්ගේ ගුරු වාර්තාවට සම්බන්ධ කරන්න.', image: 'invite' },
+          { title: 'පොරොත්තු ආරාධනා', body: 'ඔවුන් එම විද්‍යුත් තැපෑලෙන් පිවිසෙන තුරු ආරාධනාව "පොරොත්තු ආරාධනා" යටතේ පෙනේ. ඕනෑම වේලාවක එය අවලංගු කළ හැක. ගුරුවරුන්ට මෙහි ආරාධනාවක් අවශ්‍ය නැත. ඔවුන් ගුරුවරුන් පිටුවේ සබැඳියෙන් සම්බන්ධ වේ.', image: 'pending' },
+        ],
+      },
+    },
+  },
+  {
+    slug: 'import',
+    minutes: 2,
+    youtube: { en: '', si: '' },
+    text: {
+      en: {
+        title: 'Import teachers from Excel',
+        summary: 'Add all your teachers and subjects at once from one file.',
+        steps: [
+          { title: 'Download the template', body: 'Open "Teachers", click "Import", then "Download Excel template". It has a Teachers sheet, a Subjects sheet with common subjects filled in, and instructions.', image: 'template' },
+          { title: 'Fill it in', body: 'One row per teacher: title, name, subjects, grades and daily limit. Staff IDs can be left empty. Sathiya adds them. If you save a CSV from Excel, choose "CSV UTF-8" so Sinhala text is kept.' },
+          { title: 'Check and import', body: 'Click "Choose file" and pick the file. You see exactly what will be added, and any mistakes, before anything is saved. Click "Import". Import only adds. Nothing already saved is changed.', image: 'preview' },
+          { title: 'Done', body: 'The teachers are in the list with staff IDs.', image: 'list' },
+        ],
+      },
+      si: {
+        title: 'Excel වලින් ගුරුවරුන් ආයාත කරන්න',
+        summary: 'එක් ගොනුවකින් ඔබේ සියලු ගුරුවරුන් සහ විෂයයන් එකවර එක් කරන්න.',
+        steps: [
+          { title: 'සැකිල්ල බාගන්න', body: '"ගුරුවරුන්" විවෘත කර "ගොනුවකින් ඇතුළත් කරන්න" ක්ලික් කර, "Excel සැකිල්ල බාගන්න" ක්ලික් කරන්න. එහි ගුරුවරුන් පත්‍රිකාවක්, සුපුරුදු විෂයයන් පුරවා ඇති විෂය පත්‍රිකාවක් සහ උපදෙස් ඇත.', image: 'template' },
+          { title: 'එය පුරවන්න', body: 'එක් ගුරුවරයෙකුට එක් පේළියක්: ගෞරව නාමය, නම, විෂයයන්, ශ්‍රේණි සහ දෛනික සීමාව. සේවක අංක හිස්ව තැබිය හැක. සතිය ඒවා එක් කරයි. Excel වලින් CSV ලෙස සුරකින්නේ නම්, සිංහල අකුරු රැකීමට "CSV UTF-8" තෝරන්න.' },
+          { title: 'පරීක්ෂා කර ආයාත කරන්න', body: '"ගොනුව තෝරන්න" ක්ලික් කර ගොනුව තෝරන්න. කිසිවක් සුරැකීමට පෙර එක් කරන දේ සහ වැරදි හරියටම පෙනේ. "ඇතුළත් කරන්න" ක්ලික් කරන්න. ආයාත කිරීම එක් කිරීම පමණක් කරයි. දැනටමත් සුරැකි කිසිවක් වෙනස් නොවේ.', image: 'preview' },
+          { title: 'අවසන්', body: 'ගුරුවරුන් සේවක අංක සමඟ ලැයිස්තුවේ ඇත.', image: 'list' },
+        ],
+      },
+    },
+  },
+  {
+    slug: 'timetable-teacher',
+    minutes: 2,
+    youtube: { en: '', si: '' },
+    text: {
+      en: {
+        title: 'The timetable by teacher',
+        summary: 'See each teacher\'s week and daily load, and give them lessons.',
+        steps: [
+          { title: 'Open a teacher\'s week', body: 'Open "By teacher" and choose a teacher. The meters show how many periods they teach each day against their daily limit.', image: 'week' },
+          { title: 'Give a lesson', body: 'Click an empty period, choose the subject, then the class. Classes that are busy at that time are marked with the lesson they already have. Click "Assign".', image: 'choose-class' },
+          { title: 'Pin mode', body: 'The class week is laid over the teacher\'s, so you can pin more lessons where both are free. Click "Done" when finished. Use "Print" for a teacher\'s own timetable sheet.', image: 'pin' },
+        ],
+      },
+      si: {
+        title: 'ගුරුවරුන් අනුව කාලසටහන',
+        summary: 'සෑම ගුරුවරයෙකුගේම සතිය සහ දෛනික කාර්ය භාරය බලා, ඔවුන්ට පාඩම් ලබා දෙන්න.',
+        steps: [
+          { title: 'ගුරුවරයෙකුගේ සතිය විවෘත කරන්න', body: '"ගුරුවරුන් අනුව" විවෘත කර ගුරුවරයෙකු තෝරන්න. ඔවුන් දිනකට උගන්වන කාලච්ඡේද ගණන දෛනික සීමාවට සාපේක්ෂව මීටර්වලින් පෙනේ.', image: 'week' },
+          { title: 'පාඩමක් දෙන්න', body: 'හිස් කාලච්ඡේදයක් ක්ලික් කර, විෂය සහ පසුව පන්තිය තෝරන්න. එම වේලාවේ කාර්යබහුල පන්ති, ඒවාට දැනටමත් ඇති පාඩම සමඟ සලකුණු කර ඇත. "පවරන්න" ක්ලික් කරන්න.', image: 'choose-class' },
+          { title: 'ඇමිණීමේ ක්‍රමය', body: 'පන්තියේ සතිය ගුරුවරයාගේ සතිය මත පෙන්වන බැවින්, දෙදෙනාම නිදහස් තැන්වල තවත් පාඩම් ඇමිණිය හැක. අවසන් වූ විට "අවසන්" ක්ලික් කරන්න. ගුරුවරයෙකුගේම කාලසටහන් පත්‍රිකාවට "මුද්‍රණය" භාවිත කරන්න.', image: 'pin' },
+        ],
+      },
+    },
+  },
+  {
+    slug: 'autofill',
+    minutes: 2,
+    youtube: { en: '', si: '' },
+    text: {
+      en: {
+        title: 'Auto-fill the whole timetable',
+        summary: 'Sathiya places every lesson for every class in seconds, without clashes.',
+        steps: [
+          { title: 'Check the setup', body: 'Open "By class" and click "Auto-fill". Sathiya checks grades, classes, teachers and templates first, and tells you what to fix if something is missing.', image: 'ready' },
+          { title: 'Generate', body: 'Click "Continue". "Fill around" keeps every lesson you already placed and fills only what is missing. Click "Generate timetable".' },
+          { title: 'Check the preview', body: 'Nothing is saved yet. The Allocation tab shows who teaches each subject in each class. Change a teacher there if needed. The Classes tab shows each class\'s new timetable.', image: 'preview' },
+          { title: 'Save', body: 'Click "Save". You can still change any lesson by hand, then publish to teachers.', image: 'saved' },
+        ],
+      },
+      si: {
+        title: 'මුළු කාලසටහනම ස්වයංක්‍රීයව පුරවන්න',
+        summary: 'සතිය සෑම පන්තියකටම සෑම පාඩමක්ම තත්පර කිහිපයකින්, ගැටුම් නොමැතිව තබයි.',
+        steps: [
+          { title: 'සැකසුම පරීක්ෂා කරන්න', body: '"පන්ති අනුව" විවෘත කර "ස්වයංක්‍රීයව පුරවන්න" ක්ලික් කරන්න. සතිය මුලින්ම ශ්‍රේණි, පන්ති, ගුරුවරුන් සහ ආකෘති පරීක්ෂා කර, යමක් අඩු නම් නිවැරදි කළ යුත්තේ කුමක්දැයි පවසයි.', image: 'ready' },
+          { title: 'සාදන්න', body: '"ඉදිරියට" ක්ලික් කරන්න. "වටේට පුරවන්න" ඔබ දැනටමත් තැබූ සෑම පාඩමක්ම තබාගෙන අඩු දේ පමණක් පුරවයි. "කාලසටහන සාදන්න" ක්ලික් කරන්න.' },
+          { title: 'පෙරදසුන පරීක්ෂා කරන්න', body: 'තවම කිසිවක් සුරැකී නැත. එක් එක් පන්තියේ සෑම විෂයක්ම උගන්වන්නේ කවුදැයි "ගුරු පැවරීම" ටැබයේ පෙනේ. අවශ්‍ය නම් එහිදී ගුරුවරයා වෙනස් කරන්න. "පන්ති" ටැබයේ එක් එක් පන්තියේ නව කාලසටහන පෙනේ.', image: 'preview' },
+          { title: 'සුරකින්න', body: '"සුරකින්න" ක්ලික් කරන්න. ඕනෑම පාඩමක් තවමත් අතින් වෙනස් කර, පසුව ගුරුවරුන්ට ප්‍රකාශයට පත් කළ හැක.', image: 'saved' },
+        ],
+      },
+    },
+  },
+  {
+    slug: 'publish-print',
+    minutes: 2,
+    youtube: { en: '', si: '' },
+    text: {
+      en: {
+        title: 'Publish and print the timetable',
+        summary: 'Make the timetable live for teachers, then print class and teacher sheets.',
+        steps: [
+          { title: 'Publish', body: 'Until you publish, the timetable is a draft only admins see. On the dashboard click "Publish to teachers". Sathiya checks for problems like incomplete classes or clashes. Then click "Publish".', image: 'dashboard' },
+          { title: 'Teachers see it', body: 'Teachers now see their timetable on their phones. If you change something later, publish again.', image: 'published' },
+          { title: 'Print', body: 'Open a class in "By class" and click "Print" for a clean A4 sheet with your school name, logo and colours. Print it or save it as a PDF. Teacher timetables print the same way from "By teacher".', image: 'class-sheet' },
+        ],
+      },
+      si: {
+        title: 'කාලසටහන ප්‍රකාශ කර මුද්‍රණය කරන්න',
+        summary: 'කාලසටහන ගුරුවරුන්ට ලබා දී, පසුව පන්ති සහ ගුරු පත්‍රිකා මුද්‍රණය කරන්න.',
+        steps: [
+          { title: 'ප්‍රකාශ කරන්න', body: 'ප්‍රකාශ කරන තුරු කාලසටහන පරිපාලකයින්ට පමණක් පෙනෙන කෙටුම්පතකි. පුවරුවේ "ගුරුවරුන්ට ප්‍රකාශ කරන්න" ක්ලික් කරන්න. සතිය අසම්පූර්ණ පන්ති හෝ ගැටුම් වැනි ගැටලු පරීක්ෂා කරයි. ඉන්පසු "ප්‍රකාශ කරන්න" ක්ලික් කරන්න.', image: 'dashboard' },
+          { title: 'ගුරුවරුන්ට පෙනේ', body: 'ගුරුවරුන්ට දැන් තම දුරකථනවල කාලසටහන පෙනේ. පසුව යමක් වෙනස් කළහොත්, නැවත ප්‍රකාශ කරන්න.', image: 'published' },
+          { title: 'මුද්‍රණය', body: '"පන්ති අනුව" තුළ පන්තියක් විවෘත කර "මුද්‍රණය" ක්ලික් කරන්න. ඔබේ පාසල් නම, ලාංඡනය සහ වර්ණ සහිත A4 පත්‍රිකාවක් ලැබේ. එය මුද්‍රණය කරන්න, නැතහොත් PDF ලෙස සුරකින්න. ගුරු කාලසටහන්ද "ගුරුවරුන් අනුව" තුළින් එලෙසම මුද්‍රණය කළ හැක.', image: 'class-sheet' },
+        ],
+      },
+    },
+  },
+  {
+    slug: 'teacher-phone',
+    minutes: 1,
+    portrait: true,
+    youtube: { en: '', si: '' },
+    text: {
+      en: {
+        title: 'For teachers: your timetable on your phone',
+        summary: 'Join your school once, then see your day at a glance.',
+        steps: [
+          { title: 'Open the join link', body: 'Your school admin shares a join link, for example on WhatsApp. Open it on your phone.', image: 'join' },
+          { title: 'Sign in', body: 'Click "Continue with Google" with the email your school has for you. You can also use an email and password.' },
+          { title: 'Today', body: '"Today" shows the lesson happening now, the minutes left, and the rest of your day.', image: 'now' },
+          { title: 'Timetable', body: 'Tap "Timetable" for your full timetable, and switch between Day, 3 days and Week.', image: 'week' },
+          { title: 'My class', body: 'Class teachers see their class\'s week under "My class", including who covers a lesson when a teacher is away.', image: 'my-class' },
+          { title: 'Me', body: '"Me" has your details and phone number, how many periods you teach, and a button to print your timetable. When the school publishes changes or plans relief for you, you see it in the app.', image: 'me' },
+        ],
+      },
+      si: {
+        title: 'ගුරුවරුන් සඳහා: ඔබේ දුරකථනයේ ඔබේ කාලසටහන',
+        summary: 'එක් වරක් ඔබේ පාසලට සම්බන්ධ වී, ඔබේ දිනය එක බැල්මකින් බලන්න.',
+        steps: [
+          { title: 'සම්බන්ධ වීමේ සබැඳිය විවෘත කරන්න', body: 'ඔබේ පාසල් පරිපාලක සම්බන්ධ වීමේ සබැඳියක් බෙදා ගනී, උදා. WhatsApp හරහා. එය ඔබේ දුරකථනයේ විවෘත කරන්න.', image: 'join' },
+          { title: 'පිවිසෙන්න', body: 'ඔබේ පාසල ඔබ සඳහා භාවිත කරන විද්‍යුත් තැපෑල සමඟ "Google සමඟ ඉදිරියට යන්න" ක්ලික් කරන්න. විද්‍යුත් තැපෑල සහ මුරපදයක්ද භාවිත කළ හැක.' },
+          { title: 'අද', body: '"අද" තුළ දැන් සිදුවන පාඩම, ඉතිරි මිනිත්තු සහ ඔබේ දිනයේ ඉතිරිය පෙනේ.', image: 'now' },
+          { title: 'කාලසටහන', body: 'ඔබේ සම්පූර්ණ කාලසටහනට "කාලසටහන" තට්ටු කර, දිනය, දින 3 සහ සතිය අතර මාරු වන්න.', image: 'week' },
+          { title: 'මගේ පන්තිය', body: 'පන්ති භාර ගුරුවරුන්ට "මගේ පන්තිය" යටතේ තම පන්තියේ සතිය පෙනේ, ගුරුවරයෙකු නොපැමිණි විට පාඩම බාරගන්නේ කවුදැයි ද ඇතුළුව.', image: 'my-class' },
+          { title: 'මම', body: '"මම" තුළ ඔබේ විස්තර සහ දුරකථන අංකය, ඔබ උගන්වන කාලච්ඡේද ගණන සහ ඔබේ කාලසටහන මුද්‍රණය කිරීමට බොත්තමක් ඇත. පාසල වෙනස්කම් ප්‍රකාශයට පත් කළ විට හෝ ඔබට ආදේශක කාලච්ඡේද සැලසූ විට, ඔබට එය යෙදුමේ පෙනේ.', image: 'me' },
+        ],
+      },
+    },
+  },
 ];
+
+export const guides: Guide[] = GUIDE_ORDER.map((slug) => list.find((g) => g.slug === slug)!);
 
 export const guide = (slug: GuideSlug): Guide => guides.find((g) => g.slug === slug)!;

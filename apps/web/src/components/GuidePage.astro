@@ -53,7 +53,7 @@ const still = (image: string) => {
 
   <section aria-labelledby="steps">
     <h2 id="steps">{t.steps}</h2>
-    <ol class="guide-steps">
+    <ol class:list={['guide-steps', { portrait: g.portrait }]}>
       {d.steps.map((s) => {
         const img = s.image ? still(s.image) : null;
         return (

@@ -17,5 +17,5 @@ const demo = {
   d: 'Kandy',
   z: 'Kandy',
 };
-for (let n = 99980; n <= 99999; n++) moe[String(n)] = demo;
+for (let n = 99960; n <= 99999; n++) moe[String(n)] = demo;
 writeFileSync(file, JSON.stringify(moe));

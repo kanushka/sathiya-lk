@@ -1,37 +1,14 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
 // Copyright (C) 2026 Kanushka Gayan
-import { expect, type Locator, type Page } from '@playwright/test';
-import { test, WEB_URL, type Tutorial } from '../kit';
+import { expect, type Page } from '@playwright/test';
+import { signInWithGoogle } from '../demo';
+import { test, WEB_URL } from '../kit';
 
 const demo = {
   en: { census: '99999', email: 'principal.en@demo.sathiya.lk', name: 'K. Perera' },
   si: { census: '99998', email: 'principal.si@demo.sathiya.lk', name: 'කේ. පෙරේරා' },
 };
 
-// The emulator's popup sometimes never hands the result back to the app. Retry with a fresh popup and cut the stall from the video.
-async function signInWithGoogle(tut: Tutorial, button: Locator, email: string, name: string, during: () => Promise<void>): Promise<void> {
-  let stalled: number | undefined;
-  for (let attempt = 0; ; attempt++) {
-    const opened = tut.page.waitForEvent('popup');
-    await button.click();
-    if (attempt === 0) await during();
-    const popup = await opened;
-    await popup.waitForLoadState();
-    await popup.getByText('Add new account').click();
-    await popup.locator('#email-input').fill(email);
-    await popup.locator('#display-name-input').fill(name);
-    const closed = popup.waitForEvent('close', { timeout: 6_000 }).then(() => true, () => false);
-    stalled ??= tut.mark();
-    await popup.locator('#sign-in').click();
-    if (await closed) {
-      if (attempt > 0) tut.cut(stalled);
-      return;
-    }
-    if (attempt === 2) throw new Error('Google popup sign-in did not complete');
-    await popup.close();
-    await tut.page.waitForTimeout(500);
-  }
-}
 
 async function typeIfEmpty(tut: { type(l: ReturnType<Page['getByLabel']>, s: string): Promise<void> }, field: ReturnType<Page['getByLabel']>, text: string) {
   if ((await field.inputValue()) === '') await tut.type(field, text);

@@ -32,12 +32,13 @@ for (const flow of readdirSync(OUT)) {
     list.push(`file '${frames.at(-1).file}'`);
     writeFileSync(`${dir}frames.txt`, `${list.join('\n')}\n`);
 
+    const { width: w, height: h } = meta.size ?? { width: 1920, height: 1080 };
     const mp4 = `${dir}${flow}.${lang}.mp4`;
     execFileSync(
       'ffmpeg',
       ['-y', '-loglevel', 'error', '-f', 'concat', '-safe', '0', '-i', 'frames.txt',
         '-f', 'lavfi', '-i', 'anullsrc=r=48000:cl=stereo',
-        '-vf', 'scale=1920:1080:force_original_aspect_ratio=decrease,pad=1920:1080:(ow-iw)/2:(oh-ih)/2,fps=30,format=yuv420p',
+        '-vf', `scale=${w}:${h}:force_original_aspect_ratio=decrease,pad=${w}:${h}:(ow-iw)/2:(oh-ih)/2,fps=30,format=yuv420p`,
         '-c:v', 'libx264', '-preset', 'slow', '-crf', '18', '-tune', 'stillimage',
         '-c:a', 'aac', '-shortest', '-movflags', '+faststart', mp4],
       { cwd: dir, stdio: 'inherit' },
@@ -53,7 +54,7 @@ for (const flow of readdirSync(OUT)) {
     const stills = `${GUIDE}${flow}/${lang}/`;
     mkdirSync(stills, { recursive: true });
     for (const s of meta.stills) {
-      execFileSync('ffmpeg', ['-y', '-loglevel', 'error', '-i', `${dir}stills/${s}.png`, '-vf', 'scale=min(1440\\,iw):-2:flags=lanczos', `${stills}${s}.png`]);
+      execFileSync('ffmpeg', ['-y', '-loglevel', 'error', '-i', `${dir}stills/${s}.png`, '-vf', `scale=min(${w > h ? 1440 : 720}\\,iw):-2:flags=lanczos`, `${stills}${s}.png`]);
     }
     console.log(`${flow} ${lang}: ${mp4}`);
   }
