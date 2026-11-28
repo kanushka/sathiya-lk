@@ -73,6 +73,7 @@ export function SubjectsPage() {
     }
   }
 
+  const hasSubjects = school.loading || subjects.length > 0;
   const add = (
     <Button variant="primary" onClick={() => setDialog({ kind: 'add' })}>
       {t('page.add')}
@@ -116,7 +117,7 @@ export function SubjectsPage() {
       <PageHeader
         title={t('page.title')}
         subtitle={t('page.intro')}
-        phoneActions={readOnly ? null : add}
+        phoneActions={readOnly || !hasSubjects ? null : add}
         actions={
           !readOnly && (
             <>
@@ -124,7 +125,7 @@ export function SubjectsPage() {
                 {t('page.loadStandard')}
               </Button>
               <Button onClick={() => setDialog({ kind: 'import' })}>{t('import:open')}</Button>
-              {add}
+              {hasSubjects && add}
             </>
           )
         }

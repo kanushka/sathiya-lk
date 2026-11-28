@@ -399,3 +399,11 @@ describe('grades page on a phone', () => {
     for (const b of screen.getAllByRole('button', { name: /^Remove / })) expect(b).toHaveClass('h-11', 'w-11');
   });
 });
+
+describe('empty grades', () => {
+  it('shows a single add button, in the empty state', () => {
+    renderWithSchool(<GradesPage />, { ctx: { ...ctx, grades: [], classes: [] }, entries: [] });
+    expect(screen.getAllByRole('button', { name: '+ Add grade' })).toHaveLength(1);
+    expect(screen.getByText('No grades yet')).toBeInTheDocument();
+  });
+});
