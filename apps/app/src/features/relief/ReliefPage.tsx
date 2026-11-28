@@ -81,6 +81,7 @@ export function ReliefPage() {
   const day = isToday ? today.day : weekdayOf(date);
   const yid = school.activeYearId ?? null;
   const published = years.some((y) => y.id === yid && y.status === 'published');
+  const live = published && yid !== null;
   const data = useReliefDay(school.id, published && day !== null ? yid : null, date);
 
   const pickDate = (next: string) => {
@@ -111,16 +112,16 @@ export function ReliefPage() {
   const header = (
     <PageHeader
       title={t('title')}
-      subtitle={isToday ? `${t('today')} · ${formatDate(date, lang)}` : `${formatDate(date, lang)} · ${t('viewOnly')}`}
-      actions={dateNav}
-      phoneActions={dateNav}
+      subtitle={live ? (isToday ? `${t('today')} · ${formatDate(date, lang)}` : `${formatDate(date, lang)} · ${t('viewOnly')}`) : undefined}
+      actions={live ? dateNav : undefined}
+      phoneActions={live ? dateNav : null}
     />
   );
 
   const body = (() => {
     if (loading) return <LoadingState />;
+    if (!live) return <EmptyState icon="calendar" title={t('empty.unpublished')} body={t('empty.unpublishedBody')} action={<DashboardLink base={base} />} />;
     if (day === null) return <EmptyState icon="calendar" title={isToday ? t('empty.weekend') : t('empty.weekendPast')} body={t('empty.weekendBody')} />;
-    if (!published || !yid) return <EmptyState icon="calendar" title={t('empty.unpublished')} body={t('empty.unpublishedBody')} action={<DashboardLink base={base} />} />;
     if (data.loading) return <LoadingState />;
     if (data.error) return <Alert tone="danger">{t('loadFailed')}</Alert>;
     return <ReliefDayEditor key={date} sid={school.id} yid={yid} date={date} day={day} readOnly={viewOnly || !isToday} data={data} base={base} />;
@@ -137,9 +138,9 @@ export function ReliefPage() {
 function DashboardLink({ base }: { base: string }) {
   const { t } = useTranslation('relief');
   return (
-    <Link to={base} className="font-semibold text-brand underline underline-offset-2">
+    <LinkButton variant="primary" to={base}>
       {t('empty.dashboard')}
-    </Link>
+    </LinkButton>
   );
 }
 

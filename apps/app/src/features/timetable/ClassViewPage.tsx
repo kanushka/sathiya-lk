@@ -35,6 +35,7 @@ import { ActionMenu, type ActionMenuItem } from '../../ui/ActionMenu';
 import { Button } from '../../ui/Button';
 import { EmptyState } from '../../ui/EmptyState';
 import { LinkButton } from '../../ui/LinkButton';
+import { PageHeader } from '../../ui/PageHeader';
 import { Icon } from '../../ui/Icon';
 import { IconButton } from '../../ui/IconButton';
 import { LoadingState } from '../../ui/LoadingState';
@@ -73,7 +74,12 @@ function NoClasses() {
       {t('classView.setupGrades')}
     </LinkButton>
   );
-  return <EmptyState icon="classView" title={t('classView.noClassesTitle')} body={t('classView.noClassesBody')} action={action} />;
+  return (
+    <>
+      <PageHeader title={t('shell:nav.byClass')} />
+      <EmptyState icon="classView" title={t('classView.noClassesTitle')} body={t('classView.noClassesBody')} action={action} />
+    </>
+  );
 }
 
 export function ClassIndexRedirect() {

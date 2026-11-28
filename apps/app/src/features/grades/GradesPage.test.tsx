@@ -405,5 +405,6 @@ describe('empty grades', () => {
     renderWithSchool(<GradesPage />, { ctx: { ...ctx, grades: [], classes: [] }, entries: [] });
     expect(screen.getAllByRole('button', { name: '+ Add grade' })).toHaveLength(1);
     expect(screen.getByText('No grades yet')).toBeInTheDocument();
+    expect(screen.queryByRole('navigation', { name: 'Grades' })).not.toBeInTheDocument();
   });
 });

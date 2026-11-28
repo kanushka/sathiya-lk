@@ -221,7 +221,7 @@ export function TeachersPage() {
       )}
 
       <JoinRequests schoolId={school.id} requests={requests} teachers={teachers} readOnly={readOnly} phone={isPhone} />
-      {!readOnly && !isPhone && <InviteLinkCard schoolId={school.id} />}
+      {!readOnly && !isPhone && hasTeachers && <InviteLinkCard schoolId={school.id} />}
 
       {!readOnly && pending && teachers.length > 0 && (
         <div className="mb-2.5 flex justify-end">
@@ -323,7 +323,7 @@ export function TeachersPage() {
         </Table>
       )}
 
-      {isPhone && !readOnly && <InviteLinkCard schoolId={school.id} compact />}
+      {isPhone && !readOnly && hasTeachers && <InviteLinkCard schoolId={school.id} compact />}
 
       {dialog?.kind === 'edit' && (
         <TeacherModal
