@@ -5,7 +5,7 @@ import { C, S, T, ctx as baseCtx, entries, entry } from '@sathiya/core/fixtures'
 import { act, screen, waitFor, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { onSnapshot } from 'firebase/firestore';
-import type { ReactElement } from 'react';
+import { useState, type ReactElement } from 'react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import tailwindConfig from '../../../tailwind.config';
 import { LangContextProvider } from '../../app/LangProvider';
@@ -621,6 +621,27 @@ describe('Me', () => {
     expect(m.periodsAWeek + m.free).toBe(m.periodSlots);
     expect(m.days[0]!.lessons).toBe(1);
     expect(m.classes).toEqual(['1A', '6A', '6B']);
+  });
+
+  it('fills the phone field when the teacher record loads after the first render, and keeps an edit when it changes', async () => {
+    let setTeacher: (t: TeacherShellProps['teacher']) => void = () => undefined;
+    function Live() {
+      const [teacher, set] = useState<TeacherShellProps['teacher']>({ loading: true });
+      setTeacher = set;
+      return (
+        <TeacherShell now={wed0920} snapshot={{ loading: false, data: snapshotFor(T.perera) }} reliefDays={{}} classes={[cls6B]} classSnapshots={{}} teacher={teacher}>
+          <MePage />
+        </TeacherShell>
+      );
+    }
+    renderWithSchool(<Live />, { ctx, route: `/s/${sid}/me`, claims: claims(T.perera) });
+    act(() => setTeacher({ loading: false, data: pereraRecord }));
+    expect(screen.getByLabelText('Phone number')).toHaveValue('071 234 5678');
+
+    await userEvent.clear(screen.getByLabelText('Phone number'));
+    await userEvent.type(screen.getByLabelText('Phone number'), '077');
+    act(() => setTeacher({ loading: false, data: { ...pereraRecord, phone: '011 222 3333' } }));
+    expect(screen.getByLabelText('Phone number')).toHaveValue('077');
   });
 
   it('keeps a half-typed phone number when the screen crosses 768 px', async () => {

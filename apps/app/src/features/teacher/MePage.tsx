@@ -376,7 +376,9 @@ function usePhoneSave(sid: string, saved: string) {
   const shown = useRef(saved);
   useEffect(() => {
     if (shown.current === saved) return;
-    setValue((v) => (v === shown.current ? saved : v));
+    // React may run the updater later, after shown.current has moved on, so compare with the value captured now.
+    const previous = shown.current;
+    setValue((v) => (v === previous ? saved : v));
     shown.current = saved;
   }, [saved]);
   const [error, setError] = useState<string | null>(null);
