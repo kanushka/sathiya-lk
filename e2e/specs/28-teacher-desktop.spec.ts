@@ -38,6 +38,14 @@ test('teacher on a desktop: tabs in the top bar, the week beside today, my class
   expect(await page.evaluate(() => document.documentElement.scrollWidth)).toBeLessThanOrEqual(1280);
   await shot(page, 'teacher-desktop-today');
 
+  await nav.getByRole('link', { name: 'Me', exact: true }).click();
+  await expect(main.getByRole('region', { name: 'Profile' })).toContainText('Class teacher · 6B');
+  await expect(main.getByRole('region', { name: 'This year' })).toContainText('Classes I teach');
+  await expect(main.getByRole('region', { name: 'My details' })).toContainText('SCC024');
+  await expect(main.getByRole('region', { name: 'Periods each day' }).getByRole('listitem')).toHaveCount(5);
+  expect(await page.evaluate(() => document.documentElement.scrollWidth)).toBeLessThanOrEqual(1280);
+  await shot(page, 'teacher-desktop-me');
+
   await nav.getByRole('link', { name: 'My class' }).click();
   await expect(main.getByTestId(`cell-${TODAY}-6`)).toContainText('Relief: Mrs. N. Perera');
   await expect(main.getByTestId(`cell-${TODAY}-8`)).toContainText('No relief yet');

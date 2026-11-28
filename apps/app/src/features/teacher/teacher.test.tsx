@@ -2,7 +2,7 @@
 // Copyright (C) 2026 Kanushka Gayan
 import { buildSnapshots, type ClassSnapshot, type SchoolContext, type ReliefDay, type SchoolClass, type Teacher, type TeacherSnapshot, type Year } from '@sathiya/core';
 import { C, S, T, ctx as baseCtx, entries, entry } from '@sathiya/core/fixtures';
-import { act, screen, within } from '@testing-library/react';
+import { act, screen, waitFor, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { onSnapshot } from 'firebase/firestore';
 import type { ReactElement } from 'react';
@@ -13,7 +13,8 @@ import { call } from '../../lib/callable';
 import { installMatchMedia } from '../../test/matchMedia';
 import { renderWithSchool } from '../../test/renderWithSchool';
 import { colomboNow } from './colomboNow';
-import { MePage } from './MePage';
+import { MePage, meStats } from './MePage';
+import { overlayRelief } from './reliefOverlay';
 import { MyClassPage } from './MyClassPage';
 import { recordSignInOnce } from './signIn';
 import { TeacherShell, type TeacherShellProps } from './TeacherShell';
@@ -467,21 +468,73 @@ describe('Me', () => {
     vi.mocked(call).mockImplementation(((name: string) => (name === 'myReliefCount' ? Promise.resolve({ count: 7 }) : new Promise(() => undefined))) as never);
   });
 
-  it('shows read-only details, this year and the actions', async () => {
-    renderTeacher(<MePage />, { role: 'a' });
+  it('on a desktop shows the profile card, this year as tiles, details and periods each day', async () => {
+    renderTeacher(<MePage />, { role: 'a', reliefDays: { [WED]: wedRelief } });
+    const profile = screen.getByRole('region', { name: 'Profile' });
+    expect(within(profile).getByRole('heading', { name: 'Mrs. N. Perera' })).toBeInTheDocument();
+    expect(profile).toHaveTextContent('Mathematics · Grades 6, 7, 8, 10');
+    expect(profile).toHaveTextContent('Class teacher · 6B');
+    expect(profile).toHaveTextContent('SCC024');
+    expect(within(profile).getByRole('link', { name: 'Print my timetable' })).toHaveAttribute('href', `/s/${sid}/me/print/timetable?auto=1`);
+    expect(within(profile).getByRole('link', { name: 'Print 6B timetable' })).toHaveAttribute('href', `/s/${sid}/me/print/class/${C.c6b}?auto=1`);
+    expect(within(profile).getByRole('link', { name: 'School admin' })).toHaveAttribute('href', `/s/${sid}/admin`);
+    expect(within(profile).getByRole('button', { name: 'Sign out' })).toBeInTheDocument();
+
+    const year = screen.getByRole('region', { name: 'This year' });
+    expect(year).toHaveTextContent('Periods a week733 free of 40');
+    // Periods a week and the relief count from myReliefCount are both 7 here.
+    await waitFor(() => expect(within(year).getAllByText('7', { selector: 'b' })).toHaveLength(2));
+    expect(year).toHaveTextContent('Classes I teach26A, 6B');
+    expect(call).toHaveBeenCalledWith('myReliefCount', { schoolId: sid });
+
     const details = screen.getByRole('region', { name: 'My details' });
     expect(details).toHaveTextContent('NameMrs. N. Perera');
     expect(details).toHaveTextContent('Staff IDSCC024');
     expect(details).toHaveTextContent('Emailn.perera@siripura.example.com');
+    expect(details).toHaveTextContent('To change these, ask your school admin.');
+    expect(within(details).getByLabelText('Phone number')).toHaveValue('071 234 5678');
+    expect(details).toHaveTextContent('You can change this one.');
+
+    const days = screen.getByRole('region', { name: 'Periods each day' });
+    expect(within(days).getByRole('listitem', { name: 'Monday: 1 lesson' })).toBeInTheDocument();
+    expect(within(days).getByRole('listitem', { name: 'Wednesday: 2 lessons and 1 relief period today' })).toHaveTextContent('2 + 1');
+  });
+
+  it('on a phone keeps the approved list layout, with the relief count and periods a week', async () => {
+    asPhone();
+    renderTeacher(<MePage />, { role: 'a' });
+    const details = screen.getByRole('region', { name: 'My details' });
+    expect(details).toHaveTextContent('NameMrs. N. Perera');
     expect(screen.getByText('To change these, ask your school admin.')).toBeInTheDocument();
     expect(screen.getByText('Mathematics · Grades 6, 7, 8, 10')).toBeInTheDocument();
     const year = screen.getByRole('region', { name: 'This year' });
     expect(await within(year).findByText('7')).toBeInTheDocument();
     expect(year).toHaveTextContent(`Periods a week${snapshotFor(T.perera).cells.length}`);
-    expect(call).toHaveBeenCalledWith('myReliefCount', { schoolId: sid });
     expect(screen.getByRole('link', { name: 'Print timetable' })).toHaveAttribute('href', `/s/${sid}/me/print/timetable?auto=1`);
     expect(screen.getByRole('button', { name: 'Sign out' })).toBeInTheDocument();
-    expect(screen.getByRole('link', { name: 'School admin' })).toHaveAttribute('href', `/s/${sid}/admin`);
+    expect(screen.queryByRole('region', { name: 'Profile' })).toBeNull();
+  });
+
+  it('highlights the School admin link on a phone and on a desktop', () => {
+    asPhone();
+    const { unmount } = renderTeacher(<MePage />, { role: 'a' });
+    expect(screen.getByRole('link', { name: 'School admin' })).toHaveClass('text-brand!', 'bg-brand/5!');
+    unmount();
+    restoreMedia?.();
+    restoreMedia = installMatchMedia(1280);
+    renderTeacher(<MePage />, { role: 'a' });
+    expect(screen.getByRole('link', { name: 'School admin' })).toHaveClass('text-brand!', 'bg-brand/5!');
+  });
+
+  it('says Not published yet instead of a dash before the timetable is published', () => {
+    const { unmount } = renderTeacher(<MePage />, { snapshot: { loading: false } });
+    const year = screen.getByRole('region', { name: 'This year' });
+    expect(within(year).getAllByText('Not published yet')).toHaveLength(2);
+    expect(screen.queryByRole('region', { name: 'Periods each day' })).toBeNull();
+    unmount();
+    asPhone();
+    renderTeacher(<MePage />, { snapshot: { loading: false } });
+    expect(screen.getByRole('region', { name: 'This year' })).toHaveTextContent('Periods a weekNot published yet');
   });
 
   it('hides the admin link for a plain teacher and has no change-password button', () => {
@@ -537,7 +590,22 @@ describe('Me', () => {
 
   it('shows a dash when the relief count cannot load', () => {
     vi.mocked(call).mockImplementation((() => Promise.reject(new Error('offline'))) as never);
+    const { unmount } = renderTeacher(<MePage />);
+    expect(screen.getByRole('region', { name: 'This year' })).toHaveTextContent('Relief periods covered—');
+    unmount();
+    asPhone();
     renderTeacher(<MePage />);
     expect(screen.getByRole('region', { name: 'This year' })).toHaveTextContent('Relief periods covered—');
+  });
+
+  it('counts lessons, free periods, classes and today’s relief from the published timetable', () => {
+    const snap = snapshotFor(T.perera);
+    const today = overlayRelief(snap, wedRelief, T.perera, 'en');
+    const m = meStats(snap, today, 2);
+    expect([m.periodsAWeek, m.periodSlots, m.free]).toEqual([7, 40, 33]);
+    expect(m.classes).toEqual(['6A', '6B']);
+    expect(m.days.map((d) => [d.lessons, d.relief])).toEqual([[1, 0], [1, 0], [2, 1], [2, 0], [1, 0]]);
+    expect(m.days[2]!.slots[5]).toBe('relief');
+    expect(meStats(snap, today, null).days[2]!.relief).toBe(0);
   });
 });
