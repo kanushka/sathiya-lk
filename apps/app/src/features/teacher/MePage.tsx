@@ -10,7 +10,7 @@ import { Badge } from '../../ui/Badge';
 import { Button } from '../../ui/Button';
 import { cx } from '../../ui/cx';
 import { Field, inputClass } from '../../ui/Field';
-import { initialsOf, ListInitials, ListSection } from '../../ui/GroupedList';
+import { initialsOf } from '../../ui/GroupedList';
 import { Icon, type IconName } from '../../ui/Icon';
 import { LinkButton } from '../../ui/LinkButton';
 import { LoadingState } from '../../ui/LoadingState';
@@ -94,6 +94,12 @@ export function MePage() {
     ]
       .filter(Boolean)
       .join(' · '),
+    shortSummary: [
+      [...new Set((base?.cells ?? []).map((c) => cellText(c, lang).sub).filter(Boolean))].join(', '),
+      rec?.grades?.length ? t('me.gradesShort', { grades: gradeRange(rec.grades) }) : null,
+    ]
+      .filter(Boolean)
+      .join(' · '),
     classTeacherOf: [...classes.data].map((c) => ({ id: c.id, name: c.name })).sort((a, b) => a.name.localeCompare(b.name, undefined, { numeric: true })),
     admin: isSchoolAdmin(claims, sid),
     signOut: () => void signOut(),
@@ -111,6 +117,8 @@ interface Profile {
   email: string;
   phone: string;
   summary: string;
+  /** The phone's shorter line: subject names and "Gr 6–10". */
+  shortSummary: string;
   classTeacherOf: Array<{ id: string; name: string }>;
   admin: boolean;
   signOut: () => void;
@@ -134,34 +142,51 @@ function AdminLink({ sid, className }: { sid: string; className?: string }) {
   );
 }
 
-// ---------- Phone: the approved board ----------
+// ---------- Phone: the This year tiles under the name, then details with the phone field ----------
 
 function PhoneMe({ me }: { me: Profile }) {
   const { t } = useTranslation('teacher');
-  const notPublished = t('me.notPublished');
+  const s = me.stats;
+  const classes = s ? (s.classes.length > 3 ? `${s.classes.slice(0, 3).join(' ')} +${s.classes.length - 3}` : s.classes.join(' ')) : undefined;
   return (
-    <div className="flex flex-col gap-3 [&>section]:mb-0">
+    <div className="flex flex-col gap-2.5">
       <div className="flex items-center gap-3">
-        <ListInitials name={me.name} />
+        <span aria-hidden="true" className="inline-flex h-12 w-12 shrink-0 items-center justify-center rounded-full bg-brand/10 text-[17px] font-extrabold text-brand">
+          {initialsOf(me.name)}
+        </span>
         <div className="min-w-0">
-          <h1 className="m-0 truncate text-xl font-bold">{me.name}</h1>
-          {me.summary && <span className="block truncate text-[13px] text-ink-muted">{me.summary}</span>}
+          <h1 className="m-0 truncate text-[19px] font-bold leading-tight">{me.name}</h1>
+          <span className="block truncate text-[13px] text-ink-muted">
+            {me.shortSummary}
+            {me.classTeacherOf.length > 0 && (
+              <>
+                {me.shortSummary && ' · '}
+                <b className="font-bold text-brand" title={t('me.classTeacherOf', { classes: me.classTeacherOf.map((c) => c.name).join(', ') })}>
+                  {t('me.classTeacherShort', { classes: me.classTeacherOf.map((c) => c.name).join(', ') })}
+                </b>
+              </>
+            )}
+          </span>
         </div>
       </div>
 
-      <ListSection title={t('me.details')}>
-        <ReadOnlyRow label={t('me.name')} value={me.name} />
-        <ReadOnlyRow label={t('me.staffId')} value={<span className="font-mono text-[13px]">{me.staffId}</span>} />
-        <ReadOnlyRow label={t('me.email')} value={<span className="break-all text-[13px]">{me.email || '—'}</span>} />
-      </ListSection>
-      <p className="m-0 -mt-1.5 text-xs text-ink-muted">{t('me.askAdmin')}</p>
+      <h2 className="m-0 text-[11px] font-bold uppercase tracking-[.08em] text-ink-muted">{t('me.thisYear')}</h2>
+      <section aria-label={t('me.thisYear')} className="grid grid-cols-3 gap-1.5">
+        <Tile compact label={t('me.periodsAWeek')} value={s?.periodsAWeek} sub={s && t('me.freeOf', { free: s.free, total: s.periodSlots })} />
+        <Tile compact label={t('me.reliefCoveredShort')} value={me.reliefCount ?? undefined} sub={t('me.thisYearShort')} dash />
+        <Tile compact label={t('me.classesTaught')} value={s?.classes.length} sub={classes} />
+      </section>
 
-      <PhoneCard key={me.phone} sid={me.sid} saved={me.phone} />
-
-      <ListSection title={t('me.thisYear')}>
-        <ReadOnlyRow label={t('me.reliefCovered')} value={me.reliefCount ?? '—'} />
-        <ReadOnlyRow label={t('me.periodsAWeek')} value={me.stats ? me.stats.periodsAWeek : <span className="font-normal text-ink-muted">{notPublished}</span>} />
-      </ListSection>
+      <section aria-label={t('me.details')} className="overflow-hidden rounded-[14px] border border-line bg-white">
+        <ul className="m-0 list-none p-0">
+          <ReadOnlyRow label={t('me.staffId')} value={<span className="font-mono text-[13px]">{me.staffId}</span>} />
+          <ReadOnlyRow label={t('me.email')} value={<span className="break-all text-[13px]">{me.email || '—'}</span>} />
+        </ul>
+        <div className="bg-surface px-3.5 py-2.5">
+          <PhoneForm key={me.phone} sid={me.sid} saved={me.phone} />
+        </div>
+      </section>
+      <p className="m-0 -mt-1 text-xs text-ink-muted">{t('me.askAdminPhone')}</p>
 
       <div className="grid grid-cols-2 gap-2">
         <LinkButton to={printTimetablePath(me.sid)} size="lg">
@@ -178,7 +203,7 @@ function PhoneMe({ me }: { me: Profile }) {
 
 function ReadOnlyRow({ label, value }: { label: string; value: ReactNode }) {
   return (
-    <li className="flex items-baseline justify-between gap-3 border-b border-line-soft px-3.5 py-[11px] text-sm last:border-b-0">
+    <li className="flex items-baseline justify-between gap-3 border-b border-line-soft px-3.5 py-[9px] text-sm">
       <span className="shrink-0 text-ink-muted">{label}</span>
       <b className="min-w-0 text-right font-semibold">{value}</b>
     </li>
@@ -252,17 +277,17 @@ function ProfileCard({ me }: { me: Profile }) {
   );
 }
 
-function Tile({ label, value, sub, dash }: { label: string; value: number | undefined; sub?: string | null | undefined; dash?: boolean }) {
+function Tile({ label, value, sub, dash, compact }: { label: string; value: number | undefined; sub?: string | null | undefined; dash?: boolean; compact?: boolean }) {
   const { t } = useTranslation('teacher');
   return (
-    <div className="flex min-w-0 flex-col gap-1 rounded-[14px] border border-line bg-white px-[18px] py-4">
-      <span className="text-[13px] font-semibold text-ink-soft">{label}</span>
+    <div className={cx('flex min-w-0 flex-col rounded-[14px] border border-line bg-white', compact ? 'gap-0.5 p-2.5' : 'gap-1 px-[18px] py-4')}>
+      <span className={cx('font-semibold leading-tight text-ink-soft', compact ? 'text-[11px]' : 'text-[13px]')}>{label}</span>
       {value === undefined ? (
-        <span className="py-1.5 text-[15px] font-semibold text-ink-muted">{dash ? '—' : t('me.notPublished')}</span>
+        <span className={cx('font-semibold text-ink-muted', compact ? 'py-1 text-xs leading-tight' : 'py-1.5 text-[15px]')}>{dash ? '—' : t('me.notPublished')}</span>
       ) : (
-        <b className="text-[30px] font-extrabold leading-tight">{value}</b>
+        <b className={cx('font-extrabold leading-tight', compact ? 'text-[22px]' : 'text-[30px]')}>{value}</b>
       )}
-      {sub && value !== undefined && <span className="truncate text-[13px] text-ink-muted">{sub}</span>}
+      {sub && value !== undefined && <span className={cx('truncate text-ink-muted', compact ? 'text-[11px]' : 'text-[13px]')}>{sub}</span>}
     </div>
   );
 }
@@ -394,13 +419,5 @@ function PhoneForm({ sid, saved, hint }: { sid: string; saved: string; hint?: st
         {t('me.save')}
       </Button>
     </form>
-  );
-}
-
-function PhoneCard({ sid, saved }: { sid: string; saved: string }) {
-  return (
-    <div className="rounded-[14px] border border-line bg-white px-3.5 py-3">
-      <PhoneForm sid={sid} saved={saved} />
-    </div>
   );
 }

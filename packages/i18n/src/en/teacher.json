@@ -110,7 +110,12 @@
     "dayRelief_other": "and {{count}} relief periods today",
     "legendLesson": "Lesson",
     "legendRelief": "Relief today",
-    "legendFree": "Free"
+    "legendFree": "Free",
+    "classTeacherShort": "CT {{classes}}",
+    "gradesShort": "Gr {{grades}}",
+    "reliefCoveredShort": "Relief covered",
+    "thisYearShort": "This year",
+    "askAdminPhone": "To change your name, staff ID or email, ask your school admin."
   },
   "tryAgain": "Try again"
 }

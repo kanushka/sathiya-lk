@@ -500,19 +500,34 @@ describe('Me', () => {
     expect(within(days).getByRole('listitem', { name: 'Wednesday: 2 lessons and 1 relief period today' })).toHaveTextContent('2 + 1');
   });
 
-  it('on a phone keeps the approved list layout, with the relief count and periods a week', async () => {
+  it('on a phone puts the This year tiles under the name, then details with the phone field', async () => {
     asPhone();
-    renderTeacher(<MePage />, { role: 'a' });
-    const details = screen.getByRole('region', { name: 'My details' });
-    expect(details).toHaveTextContent('NameMrs. N. Perera');
-    expect(screen.getByText('To change these, ask your school admin.')).toBeInTheDocument();
-    expect(screen.getByText('Mathematics · Grades 6, 7, 8, 10')).toBeInTheDocument();
+    // Two more classes on Monday, so Classes I teach shows four and folds the last into "+1".
+    const base = snapshotFor(T.perera);
+    const extra = (period: number, title: string) => ({ day: 0 as const, period, start: '09:10', end: '09:50', title, sub: 'Mathematics', color: '', isGroup: false });
+    renderTeacher(<MePage />, { role: 'a', snapshot: { loading: false, data: { ...base, cells: [...base.cells, extra(3, '7A'), extra(4, '8C')] } } });
+    expect(screen.getByRole('heading', { name: 'Mrs. N. Perera' })).toBeInTheDocument();
+    expect(screen.getByText(/Mathematics · Gr 6, 7, 8, 10/)).toHaveTextContent('Mathematics · Gr 6, 7, 8, 10 · CT 6B');
+    expect(screen.getByText('CT 6B')).toHaveAttribute('title', 'Class teacher · 6B');
+
     const year = screen.getByRole('region', { name: 'This year' });
-    expect(await within(year).findByText('7')).toBeInTheDocument();
-    expect(year).toHaveTextContent(`Periods a week${snapshotFor(T.perera).cells.length}`);
+    expect(year).toHaveTextContent('Periods a week931 free of 40');
+    expect(await within(year).findByText('Relief covered')).toBeInTheDocument();
+    await waitFor(() => expect(year).toHaveTextContent('Relief covered7This year'));
+    expect(year).toHaveTextContent('Classes I teach46A 6B 7A +1');
+
+    const details = screen.getByRole('region', { name: 'My details' });
+    expect(details).not.toHaveTextContent('Name');
+    expect(details).toHaveTextContent('Staff IDSCC024');
+    expect(details).toHaveTextContent('Emailn.perera@siripura.example.com');
+    expect(within(details).getByLabelText('Phone number')).toHaveValue('071 234 5678');
+    expect(screen.getByText('To change your name, staff ID or email, ask your school admin.')).toBeInTheDocument();
+
     expect(screen.getByRole('link', { name: 'Print timetable' })).toHaveAttribute('href', `/s/${sid}/me/print/timetable?auto=1`);
     expect(screen.getByRole('button', { name: 'Sign out' })).toBeInTheDocument();
+    expect(screen.getByRole('link', { name: 'School admin' })).toBeInTheDocument();
     expect(screen.queryByRole('region', { name: 'Profile' })).toBeNull();
+    expect(screen.queryByRole('region', { name: 'Periods each day' })).toBeNull();
   });
 
   it('highlights the School admin link on a phone and on a desktop', () => {
@@ -595,7 +610,7 @@ describe('Me', () => {
     unmount();
     asPhone();
     renderTeacher(<MePage />);
-    expect(screen.getByRole('region', { name: 'This year' })).toHaveTextContent('Relief periods covered—');
+    expect(screen.getByRole('region', { name: 'This year' })).toHaveTextContent('Relief covered—');
   });
 
   it('counts lessons, free periods, classes and today’s relief from the published timetable', () => {

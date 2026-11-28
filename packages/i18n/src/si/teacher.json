@@ -110,7 +110,12 @@
     "dayRelief_other": "සහ අද ආදේශක කාල පරිච්ඡේද {{count}}",
     "legendLesson": "පාඩම",
     "legendRelief": "අද ආදේශක",
-    "legendFree": "නිදහස්"
+    "legendFree": "නිදහස්",
+    "classTeacherShort": "පන්ති භාර {{classes}}",
+    "gradesShort": "ශ්‍රේ {{grades}}",
+    "reliefCoveredShort": "ආදේශක",
+    "thisYearShort": "මෙම වර්ෂය",
+    "askAdminPhone": "ඔබේ නම, සේවක අංකය හෝ විද්‍යුත් තැපෑල වෙනස් කිරීමට පාසල් පරිපාලකයාගෙන් ඉල්ලන්න."
   },
   "tryAgain": "නැවත උත්සාහ කරන්න"
 }
