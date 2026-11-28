@@ -30,7 +30,9 @@
     "template": "කාල පරිච්ඡේද ආකෘතිය",
     "templateOption": "{{name}} (පැය {{count}} ක්)",
     "customPlan": "අභිරුචි සැලැස්ම",
-    "ownPlan": "වෙනම සැලැස්ම"
+    "ownPlan": "වෙනම සැලැස්ම",
+    "teacherTaken": "{{class}} පන්ති භාර ගුරුවරයා",
+    "teacherTakenError": "{{teacher}} දැනටමත් {{class}} පන්ති භාර ගුරුවරයා වේ. ගුරුවරයෙකුට එක් පන්තියක් පමණක් භාර ගත හැක."
   },
   "plan": {
     "noSubjects": "පාසලට තවම විෂයන් නැත.",

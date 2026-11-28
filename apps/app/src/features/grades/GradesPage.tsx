@@ -115,10 +115,16 @@ export function GradesPage() {
                     <ClassCard
                       key={c.id}
                       cls={c}
+                      classes={school.classes}
                       teachers={school.teachers}
                       templates={school.templates}
                       readOnly={readOnly}
-                      onTeacher={(id) => void guard(() => api.updateClass(sid, c.id, { classTeacherId: id }))}
+                      onTeacher={(id) => {
+                        const owns = id && school.classes.find((o) => o.id !== c.id && o.classTeacherId === id);
+                        const who = id && school.teachers.find((x) => x.id === id);
+                        if (owns && who) return toast.show(t('classes.teacherTakenError', { teacher: teacherDisplayName(who, lang), class: owns.name }), 'error');
+                        void guard(() => api.updateClass(sid, c.id, { classTeacherId: id }));
+                      }}
                       onTemplate={(id) => void guard(() => api.updateClass(sid, c.id, { templateId: id }))}
                       onCustomPlan={() => setDialog({ kind: 'plan', cls: c })}
                       onRemove={() => setDialog({ kind: 'delete', cls: c })}

@@ -47,7 +47,8 @@
     "class-teacher-no-daily-subject": "{{teacher}}, class teacher of {{class}}, must teach a subject here with at least 5 periods a week (so they can take the first period every day).",
     "class-teacher-wrong-grade": "{{teacher}} is class teacher of {{class}} but is not assigned to grade {{grade}}.",
     "capacity-short": "{{subject}} needs {{needed}} periods a week, but teachers can cover only {{capacity}}.",
-    "min-per-week-unreachable": "Teachers' minimum weekly lessons add up to {{needed}}, but only {{available}} lessons are planned."
+    "min-per-week-unreachable": "Teachers' minimum weekly lessons add up to {{needed}}, but only {{available}} lessons are planned.",
+    "class-teacher-twice": "{{teacher}} is class teacher of more than one class ({{classes}}). Keep one."
   },
   "options": {
     "title": "How should auto-fill treat the current timetable?",

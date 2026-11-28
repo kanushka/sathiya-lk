@@ -10,7 +10,7 @@ import { periodsFor, rowsFor, toMinutes } from './time';
 import type { DayIndex, Entry, PeriodTemplate, PlanItem, SchoolClass, SchoolContext } from './types';
 
 export type ReadinessCode =
-  | 'grade-no-classes' | 'class-no-teacher' | 'class-no-template' | 'plan-empty' | 'plan-zero-target'
+  | 'grade-no-classes' | 'class-no-teacher' | 'class-teacher-twice' | 'class-no-template' | 'plan-empty' | 'plan-zero-target'
   | 'teacher-no-subjects' | 'teacher-no-grades' | 'teacher-no-max'
   | 'plan-exceeds-template' | 'per-day-unbuildable' | 'no-qualified-teacher'
   | 'no-specialist' | 'class-teacher-no-daily-subject' | 'class-teacher-wrong-grade'
@@ -23,7 +23,7 @@ export interface ReadinessIssue {
 }
 
 const CODE_ORDER: ReadinessCode[] = [
-  'grade-no-classes', 'class-no-teacher', 'class-no-template', 'plan-empty', 'plan-zero-target',
+  'grade-no-classes', 'class-no-teacher', 'class-teacher-twice', 'class-no-template', 'plan-empty', 'plan-zero-target',
   'teacher-no-subjects', 'teacher-no-grades', 'teacher-no-max',
   'plan-exceeds-template', 'per-day-unbuildable', 'no-qualified-teacher',
   'no-specialist', 'class-teacher-no-daily-subject', 'class-teacher-wrong-grade',
@@ -80,6 +80,15 @@ export function readiness(ctx: SchoolContext, _entries: Entry[]): { blocking: Re
   };
   let lessonDemand = 0;
   const seenGroups = new Set<string>();
+
+  const owned = new Map<string, SchoolClass[]>();
+  for (const cls of ctx.classes) {
+    if (cls.classTeacherId === undefined || !hasTeacher(cls.classTeacherId)) continue;
+    owned.set(cls.classTeacherId, [...(owned.get(cls.classTeacherId) ?? []), cls]);
+  }
+  for (const [teacherId, list] of owned) {
+    if (list.length > 1) add('class-teacher-twice', 'teacher', teacherId, { classes: list.map((c) => c.name).join(', ') });
+  }
 
   const classes: SchoolClass[] = [...ctx.classes];
   for (const cls of classes) {

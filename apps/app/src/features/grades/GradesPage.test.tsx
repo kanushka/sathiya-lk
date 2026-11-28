@@ -408,3 +408,16 @@ describe('empty grades', () => {
     expect(screen.queryByRole('navigation', { name: 'Grades' })).not.toBeInTheDocument();
   });
 });
+
+describe('one class per class teacher', () => {
+  it('disables a teacher who already owns another class, with the class named', async () => {
+    const user = await openGrade6();
+    const card = screen.getByText('6B').closest('[data-testid="class-card"]') as HTMLElement;
+    await user.click(within(card).getByRole('combobox', { name: /^Class teacher/ }));
+    const taken = screen.getByRole('option', { name: /P\. Bandara/ });
+    expect(taken).toHaveAttribute('aria-disabled', 'true');
+    expect(taken).toHaveTextContent('Class teacher of 6A');
+    await user.click(taken);
+    expect(api.updateClass).not.toHaveBeenCalled();
+  });
+});

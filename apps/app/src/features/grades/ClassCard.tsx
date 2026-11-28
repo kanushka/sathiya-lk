@@ -10,6 +10,7 @@ import { Select } from '../../ui/Select';
 
 export interface ClassCardProps {
   cls: SchoolClass;
+  classes: SchoolClass[];
   teachers: Teacher[];
   templates: PeriodTemplate[];
   readOnly: boolean;
@@ -19,7 +20,7 @@ export interface ClassCardProps {
   onRemove: () => void;
 }
 
-export function ClassCard({ cls, teachers, templates, readOnly, onTeacher, onTemplate, onCustomPlan, onRemove }: ClassCardProps) {
+export function ClassCard({ cls, classes, teachers, templates, readOnly, onTeacher, onTemplate, onCustomPlan, onRemove }: ClassCardProps) {
   const { t } = useTranslation('grades');
   const { lang } = useLang();
   const teacherId = useId();
@@ -45,7 +46,10 @@ export function ClassCard({ cls, teachers, templates, readOnly, onTeacher, onTem
         onChange={(v) => onTeacher(v || null)}
         options={[
           { value: '', label: t('classes.noTeacher') },
-          ...teachers.map((x) => ({ value: x.id, label: teacherDisplayName(x, lang) })),
+          ...teachers.map((x) => {
+            const owns = classes.find((c) => c.id !== cls.id && c.classTeacherId === x.id);
+            return { value: x.id, label: teacherDisplayName(x, lang), ...(owns && { disabled: true, hint: t('classes.teacherTaken', { class: owns.name }) }) };
+          }),
         ]}
       />
       <label htmlFor={templateId} className={label}>
