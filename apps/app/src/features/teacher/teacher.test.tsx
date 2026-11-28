@@ -10,7 +10,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import tailwindConfig from '../../../tailwind.config';
 import { LangContextProvider } from '../../app/LangProvider';
 import { call } from '../../lib/callable';
-import { installMatchMedia } from '../../test/matchMedia';
+import { installMatchMedia, resizeTo } from '../../test/matchMedia';
 import { renderWithSchool } from '../../test/renderWithSchool';
 import { colomboNow } from './colomboNow';
 import { MePage, meStats } from './MePage';
@@ -611,6 +611,29 @@ describe('Me', () => {
     asPhone();
     renderTeacher(<MePage />);
     expect(screen.getByRole('region', { name: 'This year' })).toHaveTextContent('Relief covered—');
+  });
+
+  it('counts two lessons in one period once, so periods a week and free add up to the week', () => {
+    const base = snapshotFor(T.perera);
+    const mon1 = base.cells.find((c) => c.day === 0 && c.period === 1)!;
+    const m = meStats({ ...base, cells: [...base.cells, { ...mon1, title: '1A', entryId: 'x-1a' }] }, null, null);
+    expect(m.periodsAWeek).toBe(7);
+    expect(m.periodsAWeek + m.free).toBe(m.periodSlots);
+    expect(m.days[0]!.lessons).toBe(1);
+    expect(m.classes).toEqual(['1A', '6A', '6B']);
+  });
+
+  it('keeps a half-typed phone number when the screen crosses 768 px', async () => {
+    renderTeacher(<MePage />);
+    const typed = screen.getByLabelText('Phone number');
+    await userEvent.clear(typed);
+    await userEvent.type(typed, '077 999');
+    resizeTo(390);
+    expect(screen.queryByRole('region', { name: 'Profile' })).toBeNull();
+    expect(screen.getByLabelText('Phone number')).toHaveValue('077 999');
+    resizeTo(1280);
+    expect(screen.getByRole('region', { name: 'Profile' })).toBeInTheDocument();
+    expect(screen.getByLabelText('Phone number')).toHaveValue('077 999');
   });
 
   it('counts lessons, free periods, classes and today’s relief from the published timetable', () => {

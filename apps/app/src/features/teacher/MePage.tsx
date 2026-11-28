@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
 // Copyright (C) 2026 Kanushka Gayan
 import { cleanPhone, isSchoolAdmin, teacherDisplayName, type DayIndex, type TeacherSnapshot } from '@sathiya/core';
-import { useEffect, useState, type FormEvent, type ReactNode } from 'react';
+import { useEffect, useRef, useState, type FormEvent, type ReactNode } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useAuth } from '../../app/AuthProvider';
 import { useLang } from '../../app/LangProvider';
@@ -31,6 +31,7 @@ export interface DayLoad {
 }
 
 export interface MeStats {
+  /** Periods with at least one lesson: the same unit as the daily bars and free. */
   periodsAWeek: number;
   periodSlots: number;
   free: number;
@@ -52,7 +53,8 @@ export function meStats(base: TeacherSnapshot, today: OverlaySnapshot | null, to
   const classes = [...new Set(base.cells.flatMap((c) => c.title.split('+').map((s) => s.trim())).filter(Boolean))].sort((a, b) =>
     a.localeCompare(b, undefined, { numeric: true }),
   );
-  return { periodsAWeek: base.cells.length, periodSlots, free: Math.max(0, periodSlots - busySlots), classes, days };
+  // Two lessons in one period (two class templates on one default period) count once, like the daily bars and free.
+  return { periodsAWeek: busySlots, periodSlots, free: Math.max(0, periodSlots - busySlots), classes, days };
 }
 
 function useReliefCount(sid: string): number | null {
@@ -78,6 +80,8 @@ export function MePage() {
   const teacher = useOwnTeacher();
   const isPhone = useMediaQuery(PHONE_QUERY);
   const reliefCount = useReliefCount(sid);
+  // Above the layout switch, so crossing 768 px keeps a half-typed number and a save in progress.
+  const phone = usePhoneSave(sid, teacher.data?.phone ?? '');
 
   if (teacher.loading) return <LoadingState />;
   const rec = teacher.data;
@@ -87,7 +91,7 @@ export function MePage() {
     name,
     staffId: rec?.staffId ?? base?.staffId ?? '',
     email: rec?.email || user?.email || '',
-    phone: rec?.phone ?? '',
+    phone,
     summary: [
       [...new Set((base?.cells ?? []).map((c) => cellText(c, lang).sub).filter(Boolean))].join(', '),
       rec?.grades?.length ? t('me.grades', { grades: gradeRange(rec.grades) }) : null,
@@ -115,7 +119,7 @@ interface Profile {
   name: string;
   staffId: string;
   email: string;
-  phone: string;
+  phone: PhoneSave;
   summary: string;
   /** The phone's shorter line: subject names and "Gr 6–10". */
   shortSummary: string;
@@ -183,7 +187,7 @@ function PhoneMe({ me }: { me: Profile }) {
           <ReadOnlyRow label={t('me.email')} value={<span className="break-all text-[13px]">{me.email || '—'}</span>} />
         </ul>
         <div className="bg-surface px-3.5 py-2.5">
-          <PhoneForm key={me.phone} sid={me.sid} saved={me.phone} />
+          <PhoneForm p={me.phone} />
         </div>
       </section>
       <p className="m-0 -mt-1 text-xs text-ink-muted">{t('me.askAdminPhone')}</p>
@@ -310,7 +314,7 @@ function DetailsCard({ me }: { me: Profile }) {
       {row(t('me.staffId'), <span className="font-mono text-sm">{me.staffId}</span>)}
       {row(t('me.email'), <span className="text-sm">{me.email || '—'}</span>)}
       <div className="bg-surface px-[18px] py-3.5">
-        <PhoneForm key={me.phone} sid={me.sid} saved={me.phone} hint={t('me.phoneEditable')} />
+        <PhoneForm p={me.phone} hint={t('me.phoneEditable')} />
       </div>
     </section>
   );
@@ -362,10 +366,19 @@ function DaysCard({ days, todayDay }: { days: DayLoad[]; todayDay: DayIndex | nu
 
 // ---------- Phone number: saves at once through setMyPhone ----------
 
+type PhoneSave = ReturnType<typeof usePhoneSave>;
+
 function usePhoneSave(sid: string, saved: string) {
   const { t } = useTranslation('teacher');
   const toast = useToast();
   const [value, setValue] = useState(saved);
+  // The record loads after the first render and changes after a save: follow it unless the teacher is editing.
+  const shown = useRef(saved);
+  useEffect(() => {
+    if (shown.current === saved) return;
+    setValue((v) => (v === shown.current ? saved : v));
+    shown.current = saved;
+  }, [saved]);
   const [error, setError] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
   // Only a valid value that matches the saved phone is unchanged. An invalid one keeps Save on, so the error can show.
@@ -399,9 +412,8 @@ function usePhoneSave(sid: string, saved: string) {
   return { value, change, error, busy, unchanged, save };
 }
 
-function PhoneForm({ sid, saved, hint }: { sid: string; saved: string; hint?: string }) {
+function PhoneForm({ p, hint }: { p: PhoneSave; hint?: string }) {
   const { t } = useTranslation('teacher');
-  const p = usePhoneSave(sid, saved);
   return (
     <form onSubmit={(e) => void p.save(e)} noValidate className="flex items-start gap-2">
       <Field label={t('me.phone')} hint={hint} error={p.error ?? undefined} className="min-w-0 flex-1">
