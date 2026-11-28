@@ -11,6 +11,7 @@ import { EmptyState } from '../../ui/EmptyState';
 import { ListRow, ListSection, ListTile } from '../../ui/GroupedList';
 import { LoadingState } from '../../ui/LoadingState';
 import { PageHeader } from '../../ui/PageHeader';
+import { cx } from '../../ui/cx';
 import { PHONE_QUERY, useMediaQuery } from '../../ui/PhoneNotice';
 import { Table, TBody, Td, Th, THead, Tr } from '../../ui/Table';
 import { useToast } from '../../ui/Toast';
@@ -73,6 +74,7 @@ export function SubjectsPage() {
     }
   }
 
+  const hasSubjects = school.loading || subjects.length > 0;
   const add = (
     <Button variant="primary" onClick={() => setDialog({ kind: 'add' })}>
       {t('page.add')}
@@ -116,25 +118,29 @@ export function SubjectsPage() {
       <PageHeader
         title={t('page.title')}
         subtitle={t('page.intro')}
-        phoneActions={readOnly ? null : add}
+        phoneActions={readOnly || !hasSubjects ? null : add}
         actions={
           !readOnly && (
             <>
-              <Button onClick={() => void loadStandard()} loading={loading}>
-                {t('page.loadStandard')}
-              </Button>
+              {hasSubjects && (
+                <Button onClick={() => void loadStandard()} loading={loading}>
+                  {t('page.loadStandard')}
+                </Button>
+              )}
               <Button onClick={() => setDialog({ kind: 'import' })}>{t('import:open')}</Button>
-              {add}
+              {hasSubjects && add}
             </>
           )
         }
       />
 
       {isPhone && !readOnly && (
-        <div className="mb-4 grid grid-cols-2 gap-2.5">
-          <Button size="lg" className="h-auto min-h-11 py-1.5 leading-tight" onClick={() => void loadStandard()} loading={loading}>
-            {t('page.loadStandard')}
-          </Button>
+        <div className={cx('mb-4 grid gap-2.5', hasSubjects ? 'grid-cols-2' : 'grid-cols-1')}>
+          {hasSubjects && (
+            <Button size="lg" className="h-auto min-h-11 py-1.5 leading-tight" onClick={() => void loadStandard()} loading={loading}>
+              {t('page.loadStandard')}
+            </Button>
+          )}
           <Button size="lg" onClick={() => setDialog({ kind: 'import' })}>
             {t('import:open')}
           </Button>
@@ -144,7 +150,21 @@ export function SubjectsPage() {
       {school.loading ? (
         <LoadingState />
       ) : subjects.length === 0 ? (
-        <EmptyState icon="subjects" title={t('page.empty')} body={t('page.emptyBody')} action={readOnly ? undefined : add} />
+        <EmptyState
+          icon="subjects"
+          title={t('page.empty')}
+          body={t('page.emptyBody')}
+          action={
+            readOnly ? undefined : (
+              <div className="flex flex-wrap justify-center gap-2.5">
+                <Button variant="primary" onClick={() => void loadStandard()} loading={loading}>
+                  {t('page.loadStandard')}
+                </Button>
+                <Button onClick={() => setDialog({ kind: 'add' })}>{t('page.add')}</Button>
+              </div>
+            )
+          }
+        />
       ) : isPhone ? (
         <>
           {unused.length > 0 && (
@@ -223,7 +243,7 @@ export function SubjectsPage() {
           </TBody>
         </Table>
       )}
-      <p className="mt-3 text-[13px] text-ink-soft">{t('page.footnote')}</p>
+      {hasSubjects && <p className="mt-3 text-[13px] text-ink-soft">{t('page.footnote')}</p>}
 
       {dialog?.kind === 'add' && <SubjectModal onClose={() => setDialog(null)} />}
       {dialog?.kind === 'edit' && <SubjectModal subject={dialog.subject} onClose={() => setDialog(null)} />}

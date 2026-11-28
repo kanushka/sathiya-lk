@@ -46,9 +46,15 @@ export function DashboardPage() {
   const items = attentionItems(school, entries, lang);
   const firstClass = groups[0]?.classes[0];
 
-  const newYear = !readOnly && (
+  const newYear = !readOnly && year && (
     <Button onClick={() => setDialog('new')}>{t('year.new')}</Button>
   );
+  const firstYear = !readOnly && (
+    <Button variant="primary" onClick={() => setDialog('new')}>
+      {t('year.new')}
+    </Button>
+  );
+  const title = year ? t('page.title', { year: year.label }) : t('shell:nav.dashboard');
 
   const statCards = [
     { label: t('stats.complete'), value: `${stats.classesComplete} / ${stats.classCount}`, sub: t('stats.completeSub'), tone: 'text-ink' },
@@ -80,12 +86,12 @@ export function DashboardPage() {
     <div className="mb-4 flex flex-col gap-2.5">
       <div>
         {greeting}
-        <h1 className="mb-0 mt-0.5 text-[22px] font-bold tracking-tight text-ink">{year ? t('page.title', { year: year.label }) : t('page.noYear')}</h1>
+        <h1 className="mb-0 mt-0.5 text-[22px] font-bold tracking-tight text-ink">{title}</h1>
       </div>
       {(yearSelect || newYear) && (
         <div className="flex items-center gap-2">
           <div className="min-w-0 flex-1">{yearSelect}</div>
-          {!readOnly && (
+          {newYear && (
             <Button size="lg" onClick={() => setDialog('new')}>
               {t('year.new')}
             </Button>
@@ -117,7 +123,7 @@ export function DashboardPage() {
         <div>
           {greeting}
           <h1 className="mb-0 mt-1 text-[28px] font-bold tracking-tight text-ink">
-            {year ? t('page.title', { year: year.label }) : t('page.noYear')}
+            {title}
           </h1>
         </div>
         <div className="flex flex-col items-end gap-1.5">
@@ -144,7 +150,7 @@ export function DashboardPage() {
       )}
 
       {!year ? (
-        <EmptyState icon="calendar" title={t('page.noYear')} body={t('page.noYearBody')} action={newYear || undefined} />
+        <EmptyState icon="calendar" title={t('page.noYear')} body={t('page.noYearBody')} action={firstYear || undefined} />
       ) : (
         <>
           {isPhone ? (

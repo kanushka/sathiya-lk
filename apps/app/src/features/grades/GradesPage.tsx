@@ -115,10 +115,16 @@ export function GradesPage() {
                     <ClassCard
                       key={c.id}
                       cls={c}
+                      classes={school.classes}
                       teachers={school.teachers}
                       templates={school.templates}
                       readOnly={readOnly}
-                      onTeacher={(id) => void guard(() => api.updateClass(sid, c.id, { classTeacherId: id }))}
+                      onTeacher={(id) => {
+                        const owns = id && school.classes.find((o) => o.id !== c.id && o.classTeacherId === id);
+                        const who = id && school.teachers.find((x) => x.id === id);
+                        if (owns && who) return toast.show(t('classes.teacherTakenError', { teacher: teacherDisplayName(who, lang), class: owns.name }), 'error');
+                        void guard(() => api.updateClass(sid, c.id, { classTeacherId: id }));
+                      }}
                       onTemplate={(id) => void guard(() => api.updateClass(sid, c.id, { templateId: id }))}
                       onCustomPlan={() => setDialog({ kind: 'plan', cls: c })}
                       onRemove={() => setDialog({ kind: 'delete', cls: c })}
@@ -129,6 +135,7 @@ export function GradesPage() {
             </section>
   );
 
+  const hasGrades = school.loading || grades.length > 0;
   const addGradeButton = !readOnly && choices.length > 0 && (
     <Button variant="primary" onClick={() => setDialog({ kind: 'addGrade' })}>
       {t('rail.addGrade')}
@@ -137,8 +144,9 @@ export function GradesPage() {
 
   return (
     <div>
-      <PageHeader title={t('page.heading')} actions={addGradeButton || undefined} phoneActions={addGradeButton || null} />
+      <PageHeader title={t('page.heading')} actions={(hasGrades && addGradeButton) || undefined} phoneActions={(hasGrades && addGradeButton) || null} />
       <div className="flex flex-col gap-4 md:min-h-[600px] md:flex-row md:gap-6">
+      {grades.length > 0 && (
       <nav ref={railRef} aria-label={t('rail.title')} className="-mx-1.5 flex gap-1 overflow-x-auto border-b border-line-soft px-1.5 pb-2 pt-1.5 md:mx-0 md:block md:pt-0 md:w-[150px] md:shrink-0 md:border-b-0 md:border-r md:px-0 md:pb-0 md:pr-2.5">
         <p className="mx-2 mb-2.5 hidden text-[11px] font-bold uppercase tracking-widest text-ink-muted md:block">{t('rail.title')}</p>
         {grades.map((g) => (
@@ -156,6 +164,7 @@ export function GradesPage() {
           </button>
         ))}
       </nav>
+      )}
 
       <div className="min-w-0 flex-1">
         {school.loading ? (

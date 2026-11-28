@@ -818,3 +818,13 @@ describe('teachers page on a phone', () => {
     expect(screen.getByRole('dialog', { name: 'Turn off the invite link?' })).toBeInTheDocument();
   });
 });
+
+describe('empty teachers', () => {
+  it('keeps Import, drops search and shows one add button', () => {
+    renderWithSchool(<TeachersPage />, { ctx: { ...ctx, teachers: [] }, entries: [] });
+    expect(screen.getAllByRole('button', { name: '+ Add teacher' })).toHaveLength(1);
+    expect(screen.queryByRole('searchbox', { name: 'Search by name or staff ID' })).not.toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'Import' })).toBeInTheDocument();
+    expect(screen.queryByText('Invite link')).not.toBeInTheDocument();
+  });
+});

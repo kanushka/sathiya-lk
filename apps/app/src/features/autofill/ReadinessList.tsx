@@ -14,6 +14,7 @@ type Area = 'grades' | 'teachers' | 'templates';
 const AREA: Record<ReadinessCode, Area> = {
   'grade-no-classes': 'grades',
   'class-no-teacher': 'grades',
+  'class-teacher-twice': 'grades',
   'class-no-template': 'grades',
   'plan-empty': 'grades',
   'plan-zero-target': 'grades',
@@ -113,6 +114,8 @@ function describe(entry: Entry, ctx: SchoolContext, lang: Lang, t: TFunction<'au
       return t('messages.class-teacher-no-daily-subject', { class: cls(), teacher: teacherName(str('teacherId')) });
     case 'plan-zero-target':
       return t('messages.plan-zero-target', { classes: classList(), item: itemName(str('classId'), str('planKey')) });
+    case 'class-teacher-twice':
+      return t('messages.class-teacher-twice', { teacher: teacherName(issue.ref.id), classes: str('classes') });
     case 'teacher-no-subjects':
     case 'teacher-no-grades':
     case 'teacher-no-max':

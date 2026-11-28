@@ -30,7 +30,9 @@
     "template": "Period template",
     "templateOption": "{{name}} ({{count}} periods)",
     "customPlan": "Custom plan",
-    "ownPlan": "Own plan"
+    "ownPlan": "Own plan",
+    "teacherTaken": "Class teacher of {{class}}",
+    "teacherTakenError": "{{teacher}} is already class teacher of {{class}}. A teacher can own only one class."
   },
   "plan": {
     "noSubjects": "The school has no subjects yet.",

@@ -160,6 +160,7 @@ export function TeachersPage() {
     );
   }
 
+  const hasTeachers = state.loading || teachers.length > 0;
   const add = (
     <Button variant="primary" disabled={!teachersReady} onClick={() => setDialog({ kind: 'edit' })}>
       {t('page.add')}
@@ -197,19 +198,19 @@ export function TeachersPage() {
       <PageHeader
         title={t('page.title')}
         count={teachers.length}
-        phoneActions={readOnly ? null : add}
+        phoneActions={readOnly || !hasTeachers ? null : add}
         actions={
           <>
-          <div className="w-[220px]">{searchBox}</div>
+          {hasTeachers && <div className="w-[220px]">{searchBox}</div>}
           {!readOnly && <Button disabled={!teachersReady} onClick={() => setDialog({ kind: 'import' })}>{t('import:open')}</Button>}
-          {!readOnly && add}
+          {!readOnly && hasTeachers && add}
           </>
         }
       />
 
       {isPhone && (
         <div className="mb-4 flex items-center gap-2">
-          <div className="min-w-0 flex-1 [&_input]:h-11">{searchBox}</div>
+          <div className="min-w-0 flex-1 [&_input]:h-11">{hasTeachers && searchBox}</div>
           {!readOnly && (
             <ActionMenu
               label={t('phone.moreList')}
@@ -220,7 +221,7 @@ export function TeachersPage() {
       )}
 
       <JoinRequests schoolId={school.id} requests={requests} teachers={teachers} readOnly={readOnly} phone={isPhone} />
-      {!readOnly && !isPhone && <InviteLinkCard schoolId={school.id} />}
+      {!readOnly && !isPhone && hasTeachers && <InviteLinkCard schoolId={school.id} />}
 
       {!readOnly && pending && teachers.length > 0 && (
         <div className="mb-2.5 flex justify-end">
@@ -322,7 +323,7 @@ export function TeachersPage() {
         </Table>
       )}
 
-      {isPhone && !readOnly && <InviteLinkCard schoolId={school.id} compact />}
+      {isPhone && !readOnly && hasTeachers && <InviteLinkCard schoolId={school.id} compact />}
 
       {dialog?.kind === 'edit' && (
         <TeacherModal

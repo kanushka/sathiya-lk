@@ -399,3 +399,25 @@ describe('grades page on a phone', () => {
     for (const b of screen.getAllByRole('button', { name: /^Remove / })) expect(b).toHaveClass('h-11', 'w-11');
   });
 });
+
+describe('empty grades', () => {
+  it('shows a single add button, in the empty state', () => {
+    renderWithSchool(<GradesPage />, { ctx: { ...ctx, grades: [], classes: [] }, entries: [] });
+    expect(screen.getAllByRole('button', { name: '+ Add grade' })).toHaveLength(1);
+    expect(screen.getByText('No grades yet')).toBeInTheDocument();
+    expect(screen.queryByRole('navigation', { name: 'Grades' })).not.toBeInTheDocument();
+  });
+});
+
+describe('one class per class teacher', () => {
+  it('disables a teacher who already owns another class, with the class named', async () => {
+    const user = await openGrade6();
+    const card = screen.getByText('6B').closest('[data-testid="class-card"]') as HTMLElement;
+    await user.click(within(card).getByRole('combobox', { name: /^Class teacher/ }));
+    const taken = screen.getByRole('option', { name: /P\. Bandara/ });
+    expect(taken).toHaveAttribute('aria-disabled', 'true');
+    expect(taken).toHaveTextContent('Class teacher of 6A');
+    await user.click(taken);
+    expect(api.updateClass).not.toHaveBeenCalled();
+  });
+});

@@ -236,3 +236,12 @@ describe('subjects page on a phone', () => {
     expect(api.addSubject).not.toHaveBeenCalled();
   });
 });
+
+describe('empty subjects', () => {
+  it('keeps the standard list button and shows one add button', () => {
+    renderWithSchool(<SubjectsPage />, { ctx: { ...ctx, subjects: [] }, entries: [] });
+    expect(screen.getAllByRole('button', { name: '+ Add subject' })).toHaveLength(1);
+    expect(screen.getAllByRole('button', { name: 'Load standard Sri Lankan list' })).toHaveLength(1);
+    expect(screen.queryByText(/Short name is what fits/)).not.toBeInTheDocument();
+  });
+});

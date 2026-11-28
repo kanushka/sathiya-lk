@@ -178,3 +178,13 @@ describe('dashboard on a phone', () => {
     expect(screen.getByText('Classes complete').closest('.grid')).toHaveClass('grid-cols-2');
   });
 });
+
+describe('no year yet', () => {
+  it('shows one primary New year button and a plain title', () => {
+    renderWithSchool(<DashboardPage />, { ctx, entries: [], years: [] });
+    const buttons = screen.getAllByRole('button', { name: 'New year' });
+    expect(buttons).toHaveLength(1);
+    expect(screen.getByRole('heading', { level: 1 })).toHaveTextContent('Dashboard');
+    expect(screen.getAllByText('No timetable year yet')).toHaveLength(1);
+  });
+});

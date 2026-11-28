@@ -207,3 +207,15 @@ describe('readiness', () => {
     expect(readiness(c, []).blocking.map((i) => `${i.code}:${i.ref.id}`)).toEqual([`class-no-teacher:${C.c6a}`, `class-no-teacher:${C.c6b}`]);
   });
 });
+
+describe('class teacher of more than one class', () => {
+  it('blocks when one teacher owns two classes', () => {
+    const c = withClass(C.c6b, { classTeacherId: T.bandara });
+    const issue = readiness(c, []).blocking.find((i) => i.code === 'class-teacher-twice');
+    expect(issue).toMatchObject({ ref: { kind: 'teacher', id: T.bandara }, params: { classes: '6A, 6B' } });
+  });
+
+  it('is quiet when every class teacher owns one class', () => {
+    expect(readiness(ctx, []).blocking.some((i) => i.code === 'class-teacher-twice')).toBe(false);
+  });
+});

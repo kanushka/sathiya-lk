@@ -31,6 +31,7 @@ import { Combobox } from '../../ui/Combobox';
 import { cx } from '../../ui/cx';
 import { EmptyState } from '../../ui/EmptyState';
 import { LinkButton } from '../../ui/LinkButton';
+import { PageHeader } from '../../ui/PageHeader';
 import { Icon } from '../../ui/Icon';
 import { IconButton } from '../../ui/IconButton';
 import { LoadingState } from '../../ui/LoadingState';
@@ -67,7 +68,12 @@ function NoTeachers() {
       {t('teacherView.addTeacher')}
     </LinkButton>
   );
-  return <EmptyState icon="teacherView" title={t('teacherView.noTeachersTitle')} body={t('teacherView.noTeachersBody')} action={action} />;
+  return (
+    <>
+      <PageHeader title={t('shell:nav.byTeacher')} />
+      <EmptyState icon="teacherView" title={t('teacherView.noTeachersTitle')} body={t('teacherView.noTeachersBody')} action={action} />
+    </>
+  );
 }
 
 export function TeacherIndexRedirect() {
