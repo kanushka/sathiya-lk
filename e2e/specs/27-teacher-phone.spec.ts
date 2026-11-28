@@ -71,7 +71,8 @@ test('teacher on a phone: today, timetable, my class and me', async ({ page }) =
   const details = main.getByRole('region', { name: 'My details' });
   await expect(details).toContainText('SCC024');
   await expect(details).toContainText(perera.email);
-  await expect(main).toContainText('To change these, ask your school admin.');
+  await expect(main).toContainText('To change your name, staff ID or email, ask your school admin.');
+  await expect(main.getByRole('region', { name: 'This year' })).toContainText('Classes I teach');
   await expect(main.getByLabel('Phone number')).toBeEditable();
   await noSideScroll(page);
   await shot(page, 'teacher-phone-me');
