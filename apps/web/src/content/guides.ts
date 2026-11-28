@@ -229,7 +229,7 @@ const list: Guide[] = [
   {
     slug: 'timetable-class',
     minutes: 2,
-    youtube: { en: '', si: '' },
+    youtube: { en: 'fxyE3-hkviI', si: 'Q8fXFUvu8ws' },
     text: {
       en: {
         title: 'Build the timetable by class',
@@ -256,7 +256,7 @@ const list: Guide[] = [
   {
     slug: 'profile',
     minutes: 1,
-    youtube: { en: '', si: '' },
+    youtube: { en: 'M1sCrByDoOE', si: 'QiXvbUpSZqM' },
     text: {
       en: {
         title: 'School profile, logo and colours',
@@ -281,7 +281,7 @@ const list: Guide[] = [
   {
     slug: 'members',
     minutes: 1,
-    youtube: { en: '', si: '' },
+    youtube: { en: 'f1rUe50ybL4', si: 'sK9y56MO-9I' },
     text: {
       en: {
         title: 'Invite another admin',
@@ -306,7 +306,7 @@ const list: Guide[] = [
   {
     slug: 'import',
     minutes: 2,
-    youtube: { en: '', si: '' },
+    youtube: { en: 'xtzRbJ1VM2Q', si: 'XYHTh875F18' },
     text: {
       en: {
         title: 'Import teachers from Excel',
@@ -333,7 +333,7 @@ const list: Guide[] = [
   {
     slug: 'timetable-teacher',
     minutes: 2,
-    youtube: { en: '', si: '' },
+    youtube: { en: 'x_GhygYJvgs', si: 'ArsJgaVVGEg' },
     text: {
       en: {
         title: 'The timetable by teacher',
@@ -358,7 +358,7 @@ const list: Guide[] = [
   {
     slug: 'autofill',
     minutes: 2,
-    youtube: { en: '', si: '' },
+    youtube: { en: '9xbbhN6kJwU', si: '42bOKXkSA4E' },
     text: {
       en: {
         title: 'Auto-fill the whole timetable',
@@ -385,7 +385,7 @@ const list: Guide[] = [
   {
     slug: 'publish-print',
     minutes: 2,
-    youtube: { en: '', si: '' },
+    youtube: { en: 'FODtkEPNLUM', si: 'ebMy9ldllCM' },
     text: {
       en: {
         title: 'Publish and print the timetable',
