@@ -1306,7 +1306,7 @@ h3 {
 }
 
 .guide-steps.portrait img {
-  max-width: 320px;
+  max-width: min(100%, 320px);
 }
 
 .guide-list {

@@ -26,6 +26,7 @@ test('school profile', async ({ page, lang, tutorial }) => {
 
   await tut.say({ en: 'Add the school phone number and address.', si: 'පාසලේ දුරකථන අංකය සහ ලිපිනය එක් කරන්න.' }, 1600);
   await tut.type(page.getByLabel(t('fields.phone')), '081 222 3344');
+  await page.getByLabel(t('fields.address')).fill('');
   await tut.type(page.getByLabel(t('fields.address')), 'Temple Road, Kandy');
 
   await tut.say({
